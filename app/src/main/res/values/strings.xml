@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">ケアのて</string>
+
+    <!-- Navigation -->
+    <string name="nav_medication">服薬</string>
+    <string name="nav_calendar">予定</string>
+    <string name="nav_tasks">タスク</string>
+    <string name="nav_health_records">記録</string>
+    <string name="nav_notes">メモ</string>
+
+    <!-- Settings -->
+    <string name="settings_title">設定</string>
+
+    <!-- Medication -->
+    <string name="medication_title">服薬管理</string>
+    <string name="medication_add">薬を追加</string>
+    <string name="medication_today">今日の服薬</string>
+    <string name="medication_taken">飲んだ</string>
+    <string name="medication_skipped">飲めなかった</string>
+    <string name="medication_postponed">後で通知</string>
+    <string name="medication_history">服薬履歴を見る</string>
+    <string name="medication_morning">朝</string>
+    <string name="medication_noon">昼</string>
+    <string name="medication_evening">夕</string>
+    <string name="medication_name">薬の名前</string>
+    <string name="medication_name_placeholder">例：ロキソニン</string>
+    <string name="medication_dosage">用量</string>
+    <string name="medication_dosage_placeholder">例：1錠</string>
+    <string name="medication_timing">服用タイミング</string>
+    <string name="medication_time">時刻</string>
+    <string name="medication_name_required">薬の名前を入力してください</string>
+    <string name="medication_saved">薬を保存しました</string>
+    <string name="medication_deleted">薬を削除しました</string>
+    <string name="medication_delete_confirm">%sを削除しますか？関連する服薬記録も削除されます。</string>
+    <string name="medication_log_recorded">服薬を記録しました</string>
+    <string name="medication_empty">登録されている薬はありません</string>
+    <string name="medication_empty_action">薬を追加する</string>
+    <string name="medication_detail">薬の詳細</string>
+    <string name="medication_status_not_taken">未服用</string>
+    <string name="medication_status_taken">服用済み</string>
+    <string name="medication_status_skipped">スキップ</string>
+    <string name="medication_status_postponed">延期</string>
+    <string name="medication_no_history">服薬記録はありません</string>
+    <string name="medication_edit">薬を編集</string>
+    <string name="medication_updated">薬を更新しました</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">カレンダー</string>
+    <string name="calendar_add_event">予定を追加</string>
+    <string name="calendar_today">今日</string>
+    <string name="calendar_event">予定</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">タスク</string>
+    <string name="tasks_add">タスクを追加</string>
+    <string name="tasks_completed">完了済み</string>
+    <string name="tasks_due_today">今日まで</string>
+
+    <!-- Health Records -->
+    <string name="health_records_title">健康記録</string>
+    <string name="health_records_add">記録を追加</string>
+    <string name="health_records_temperature">体温</string>
+    <string name="health_records_blood_pressure">血圧</string>
+    <string name="health_records_pulse">脈拍</string>
+    <string name="health_records_weight">体重</string>
+    <string name="health_records_meal">食事量</string>
+    <string name="health_records_excretion">排泄</string>
+    <string name="health_records_condition">体調メモ</string>
+    <string name="health_records_graph">グラフで見る</string>
+
+    <!-- Notes -->
+    <string name="notes_title">メモ・申し送り</string>
+    <string name="notes_add">メモを追加</string>
+    <string name="notes_search">検索…</string>
+    <string name="notes_tag_condition">体調</string>
+    <string name="notes_tag_meal">食事</string>
+    <string name="notes_tag_report">報告</string>
+    <string name="notes_tag_other">その他</string>
+    <string name="notes_all_tags">すべて</string>
+    <string name="notes_empty">メモはまだありません</string>
+    <string name="notes_empty_action">メモを追加する</string>
+    <string name="notes_title_label">タイトル</string>
+    <string name="notes_title_placeholder">メモのタイトルを入力</string>
+    <string name="notes_content_label">内容</string>
+    <string name="notes_content_placeholder">メモの内容を入力</string>
+    <string name="notes_tag_label">タグ</string>
+    <string name="notes_title_required">タイトルを入力してください</string>
+    <string name="notes_content_required">内容を入力してください</string>
+    <string name="notes_saved">メモを保存しました</string>
+    <string name="notes_updated">メモを更新しました</string>
+    <string name="notes_deleted">メモを削除しました</string>
+    <string name="notes_delete_confirm">このメモを削除しますか？</string>
+    <string name="notes_edit">メモを編集</string>
+    <string name="notes_delete_failed">削除に失敗しました</string>
+
+    <!-- Common -->
+    <string name="common_save">保存する</string>
+    <string name="common_cancel">キャンセル</string>
+    <string name="common_delete">削除する</string>
+    <string name="common_edit">編集</string>
+    <string name="common_close">閉じる</string>
+    <string name="common_add">追加</string>
+    <string name="common_memo">メモ</string>
+    <string name="common_photo_add">写真を追加</string>
+    <string name="common_notification">通知</string>
+    <string name="common_reminder">リマインダー</string>
+
+    <!-- Common UI Components -->
+    <string name="ui_loading">読み込み中…</string>
+    <string name="ui_retry">再試行</string>
+    <string name="ui_error_database">データベースエラーが発生しました</string>
+    <string name="ui_error_not_found">データが見つかりませんでした</string>
+    <string name="ui_error_validation">入力内容に問題があります</string>
+    <string name="ui_error_network">ネットワークに接続できません</string>
+    <string name="ui_error_unauthorized">認証が必要です</string>
+    <string name="ui_error_unknown">予期しないエラーが発生しました</string>
+    <string name="ui_empty_default">データがありません</string>
+    <string name="ui_confirm_title">確認</string>
+    <string name="ui_confirm_delete_title">削除の確認</string>
+    <string name="ui_confirm_delete_message">本当に削除しますか？この操作は元に戻せません。</string>
+    <string name="ui_confirm_yes">はい</string>
+    <string name="ui_confirm_no">いいえ</string>
+    <string name="ui_validation_required">この項目は必須です</string>
+    <string name="ui_validation_too_long">文字数が上限を超えています</string>
+
+    <!-- Placeholder -->
+    <string name="placeholder_coming_soon">この機能は近日公開予定です</string>
+</resources>

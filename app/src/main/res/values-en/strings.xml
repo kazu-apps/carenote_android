@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">CareNote</string>
+
+    <!-- Navigation -->
+    <string name="nav_medication">Medication</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_health_records">Records</string>
+    <string name="nav_notes">Notes</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+
+    <!-- Medication -->
+    <string name="medication_title">Medication</string>
+    <string name="medication_add">Add Medication</string>
+    <string name="medication_today">Today\'s Medication</string>
+    <string name="medication_taken">Taken</string>
+    <string name="medication_skipped">Skipped</string>
+    <string name="medication_postponed">Remind Later</string>
+    <string name="medication_history">View History</string>
+    <string name="medication_morning">Morning</string>
+    <string name="medication_noon">Noon</string>
+    <string name="medication_evening">Evening</string>
+    <string name="medication_name">Medication Name</string>
+    <string name="medication_name_placeholder">e.g. Aspirin</string>
+    <string name="medication_dosage">Dosage</string>
+    <string name="medication_dosage_placeholder">e.g. 1 tablet</string>
+    <string name="medication_timing">Timing</string>
+    <string name="medication_time">Time</string>
+    <string name="medication_name_required">Please enter a medication name</string>
+    <string name="medication_saved">Medication saved</string>
+    <string name="medication_deleted">Medication deleted</string>
+    <string name="medication_delete_confirm">Delete %s? Related medication logs will also be deleted.</string>
+    <string name="medication_log_recorded">Medication log recorded</string>
+    <string name="medication_empty">No medications registered</string>
+    <string name="medication_empty_action">Add Medication</string>
+    <string name="medication_detail">Medication Detail</string>
+    <string name="medication_status_not_taken">Not Taken</string>
+    <string name="medication_status_taken">Taken</string>
+    <string name="medication_status_skipped">Skipped</string>
+    <string name="medication_status_postponed">Postponed</string>
+    <string name="medication_no_history">No medication records</string>
+    <string name="medication_edit">Edit Medication</string>
+    <string name="medication_updated">Medication updated</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_add_event">Add Event</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_event">Event</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Tasks</string>
+    <string name="tasks_add">Add Task</string>
+    <string name="tasks_completed">Completed</string>
+    <string name="tasks_due_today">Due Today</string>
+
+    <!-- Health Records -->
+    <string name="health_records_title">Health Records</string>
+    <string name="health_records_add">Add Record</string>
+    <string name="health_records_temperature">Temperature</string>
+    <string name="health_records_blood_pressure">Blood Pressure</string>
+    <string name="health_records_pulse">Pulse</string>
+    <string name="health_records_weight">Weight</string>
+    <string name="health_records_meal">Meal Amount</string>
+    <string name="health_records_excretion">Excretion</string>
+    <string name="health_records_condition">Condition Notes</string>
+    <string name="health_records_graph">View Graph</string>
+
+    <!-- Notes -->
+    <string name="notes_title">Notes</string>
+    <string name="notes_add">Add Note</string>
+    <string name="notes_search">Search…</string>
+    <string name="notes_tag_condition">Condition</string>
+    <string name="notes_tag_meal">Meal</string>
+    <string name="notes_tag_report">Report</string>
+    <string name="notes_tag_other">Other</string>
+    <string name="notes_all_tags">All</string>
+    <string name="notes_empty">No notes yet</string>
+    <string name="notes_empty_action">Add a note</string>
+    <string name="notes_title_label">Title</string>
+    <string name="notes_title_placeholder">Enter note title</string>
+    <string name="notes_content_label">Content</string>
+    <string name="notes_content_placeholder">Enter note content</string>
+    <string name="notes_tag_label">Tag</string>
+    <string name="notes_title_required">Please enter a title</string>
+    <string name="notes_content_required">Please enter content</string>
+    <string name="notes_saved">Note saved</string>
+    <string name="notes_updated">Note updated</string>
+    <string name="notes_deleted">Note deleted</string>
+    <string name="notes_delete_confirm">Delete this note?</string>
+    <string name="notes_edit">Edit Note</string>
+    <string name="notes_delete_failed">Failed to delete</string>
+
+    <!-- Common -->
+    <string name="common_save">Save</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_close">Close</string>
+    <string name="common_add">Add</string>
+    <string name="common_memo">Memo</string>
+    <string name="common_photo_add">Add Photo</string>
+    <string name="common_notification">Notification</string>
+    <string name="common_reminder">Reminder</string>
+
+    <!-- Common UI Components -->
+    <string name="ui_loading">Loading…</string>
+    <string name="ui_retry">Retry</string>
+    <string name="ui_error_database">A database error occurred</string>
+    <string name="ui_error_not_found">Data not found</string>
+    <string name="ui_error_validation">There is a problem with your input</string>
+    <string name="ui_error_network">Unable to connect to the network</string>
+    <string name="ui_error_unauthorized">Authentication required</string>
+    <string name="ui_error_unknown">An unexpected error occurred</string>
+    <string name="ui_empty_default">No data available</string>
+    <string name="ui_confirm_title">Confirm</string>
+    <string name="ui_confirm_delete_title">Confirm Deletion</string>
+    <string name="ui_confirm_delete_message">Are you sure you want to delete? This cannot be undone.</string>
+    <string name="ui_confirm_yes">Yes</string>
+    <string name="ui_confirm_no">No</string>
+    <string name="ui_validation_required">This field is required</string>
+    <string name="ui_validation_too_long">Character limit exceeded</string>
+
+    <!-- Placeholder -->
+    <string name="placeholder_coming_soon">This feature is coming soon</string>
+</resources>

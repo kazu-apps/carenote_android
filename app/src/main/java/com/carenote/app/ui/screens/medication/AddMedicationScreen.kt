@@ -1,0 +1,222 @@
+package com.carenote.app.ui.screens.medication
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.carenote.app.R
+import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.util.DateTimeFormatters
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddMedicationScreen(
+    onNavigateBack: () -> Unit = {},
+    viewModel: AddMedicationViewModel = hiltViewModel()
+) {
+    val formState by viewModel.formState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.savedEvent.collect { saved ->
+            if (saved) {
+                onNavigateBack()
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.medication_add),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_close)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            CareNoteTextField(
+                value = formState.name,
+                onValueChange = viewModel::updateName,
+                label = stringResource(R.string.medication_name),
+                placeholder = stringResource(R.string.medication_name_placeholder),
+                errorMessage = formState.nameError
+            )
+
+            CareNoteTextField(
+                value = formState.dosage,
+                onValueChange = viewModel::updateDosage,
+                label = stringResource(R.string.medication_dosage),
+                placeholder = stringResource(R.string.medication_dosage_placeholder)
+            )
+
+            Text(
+                text = stringResource(R.string.medication_timing),
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            TimingSelector(
+                selectedTimings = formState.timings,
+                times = formState.times,
+                onToggleTiming = viewModel::toggleTiming,
+                onUpdateTime = viewModel::updateTime
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.common_reminder),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Switch(
+                    checked = formState.reminderEnabled,
+                    onCheckedChange = { viewModel.toggleReminder() }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.weight(1f),
+                    shape = ButtonShape
+                ) {
+                    Text(text = stringResource(R.string.common_cancel))
+                }
+                Button(
+                    onClick = viewModel::saveMedication,
+                    modifier = Modifier.weight(1f),
+                    shape = ButtonShape,
+                    enabled = !formState.isSaving
+                ) {
+                    if (formState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .height(20.dp)
+                                .width(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text(text = stringResource(R.string.common_save))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun TimingSelector(
+    selectedTimings: List<MedicationTiming>,
+    times: Map<MedicationTiming, java.time.LocalTime>,
+    onToggleTiming: (MedicationTiming) -> Unit,
+    onUpdateTime: (MedicationTiming, java.time.LocalTime) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        MedicationTiming.entries.forEach { timing ->
+            val isSelected = selectedTimings.contains(timing)
+            val label = when (timing) {
+                MedicationTiming.MORNING -> stringResource(R.string.medication_morning)
+                MedicationTiming.NOON -> stringResource(R.string.medication_noon)
+                MedicationTiming.EVENING -> stringResource(R.string.medication_evening)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onToggleTiming(timing) }
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                if (isSelected) {
+                    times[timing]?.let { time ->
+                        FilterChip(
+                            selected = true,
+                            onClick = { },
+                            label = {
+                                Text(
+                                    text = DateTimeFormatters.formatTime(time),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

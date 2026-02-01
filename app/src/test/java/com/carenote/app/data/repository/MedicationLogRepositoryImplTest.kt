@@ -1,0 +1,224 @@
+package com.carenote.app.data.repository
+
+import com.carenote.app.data.local.dao.MedicationLogDao
+import com.carenote.app.data.local.entity.MedicationLogEntity
+import com.carenote.app.data.mapper.MedicationLogMapper
+import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.domain.model.MedicationLogStatus
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+class MedicationLogRepositoryImplTest {
+
+    private lateinit var dao: MedicationLogDao
+    private lateinit var mapper: MedicationLogMapper
+    private lateinit var repository: MedicationLogRepositoryImpl
+
+    @Before
+    fun setUp() {
+        dao = mockk()
+        mapper = MedicationLogMapper()
+        repository = MedicationLogRepositoryImpl(dao, mapper)
+    }
+
+    private fun createEntity(
+        id: Long = 1L,
+        medicationId: Long = 10L,
+        status: String = "TAKEN"
+    ) = MedicationLogEntity(
+        id = id,
+        medicationId = medicationId,
+        status = status,
+        scheduledAt = "2025-03-15T08:00:00",
+        recordedAt = "2025-03-15T08:05:00",
+        memo = ""
+    )
+
+    @Test
+    fun `getLogsForMedication returns flow of logs`() = runTest {
+        val entities = listOf(
+            createEntity(1L, 10L, "TAKEN"),
+            createEntity(2L, 10L, "SKIPPED")
+        )
+        every { dao.getLogsForMedication(10L) } returns flowOf(entities)
+
+        val result = repository.getLogsForMedication(10L).first()
+
+        assertEquals(2, result.size)
+        assertEquals(MedicationLogStatus.TAKEN, result[0].status)
+        assertEquals(MedicationLogStatus.SKIPPED, result[1].status)
+    }
+
+    @Test
+    fun `getLogsForMedication returns empty list when no logs`() = runTest {
+        every { dao.getLogsForMedication(999L) } returns flowOf(emptyList())
+
+        val result = repository.getLogsForMedication(999L).first()
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `getLogsForDate queries with correct date range`() = runTest {
+        val date = LocalDate.of(2025, 3, 15)
+        every { dao.getLogsForDateRange(any(), any()) } returns flowOf(emptyList())
+
+        repository.getLogsForDate(date).first()
+
+        coVerify {
+            dao.getLogsForDateRange(
+                match { it.startsWith("2025-03-15T") },
+                match { it.startsWith("2025-03-16T") }
+            )
+        }
+    }
+
+    @Test
+    fun `getLogsForDate returns mapped logs`() = runTest {
+        val entities = listOf(createEntity(1L, 10L, "TAKEN"))
+        every { dao.getLogsForDateRange(any(), any()) } returns flowOf(entities)
+
+        val result = repository.getLogsForDate(LocalDate.of(2025, 3, 15)).first()
+
+        assertEquals(1, result.size)
+        assertEquals(MedicationLogStatus.TAKEN, result[0].status)
+    }
+
+    @Test
+    fun `insertLog returns Success with id`() = runTest {
+        coEvery { dao.insertLog(any()) } returns 1L
+
+        val log = MedicationLog(
+            medicationId = 10L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2025, 3, 15, 8, 5)
+        )
+        val result = repository.insertLog(log)
+
+        assertTrue(result is Result.Success)
+        assertEquals(1L, (result as Result.Success).value)
+    }
+
+    @Test
+    fun `insertLog returns Failure on db error`() = runTest {
+        coEvery { dao.insertLog(any()) } throws RuntimeException("DB error")
+
+        val log = MedicationLog(
+            medicationId = 10L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.now(),
+            recordedAt = LocalDateTime.now()
+        )
+        val result = repository.insertLog(log)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updateLog returns Success`() = runTest {
+        coEvery { dao.updateLog(any()) } returns Unit
+
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 10L,
+            status = MedicationLogStatus.SKIPPED,
+            scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2025, 3, 15, 8, 5)
+        )
+        val result = repository.updateLog(log)
+
+        assertTrue(result is Result.Success)
+    }
+
+    @Test
+    fun `updateLog returns Failure on db error`() = runTest {
+        coEvery { dao.updateLog(any()) } throws RuntimeException("DB error")
+
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 10L,
+            status = MedicationLogStatus.SKIPPED,
+            scheduledAt = LocalDateTime.now(),
+            recordedAt = LocalDateTime.now()
+        )
+        val result = repository.updateLog(log)
+
+        assertTrue(result is Result.Failure)
+    }
+
+    @Test
+    fun `deleteLog returns Success`() = runTest {
+        coEvery { dao.deleteLog(1L) } returns Unit
+
+        val result = repository.deleteLog(1L)
+
+        assertTrue(result is Result.Success)
+        coVerify { dao.deleteLog(1L) }
+    }
+
+    @Test
+    fun `deleteLog returns Failure on db error`() = runTest {
+        coEvery { dao.deleteLog(1L) } throws RuntimeException("DB error")
+
+        val result = repository.deleteLog(1L)
+
+        assertTrue(result is Result.Failure)
+    }
+
+    @Test
+    fun `insertLog calls dao with mapped entity`() = runTest {
+        coEvery { dao.insertLog(any()) } returns 1L
+
+        val log = MedicationLog(
+            medicationId = 10L,
+            status = MedicationLogStatus.POSTPONED,
+            scheduledAt = LocalDateTime.of(2025, 3, 15, 18, 0),
+            recordedAt = LocalDateTime.of(2025, 3, 15, 18, 0),
+            memo = "後で飲む"
+        )
+        repository.insertLog(log)
+
+        coVerify {
+            dao.insertLog(match {
+                it.medicationId == 10L &&
+                    it.status == "POSTPONED" &&
+                    it.memo == "後で飲む"
+            })
+        }
+    }
+
+    @Test
+    fun `getLogsForMedication maps all fields correctly`() = runTest {
+        val entity = MedicationLogEntity(
+            id = 5L,
+            medicationId = 20L,
+            status = "POSTPONED",
+            scheduledAt = "2025-03-15T18:00:00",
+            recordedAt = "2025-03-15T18:30:00",
+            memo = "テストメモ"
+        )
+        every { dao.getLogsForMedication(20L) } returns flowOf(listOf(entity))
+
+        val result = repository.getLogsForMedication(20L).first()
+
+        assertEquals(5L, result[0].id)
+        assertEquals(20L, result[0].medicationId)
+        assertEquals(MedicationLogStatus.POSTPONED, result[0].status)
+        assertEquals("テストメモ", result[0].memo)
+    }
+}
