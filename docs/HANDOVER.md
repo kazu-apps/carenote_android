@@ -2,7 +2,7 @@
 
 ## セッションステータス: 完了
 
-## タスク: Phase 6-3 カレンダー UI 実装
+## タスク: Phase 7-3 タスク管理 UI 実装
 
 ## フェーズロードマップ
 
@@ -47,31 +47,36 @@ CalendarScreen（月表示 + イベント一覧）+ AddEditCalendarEventScreen +
 
 ---
 
-### Item 7: タスク管理機能 - PENDING
+### Item 7: タスク管理機能 - DONE
 
 介護タスク（買い物・掃除・書類手続き等）の管理機能。
 タスク一覧（完了/未完了フィルタ）+ 追加/編集フォーム + 完了トグル。
 
-#### Phase 7-1: ドメイン層 + データ層 - PENDING
-Task ドメインモデル（優先度 enum）、Room Entity/DAO、Mapper、Repository 実装
-- 変更対象: domain/model/, domain/repository/, data/local/, data/mapper/, data/repository/, di/, config/
-- 依存: なし（Phase 6 と並行可能だが DB バージョン管理上は Phase 6-1 後が安全）
-- 新規ファイル ~8、変更ファイル ~4（DB v5、DI、AppConfig、strings）
-- 成果物: Task モデル + CRUD リポジトリ + Mapper テスト + Repository テスト
+#### Phase 7-1: ドメイン層 + データ層 - DONE
+Task ドメインモデル（TaskPriority enum）、Room Entity/DAO、Mapper、Repository 実装
+- 変更対象: domain/model/, domain/repository/, data/local/, data/mapper/, data/repository/, di/, config/, res/values/
+- 依存: Phase 6-1 後（DB バージョン管理）
+- 新規ファイル 10（TaskPriority, Task, TaskRepository, TaskEntity, TaskDao, TaskMapper, TaskRepositoryImpl, TaskMapperTest, TaskRepositoryImplTest, FakeTaskRepository）
+- 変更ファイル 6（CareNoteDatabase v4→v5, DatabaseModule, AppModule, AppConfig, strings.xml JP/EN）
+- 成果物: Task モデル + CRUD リポジトリ + Mapper テスト 13件 + Repository テスト 12件 + FakeTaskRepository
+- テスト: 全パス、ビルド成功
 
-#### Phase 7-2: ViewModel 層 (TDD) - PENDING
-TasksViewModel（フィルタ + 完了トグル）+ AddEditTaskViewModel を TDD で実装
-- 変更対象: ui/screens/tasks/, test/.../tasks/, test/.../fakes/
+#### Phase 7-2: ViewModel 層 (TDD) - DONE
+TasksViewModel（フィルタ + 完了トグル + 削除）+ AddEditTaskViewModel を TDD で実装
+- 変更対象: ui/screens/tasks/, test/.../tasks/, ui/navigation/Screen.kt
 - 依存: Phase 7-1 完了後
-- 新規ファイル ~5（ViewModel x2, Test x2, FakeRepo x1）、変更 ~2（Screen.kt, strings）
-- 成果物: ViewModel ロジック + テスト ~30件 + ナビゲーション定義
+- 新規ファイル 5（TaskFilterMode, TasksViewModel, AddEditTaskViewModel, TasksViewModelTest, AddEditTaskViewModelTest）、変更 1（Screen.kt）
+- 成果物: ViewModel ロジック + テスト 40件（TasksVM 17件 + AddEditTaskVM 23件）+ ナビゲーション定義
+- テスト: 全パス、ビルド成功
 
-#### Phase 7-3: UI 実装 - PENDING
-TasksScreen（タスク一覧 + フィルタ + 完了チェック）+ AddEditTaskScreen + ナビゲーション接続
+#### Phase 7-3: UI 実装 - DONE
+TasksScreen（タスク一覧 + フィルタチップ + 完了チェック + 削除）+ AddEditTaskScreen + ナビゲーション接続
 - 変更対象: ui/screens/tasks/, ui/navigation/, res/values/
 - 依存: Phase 7-2 完了後
-- 新規ファイル ~6（Screen, components）、変更 ~3（NavHost, strings x2）
-- 成果物: タスク画面フル実装 + タスク追加/編集フォーム
+- 新規ファイル 3（TaskCard.kt, TaskFilterChips.kt, AddEditTaskScreen.kt）
+- 変更ファイル 3（TasksScreen.kt, CareNoteNavHost.kt, strings.xml JP/EN）
+- 成果物: タスク画面フル実装 + タスク追加/編集フォーム + フィルタチップ + 優先度バッジ + DatePicker
+- テスト: 全パス（既存テスト影響なし）、ビルド成功
 
 ---
 
@@ -151,7 +156,7 @@ Task(
 ```
 
 **TaskDao クエリ:**
-- getAllTasks(): Flow（作成日降順）
+- getAllTasks(): Flow（未完了優先、作成日降順）
 - getTaskById(id): Flow
 - getIncompleteTasks(): Flow（未完了のみ）
 - getTasksByDueDate(date: String): Flow（期限日フィルタ）
@@ -180,11 +185,12 @@ Task(
 - FilterChip 行（すべて / 未完了 / 完了済み）
 - TaskList（LazyColumn + TaskCard）
 - FAB（タスク追加）
+- SnackbarHost + ConfirmDialog（削除確認）
 
 **コンポーネント分割:**
-- TaskCard.kt（チェックボックス + タイトル + 期限 + 優先度バッジ、~100行）
-- TaskFilterSelector.kt（フィルタ切替、~40行）
-- AddEditTaskScreen.kt（フォーム画面、~250行）
+- TaskCard.kt（Checkbox + タイトル（完了時取消線）+ 説明プレビュー + 期限 + 優先度バッジ、CareNoteCard ラップ）
+- TaskFilterChips.kt（FilterChip x3: ALL/INCOMPLETE/COMPLETED）
+- AddEditTaskScreen.kt（フォーム画面、CareNoteTextField + DueDateSelector + PrioritySelector + DatePicker）
 
 ---
 
@@ -195,9 +201,9 @@ Task(
 | ~~1~~ | ~~6-1~~ | ~~カレンダー ドメイン+データ層~~ | ~~~12~~ |
 | ~~2~~ | ~~6-2~~ | ~~カレンダー ViewModel (TDD)~~ | ~~~7~~ |
 | ~~3~~ | ~~6-3~~ | ~~カレンダー UI 実装~~ | ~~~9~~ |
-| 4 | 7-1 | タスク ドメイン+データ層 | ~12 |
-| 5 | 7-2 | タスク ViewModel (TDD) | ~7 |
-| 6 | 7-3 | タスク UI 実装 | ~9 |
+| ~~4~~ | ~~7-1~~ | ~~タスク ドメイン+データ層~~ | ~~16~~ |
+| ~~5~~ | ~~7-2~~ | ~~タスク ViewModel (TDD)~~ | ~~6~~ |
+| ~~6~~ | ~~7-3~~ | ~~タスク UI 実装~~ | ~~6~~ |
 
 ## 完了フェーズ
 
@@ -216,34 +222,33 @@ UiState パターン、共通UIコンポーネント (6個)、ユーティリテ
 ### Phase 5（過去セッション完了）
 健康記録機能フル実装 (ドメイン+データ+ViewModel+UI+グラフ、テスト ~75件)
 
-### Phase 6（今回セッション完了）
+### Phase 6（過去セッション完了）
 カレンダー機能フル実装 (ドメイン+データ+ViewModel+UI、テスト 59件)
+
+### Phase 7（今回セッション完了）
+タスク管理機能フル実装 (ドメイン+データ+ViewModel+UI、テスト 65件)
 
 ## 完了タスク（今回セッション）
 
-- Phase 6-3: カレンダー UI 実装
-  - strings.xml（JP/EN）に曜日ヘッダー + 終日ラベル文字列追加
-  - AppConfig.Calendar に DAY_CELL_SIZE_DP / CALENDAR_ROWS 追加
-  - CalendarEventCard（CareNoteCard ラップ、タイトル + 時刻 + 説明プレビュー）
-  - DayCell（日付テキスト + 選択ハイライト + 今日強調 + イベントドット）
-  - MonthCalendarGrid（曜日ヘッダー + 6x7 Row/Column グリッド）
-  - CalendarScreen（TopAppBar 月ナビ + MonthCalendarGrid + イベント一覧 + FAB + Snackbar）
-  - AddEditCalendarEventScreen（タイトル + 説明 + DatePicker + 終日Switch + TimePicker x2）
-  - CareNoteNavHost に AddCalendarEvent / EditCalendarEvent ルート追加
+- Phase 7-3: タスク管理 UI 実装
+  - TaskCard.kt（CareNoteCard ラップ、Checkbox + タイトル取消線 + 説明プレビュー + 期限表示 + 優先度バッジ HIGH=赤/LOW=青）
+  - TaskFilterChips.kt（FilterChip x3: ALL/INCOMPLETE/COMPLETED）
+  - TasksScreen.kt（プレースホルダー → フル実装: Scaffold + TopAppBar + FAB + LazyColumn + FilterChips + TaskCard + EmptyState/Loading/Error + ConfirmDialog + Snackbar）
+  - AddEditTaskScreen.kt（フォーム画面: CareNoteTextField title/description + DueDateSelector nullable + PrioritySelector FilterChip x3 + DatePicker + Cancel/Save ボタン）
+  - CareNoteNavHost.kt（TasksScreen にナビゲーションコールバック追加 + AddTask/EditTask composable ルート追加）
+  - strings.xml JP/EN にフィルタラベル追加（tasks_filter_all, tasks_filter_incomplete, tasks_filter_completed）
 
 ## 変更ファイル
 
 | 操作 | ファイル |
 |------|---------|
-| 変更 | res/values/strings.xml（曜日ヘッダー + 終日ラベル追加） |
-| 変更 | res/values-en/strings.xml（同上、英語） |
-| 変更 | config/AppConfig.kt（Calendar.DAY_CELL_SIZE_DP, CALENDAR_ROWS） |
-| 新規 | ui/screens/calendar/components/CalendarEventCard.kt |
-| 新規 | ui/screens/calendar/components/DayCell.kt |
-| 新規 | ui/screens/calendar/components/MonthCalendarGrid.kt |
-| 変更 | ui/screens/calendar/CalendarScreen.kt（プレースホルダー → フル実装） |
-| 新規 | ui/screens/calendar/AddEditCalendarEventScreen.kt |
-| 変更 | ui/navigation/CareNoteNavHost.kt（Calendar ルート更新 + Add/Edit ルート追加） |
+| 新規 | ui/screens/tasks/components/TaskCard.kt |
+| 新規 | ui/screens/tasks/components/TaskFilterChips.kt |
+| 新規 | ui/screens/tasks/AddEditTaskScreen.kt |
+| 変更 | ui/screens/tasks/TasksScreen.kt（プレースホルダー → フル実装） |
+| 変更 | ui/navigation/CareNoteNavHost.kt（タスクルート追加） |
+| 変更 | res/values/strings.xml（フィルタラベル 3件追加） |
+| 変更 | res/values-en/strings.xml（フィルタラベル 3件追加） |
 
 ## テスト結果
 
@@ -252,7 +257,8 @@ UiState パターン、共通UIコンポーネント (6個)、ユーティリテ
 
 ## 次のアクション
 
-1. `/task-exec` を実行して Phase 7-1（タスク管理 ドメイン層 + データ層）を進める
+- Item 7 タスク管理機能は全 Phase 完了
+- 次の機能実装へ（Firebase Auth、Cloud Firestore 等）
 
 ## 既知の問題
 - Room DB は `fallbackToDestructiveMigration()` 使用中（プレリリースのため）

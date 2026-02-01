@@ -80,8 +80,31 @@
     <!-- Tasks -->
     <string name="tasks_title">タスク</string>
     <string name="tasks_add">タスクを追加</string>
+    <string name="tasks_edit">タスクを編集</string>
     <string name="tasks_completed">完了済み</string>
+    <string name="tasks_incomplete">未完了</string>
     <string name="tasks_due_today">今日まで</string>
+    <string name="tasks_task_title">タイトル</string>
+    <string name="tasks_task_title_placeholder">タスクのタイトルを入力</string>
+    <string name="tasks_task_description">説明</string>
+    <string name="tasks_task_description_placeholder">説明を入力（任意）</string>
+    <string name="tasks_task_due_date">期限</string>
+    <string name="tasks_task_no_due_date">期限なし</string>
+    <string name="tasks_task_priority">優先度</string>
+    <string name="tasks_task_priority_low">低</string>
+    <string name="tasks_task_priority_medium">中</string>
+    <string name="tasks_task_priority_high">高</string>
+    <string name="tasks_task_title_required">タイトルを入力してください</string>
+    <string name="tasks_saved">タスクを保存しました</string>
+    <string name="tasks_updated">タスクを更新しました</string>
+    <string name="tasks_deleted">タスクを削除しました</string>
+    <string name="tasks_delete_confirm">このタスクを削除しますか？</string>
+    <string name="tasks_delete_failed">削除に失敗しました</string>
+    <string name="tasks_filter_all">すべて</string>
+    <string name="tasks_filter_incomplete">未完了</string>
+    <string name="tasks_filter_completed">完了済み</string>
+    <string name="tasks_empty">タスクはありません</string>
+    <string name="tasks_empty_action">タスクを追加する</string>
 
     <!-- Health Records -->
     <string name="health_records_title">健康記録</string>

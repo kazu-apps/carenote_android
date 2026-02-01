@@ -121,6 +121,22 @@ sealed class Screen(
         fun createRoute(eventId: Long): String = "edit_calendar_event/$eventId"
     }
 
+    data object AddTask : Screen(
+        route = "add_task",
+        titleResId = R.string.tasks_add,
+        selectedIcon = Icons.Filled.Add,
+        unselectedIcon = Icons.Outlined.Add
+    )
+
+    data object EditTask : Screen(
+        route = "edit_task/{taskId}",
+        titleResId = R.string.tasks_edit,
+        selectedIcon = Icons.Filled.CheckCircle,
+        unselectedIcon = Icons.Outlined.CheckCircle
+    ) {
+        fun createRoute(taskId: Long): String = "edit_task/$taskId"
+    }
+
     companion object {
         val bottomNavItems = listOf(Medication, Calendar, Tasks, HealthRecords, Notes)
     }

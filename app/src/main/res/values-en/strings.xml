@@ -80,8 +80,31 @@
     <!-- Tasks -->
     <string name="tasks_title">Tasks</string>
     <string name="tasks_add">Add Task</string>
+    <string name="tasks_edit">Edit Task</string>
     <string name="tasks_completed">Completed</string>
+    <string name="tasks_incomplete">Incomplete</string>
     <string name="tasks_due_today">Due Today</string>
+    <string name="tasks_task_title">Title</string>
+    <string name="tasks_task_title_placeholder">Enter task title</string>
+    <string name="tasks_task_description">Description</string>
+    <string name="tasks_task_description_placeholder">Enter description (optional)</string>
+    <string name="tasks_task_due_date">Due Date</string>
+    <string name="tasks_task_no_due_date">No due date</string>
+    <string name="tasks_task_priority">Priority</string>
+    <string name="tasks_task_priority_low">Low</string>
+    <string name="tasks_task_priority_medium">Medium</string>
+    <string name="tasks_task_priority_high">High</string>
+    <string name="tasks_task_title_required">Please enter a title</string>
+    <string name="tasks_saved">Task saved</string>
+    <string name="tasks_updated">Task updated</string>
+    <string name="tasks_deleted">Task deleted</string>
+    <string name="tasks_delete_confirm">Delete this task?</string>
+    <string name="tasks_delete_failed">Failed to delete</string>
+    <string name="tasks_filter_all">All</string>
+    <string name="tasks_filter_incomplete">Incomplete</string>
+    <string name="tasks_filter_completed">Completed</string>
+    <string name="tasks_empty">No tasks</string>
+    <string name="tasks_empty_action">Add a task</string>
 
     <!-- Health Records -->
     <string name="health_records_title">Health Records</string>

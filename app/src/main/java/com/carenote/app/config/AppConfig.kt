@@ -185,6 +185,23 @@ object AppConfig {
     }
 
     /**
+     * タスク関連の設定値
+     */
+    object Task {
+        /** タイトルの最大文字数 */
+        const val TITLE_MAX_LENGTH = 100
+
+        /** 説明の最大文字数 */
+        const val DESCRIPTION_MAX_LENGTH = 500
+
+        /** タイトルの最大行数 */
+        const val TITLE_MAX_LINES = 1
+
+        /** 説明プレビューの最大行数 */
+        const val DESCRIPTION_PREVIEW_MAX_LINES = 2
+    }
+
+    /**
      * UI関連の設定値
      */
     object UI {

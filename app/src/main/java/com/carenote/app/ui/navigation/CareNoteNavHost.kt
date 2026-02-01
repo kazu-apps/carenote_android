@@ -17,6 +17,7 @@ import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordScreen
 import com.carenote.app.ui.screens.notes.AddEditNoteScreen
 import com.carenote.app.ui.screens.notes.NotesScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
+import com.carenote.app.ui.screens.tasks.AddEditTaskScreen
 import com.carenote.app.ui.screens.tasks.TasksScreen
 
 @Composable
@@ -55,7 +56,14 @@ fun CareNoteNavHost(
         }
 
         composable(Screen.Tasks.route) {
-            TasksScreen()
+            TasksScreen(
+                onNavigateToAddTask = {
+                    navController.navigate(Screen.AddTask.route)
+                },
+                onNavigateToEditTask = { taskId ->
+                    navController.navigate(Screen.EditTask.createRoute(taskId))
+                }
+            )
         }
 
         composable(Screen.HealthRecords.route) {
@@ -148,6 +156,23 @@ fun CareNoteNavHost(
             )
         ) {
             AddEditCalendarEventScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AddTask.route) {
+            AddEditTaskScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EditTask.route,
+            arguments = listOf(
+                navArgument("taskId") { type = NavType.LongType }
+            )
+        ) {
+            AddEditTaskScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
