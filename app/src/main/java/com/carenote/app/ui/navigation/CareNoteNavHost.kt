@@ -7,11 +7,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.carenote.app.ui.screens.calendar.AddEditCalendarEventScreen
 import com.carenote.app.ui.screens.calendar.CalendarScreen
 import com.carenote.app.ui.screens.healthrecords.HealthRecordsScreen
 import com.carenote.app.ui.screens.medication.AddMedicationScreen
 import com.carenote.app.ui.screens.medication.MedicationDetailScreen
 import com.carenote.app.ui.screens.medication.MedicationScreen
+import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordScreen
 import com.carenote.app.ui.screens.notes.AddEditNoteScreen
 import com.carenote.app.ui.screens.notes.NotesScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
@@ -42,7 +44,14 @@ fun CareNoteNavHost(
         }
 
         composable(Screen.Calendar.route) {
-            CalendarScreen()
+            CalendarScreen(
+                onNavigateToAddEvent = {
+                    navController.navigate(Screen.AddCalendarEvent.route)
+                },
+                onNavigateToEditEvent = { eventId ->
+                    navController.navigate(Screen.EditCalendarEvent.createRoute(eventId))
+                }
+            )
         }
 
         composable(Screen.Tasks.route) {
@@ -50,7 +59,14 @@ fun CareNoteNavHost(
         }
 
         composable(Screen.HealthRecords.route) {
-            HealthRecordsScreen()
+            HealthRecordsScreen(
+                onNavigateToAddRecord = {
+                    navController.navigate(Screen.AddHealthRecord.route)
+                },
+                onNavigateToEditRecord = { recordId ->
+                    navController.navigate(Screen.EditHealthRecord.createRoute(recordId))
+                }
+            )
         }
 
         composable(Screen.Notes.route) {
@@ -98,6 +114,40 @@ fun CareNoteNavHost(
             )
         ) {
             AddEditNoteScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AddHealthRecord.route) {
+            AddEditHealthRecordScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EditHealthRecord.route,
+            arguments = listOf(
+                navArgument("recordId") { type = NavType.LongType }
+            )
+        ) {
+            AddEditHealthRecordScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AddCalendarEvent.route) {
+            AddEditCalendarEventScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EditCalendarEvent.route,
+            arguments = listOf(
+                navArgument("eventId") { type = NavType.LongType }
+            )
+        ) {
+            AddEditCalendarEventScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

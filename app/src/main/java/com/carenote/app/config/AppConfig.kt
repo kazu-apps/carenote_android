@@ -95,6 +95,96 @@ object AppConfig {
     }
 
     /**
+     * 健康記録の入力値バリデーション範囲
+     */
+    object HealthRecord {
+        const val TEMPERATURE_MIN = 34.0
+        const val TEMPERATURE_MAX = 42.0
+        const val BLOOD_PRESSURE_MIN = 40
+        const val BLOOD_PRESSURE_MAX = 250
+        const val PULSE_MIN = 30
+        const val PULSE_MAX = 200
+        const val WEIGHT_MIN = 20.0
+        const val WEIGHT_MAX = 200.0
+    }
+
+    /**
+     * グラフ表示の設定値
+     */
+    object Graph {
+        /** チャートの高さ（dp） */
+        const val CHART_HEIGHT_DP = 220
+
+        /** 体温Y軸: 最小値（℃） */
+        const val TEMPERATURE_Y_MIN = 35.0
+
+        /** 体温Y軸: 最大値（℃） */
+        const val TEMPERATURE_Y_MAX = 40.0
+
+        /** 血圧Y軸: 最小値（mmHg） */
+        const val BLOOD_PRESSURE_Y_MIN = 40
+
+        /** 血圧Y軸: 最大値（mmHg） */
+        const val BLOOD_PRESSURE_Y_MAX = 200
+
+        /** 折れ線の太さ（dp） */
+        const val LINE_STROKE_WIDTH_DP = 2.5f
+
+        /** データポイントの半径（dp） */
+        const val POINT_RADIUS_DP = 4f
+
+        /** 異常値ポイントの半径（dp） */
+        const val ABNORMAL_POINT_RADIUS_DP = 5f
+
+        /** グリッド線の太さ（dp） */
+        const val GRID_STROKE_WIDTH_DP = 0.5f
+
+        /** 閾値線の太さ（dp） */
+        const val THRESHOLD_STROKE_WIDTH_DP = 1f
+
+        /** 閾値線の破線間隔（dp） */
+        const val THRESHOLD_DASH_ON_DP = 8f
+
+        /** 閾値線の破線ギャップ（dp） */
+        const val THRESHOLD_DASH_OFF_DP = 4f
+
+        /** Y軸ラベル領域の幅（dp） */
+        const val Y_AXIS_LABEL_WIDTH_DP = 40
+
+        /** X軸ラベル領域の高さ（dp） */
+        const val X_AXIS_LABEL_HEIGHT_DP = 24
+
+        /** 7日間 */
+        const val DATE_RANGE_SEVEN_DAYS = 7L
+
+        /** 30日間 */
+        const val DATE_RANGE_THIRTY_DAYS = 30L
+    }
+
+    /**
+     * カレンダーイベント関連の設定値
+     */
+    object Calendar {
+        /** タイトルの最大文字数 */
+        const val TITLE_MAX_LENGTH = 100
+
+        /** 説明の最大文字数 */
+        const val DESCRIPTION_MAX_LENGTH = 500
+
+        /** タイトルの最大行数 */
+        const val TITLE_MAX_LINES = 1
+
+        /** 説明プレビューの最大行数 */
+        const val DESCRIPTION_PREVIEW_MAX_LINES = 2
+
+        /** 日セルの最小タッチサイズ（dp） */
+        const val DAY_CELL_SIZE_DP = 48
+
+        /** 月カレンダーの行数 */
+        const val CALENDAR_ROWS = 6
+    }
+
+    /**
      * UI関連の設定値
      */
     object UI {

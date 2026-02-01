@@ -1,53 +1,230 @@
 package com.carenote.app.ui.screens.calendar
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
+import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.components.EmptyState
+import com.carenote.app.ui.components.ErrorDisplay
+import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.screens.calendar.components.CalendarEventCard
+import com.carenote.app.ui.screens.calendar.components.MonthCalendarGrid
+import com.carenote.app.ui.util.DateTimeFormatters
+import com.carenote.app.ui.viewmodel.UiState
+import java.time.LocalDate
+import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen() {
+fun CalendarScreen(
+    onNavigateToAddEvent: () -> Unit = {},
+    onNavigateToEditEvent: (Long) -> Unit = {},
+    viewModel: CalendarViewModel = hiltViewModel()
+) {
+    val currentMonth by viewModel.currentMonth.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val eventsForMonth by viewModel.eventsForMonth.collectAsState()
+    val eventsUiState by viewModel.eventsForSelectedDate.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var deleteEvent by remember { mutableStateOf<CalendarEvent?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.snackbarController.events.collect { event ->
+            snackbarHostState.showSnackbar(event.message)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = stringResource(R.string.calendar_title),
-                        style = MaterialTheme.typography.titleLarge
+                    MonthNavigationBar(
+                        currentMonth = currentMonth,
+                        onPreviousMonth = {
+                            viewModel.changeMonth(currentMonth.minusMonths(1))
+                        },
+                        onNextMonth = {
+                            viewModel.changeMonth(currentMonth.plusMonths(1))
+                        },
+                        onToday = {
+                            val today = LocalDate.now()
+                            viewModel.changeMonth(YearMonth.from(today))
+                            viewModel.selectDate(today)
+                        }
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToAddEvent,
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.calendar_add_event)
+                )
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = innerPadding.calculateTopPadding() + 8.dp,
+                bottom = innerPadding.calculateBottomPadding() + 80.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item(key = "calendar_grid") {
+                MonthCalendarGrid(
+                    yearMonth = currentMonth,
+                    selectedDate = selectedDate,
+                    eventsForMonth = eventsForMonth,
+                    onDateClick = { date ->
+                        viewModel.selectDate(date)
+                        if (YearMonth.from(date) != currentMonth) {
+                            viewModel.changeMonth(YearMonth.from(date))
+                        }
+                    }
+                )
+            }
+
+            item(key = "selected_date_header") {
+                Text(
+                    text = DateTimeFormatters.formatDate(selectedDate),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            when (val state = eventsUiState) {
+                is UiState.Loading -> {
+                    item(key = "loading") {
+                        LoadingIndicator()
+                    }
+                }
+                is UiState.Error -> {
+                    item(key = "error") {
+                        ErrorDisplay(error = state.error, onRetry = null)
+                    }
+                }
+                is UiState.Success -> {
+                    if (state.data.isEmpty()) {
+                        item(key = "empty_state") {
+                            EmptyState(
+                                icon = Icons.Filled.CalendarMonth,
+                                message = stringResource(R.string.calendar_empty),
+                                actionLabel = stringResource(R.string.calendar_empty_action),
+                                onAction = onNavigateToAddEvent
+                            )
+                        }
+                    } else {
+                        items(
+                            items = state.data,
+                            key = { it.id }
+                        ) { event ->
+                            CalendarEventCard(
+                                event = event,
+                                onClick = { onNavigateToEditEvent(event.id) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    deleteEvent?.let { event ->
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_delete_title),
+            message = stringResource(R.string.calendar_event_delete_confirm),
+            onConfirm = {
+                viewModel.deleteEvent(event.id)
+                deleteEvent = null
+            },
+            onDismiss = { deleteEvent = null },
+            isDestructive = true
+        )
+    }
+}
+
+@Composable
+private fun MonthNavigationBar(
+    currentMonth: YearMonth,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onToday: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPreviousMonth) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronLeft,
+                    contentDescription = null
+                )
+            }
+
             Text(
-                text = stringResource(R.string.placeholder_coming_soon),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = DateTimeFormatters.formatYearMonth(currentMonth.atDay(1)),
+                style = MaterialTheme.typography.titleLarge
             )
+
+            IconButton(onClick = onNextMonth) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null
+                )
+            }
+        }
+
+        TextButton(onClick = onToday) {
+            Text(text = stringResource(R.string.calendar_today))
         }
     }
 }

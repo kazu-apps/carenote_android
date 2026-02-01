@@ -4,9 +4,13 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.carenote.app.data.local.converter.DateTimeConverters
+import com.carenote.app.data.local.dao.CalendarEventDao
+import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
+import com.carenote.app.data.local.entity.CalendarEventEntity
+import com.carenote.app.data.local.entity.HealthRecordEntity
 import com.carenote.app.data.local.entity.MedicationEntity
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.data.local.entity.NoteEntity
@@ -15,9 +19,11 @@ import com.carenote.app.data.local.entity.NoteEntity
     entities = [
         MedicationEntity::class,
         MedicationLogEntity::class,
-        NoteEntity::class
+        NoteEntity::class,
+        HealthRecordEntity::class,
+        CalendarEventEntity::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)
@@ -26,6 +32,8 @@ abstract class CareNoteDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
     abstract fun medicationLogDao(): MedicationLogDao
     abstract fun noteDao(): NoteDao
+    abstract fun healthRecordDao(): HealthRecordDao
+    abstract fun calendarEventDao(): CalendarEventDao
 
     companion object {
         const val DATABASE_NAME = "carenote_database"

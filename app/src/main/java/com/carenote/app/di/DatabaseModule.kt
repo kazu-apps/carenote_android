@@ -3,6 +3,8 @@ package com.carenote.app.di
 import android.content.Context
 import androidx.room.Room
 import com.carenote.app.data.local.CareNoteDatabase
+import com.carenote.app.data.local.dao.CalendarEventDao
+import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
@@ -45,5 +47,17 @@ object DatabaseModule {
     @Singleton
     fun provideNoteDao(database: CareNoteDatabase): NoteDao {
         return database.noteDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideHealthRecordDao(database: CareNoteDatabase): HealthRecordDao {
+        return database.healthRecordDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCalendarEventDao(database: CareNoteDatabase): CalendarEventDao {
+        return database.calendarEventDao()
     }
 }

@@ -89,6 +89,38 @@ sealed class Screen(
         fun createRoute(noteId: Long): String = "edit_note/$noteId"
     }
 
+    data object AddHealthRecord : Screen(
+        route = "add_health_record",
+        titleResId = R.string.health_records_add,
+        selectedIcon = Icons.Filled.Add,
+        unselectedIcon = Icons.Outlined.Add
+    )
+
+    data object EditHealthRecord : Screen(
+        route = "edit_health_record/{recordId}",
+        titleResId = R.string.health_records_edit,
+        selectedIcon = Icons.Filled.MonitorHeart,
+        unselectedIcon = Icons.Outlined.MonitorHeart
+    ) {
+        fun createRoute(recordId: Long): String = "edit_health_record/$recordId"
+    }
+
+    data object AddCalendarEvent : Screen(
+        route = "add_calendar_event",
+        titleResId = R.string.calendar_add_event,
+        selectedIcon = Icons.Filled.Add,
+        unselectedIcon = Icons.Outlined.Add
+    )
+
+    data object EditCalendarEvent : Screen(
+        route = "edit_calendar_event/{eventId}",
+        titleResId = R.string.calendar_edit_event,
+        selectedIcon = Icons.Filled.CalendarMonth,
+        unselectedIcon = Icons.Outlined.CalendarMonth
+    ) {
+        fun createRoute(eventId: Long): String = "edit_calendar_event/$eventId"
+    }
+
     companion object {
         val bottomNavItems = listOf(Medication, Calendar, Tasks, HealthRecords, Notes)
     }
