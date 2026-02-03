@@ -108,6 +108,39 @@ object Migrations {
         }
     }
 
+    /** v6 -> v7: Add sync_mappings table for Room-Firestore ID mapping */
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `sync_mappings` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `entity_type` TEXT NOT NULL,
+                    `local_id` INTEGER NOT NULL,
+                    `remote_id` TEXT NOT NULL,
+                    `last_synced_at` TEXT NOT NULL,
+                    `is_deleted` INTEGER NOT NULL DEFAULT 0
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_mappings_entity_type_local_id` " +
+                    "ON `sync_mappings` (`entity_type`, `local_id`)"
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_mappings_entity_type_remote_id` " +
+                    "ON `sync_mappings` (`entity_type`, `remote_id`)"
+            )
+        }
+    }
+
     /** All migrations in order, for convenient registration with Room. Returns a new array each call. */
-    fun all(): Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+    fun all(): Array<Migration> = arrayOf(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+        MIGRATION_5_6,
+        MIGRATION_6_7
+    )
 }

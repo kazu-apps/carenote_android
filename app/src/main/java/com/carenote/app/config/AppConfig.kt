@@ -10,6 +10,12 @@ object AppConfig {
      * 服薬関連の設定値
      */
     object Medication {
+        /** 薬名の最大文字数 */
+        const val NAME_MAX_LENGTH = 100
+
+        /** 用量の最大文字数 */
+        const val DOSAGE_MAX_LENGTH = 200
+
         /** デフォルトの朝食後時刻 */
         const val DEFAULT_MORNING_HOUR = 8
         const val DEFAULT_MORNING_MINUTE = 0
@@ -84,6 +90,12 @@ object AppConfig {
      * メモ関連の設定値
      */
     object Note {
+        /** タイトルの最大文字数 */
+        const val TITLE_MAX_LENGTH = 100
+
+        /** 内容の最大文字数 */
+        const val CONTENT_MAX_LENGTH = 5000
+
         /** メモ内容プレビューの最大行数 */
         const val CONTENT_PREVIEW_MAX_LINES = 2
 
@@ -98,6 +110,9 @@ object AppConfig {
      * 健康記録の入力値バリデーション範囲
      */
     object HealthRecord {
+        /** 体調メモの最大文字数 */
+        const val CONDITION_NOTE_MAX_LENGTH = 500
+
         const val TEMPERATURE_MIN = 34.0
         const val TEMPERATURE_MAX = 42.0
         const val BLOOD_PRESSURE_MIN = 40
@@ -255,6 +270,23 @@ object AppConfig {
     }
 
     /**
+     * 認証関連の設定値
+     */
+    object Auth {
+        /** メールアドレスの最大文字数 */
+        const val EMAIL_MAX_LENGTH = 255
+
+        /** パスワードの最小文字数 */
+        const val PASSWORD_MIN_LENGTH = 6
+
+        /** パスワードの最大文字数 */
+        const val PASSWORD_MAX_LENGTH = 100
+
+        /** 表示名の最大文字数 */
+        const val DISPLAY_NAME_MAX_LENGTH = 50
+    }
+
+    /**
      * UI関連の設定値
      */
     object UI {
@@ -272,5 +304,19 @@ object AppConfig {
 
         /** Flow の WhileSubscribed 停止タイムアウト（ミリ秒） */
         const val FLOW_STOP_TIMEOUT_MS = 5_000L
+    }
+
+    /**
+     * 同期関連の設定値
+     */
+    object Sync {
+        /** Firestore 操作のタイムアウト（ミリ秒） */
+        const val TIMEOUT_MS = 30_000L
+
+        /** バッチ同期のサイズ */
+        const val BATCH_SIZE = 100
+
+        /** 同期エンティティタイプ数（進捗計算用） */
+        const val ENTITY_TYPE_COUNT = 6
     }
 }

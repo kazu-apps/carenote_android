@@ -1,137 +1,251 @@
 package com.carenote.app.data.local
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.doublePreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.callbackFlow
+import timber.log.Timber
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SettingsDataSource @Inject constructor(
-    private val dataStore: DataStore<Preferences>
+    @ApplicationContext private val context: Context
 ) {
 
-    private object PreferencesKeys {
-        val THEME_MODE = stringPreferencesKey("theme_mode")
-        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
-        val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
-        val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
-        val TEMPERATURE_HIGH = doublePreferencesKey("temperature_high")
-        val BP_HIGH_UPPER = intPreferencesKey("bp_high_upper")
-        val BP_HIGH_LOWER = intPreferencesKey("bp_high_lower")
-        val PULSE_HIGH = intPreferencesKey("pulse_high")
-        val PULSE_LOW = intPreferencesKey("pulse_low")
-        val MORNING_HOUR = intPreferencesKey("morning_hour")
-        val MORNING_MINUTE = intPreferencesKey("morning_minute")
-        val NOON_HOUR = intPreferencesKey("noon_hour")
-        val NOON_MINUTE = intPreferencesKey("noon_minute")
-        val EVENING_HOUR = intPreferencesKey("evening_hour")
-        val EVENING_MINUTE = intPreferencesKey("evening_minute")
+    private val prefs: SharedPreferences by lazy {
+        getOrRecreatePrefs()
     }
 
-    fun getSettings(): Flow<UserSettings> {
-        return dataStore.data.map { prefs ->
-            UserSettings(
-                themeMode = prefs[PreferencesKeys.THEME_MODE]?.let { value ->
-                    try {
-                        ThemeMode.valueOf(value)
-                    } catch (_: IllegalArgumentException) {
-                        ThemeMode.SYSTEM
-                    }
-                } ?: ThemeMode.SYSTEM,
-                notificationsEnabled = prefs[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true,
-                quietHoursStart = prefs[PreferencesKeys.QUIET_HOURS_START]
-                    ?: AppConfig.Notification.DEFAULT_QUIET_HOURS_START,
-                quietHoursEnd = prefs[PreferencesKeys.QUIET_HOURS_END]
-                    ?: AppConfig.Notification.DEFAULT_QUIET_HOURS_END,
-                temperatureHigh = prefs[PreferencesKeys.TEMPERATURE_HIGH]
-                    ?: AppConfig.HealthThresholds.TEMPERATURE_HIGH,
-                bloodPressureHighUpper = prefs[PreferencesKeys.BP_HIGH_UPPER]
-                    ?: AppConfig.HealthThresholds.BLOOD_PRESSURE_HIGH_UPPER,
-                bloodPressureHighLower = prefs[PreferencesKeys.BP_HIGH_LOWER]
-                    ?: AppConfig.HealthThresholds.BLOOD_PRESSURE_HIGH_LOWER,
-                pulseHigh = prefs[PreferencesKeys.PULSE_HIGH]
-                    ?: AppConfig.HealthThresholds.PULSE_HIGH,
-                pulseLow = prefs[PreferencesKeys.PULSE_LOW]
-                    ?: AppConfig.HealthThresholds.PULSE_LOW,
-                morningHour = prefs[PreferencesKeys.MORNING_HOUR]
-                    ?: AppConfig.Medication.DEFAULT_MORNING_HOUR,
-                morningMinute = prefs[PreferencesKeys.MORNING_MINUTE]
-                    ?: AppConfig.Medication.DEFAULT_MORNING_MINUTE,
-                noonHour = prefs[PreferencesKeys.NOON_HOUR]
-                    ?: AppConfig.Medication.DEFAULT_NOON_HOUR,
-                noonMinute = prefs[PreferencesKeys.NOON_MINUTE]
-                    ?: AppConfig.Medication.DEFAULT_NOON_MINUTE,
-                eveningHour = prefs[PreferencesKeys.EVENING_HOUR]
-                    ?: AppConfig.Medication.DEFAULT_EVENING_HOUR,
-                eveningMinute = prefs[PreferencesKeys.EVENING_MINUTE]
-                    ?: AppConfig.Medication.DEFAULT_EVENING_MINUTE
-            )
+    private object PreferencesKeys {
+        const val THEME_MODE = "theme_mode"
+        const val NOTIFICATIONS_ENABLED = "notifications_enabled"
+        const val QUIET_HOURS_START = "quiet_hours_start"
+        const val QUIET_HOURS_END = "quiet_hours_end"
+        const val TEMPERATURE_HIGH = "temperature_high"
+        const val BP_HIGH_UPPER = "bp_high_upper"
+        const val BP_HIGH_LOWER = "bp_high_lower"
+        const val PULSE_HIGH = "pulse_high"
+        const val PULSE_LOW = "pulse_low"
+        const val MORNING_HOUR = "morning_hour"
+        const val MORNING_MINUTE = "morning_minute"
+        const val NOON_HOUR = "noon_hour"
+        const val NOON_MINUTE = "noon_minute"
+        const val EVENING_HOUR = "evening_hour"
+        const val EVENING_MINUTE = "evening_minute"
+        const val LAST_SYNC_TIME = "last_sync_time"
+    }
+
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    fun getSettings(): Flow<UserSettings> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            trySend(readCurrentSettings())
         }
+
+        // Emit initial value
+        send(readCurrentSettings())
+
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+
+        awaitClose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
+    private fun readCurrentSettings(): UserSettings {
+        return UserSettings(
+            themeMode = prefs.getString(PreferencesKeys.THEME_MODE, null)?.let { value ->
+                try {
+                    ThemeMode.valueOf(value)
+                } catch (_: IllegalArgumentException) {
+                    ThemeMode.SYSTEM
+                }
+            } ?: ThemeMode.SYSTEM,
+            notificationsEnabled = prefs.getBoolean(
+                PreferencesKeys.NOTIFICATIONS_ENABLED,
+                true
+            ),
+            quietHoursStart = prefs.getInt(
+                PreferencesKeys.QUIET_HOURS_START,
+                AppConfig.Notification.DEFAULT_QUIET_HOURS_START
+            ),
+            quietHoursEnd = prefs.getInt(
+                PreferencesKeys.QUIET_HOURS_END,
+                AppConfig.Notification.DEFAULT_QUIET_HOURS_END
+            ),
+            temperatureHigh = getDouble(
+                PreferencesKeys.TEMPERATURE_HIGH,
+                AppConfig.HealthThresholds.TEMPERATURE_HIGH
+            ),
+            bloodPressureHighUpper = prefs.getInt(
+                PreferencesKeys.BP_HIGH_UPPER,
+                AppConfig.HealthThresholds.BLOOD_PRESSURE_HIGH_UPPER
+            ),
+            bloodPressureHighLower = prefs.getInt(
+                PreferencesKeys.BP_HIGH_LOWER,
+                AppConfig.HealthThresholds.BLOOD_PRESSURE_HIGH_LOWER
+            ),
+            pulseHigh = prefs.getInt(
+                PreferencesKeys.PULSE_HIGH,
+                AppConfig.HealthThresholds.PULSE_HIGH
+            ),
+            pulseLow = prefs.getInt(
+                PreferencesKeys.PULSE_LOW,
+                AppConfig.HealthThresholds.PULSE_LOW
+            ),
+            morningHour = prefs.getInt(
+                PreferencesKeys.MORNING_HOUR,
+                AppConfig.Medication.DEFAULT_MORNING_HOUR
+            ),
+            morningMinute = prefs.getInt(
+                PreferencesKeys.MORNING_MINUTE,
+                AppConfig.Medication.DEFAULT_MORNING_MINUTE
+            ),
+            noonHour = prefs.getInt(
+                PreferencesKeys.NOON_HOUR,
+                AppConfig.Medication.DEFAULT_NOON_HOUR
+            ),
+            noonMinute = prefs.getInt(
+                PreferencesKeys.NOON_MINUTE,
+                AppConfig.Medication.DEFAULT_NOON_MINUTE
+            ),
+            eveningHour = prefs.getInt(
+                PreferencesKeys.EVENING_HOUR,
+                AppConfig.Medication.DEFAULT_EVENING_HOUR
+            ),
+            eveningMinute = prefs.getInt(
+                PreferencesKeys.EVENING_MINUTE,
+                AppConfig.Medication.DEFAULT_EVENING_MINUTE
+            )
+        )
     }
 
     suspend fun updateNotifications(enabled: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
-        }
+        prefs.edit().putBoolean(PreferencesKeys.NOTIFICATIONS_ENABLED, enabled).apply()
     }
 
     suspend fun updateQuietHours(start: Int, end: Int) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.QUIET_HOURS_START] = start
-            prefs[PreferencesKeys.QUIET_HOURS_END] = end
-        }
+        prefs.edit()
+            .putInt(PreferencesKeys.QUIET_HOURS_START, start)
+            .putInt(PreferencesKeys.QUIET_HOURS_END, end)
+            .apply()
     }
 
     suspend fun updateTemperatureThreshold(value: Double) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.TEMPERATURE_HIGH] = value
-        }
+        putDouble(PreferencesKeys.TEMPERATURE_HIGH, value)
     }
 
     suspend fun updateBloodPressureThresholds(upper: Int, lower: Int) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.BP_HIGH_UPPER] = upper
-            prefs[PreferencesKeys.BP_HIGH_LOWER] = lower
-        }
+        prefs.edit()
+            .putInt(PreferencesKeys.BP_HIGH_UPPER, upper)
+            .putInt(PreferencesKeys.BP_HIGH_LOWER, lower)
+            .apply()
     }
 
     suspend fun updatePulseThresholds(high: Int, low: Int) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.PULSE_HIGH] = high
-            prefs[PreferencesKeys.PULSE_LOW] = low
-        }
+        prefs.edit()
+            .putInt(PreferencesKeys.PULSE_HIGH, high)
+            .putInt(PreferencesKeys.PULSE_LOW, low)
+            .apply()
     }
 
     suspend fun updateMedicationTime(hourKey: String, minuteKey: String, hour: Int, minute: Int) {
-        dataStore.edit { prefs ->
-            prefs[intPreferencesKey(hourKey)] = hour
-            prefs[intPreferencesKey(minuteKey)] = minute
-        }
+        prefs.edit()
+            .putInt(hourKey, hour)
+            .putInt(minuteKey, minute)
+            .apply()
     }
 
     suspend fun updateThemeMode(mode: String) {
-        dataStore.edit { prefs ->
-            prefs[PreferencesKeys.THEME_MODE] = mode
-        }
+        prefs.edit().putString(PreferencesKeys.THEME_MODE, mode).apply()
     }
 
     suspend fun clearAll() {
-        dataStore.edit { prefs ->
-            prefs.clear()
+        prefs.edit().clear().apply()
+    }
+
+    /**
+     * 最終同期日時を取得
+     *
+     * @return 最終同期日時。一度も同期していない場合は null
+     */
+    fun getLastSyncTime(): LocalDateTime? {
+        val timeString = prefs.getString(PreferencesKeys.LAST_SYNC_TIME, null)
+        return timeString?.let {
+            try {
+                LocalDateTime.parse(it, dateTimeFormatter)
+            } catch (_: Exception) {
+                Timber.w("Invalid last sync time format: $it")
+                null
+            }
         }
     }
 
+    /**
+     * 最終同期日時を更新
+     *
+     * @param time 同期日時
+     */
+    suspend fun updateLastSyncTime(time: LocalDateTime) {
+        prefs.edit()
+            .putString(PreferencesKeys.LAST_SYNC_TIME, time.format(dateTimeFormatter))
+            .apply()
+    }
+
+    private fun getOrRecreatePrefs(): SharedPreferences {
+        return try {
+            createEncryptedPrefs()
+        } catch (e: Exception) {
+            Timber.w("EncryptedSharedPreferences corrupted, recreating: $e")
+            deletePrefsFile()
+            createEncryptedPrefs()
+        }
+    }
+
+    private fun createEncryptedPrefs(): SharedPreferences {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        return EncryptedSharedPreferences.create(
+            context,
+            PREFS_FILE_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    private fun deletePrefsFile() {
+        val prefsDir = File(context.applicationInfo.dataDir, "shared_prefs")
+        File(prefsDir, "$PREFS_FILE_NAME.xml").delete()
+    }
+
+    private fun getDouble(key: String, defaultValue: Double): Double {
+        return if (prefs.contains(key)) {
+            Double.fromBits(prefs.getLong(key, defaultValue.toRawBits()))
+        } else {
+            defaultValue
+        }
+    }
+
+    private fun putDouble(key: String, value: Double) {
+        prefs.edit().putLong(key, value.toRawBits()).apply()
+    }
+
     companion object {
+        private const val PREFS_FILE_NAME = "carenote_settings_prefs"
         const val MORNING_HOUR_KEY = "morning_hour"
         const val MORNING_MINUTE_KEY = "morning_minute"
         const val NOON_HOUR_KEY = "noon_hour"

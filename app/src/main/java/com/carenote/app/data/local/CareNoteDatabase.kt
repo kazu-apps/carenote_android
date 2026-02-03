@@ -9,12 +9,14 @@ import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
+import com.carenote.app.data.local.dao.SyncMappingDao
 import com.carenote.app.data.local.dao.TaskDao
 import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.data.local.entity.HealthRecordEntity
 import com.carenote.app.data.local.entity.MedicationEntity
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.data.local.entity.NoteEntity
+import com.carenote.app.data.local.entity.SyncMappingEntity
 import com.carenote.app.data.local.entity.TaskEntity
 
 @Database(
@@ -24,9 +26,10 @@ import com.carenote.app.data.local.entity.TaskEntity
         NoteEntity::class,
         HealthRecordEntity::class,
         CalendarEventEntity::class,
-        TaskEntity::class
+        TaskEntity::class,
+        SyncMappingEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)
@@ -38,6 +41,7 @@ abstract class CareNoteDatabase : RoomDatabase() {
     abstract fun healthRecordDao(): HealthRecordDao
     abstract fun calendarEventDao(): CalendarEventDao
     abstract fun taskDao(): TaskDao
+    abstract fun syncMappingDao(): SyncMappingDao
 
     companion object {
         const val DATABASE_NAME = "carenote_database"
