@@ -2,9 +2,16 @@ package com.carenote.app.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "tasks")
+@Entity(
+    tableName = "tasks",
+    indices = [
+        Index(value = ["is_completed"]),
+        Index(value = ["due_date"])
+    ]
+)
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

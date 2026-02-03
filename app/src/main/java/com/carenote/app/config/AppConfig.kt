@@ -154,6 +154,18 @@ object AppConfig {
         /** X軸ラベル領域の高さ（dp） */
         const val X_AXIS_LABEL_HEIGHT_DP = 24
 
+        /** チャート軸ラベルのフォントサイズ（sp） */
+        const val AXIS_LABEL_FONT_SIZE_SP = 12
+
+        /** 血圧グリッドステップ（mmHg） */
+        const val BLOOD_PRESSURE_GRID_STEP = 40.0
+
+        /** 体温グリッドステップ（℃） */
+        const val TEMPERATURE_GRID_STEP = 1.0
+
+        /** X軸の最大ラベル数 */
+        const val X_AXIS_MAX_LABELS = 5
+
         /** 7日間 */
         const val DATE_RANGE_SEVEN_DAYS = 7L
 
@@ -182,6 +194,18 @@ object AppConfig {
 
         /** 月カレンダーの行数 */
         const val CALENDAR_ROWS = 6
+
+        /** TimePicker デフォルト開始時刻（時） */
+        const val DEFAULT_START_HOUR = 9
+
+        /** TimePicker デフォルト開始時刻（分） */
+        const val DEFAULT_START_MINUTE = 0
+
+        /** TimePicker デフォルト終了時刻（時） */
+        const val DEFAULT_END_HOUR = 10
+
+        /** TimePicker デフォルト終了時刻（分） */
+        const val DEFAULT_END_MINUTE = 0
     }
 
     /**
@@ -202,6 +226,35 @@ object AppConfig {
     }
 
     /**
+     * 法的文書関連の設定値
+     */
+    object Legal {
+        /** プライバシーポリシーの最終更新日 */
+        const val PRIVACY_POLICY_LAST_UPDATED = "2026-02-02"
+
+        /** 利用規約の最終更新日 */
+        const val TERMS_OF_SERVICE_LAST_UPDATED = "2026-02-02"
+    }
+
+    /**
+     * 時刻バリデーション範囲
+     */
+    object Time {
+        const val HOUR_MIN = 0
+        const val HOUR_MAX = 23
+        const val MINUTE_MIN = 0
+        const val MINUTE_MAX = 59
+    }
+
+    /**
+     * テーマ関連の設定値
+     */
+    object Theme {
+        /** デフォルトのテーマモード名 */
+        const val DEFAULT_THEME_MODE = "SYSTEM"
+    }
+
+    /**
      * UI関連の設定値
      */
     object UI {
@@ -216,5 +269,8 @@ object AppConfig {
 
         /** 最小タッチターゲットサイズ（dp） */
         const val MIN_TOUCH_TARGET_DP = 48
+
+        /** Flow の WhileSubscribed 停止タイムアウト（ミリ秒） */
+        const val FLOW_STOP_TIMEOUT_MS = 5_000L
     }
 }

@@ -23,6 +23,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -30,7 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,6 +44,7 @@ import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.screens.notes.components.NoteTagChip
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.util.SnackbarEvent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -48,12 +53,24 @@ fun AddEditNoteScreen(
     viewModel: AddEditNoteViewModel = hiltViewModel()
 ) {
     val formState by viewModel.formState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
             if (saved) {
                 onNavigateBack()
             }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.snackbarController.events.collect { event ->
+            val message = when (event) {
+                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
         }
     }
 
@@ -64,6 +81,7 @@ fun AddEditNoteScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {

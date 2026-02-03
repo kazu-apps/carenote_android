@@ -7,18 +7,39 @@
 -keep class * extends dagger.hilt.android.internal.managers.ComponentSupplier { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentComponentBuilderEntryPoint { *; }
 
-# Gson serialization support
+# Generic attributes needed by reflection-based libraries (Room, Hilt, etc.)
 -keepattributes Signature, *Annotation*
--keep class com.google.gson.** { *; }
--keep class * implements com.google.gson.TypeAdapterFactory
--keep class * implements com.google.gson.JsonSerializer
--keep class * implements com.google.gson.JsonDeserializer
 
 # Coroutines
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
 
+# Domain model enums — Mapper layer uses name/valueOf for DB string serialization
+-keep enum com.carenote.app.domain.model.** {
+    *;
+}
+
+# Domain models — data classes used across layers
+-keep class com.carenote.app.domain.model.** { *; }
+
+# Sealed classes — Result, DomainError used in when expressions
+-keep class com.carenote.app.domain.common.** { *; }
+
+# Room TypeConverters — invoked via Room generated code
+-keep class com.carenote.app.data.local.converter.** { *; }
+
+# Data mapper classes — enum string parsing/serialization logic
+-keep class com.carenote.app.data.mapper.** { *; }
+
+# Navigation sealed class — route names used at runtime
+-keep class com.carenote.app.ui.navigation.Screen { *; }
+-keep class com.carenote.app.ui.navigation.Screen$* { *; }
+
+# R8 full mode compatibility for Kotlin coroutines
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+
 # Warnings suppressed for Apache HTTP/JNDI/GSS
 -dontwarn org.apache.http.**
 -dontwarn javax.naming.**
 -dontwarn org.ietf.jgss.**
+-dontwarn org.jetbrains.annotations.**

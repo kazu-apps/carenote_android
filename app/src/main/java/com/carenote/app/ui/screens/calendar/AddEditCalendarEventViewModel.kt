@@ -3,8 +3,11 @@ package com.carenote.app.ui.screens.calendar
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.CalendarEventRepository
+import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +30,7 @@ data class AddEditCalendarEventFormState(
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
     val isAllDay: Boolean = true,
-    val titleError: String? = null,
+    val titleError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -47,6 +50,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
 
     private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
     val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+
+    val snackbarController = SnackbarController()
 
     private var originalEvent: CalendarEvent? = null
 
@@ -105,7 +110,11 @@ class AddEditCalendarEventViewModel @Inject constructor(
     fun saveEvent() {
         val current = _formState.value
 
-        val titleError = if (current.title.isBlank()) TITLE_REQUIRED_ERROR else null
+        val titleError = if (current.title.isBlank()) {
+            UiText.Resource(R.string.calendar_event_title_required)
+        } else {
+            null
+        }
 
         if (titleError != null) {
             _formState.value = current.copy(titleError = titleError)
@@ -135,6 +144,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     .onFailure { error ->
                         Timber.w("Failed to update calendar event: $error")
                         _formState.value = _formState.value.copy(isSaving = false)
+                        snackbarController.showMessage(R.string.calendar_event_save_failed)
                     }
             } else {
                 val newEvent = CalendarEvent(
@@ -155,12 +165,10 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     .onFailure { error ->
                         Timber.w("Failed to save calendar event: $error")
                         _formState.value = _formState.value.copy(isSaving = false)
+                        snackbarController.showMessage(R.string.calendar_event_save_failed)
                     }
             }
         }
     }
 
-    companion object {
-        const val TITLE_REQUIRED_ERROR = "タイトルを入力してください"
-    }
 }

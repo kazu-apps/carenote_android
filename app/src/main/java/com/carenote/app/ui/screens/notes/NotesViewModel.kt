@@ -2,6 +2,7 @@ package com.carenote.app.ui.screens.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
@@ -52,7 +53,7 @@ class NotesViewModel @Inject constructor(
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = UiState.Loading
             )
 
@@ -69,18 +70,13 @@ class NotesViewModel @Inject constructor(
             noteRepository.deleteNote(id)
                 .onSuccess {
                     Timber.d("Note deleted: id=$id")
-                    snackbarController.showMessage(SNACKBAR_DELETED)
+                    snackbarController.showMessage(R.string.notes_deleted)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to delete note: $error")
-                    snackbarController.showMessage(SNACKBAR_DELETE_FAILED)
+                    snackbarController.showMessage(R.string.notes_delete_failed)
                 }
         }
     }
 
-    companion object {
-        private const val STOP_TIMEOUT_MS = 5_000L
-        const val SNACKBAR_DELETED = "メモを削除しました"
-        const val SNACKBAR_DELETE_FAILED = "削除に失敗しました"
-    }
 }

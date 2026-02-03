@@ -3,11 +3,14 @@ package com.carenote.app.ui.screens.healthrecords
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.domain.repository.HealthRecordRepository
+import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,11 +34,11 @@ data class AddEditHealthRecordFormState(
     val excretion: ExcretionType? = null,
     val conditionNote: String = "",
     val recordedAt: LocalDateTime = LocalDateTime.now(),
-    val temperatureError: String? = null,
-    val bloodPressureError: String? = null,
-    val pulseError: String? = null,
-    val weightError: String? = null,
-    val generalError: String? = null,
+    val temperatureError: UiText? = null,
+    val bloodPressureError: UiText? = null,
+    val pulseError: UiText? = null,
+    val weightError: UiText? = null,
+    val generalError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -55,6 +58,8 @@ class AddEditHealthRecordViewModel @Inject constructor(
 
     private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
     val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+
+    val snackbarController = SnackbarController()
 
     private var originalRecord: HealthRecord? = null
 
@@ -154,7 +159,9 @@ class AddEditHealthRecordViewModel @Inject constructor(
         val parsed = parseFormFields(current)
 
         if (!parsed.hasAnyField) {
-            _formState.value = current.copy(generalError = ALL_FIELDS_EMPTY_ERROR)
+            _formState.value = current.copy(
+                generalError = UiText.Resource(R.string.health_records_all_empty_error)
+            )
             return
         }
 
@@ -203,6 +210,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
                 .onFailure { error ->
                     Timber.w("Failed to update health record: $error")
                     _formState.value = _formState.value.copy(isSaving = false)
+                    snackbarController.showMessage(R.string.health_records_save_failed)
                 }
         } else {
             val newRecord = HealthRecord(
@@ -226,6 +234,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
                 .onFailure { error ->
                     Timber.w("Failed to save health record: $error")
                     _formState.value = _formState.value.copy(isSaving = false)
+                    snackbarController.showMessage(R.string.health_records_save_failed)
                 }
         }
     }
@@ -252,20 +261,29 @@ class AddEditHealthRecordViewModel @Inject constructor(
         val tempErr = validateRange(
             state.temperature, parsed.temperature,
             AppConfig.HealthRecord.TEMPERATURE_MIN, AppConfig.HealthRecord.TEMPERATURE_MAX,
-            TEMPERATURE_RANGE_ERROR
+            UiText.ResourceWithArgs(
+                R.string.health_records_temperature_range_error,
+                listOf(AppConfig.HealthRecord.TEMPERATURE_MIN, AppConfig.HealthRecord.TEMPERATURE_MAX)
+            )
         )
         val bpHighErr = validateRange(
             state.bloodPressureHigh, parsed.bpHigh?.toDouble(),
             AppConfig.HealthRecord.BLOOD_PRESSURE_MIN.toDouble(),
             AppConfig.HealthRecord.BLOOD_PRESSURE_MAX.toDouble(),
-            BLOOD_PRESSURE_RANGE_ERROR
+            UiText.ResourceWithArgs(
+                R.string.health_records_blood_pressure_range_error,
+                listOf(AppConfig.HealthRecord.BLOOD_PRESSURE_MIN, AppConfig.HealthRecord.BLOOD_PRESSURE_MAX)
+            )
         )
         val bpLowErr = if (bpHighErr == null) {
             validateRange(
                 state.bloodPressureLow, parsed.bpLow?.toDouble(),
                 AppConfig.HealthRecord.BLOOD_PRESSURE_MIN.toDouble(),
                 AppConfig.HealthRecord.BLOOD_PRESSURE_MAX.toDouble(),
-                BLOOD_PRESSURE_RANGE_ERROR
+                UiText.ResourceWithArgs(
+                    R.string.health_records_blood_pressure_range_error,
+                    listOf(AppConfig.HealthRecord.BLOOD_PRESSURE_MIN, AppConfig.HealthRecord.BLOOD_PRESSURE_MAX)
+                )
             )
         } else {
             null
@@ -275,12 +293,18 @@ class AddEditHealthRecordViewModel @Inject constructor(
             state.pulse, parsed.pulse?.toDouble(),
             AppConfig.HealthRecord.PULSE_MIN.toDouble(),
             AppConfig.HealthRecord.PULSE_MAX.toDouble(),
-            PULSE_RANGE_ERROR
+            UiText.ResourceWithArgs(
+                R.string.health_records_pulse_range_error,
+                listOf(AppConfig.HealthRecord.PULSE_MIN, AppConfig.HealthRecord.PULSE_MAX)
+            )
         )
         val weightErr = validateRange(
             state.weight, parsed.weight,
             AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX,
-            WEIGHT_RANGE_ERROR
+            UiText.ResourceWithArgs(
+                R.string.health_records_weight_range_error,
+                listOf(AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX)
+            )
         )
 
         return if (tempErr != null || bpErr != null || pulseErr != null || weightErr != null) {
@@ -295,10 +319,10 @@ class AddEditHealthRecordViewModel @Inject constructor(
         parsedValue: Double?,
         min: Double,
         max: Double,
-        errorMessage: String
-    ): String? {
+        error: UiText
+    ): UiText? {
         if (rawValue.isBlank()) return null
-        if (parsedValue == null || parsedValue < min || parsedValue > max) return errorMessage
+        if (parsedValue == null || parsedValue < min || parsedValue > max) return error
         return null
     }
 
@@ -313,21 +337,9 @@ class AddEditHealthRecordViewModel @Inject constructor(
     )
 
     private data class ValidationErrors(
-        val temperatureError: String?,
-        val bloodPressureError: String?,
-        val pulseError: String?,
-        val weightError: String?
+        val temperatureError: UiText?,
+        val bloodPressureError: UiText?,
+        val pulseError: UiText?,
+        val weightError: UiText?
     )
-
-    companion object {
-        const val ALL_FIELDS_EMPTY_ERROR = "少なくとも1つの項目を入力してください"
-        const val TEMPERATURE_RANGE_ERROR =
-            "${AppConfig.HealthRecord.TEMPERATURE_MIN}〜${AppConfig.HealthRecord.TEMPERATURE_MAX}℃の範囲で入力してください"
-        const val BLOOD_PRESSURE_RANGE_ERROR =
-            "${AppConfig.HealthRecord.BLOOD_PRESSURE_MIN}〜${AppConfig.HealthRecord.BLOOD_PRESSURE_MAX}mmHgの範囲で入力してください"
-        const val PULSE_RANGE_ERROR =
-            "${AppConfig.HealthRecord.PULSE_MIN}〜${AppConfig.HealthRecord.PULSE_MAX}回/分の範囲で入力してください"
-        const val WEIGHT_RANGE_ERROR =
-            "${AppConfig.HealthRecord.WEIGHT_MIN}〜${AppConfig.HealthRecord.WEIGHT_MAX}kgの範囲で入力してください"
-    }
 }

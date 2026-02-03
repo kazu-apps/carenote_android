@@ -2,9 +2,11 @@ package com.carenote.app.ui.screens.notes
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.fakes.FakeNoteRepository
+import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -166,7 +168,7 @@ class AddEditNoteViewModelTest {
 
         assertNotNull(viewModel.formState.value.titleError)
         assertEquals(
-            AddEditNoteViewModel.TITLE_REQUIRED_ERROR,
+            UiText.Resource(R.string.notes_title_required),
             viewModel.formState.value.titleError
         )
     }
@@ -191,7 +193,7 @@ class AddEditNoteViewModelTest {
 
         assertNotNull(viewModel.formState.value.contentError)
         assertEquals(
-            AddEditNoteViewModel.CONTENT_REQUIRED_ERROR,
+            UiText.Resource(R.string.notes_content_required),
             viewModel.formState.value.contentError
         )
     }

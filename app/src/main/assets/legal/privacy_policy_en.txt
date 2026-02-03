@@ -1,0 +1,44 @@
+Introduction
+
+Thank you for using CareNote (the "App"). This Privacy Policy explains how the App handles your personal information.
+
+■ Information We Collect
+
+The App stores the following information only on your device:
+
+・Medication information (names, dosages, timing, medication logs)
+・Health records (temperature, blood pressure, pulse, weight, meal intake, excretion, condition notes)
+・Calendar events (hospital visits, home care visits, etc.)
+・Tasks (daily caregiving tasks)
+・Notes and handovers (caregiving memos)
+・App settings (notification settings, health thresholds, default medication times)
+
+■ Where Data Is Stored
+
+All data is stored exclusively on your device (local storage). No data is transmitted to external servers.
+
+■ Third-Party Sharing
+
+The App does not share personal information with third parties. Data is never transmitted from your device.
+
+■ Advertising and Tracking
+
+The App does not display advertisements and does not use analytics or tracking tools.
+
+■ Data Deletion
+
+Uninstalling the App will delete all data stored on your device. You can also reset settings to their defaults from the Settings screen within the App.
+
+■ Children's Privacy
+
+The App is intended for caregivers (adults) and is not directed at children under 13.
+
+■ Changes to This Policy
+
+This policy may be updated without prior notice. Any changes will be reflected within the App.
+
+■ Contact Us
+
+For questions about this policy, please contact us at:
+
+Email: carenote.app.support@gmail.com

@@ -9,6 +9,7 @@ import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.TaskDao
+import com.carenote.app.data.local.migration.Migrations
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,7 +29,7 @@ object DatabaseModule {
             CareNoteDatabase::class.java,
             CareNoteDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration()
+            .addMigrations(*Migrations.all())
             .build()
     }
 

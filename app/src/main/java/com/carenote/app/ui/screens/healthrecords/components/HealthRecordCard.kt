@@ -23,9 +23,8 @@ import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.ui.components.CareNoteCard
-import com.carenote.app.ui.theme.AccentError
+import com.carenote.app.ui.theme.CareNoteColors
 import com.carenote.app.ui.theme.ChipShape
-import com.carenote.app.ui.theme.PrimaryGreen
 import com.carenote.app.ui.util.DateTimeFormatters
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -149,7 +148,7 @@ private fun VitalItem(
     isAbnormal: Boolean
 ) {
     val textColor = if (isAbnormal) {
-        AccentError
+        CareNoteColors.current.accentError
     } else {
         MaterialTheme.colorScheme.onSurface
     }
@@ -168,12 +167,12 @@ private fun InfoChip(
 ) {
     Surface(
         shape = ChipShape,
-        color = PrimaryGreen.copy(alpha = 0.1f)
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     ) {
         Text(
             text = "$label: $value",
             style = MaterialTheme.typography.labelSmall,
-            color = PrimaryGreen,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }

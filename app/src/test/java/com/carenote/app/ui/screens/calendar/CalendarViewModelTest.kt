@@ -1,8 +1,10 @@
 package com.carenote.app.ui.screens.calendar
 
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -241,7 +243,8 @@ class CalendarViewModelTest {
             viewModel.deleteEvent(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(CalendarViewModel.SNACKBAR_DELETED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.calendar_event_deleted, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 
@@ -257,7 +260,8 @@ class CalendarViewModelTest {
             viewModel.deleteEvent(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(CalendarViewModel.SNACKBAR_DELETE_FAILED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.calendar_event_delete_failed, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 

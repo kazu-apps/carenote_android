@@ -1,9 +1,11 @@
 package com.carenote.app.ui.screens.healthrecords
 
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.fakes.FakeHealthRecordRepository
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -135,7 +137,8 @@ class HealthRecordsViewModelTest {
             viewModel.deleteRecord(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(HealthRecordsViewModel.SNACKBAR_DELETED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.health_records_deleted, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 
@@ -151,7 +154,8 @@ class HealthRecordsViewModelTest {
             viewModel.deleteRecord(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(HealthRecordsViewModel.SNACKBAR_DELETE_FAILED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.health_records_delete_failed, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 

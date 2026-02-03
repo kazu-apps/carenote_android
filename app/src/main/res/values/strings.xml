@@ -12,6 +12,43 @@
 
     <!-- Settings -->
     <string name="settings_title">設定</string>
+    <string name="settings_theme">テーマ</string>
+    <string name="settings_theme_system">システムに合わせる</string>
+    <string name="settings_theme_light">ライト</string>
+    <string name="settings_theme_dark">ダーク</string>
+    <string name="settings_notifications">通知設定</string>
+    <string name="settings_notifications_enabled">通知を有効にする</string>
+    <string name="settings_quiet_hours">おやすみ時間</string>
+    <string name="settings_quiet_hours_format">%1$d:00 〜 %2$d:00</string>
+    <string name="settings_health_thresholds">健康記録の異常値基準</string>
+    <string name="settings_temperature_high">体温の異常値</string>
+    <string name="settings_temperature_format">%1$.1f℃ 以上</string>
+    <string name="settings_bp_upper">血圧上の異常値</string>
+    <string name="settings_bp_upper_format">%1$d mmHg 以上</string>
+    <string name="settings_bp_lower">血圧下の異常値</string>
+    <string name="settings_bp_lower_format">%1$d mmHg 以上</string>
+    <string name="settings_pulse_high">脈拍の異常値上限</string>
+    <string name="settings_pulse_high_format">%1$d 回/分 以上</string>
+    <string name="settings_pulse_low">脈拍の異常値下限</string>
+    <string name="settings_pulse_low_format">%1$d 回/分 以下</string>
+    <string name="settings_medication_times">服薬デフォルト時刻</string>
+    <string name="settings_time_format">%1$02d:%2$02d</string>
+    <string name="settings_app_info">アプリ情報</string>
+    <string name="settings_version">バージョン</string>
+    <string name="settings_privacy_policy">プライバシーポリシー</string>
+    <string name="settings_privacy_policy_summary">個人情報の取り扱いについて</string>
+    <string name="settings_terms_of_service">利用規約</string>
+    <string name="settings_terms_of_service_summary">アプリの利用条件について</string>
+    <string name="settings_reset_to_defaults">デフォルト設定に戻す</string>
+    <string name="settings_reset_confirm_title">設定のリセット</string>
+    <string name="settings_reset_confirm_message">すべての設定をデフォルトに戻しますか？</string>
+    <string name="settings_saved">設定を保存しました</string>
+    <string name="settings_reset_done">デフォルト設定に戻しました</string>
+    <string name="settings_error_save_failed">設定の保存に失敗しました</string>
+    <string name="settings_error_validation">入力値が範囲外です</string>
+    <string name="settings_input_value">値を入力</string>
+    <string name="settings_select_time">時刻を選択</string>
+    <string name="common_ok">OK</string>
 
     <!-- Medication -->
     <string name="medication_title">服薬管理</string>
@@ -35,6 +72,9 @@
     <string name="medication_deleted">薬を削除しました</string>
     <string name="medication_delete_confirm">%sを削除しますか？関連する服薬記録も削除されます。</string>
     <string name="medication_log_recorded">服薬を記録しました</string>
+    <string name="medication_log_failed">記録に失敗しました</string>
+    <string name="medication_delete_failed">削除に失敗しました</string>
+    <string name="medication_save_failed">保存に失敗しました</string>
     <string name="medication_empty">登録されている薬はありません</string>
     <string name="medication_empty_action">薬を追加する</string>
     <string name="medication_detail">薬の詳細</string>
@@ -66,6 +106,7 @@
     <string name="calendar_event_deleted">予定を削除しました</string>
     <string name="calendar_event_delete_confirm">この予定を削除しますか？</string>
     <string name="calendar_event_delete_failed">削除に失敗しました</string>
+    <string name="calendar_event_save_failed">保存に失敗しました</string>
     <string name="calendar_empty">予定はありません</string>
     <string name="calendar_empty_action">予定を追加する</string>
     <string name="calendar_weekday_sun">日</string>
@@ -100,6 +141,8 @@
     <string name="tasks_deleted">タスクを削除しました</string>
     <string name="tasks_delete_confirm">このタスクを削除しますか？</string>
     <string name="tasks_delete_failed">削除に失敗しました</string>
+    <string name="tasks_toggle_failed">更新に失敗しました</string>
+    <string name="tasks_save_failed">保存に失敗しました</string>
     <string name="tasks_filter_all">すべて</string>
     <string name="tasks_filter_incomplete">未完了</string>
     <string name="tasks_filter_completed">完了済み</string>
@@ -123,6 +166,7 @@
     <string name="health_records_delete_confirm">この記録を削除しますか？</string>
     <string name="health_records_deleted">記録を削除しました</string>
     <string name="health_records_delete_failed">削除に失敗しました</string>
+    <string name="health_records_save_failed">保存に失敗しました</string>
     <string name="health_records_saved">記録を保存しました</string>
     <string name="health_records_updated">記録を更新しました</string>
     <string name="health_records_temperature_unit">℃</string>
@@ -145,6 +189,10 @@
     <string name="health_records_no_data">--</string>
     <string name="health_records_condition_placeholder">体調や気になることを入力</string>
     <string name="health_records_all_empty_error">少なくとも1つの項目を入力してください</string>
+    <string name="health_records_temperature_range_error">%1$.1f〜%2$.1f℃の範囲で入力してください</string>
+    <string name="health_records_blood_pressure_range_error">%1$d〜%2$dmmHgの範囲で入力してください</string>
+    <string name="health_records_pulse_range_error">%1$d〜%2$d回/分の範囲で入力してください</string>
+    <string name="health_records_weight_range_error">%1$.1f〜%2$.1fkgの範囲で入力してください</string>
     <string name="health_records_view_list">一覧</string>
     <string name="health_records_view_graph">グラフ</string>
     <string name="health_records_graph_7days">7日間</string>
@@ -184,6 +232,7 @@
     <string name="notes_delete_confirm">このメモを削除しますか？</string>
     <string name="notes_edit">メモを編集</string>
     <string name="notes_delete_failed">削除に失敗しました</string>
+    <string name="notes_save_failed">保存に失敗しました</string>
 
     <!-- Common -->
     <string name="common_save">保存する</string>
@@ -214,6 +263,19 @@
     <string name="ui_confirm_no">いいえ</string>
     <string name="ui_validation_required">この項目は必須です</string>
     <string name="ui_validation_too_long">文字数が上限を超えています</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_calendar_previous_month">前の月</string>
+    <string name="a11y_calendar_next_month">次の月</string>
+    <string name="a11y_day_cell">%1$d日</string>
+    <string name="a11y_day_cell_today">%1$d日、今日</string>
+    <string name="a11y_day_cell_selected">%1$d日、選択中</string>
+    <string name="a11y_day_cell_has_events">%1$d日、予定あり</string>
+
+    <!-- Legal -->
+    <string name="legal_privacy_policy_title">プライバシーポリシー</string>
+    <string name="legal_terms_of_service_title">利用規約</string>
+    <string name="legal_last_updated">最終更新日: %s</string>
 
     <!-- Placeholder -->
     <string name="placeholder_coming_soon">この機能は近日公開予定です</string>

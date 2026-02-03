@@ -54,7 +54,7 @@ class HealthRecordGraphViewModel @Inject constructor(
                 .map { records -> mapToGraphState(records, range) }
         }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
             initialValue = HealthRecordGraphState()
         )
 
@@ -63,8 +63,6 @@ class HealthRecordGraphViewModel @Inject constructor(
     }
 
     companion object {
-        private const val STOP_TIMEOUT_MS = 5_000L
-
         fun mapToGraphState(
             records: List<HealthRecord>,
             dateRange: GraphDateRange

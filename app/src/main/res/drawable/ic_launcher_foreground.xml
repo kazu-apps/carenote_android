@@ -4,12 +4,40 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Green circle -->
+    <!-- Green circle background -->
     <path
         android:fillColor="#2E7D32"
         android:pathData="M54,54m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0"/>
-    <!-- Hand/heart icon (care symbol) -->
+    <!-- Large heart (care symbol) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,38c-3.3,-3.3 -8.7,-3.3 -12,0c-3.3,3.3 -3.3,8.7 0,12L54,62l12,-12c3.3,-3.3 3.3,-8.7 0,-12c-3.3,-3.3 -8.7,-3.3 -12,0z"/>
+        android:pathData="M54,68L39.6,53.6c-1.2,-1.2 -2,-2.8 -2,-4.6c0,-3.6 2.9,-6.5 6.5,-6.5c1.8,0 3.4,0.7 4.6,1.9L54,49.8l5.3,-5.4c1.2,-1.2 2.8,-1.9 4.6,-1.9c3.6,0 6.5,2.9 6.5,6.5c0,1.8 -0.7,3.4 -2,4.6L54,68z"/>
+    <!-- Left cupping hand -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M33,56c0,0 -2,3 -2,6c0,4 3,8 8,10c3,1.2 8,2.5 12,3"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
+    <!-- Right cupping hand -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M75,56c0,0 2,3 2,6c0,4 -3,8 -8,10c-3,1.2 -8,2.5 -12,3"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
+    <!-- Left hand palm -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M30,54c0,0 1,-4 3,-5c1.5,-0.8 3,0 3,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
+    <!-- Right hand palm -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M78,54c0,0 -1,-4 -3,-5c-1.5,-0.8 -3,0 -3,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
 </vector>

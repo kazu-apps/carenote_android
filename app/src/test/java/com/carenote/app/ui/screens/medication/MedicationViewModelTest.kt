@@ -1,12 +1,14 @@
 package com.carenote.app.ui.screens.medication
 
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationRepository
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -313,7 +315,8 @@ class MedicationViewModelTest {
             viewModel.recordMedication(1L, MedicationLogStatus.TAKEN)
             advanceUntilIdle()
             val event = awaitItem()
-            assertTrue(event.message.isNotEmpty())
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.medication_log_recorded, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 
@@ -328,7 +331,8 @@ class MedicationViewModelTest {
             viewModel.deleteMedication(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertTrue(event.message.isNotEmpty())
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.medication_deleted, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 

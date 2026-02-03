@@ -142,7 +142,7 @@ class DateTimeFormattersTest {
         val monday = LocalDate.of(2025, 3, 17)
         val result = DateTimeFormatters.formatDayOfWeek(monday, Locale.JAPANESE)
 
-        assertTrue(result.isNotEmpty())
+        assertEquals("月", result)
     }
 
     @Test
@@ -150,6 +150,6 @@ class DateTimeFormattersTest {
         val monday = LocalDate.of(2025, 3, 17)
         val result = DateTimeFormatters.formatDayOfWeek(monday, Locale.ENGLISH)
 
-        assertTrue(result.isNotEmpty())
+        assertEquals("Mon", result)
     }
 }

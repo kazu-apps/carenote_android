@@ -1,7 +1,15 @@
 package com.carenote.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.core.os.ConfigurationCompat
+import com.carenote.app.R
+import com.carenote.app.config.AppConfig
+import com.carenote.app.ui.util.readAssetText
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,6 +24,7 @@ import com.carenote.app.ui.screens.medication.MedicationScreen
 import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordScreen
 import com.carenote.app.ui.screens.notes.AddEditNoteScreen
 import com.carenote.app.ui.screens.notes.NotesScreen
+import com.carenote.app.ui.screens.settings.LegalDocumentScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
 import com.carenote.app.ui.screens.tasks.AddEditTaskScreen
 import com.carenote.app.ui.screens.tasks.TasksScreen
@@ -89,7 +98,43 @@ fun CareNoteNavHost(
         }
 
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPrivacyPolicy = {
+                    navController.navigate(Screen.PrivacyPolicy.route)
+                },
+                onNavigateToTermsOfService = {
+                    navController.navigate(Screen.TermsOfService.route)
+                }
+            )
+        }
+
+        composable(Screen.PrivacyPolicy.route) {
+            val context = LocalContext.current
+            val locale = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]
+            val isJapanese = locale?.language == "ja"
+            val fileName = if (isJapanese) "legal/privacy_policy_ja.txt" else "legal/privacy_policy_en.txt"
+            val content = remember(fileName) { readAssetText(context, fileName) }
+            LegalDocumentScreen(
+                title = stringResource(R.string.legal_privacy_policy_title),
+                content = content,
+                lastUpdated = AppConfig.Legal.PRIVACY_POLICY_LAST_UPDATED,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.TermsOfService.route) {
+            val context = LocalContext.current
+            val locale = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]
+            val isJapanese = locale?.language == "ja"
+            val fileName = if (isJapanese) "legal/terms_of_service_ja.txt" else "legal/terms_of_service_en.txt"
+            val content = remember(fileName) { readAssetText(context, fileName) }
+            LegalDocumentScreen(
+                title = stringResource(R.string.legal_terms_of_service_title),
+                content = content,
+                lastUpdated = AppConfig.Legal.TERMS_OF_SERVICE_LAST_UPDATED,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.AddMedication.route) {

@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +8,13 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     jacoco
+}
+
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties().apply {
+    if (keyPropertiesFile.exists()) {
+        FileInputStream(keyPropertiesFile).use { load(it) }
+    }
 }
 
 android {
@@ -21,6 +31,23 @@ android {
         testInstrumentationRunner = "com.carenote.app.HiltTestRunner"
     }
 
+    if (keyPropertiesFile.exists()) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(
+                    (keyProperties["storeFile"] as? String)
+                        ?: error("key.properties is missing 'storeFile'")
+                )
+                storePassword = (keyProperties["storePassword"] as? String)
+                    ?: error("key.properties is missing 'storePassword'")
+                keyAlias = (keyProperties["keyAlias"] as? String)
+                    ?: error("key.properties is missing 'keyAlias'")
+                keyPassword = (keyProperties["keyPassword"] as? String)
+                    ?: error("key.properties is missing 'keyPassword'")
+            }
+        }
+    }
+
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
@@ -33,6 +60,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (keyPropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
@@ -59,6 +89,7 @@ android {
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -75,6 +106,9 @@ dependencies {
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
     // Room
     implementation(libs.androidx.room.runtime)
@@ -93,9 +127,6 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-
-    // Gson
-    implementation(libs.gson)
 
     // Logging
     implementation(libs.timber)

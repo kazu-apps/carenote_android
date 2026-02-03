@@ -6,4 +6,10 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/background_cream</item>
     </style>
+
+    <style name="Theme.CareNote.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/icon_background_green</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.CareNote</item>
+    </style>
 </resources>

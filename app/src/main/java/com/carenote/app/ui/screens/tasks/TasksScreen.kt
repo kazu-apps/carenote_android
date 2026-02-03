@@ -26,6 +26,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,6 +39,8 @@ import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.screens.tasks.components.TaskCard
 import com.carenote.app.ui.screens.tasks.components.TaskFilterChips
+import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,10 +54,15 @@ fun TasksScreen(
     val filterMode by viewModel.filterMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteTask by remember { mutableStateOf<Task?>(null) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
-            snackbarHostState.showSnackbar(event.message)
+            val message = when (event) {
+                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
         }
     }
 
@@ -74,6 +83,7 @@ fun TasksScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAddTask,
+                modifier = Modifier.testTag(TestTags.TASKS_FAB),
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(

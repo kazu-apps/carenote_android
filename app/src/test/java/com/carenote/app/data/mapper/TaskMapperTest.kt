@@ -70,6 +70,24 @@ class TaskMapperTest {
     }
 
     @Test
+    fun `toDomain falls back to MEDIUM for unknown priority`() {
+        val result = mapper.toDomain(createEntity(priority = "URGENT"))
+        assertEquals(TaskPriority.MEDIUM, result.priority)
+    }
+
+    @Test
+    fun `toDomain falls back to MEDIUM for empty priority`() {
+        val result = mapper.toDomain(createEntity(priority = ""))
+        assertEquals(TaskPriority.MEDIUM, result.priority)
+    }
+
+    @Test
+    fun `toDomain falls back to MEDIUM for lowercase priority`() {
+        val result = mapper.toDomain(createEntity(priority = "high"))
+        assertEquals(TaskPriority.MEDIUM, result.priority)
+    }
+
+    @Test
     fun `toEntity maps domain model with all fields to entity`() {
         val domain = createTask(
             id = 2L,

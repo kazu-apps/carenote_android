@@ -1,9 +1,11 @@
 package com.carenote.app.ui.screens.tasks
 
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeTaskRepository
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -270,7 +272,8 @@ class TasksViewModelTest {
             viewModel.deleteTask(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(TasksViewModel.SNACKBAR_DELETED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.tasks_deleted, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 
@@ -285,7 +288,8 @@ class TasksViewModelTest {
             viewModel.deleteTask(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(TasksViewModel.SNACKBAR_DELETE_FAILED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.tasks_delete_failed, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 
@@ -320,7 +324,8 @@ class TasksViewModelTest {
             viewModel.toggleCompletion(task)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(TasksViewModel.SNACKBAR_TOGGLE_FAILED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.tasks_toggle_failed, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 

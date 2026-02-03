@@ -24,6 +24,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.components.CareNoteCard
+import com.carenote.app.ui.theme.CareNoteColors
 import com.carenote.app.ui.theme.ChipShape
 import com.carenote.app.ui.util.DateTimeFormatters
 
@@ -102,14 +103,15 @@ private fun PriorityBadge(
 ) {
     if (priority == TaskPriority.MEDIUM) return
 
+    val careNoteColors = CareNoteColors.current
     val (containerColor, contentColor, labelResId) = when (priority) {
         TaskPriority.HIGH -> Triple(
-            Color(0xFFE53935),
+            careNoteColors.taskPriorityHighColor,
             Color.White,
             R.string.tasks_task_priority_high
         )
         TaskPriority.LOW -> Triple(
-            Color(0xFF42A5F5),
+            careNoteColors.taskPriorityLowColor,
             Color.White,
             R.string.tasks_task_priority_low
         )

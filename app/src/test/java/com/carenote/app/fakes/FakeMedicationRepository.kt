@@ -12,6 +12,7 @@ class FakeMedicationRepository : MedicationRepository {
 
     private val medications = MutableStateFlow<List<Medication>>(emptyList())
     private var nextId = 1L
+    var shouldFail = false
 
     fun setMedications(list: List<Medication>) {
         medications.value = list
@@ -20,6 +21,7 @@ class FakeMedicationRepository : MedicationRepository {
     fun clear() {
         medications.value = emptyList()
         nextId = 1L
+        shouldFail = false
     }
 
     override fun getAllMedications(): Flow<List<Medication>> = medications
@@ -29,6 +31,7 @@ class FakeMedicationRepository : MedicationRepository {
     }
 
     override suspend fun insertMedication(medication: Medication): Result<Long, DomainError> {
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake insert error"))
         val id = nextId++
         val newMedication = medication.copy(id = id)
         medications.value = medications.value + newMedication
@@ -36,6 +39,7 @@ class FakeMedicationRepository : MedicationRepository {
     }
 
     override suspend fun updateMedication(medication: Medication): Result<Unit, DomainError> {
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake update error"))
         medications.value = medications.value.map {
             if (it.id == medication.id) medication else it
         }
@@ -43,6 +47,7 @@ class FakeMedicationRepository : MedicationRepository {
     }
 
     override suspend fun deleteMedication(id: Long): Result<Unit, DomainError> {
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake delete error"))
         medications.value = medications.value.filter { it.id != id }
         return Result.Success(Unit)
     }

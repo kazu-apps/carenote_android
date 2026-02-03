@@ -11,8 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import java.time.LocalDate
 
@@ -42,11 +46,20 @@ fun DayCell(
         else -> FontWeight.Normal
     }
 
+    val dayOfMonth = date.dayOfMonth
+    val dayCellDescription = when {
+        isSelected -> stringResource(R.string.a11y_day_cell_selected, dayOfMonth)
+        isToday -> stringResource(R.string.a11y_day_cell_today, dayOfMonth)
+        hasEvents -> stringResource(R.string.a11y_day_cell_has_events, dayOfMonth)
+        else -> stringResource(R.string.a11y_day_cell, dayOfMonth)
+    }
+
     Box(
         modifier = modifier
             .size(AppConfig.Calendar.DAY_CELL_SIZE_DP.dp)
             .clip(CircleShape)
             .background(backgroundColor)
+            .semantics { contentDescription = dayCellDescription }
             .clickable { onDateClick(date) },
         contentAlignment = Alignment.Center
     ) {

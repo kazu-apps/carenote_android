@@ -12,6 +12,43 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">Follow System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_enabled">Enable notifications</string>
+    <string name="settings_quiet_hours">Quiet Hours</string>
+    <string name="settings_quiet_hours_format">%1$d:00 – %2$d:00</string>
+    <string name="settings_health_thresholds">Health Thresholds</string>
+    <string name="settings_temperature_high">Temperature Alert</string>
+    <string name="settings_temperature_format">%1$.1f\u2103 or above</string>
+    <string name="settings_bp_upper">Systolic BP Alert</string>
+    <string name="settings_bp_upper_format">%1$d mmHg or above</string>
+    <string name="settings_bp_lower">Diastolic BP Alert</string>
+    <string name="settings_bp_lower_format">%1$d mmHg or above</string>
+    <string name="settings_pulse_high">Pulse Upper Alert</string>
+    <string name="settings_pulse_high_format">%1$d bpm or above</string>
+    <string name="settings_pulse_low">Pulse Lower Alert</string>
+    <string name="settings_pulse_low_format">%1$d bpm or below</string>
+    <string name="settings_medication_times">Default Medication Times</string>
+    <string name="settings_time_format">%1$02d:%2$02d</string>
+    <string name="settings_app_info">App Info</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_privacy_policy_summary">How we handle your information</string>
+    <string name="settings_terms_of_service">Terms of Service</string>
+    <string name="settings_terms_of_service_summary">App usage terms and conditions</string>
+    <string name="settings_reset_to_defaults">Reset to Defaults</string>
+    <string name="settings_reset_confirm_title">Reset Settings</string>
+    <string name="settings_reset_confirm_message">Reset all settings to defaults?</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="settings_reset_done">Settings reset to defaults</string>
+    <string name="settings_error_save_failed">Failed to save settings</string>
+    <string name="settings_error_validation">Input value is out of range</string>
+    <string name="settings_input_value">Enter value</string>
+    <string name="settings_select_time">Select time</string>
+    <string name="common_ok">OK</string>
 
     <!-- Medication -->
     <string name="medication_title">Medication</string>
@@ -35,6 +72,9 @@
     <string name="medication_deleted">Medication deleted</string>
     <string name="medication_delete_confirm">Delete %s? Related medication logs will also be deleted.</string>
     <string name="medication_log_recorded">Medication log recorded</string>
+    <string name="medication_log_failed">Failed to record</string>
+    <string name="medication_delete_failed">Failed to delete</string>
+    <string name="medication_save_failed">Failed to save</string>
     <string name="medication_empty">No medications registered</string>
     <string name="medication_empty_action">Add Medication</string>
     <string name="medication_detail">Medication Detail</string>
@@ -66,6 +106,7 @@
     <string name="calendar_event_deleted">Event deleted</string>
     <string name="calendar_event_delete_confirm">Delete this event?</string>
     <string name="calendar_event_delete_failed">Failed to delete</string>
+    <string name="calendar_event_save_failed">Failed to save</string>
     <string name="calendar_empty">No events</string>
     <string name="calendar_empty_action">Add an event</string>
     <string name="calendar_weekday_sun">Sun</string>
@@ -100,6 +141,8 @@
     <string name="tasks_deleted">Task deleted</string>
     <string name="tasks_delete_confirm">Delete this task?</string>
     <string name="tasks_delete_failed">Failed to delete</string>
+    <string name="tasks_toggle_failed">Failed to update</string>
+    <string name="tasks_save_failed">Failed to save</string>
     <string name="tasks_filter_all">All</string>
     <string name="tasks_filter_incomplete">Incomplete</string>
     <string name="tasks_filter_completed">Completed</string>
@@ -123,6 +166,7 @@
     <string name="health_records_delete_confirm">Delete this record?</string>
     <string name="health_records_deleted">Record deleted</string>
     <string name="health_records_delete_failed">Failed to delete</string>
+    <string name="health_records_save_failed">Failed to save</string>
     <string name="health_records_saved">Record saved</string>
     <string name="health_records_updated">Record updated</string>
     <string name="health_records_temperature_unit">\u2103</string>
@@ -145,6 +189,10 @@
     <string name="health_records_no_data">--</string>
     <string name="health_records_condition_placeholder">Enter condition or concerns</string>
     <string name="health_records_all_empty_error">Please enter at least one item</string>
+    <string name="health_records_temperature_range_error">Please enter a value between %1$.1f and %2$.1f\u2103</string>
+    <string name="health_records_blood_pressure_range_error">Please enter a value between %1$d and %2$d mmHg</string>
+    <string name="health_records_pulse_range_error">Please enter a value between %1$d and %2$d bpm</string>
+    <string name="health_records_weight_range_error">Please enter a value between %1$.1f and %2$.1f kg</string>
     <string name="health_records_view_list">List</string>
     <string name="health_records_view_graph">Graph</string>
     <string name="health_records_graph_7days">7 Days</string>
@@ -184,6 +232,7 @@
     <string name="notes_delete_confirm">Delete this note?</string>
     <string name="notes_edit">Edit Note</string>
     <string name="notes_delete_failed">Failed to delete</string>
+    <string name="notes_save_failed">Failed to save</string>
 
     <!-- Common -->
     <string name="common_save">Save</string>
@@ -214,6 +263,19 @@
     <string name="ui_confirm_no">No</string>
     <string name="ui_validation_required">This field is required</string>
     <string name="ui_validation_too_long">Character limit exceeded</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_calendar_previous_month">Previous month</string>
+    <string name="a11y_calendar_next_month">Next month</string>
+    <string name="a11y_day_cell">Day %1$d</string>
+    <string name="a11y_day_cell_today">Day %1$d, today</string>
+    <string name="a11y_day_cell_selected">Day %1$d, selected</string>
+    <string name="a11y_day_cell_has_events">Day %1$d, has events</string>
+
+    <!-- Legal -->
+    <string name="legal_privacy_policy_title">Privacy Policy</string>
+    <string name="legal_terms_of_service_title">Terms of Service</string>
+    <string name="legal_last_updated">Last updated: %s</string>
 
     <!-- Placeholder -->
     <string name="placeholder_coming_soon">This feature is coming soon</string>

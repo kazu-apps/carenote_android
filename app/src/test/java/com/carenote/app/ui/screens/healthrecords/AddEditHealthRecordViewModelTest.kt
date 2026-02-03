@@ -2,11 +2,13 @@ package com.carenote.app.ui.screens.healthrecords
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.fakes.FakeHealthRecordRepository
+import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -175,7 +177,7 @@ class AddEditHealthRecordViewModelTest {
 
         assertNotNull(viewModel.formState.value.generalError)
         assertEquals(
-            AddEditHealthRecordViewModel.ALL_FIELDS_EMPTY_ERROR,
+            UiText.Resource(R.string.health_records_all_empty_error),
             viewModel.formState.value.generalError
         )
     }
@@ -301,7 +303,10 @@ class AddEditHealthRecordViewModelTest {
 
         assertNotNull(viewModel.formState.value.temperatureError)
         assertEquals(
-            AddEditHealthRecordViewModel.TEMPERATURE_RANGE_ERROR,
+            UiText.ResourceWithArgs(
+                R.string.health_records_temperature_range_error,
+                listOf(AppConfig.HealthRecord.TEMPERATURE_MIN, AppConfig.HealthRecord.TEMPERATURE_MAX)
+            ),
             viewModel.formState.value.temperatureError
         )
     }
@@ -325,7 +330,10 @@ class AddEditHealthRecordViewModelTest {
 
         assertNotNull(viewModel.formState.value.bloodPressureError)
         assertEquals(
-            AddEditHealthRecordViewModel.BLOOD_PRESSURE_RANGE_ERROR,
+            UiText.ResourceWithArgs(
+                R.string.health_records_blood_pressure_range_error,
+                listOf(AppConfig.HealthRecord.BLOOD_PRESSURE_MIN, AppConfig.HealthRecord.BLOOD_PRESSURE_MAX)
+            ),
             viewModel.formState.value.bloodPressureError
         )
     }
@@ -349,7 +357,10 @@ class AddEditHealthRecordViewModelTest {
 
         assertNotNull(viewModel.formState.value.pulseError)
         assertEquals(
-            AddEditHealthRecordViewModel.PULSE_RANGE_ERROR,
+            UiText.ResourceWithArgs(
+                R.string.health_records_pulse_range_error,
+                listOf(AppConfig.HealthRecord.PULSE_MIN, AppConfig.HealthRecord.PULSE_MAX)
+            ),
             viewModel.formState.value.pulseError
         )
     }
@@ -373,7 +384,10 @@ class AddEditHealthRecordViewModelTest {
 
         assertNotNull(viewModel.formState.value.weightError)
         assertEquals(
-            AddEditHealthRecordViewModel.WEIGHT_RANGE_ERROR,
+            UiText.ResourceWithArgs(
+                R.string.health_records_weight_range_error,
+                listOf(AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX)
+            ),
             viewModel.formState.value.weightError
         )
     }

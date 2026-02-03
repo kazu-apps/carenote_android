@@ -3,6 +3,8 @@ package com.carenote.app.ui.screens.medication
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.repository.MedicationLogRepository
@@ -50,7 +52,7 @@ class MedicationDetailViewModel @Inject constructor(
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = UiState.Loading
             )
 
@@ -58,7 +60,7 @@ class MedicationDetailViewModel @Inject constructor(
         medicationLogRepository.getLogsForMedication(medicationId)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = emptyList()
             )
 
@@ -71,13 +73,9 @@ class MedicationDetailViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     Timber.w("Failed to delete medication: $error")
-                    snackbarController.showMessage(SNACKBAR_DELETE_FAILED)
+                    snackbarController.showMessage(R.string.medication_delete_failed)
                 }
         }
     }
 
-    companion object {
-        private const val STOP_TIMEOUT_MS = 5_000L
-        const val SNACKBAR_DELETE_FAILED = "削除に失敗しました"
-    }
 }

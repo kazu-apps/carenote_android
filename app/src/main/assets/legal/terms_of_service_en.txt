@@ -1,0 +1,55 @@
+Article 1 (Application)
+
+These Terms of Service (the "Terms") set forth the conditions for the use of CareNote (the "App"). By using the App, you are deemed to have agreed to these Terms.
+
+Article 2 (Description of Service)
+
+The App is a caregiving record management application designed for family caregivers. It provides the following features:
+
+・Medication management (registration, logging, reminders)
+・Health records (temperature, blood pressure, pulse tracking and graphs)
+・Calendar (scheduling hospital visits, home care, etc.)
+・Task management (daily caregiving tasks)
+・Notes and handovers (caregiving memos)
+
+Article 3 (Medical Disclaimer)
+
+The App is not a medical device and does not provide medical advice. Information in the App is not a substitute for advice from a physician or other healthcare professional. Always consult a healthcare professional for health-related decisions.
+
+Article 4 (Data Management)
+
+1. All App data is stored exclusively on your device.
+2. You are responsible for backing up your own data.
+3. The developer is not responsible for data loss due to device failure, loss, app uninstallation, or other causes.
+
+Article 5 (Prohibited Activities)
+
+Users shall not:
+
+1. Decompile, reverse engineer, or disassemble the App
+2. Modify the App or create derivative works
+3. Use the App for any unlawful purpose
+
+Article 6 (Intellectual Property)
+
+All intellectual property rights related to the App belong to the developer.
+
+Article 7 (Disclaimer of Warranties)
+
+1. The developer makes no guarantees regarding the completeness, accuracy, or usefulness of the App.
+2. The developer shall not be liable for any damages arising from the use of the App.
+3. The App is provided "as is."
+
+Article 8 (Changes to Terms)
+
+The developer may modify these Terms as necessary. Modified Terms shall take effect upon publication within the App.
+
+Article 9 (Governing Law)
+
+These Terms shall be governed by and construed in accordance with the laws of Japan.
+
+■ Contact Us
+
+For questions about these Terms, please contact us at:
+
+Email: carenote.app.support@gmail.com

@@ -122,7 +122,7 @@ fun DrawScope.drawXAxisLabels(
     labelColor: Color
 ) {
     if (points.isEmpty()) return
-    val maxLabels = 5
+    val maxLabels = AppConfig.Graph.X_AXIS_MAX_LABELS
     val indices = selectLabelIndices(points.size, maxLabels)
     for (i in indices) {
         val x = indexToX(i, points.size, chartLeft, chartRight)

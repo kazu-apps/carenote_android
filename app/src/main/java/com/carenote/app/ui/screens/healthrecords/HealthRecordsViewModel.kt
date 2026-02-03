@@ -2,6 +2,8 @@ package com.carenote.app.ui.screens.healthrecords
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.ui.util.SnackbarController
@@ -31,7 +33,7 @@ class HealthRecordsViewModel @Inject constructor(
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = UiState.Loading
             )
 
@@ -40,18 +42,13 @@ class HealthRecordsViewModel @Inject constructor(
             healthRecordRepository.deleteRecord(id)
                 .onSuccess {
                     Timber.d("Health record deleted: id=$id")
-                    snackbarController.showMessage(SNACKBAR_DELETED)
+                    snackbarController.showMessage(R.string.health_records_deleted)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to delete health record: $error")
-                    snackbarController.showMessage(SNACKBAR_DELETE_FAILED)
+                    snackbarController.showMessage(R.string.health_records_delete_failed)
                 }
         }
     }
 
-    companion object {
-        private const val STOP_TIMEOUT_MS = 5_000L
-        const val SNACKBAR_DELETED = "記録を削除しました"
-        const val SNACKBAR_DELETE_FAILED = "削除に失敗しました"
-    }
 }

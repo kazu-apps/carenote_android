@@ -26,7 +26,7 @@ import com.carenote.app.data.local.entity.TaskEntity
         CalendarEventEntity::class,
         TaskEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)

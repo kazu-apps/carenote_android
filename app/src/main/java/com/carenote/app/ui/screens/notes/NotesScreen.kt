@@ -33,6 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,6 +47,8 @@ import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.screens.notes.components.NoteCard
 import com.carenote.app.ui.screens.notes.components.NoteTagChip
+import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,10 +63,15 @@ fun NotesScreen(
     val selectedTag by viewModel.selectedTag.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteNote by remember { mutableStateOf<Note?>(null) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
-            snackbarHostState.showSnackbar(event.message)
+            val message = when (event) {
+                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
         }
     }
 
@@ -83,6 +92,7 @@ fun NotesScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAddNote,
+                modifier = Modifier.testTag(TestTags.NOTES_FAB),
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(

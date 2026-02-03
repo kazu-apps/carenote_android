@@ -9,11 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.carenote.app.R
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.ui.theme.CareNoteColors
 import com.carenote.app.ui.theme.ChipShape
-import com.carenote.app.ui.theme.NoteTagConditionColor
-import com.carenote.app.ui.theme.NoteTagMealColor
-import com.carenote.app.ui.theme.NoteTagOtherColor
-import com.carenote.app.ui.theme.NoteTagReportColor
 
 @Composable
 fun NoteTagChip(
@@ -22,11 +19,20 @@ fun NoteTagChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = CareNoteColors.current
+
     val tagColor = when (tag) {
-        NoteTag.CONDITION -> NoteTagConditionColor
-        NoteTag.MEAL -> NoteTagMealColor
-        NoteTag.REPORT -> NoteTagReportColor
-        NoteTag.OTHER -> NoteTagOtherColor
+        NoteTag.CONDITION -> colors.noteTagConditionColor
+        NoteTag.MEAL -> colors.noteTagMealColor
+        NoteTag.REPORT -> colors.noteTagReportColor
+        NoteTag.OTHER -> colors.noteTagOtherColor
+    }
+
+    val tagTextColor = when (tag) {
+        NoteTag.CONDITION -> colors.noteTagConditionTextColor
+        NoteTag.MEAL -> colors.noteTagMealTextColor
+        NoteTag.REPORT -> colors.noteTagReportTextColor
+        NoteTag.OTHER -> colors.noteTagOtherTextColor
     }
 
     FilterChip(
@@ -41,7 +47,7 @@ fun NoteTagChip(
         shape = ChipShape,
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = tagColor.copy(alpha = 0.2f),
-            selectedLabelColor = tagColor
+            selectedLabelColor = tagTextColor
         ),
         border = FilterChipDefaults.filterChipBorder(
             borderColor = tagColor.copy(alpha = 0.5f),

@@ -2,8 +2,10 @@ package com.carenote.app.ui.screens.calendar
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -203,7 +205,7 @@ class AddEditCalendarEventViewModelTest {
 
         assertNotNull(viewModel.formState.value.titleError)
         assertEquals(
-            AddEditCalendarEventViewModel.TITLE_REQUIRED_ERROR,
+            UiText.Resource(R.string.calendar_event_title_required),
             viewModel.formState.value.titleError
         )
     }

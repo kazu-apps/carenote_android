@@ -2,9 +2,15 @@ package com.carenote.app.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "calendar_events")
+@Entity(
+    tableName = "calendar_events",
+    indices = [
+        Index(value = ["date"])
+    ]
+)
 data class CalendarEventEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

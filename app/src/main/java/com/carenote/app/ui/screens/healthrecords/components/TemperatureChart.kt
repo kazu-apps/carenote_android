@@ -19,9 +19,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.components.CareNoteCard
 import com.carenote.app.ui.screens.healthrecords.GraphDataPoint
-import com.carenote.app.ui.theme.AccentError
-import com.carenote.app.ui.theme.PrimaryGreen
-import com.carenote.app.ui.theme.TextSecondary
+import com.carenote.app.ui.theme.CareNoteColors
 
 @Composable
 fun TemperatureChart(
@@ -35,11 +33,16 @@ fun TemperatureChart(
     val yAxisWidth = AppConfig.Graph.Y_AXIS_LABEL_WIDTH_DP
     val xAxisHeight = AppConfig.Graph.X_AXIS_LABEL_HEIGHT_DP
 
+    val colors = CareNoteColors.current
+    val chartLabelColor = colors.chartLabelColor
+    val chartLineColor = colors.chartLineColor
+    val accentError = colors.accentError
+
     val textMeasurer = rememberTextMeasurer()
-    val labelStyle = remember {
-        TextStyle(fontSize = 10.sp, color = TextSecondary)
+    val labelStyle = remember(chartLabelColor) {
+        TextStyle(fontSize = AppConfig.Graph.AXIS_LABEL_FONT_SIZE_SP.sp, color = chartLabelColor)
     }
-    val gridColor = TextSecondary.copy(alpha = 0.2f)
+    val gridColor = chartLabelColor.copy(alpha = 0.2f)
 
     CareNoteCard(modifier = modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -62,7 +65,7 @@ fun TemperatureChart(
                 drawGridLines(
                     yMin = yMin,
                     yMax = yMax,
-                    step = 1.0,
+                    step = AppConfig.Graph.TEMPERATURE_GRID_STEP,
                     chartLeft = chartLeft,
                     chartRight = chartRight,
                     chartTop = chartTop,
@@ -78,18 +81,18 @@ fun TemperatureChart(
                     chartRight = chartRight,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
-                    color = AccentError.copy(alpha = 0.7f)
+                    color = accentError.copy(alpha = 0.7f)
                 )
 
                 drawYAxisLabels(
                     textMeasurer = textMeasurer,
                     yMin = yMin,
                     yMax = yMax,
-                    step = 1.0,
+                    step = AppConfig.Graph.TEMPERATURE_GRID_STEP,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
                     labelStyle = labelStyle,
-                    labelColor = TextSecondary
+                    labelColor = chartLabelColor
                 )
 
                 drawXAxisLabels(
@@ -99,7 +102,7 @@ fun TemperatureChart(
                     chartRight = chartRight,
                     chartBottom = chartBottom,
                     labelStyle = labelStyle,
-                    labelColor = TextSecondary
+                    labelColor = chartLabelColor
                 )
 
                 drawDataLine(
@@ -110,9 +113,9 @@ fun TemperatureChart(
                     chartRight = chartRight,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
-                    lineColor = PrimaryGreen,
-                    pointColor = PrimaryGreen,
-                    abnormalColor = AccentError,
+                    lineColor = chartLineColor,
+                    pointColor = chartLineColor,
+                    abnormalColor = accentError,
                     abnormalThreshold = threshold
                 )
             }

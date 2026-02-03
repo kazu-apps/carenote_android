@@ -1,9 +1,11 @@
 package com.carenote.app.ui.screens.notes
 
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.fakes.FakeNoteRepository
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -194,7 +196,8 @@ class NotesViewModelTest {
             viewModel.deleteNote(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(NotesViewModel.SNACKBAR_DELETED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.notes_deleted, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 
@@ -210,7 +213,8 @@ class NotesViewModelTest {
             viewModel.deleteNote(1L)
             advanceUntilIdle()
             val event = awaitItem()
-            assertEquals(NotesViewModel.SNACKBAR_DELETE_FAILED, event.message)
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.notes_delete_failed, (event as SnackbarEvent.WithResId).messageResId)
         }
     }
 

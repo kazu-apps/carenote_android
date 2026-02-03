@@ -2,9 +2,11 @@ package com.carenote.app.ui.screens.tasks
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.carenote.app.R
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeTaskRepository
+import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -204,7 +206,7 @@ class AddEditTaskViewModelTest {
 
         assertNotNull(viewModel.formState.value.titleError)
         assertEquals(
-            AddEditTaskViewModel.TITLE_REQUIRED_ERROR,
+            UiText.Resource(R.string.tasks_task_title_required),
             viewModel.formState.value.titleError
         )
     }
@@ -227,7 +229,7 @@ class AddEditTaskViewModelTest {
         viewModel.saveTask()
         advanceUntilIdle()
 
-        viewModel.savedTask.test {
+        viewModel.savedEvent.test {
             val saved = awaitItem()
             assertTrue(saved)
         }

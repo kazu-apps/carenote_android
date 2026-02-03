@@ -3,9 +3,12 @@ package com.carenote.app.ui.screens.notes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
 import com.carenote.app.domain.model.Note
+import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.repository.NoteRepository
+import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +26,8 @@ data class AddEditNoteFormState(
     val title: String = "",
     val content: String = "",
     val tag: NoteTag = NoteTag.OTHER,
-    val titleError: String? = null,
-    val contentError: String? = null,
+    val titleError: UiText? = null,
+    val contentError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -44,6 +47,8 @@ class AddEditNoteViewModel @Inject constructor(
 
     private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
     val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+
+    val snackbarController = SnackbarController()
 
     private var originalNote: Note? = null
 
@@ -88,8 +93,16 @@ class AddEditNoteViewModel @Inject constructor(
     fun saveNote() {
         val current = _formState.value
 
-        val titleError = if (current.title.isBlank()) TITLE_REQUIRED_ERROR else null
-        val contentError = if (current.content.isBlank()) CONTENT_REQUIRED_ERROR else null
+        val titleError = if (current.title.isBlank()) {
+            UiText.Resource(R.string.notes_title_required)
+        } else {
+            null
+        }
+        val contentError = if (current.content.isBlank()) {
+            UiText.Resource(R.string.notes_content_required)
+        } else {
+            null
+        }
 
         if (titleError != null || contentError != null) {
             _formState.value = current.copy(
@@ -119,6 +132,7 @@ class AddEditNoteViewModel @Inject constructor(
                     .onFailure { error ->
                         Timber.w("Failed to update note: $error")
                         _formState.value = _formState.value.copy(isSaving = false)
+                        snackbarController.showMessage(R.string.notes_save_failed)
                     }
             } else {
                 val newNote = Note(
@@ -136,13 +150,10 @@ class AddEditNoteViewModel @Inject constructor(
                     .onFailure { error ->
                         Timber.w("Failed to save note: $error")
                         _formState.value = _formState.value.copy(isSaving = false)
+                        snackbarController.showMessage(R.string.notes_save_failed)
                     }
             }
         }
     }
 
-    companion object {
-        const val TITLE_REQUIRED_ERROR = "タイトルを入力してください"
-        const val CONTENT_REQUIRED_ERROR = "内容を入力してください"
-    }
 }

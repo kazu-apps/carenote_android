@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,6 +50,7 @@ import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.screens.medication.components.MedicationTimingChip
 import com.carenote.app.ui.util.DateTimeFormatters
+import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +63,7 @@ fun MedicationDetailScreen(
     val logs by viewModel.logs.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.deletedEvent.collect { deleted ->
@@ -72,7 +75,11 @@ fun MedicationDetailScreen(
 
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
-            snackbarHostState.showSnackbar(event.message)
+            val message = when (event) {
+                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
         }
     }
 

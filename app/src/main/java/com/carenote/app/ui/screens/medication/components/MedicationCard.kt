@@ -28,7 +28,7 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.ui.components.CareNoteCard
-import com.carenote.app.ui.theme.AccentSuccess
+import com.carenote.app.ui.theme.CareNoteColors
 
 /**
  * 服薬カードコンポーネント
@@ -106,7 +106,7 @@ fun MedicationCard(
 @Composable
 private fun StatusBadge(status: MedicationLogStatus) {
     val (text, color) = when (status) {
-        MedicationLogStatus.TAKEN -> stringResource(R.string.medication_status_taken) to AccentSuccess
+        MedicationLogStatus.TAKEN -> stringResource(R.string.medication_status_taken) to CareNoteColors.current.accentSuccess
         MedicationLogStatus.SKIPPED -> stringResource(R.string.medication_status_skipped) to MaterialTheme.colorScheme.error
         MedicationLogStatus.POSTPONED -> stringResource(R.string.medication_status_postponed) to MaterialTheme.colorScheme.tertiary
     }
@@ -134,7 +134,7 @@ private fun ActionButtons(
         ) {
             Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.medication_taken),
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
@@ -149,7 +149,7 @@ private fun ActionButtons(
         ) {
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.medication_skipped),
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
@@ -164,7 +164,7 @@ private fun ActionButtons(
         ) {
             Icon(
                 imageVector = Icons.Filled.Schedule,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.medication_postponed),
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))

@@ -149,6 +149,7 @@ sealed class Result<out T, out E> {
             return try {
                 Success(block())
             } catch (e: Throwable) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Failure(errorTransform(e))
             }
         }
@@ -165,6 +166,7 @@ sealed class Result<out T, out E> {
             return try {
                 Success(block())
             } catch (e: Throwable) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Failure(errorTransform(e))
             }
         }

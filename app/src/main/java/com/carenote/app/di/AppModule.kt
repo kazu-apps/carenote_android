@@ -1,5 +1,6 @@
 package com.carenote.app.di
 
+import com.carenote.app.data.local.SettingsDataSource
 import com.carenote.app.data.local.dao.CalendarEventDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
@@ -12,20 +13,20 @@ import com.carenote.app.data.mapper.MedicationLogMapper
 import com.carenote.app.data.mapper.MedicationMapper
 import com.carenote.app.data.mapper.NoteMapper
 import com.carenote.app.data.mapper.TaskMapper
+import com.carenote.app.data.repository.SettingsRepositoryImpl
 import com.carenote.app.data.repository.CalendarEventRepositoryImpl
 import com.carenote.app.data.repository.HealthRecordRepositoryImpl
 import com.carenote.app.data.repository.MedicationLogRepositoryImpl
 import com.carenote.app.data.repository.MedicationRepositoryImpl
 import com.carenote.app.data.repository.NoteRepositoryImpl
 import com.carenote.app.data.repository.TaskRepositoryImpl
+import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.TaskRepository
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,12 +36,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-    @Provides
-    @Singleton
-    fun provideGson(): Gson {
-        return GsonBuilder().create()
-    }
 
     @Provides
     @Singleton
@@ -94,5 +89,13 @@ object AppModule {
         mapper: TaskMapper
     ): TaskRepository {
         return TaskRepositoryImpl(taskDao, mapper)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSettingsRepository(
+        dataSource: SettingsDataSource
+    ): SettingsRepository {
+        return SettingsRepositoryImpl(dataSource)
     }
 }

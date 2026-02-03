@@ -57,6 +57,20 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.Settings
     )
 
+    data object PrivacyPolicy : Screen(
+        route = "privacy_policy",
+        titleResId = R.string.legal_privacy_policy_title,
+        selectedIcon = Icons.Filled.Policy,
+        unselectedIcon = Icons.Outlined.Policy
+    )
+
+    data object TermsOfService : Screen(
+        route = "terms_of_service",
+        titleResId = R.string.legal_terms_of_service_title,
+        selectedIcon = Icons.Filled.Description,
+        unselectedIcon = Icons.Outlined.Description
+    )
+
     data object AddMedication : Screen(
         route = "add_medication",
         titleResId = R.string.medication_add,

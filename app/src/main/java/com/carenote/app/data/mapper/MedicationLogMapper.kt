@@ -14,10 +14,18 @@ class MedicationLogMapper @Inject constructor() : Mapper<MedicationLogEntity, Me
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     override fun toDomain(entity: MedicationLogEntity): MedicationLog {
+        val status = try {
+            MedicationLogStatus.valueOf(entity.status)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException(
+                "Unknown MedicationLogStatus: '${entity.status}'. Expected one of: ${MedicationLogStatus.entries.joinToString()}",
+                e
+            )
+        }
         return MedicationLog(
             id = entity.id,
             medicationId = entity.medicationId,
-            status = MedicationLogStatus.valueOf(entity.status),
+            status = status,
             scheduledAt = LocalDateTime.parse(entity.scheduledAt, dateTimeFormatter),
             recordedAt = LocalDateTime.parse(entity.recordedAt, dateTimeFormatter),
             memo = entity.memo

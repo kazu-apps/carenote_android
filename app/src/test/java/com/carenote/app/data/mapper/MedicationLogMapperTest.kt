@@ -4,6 +4,8 @@ import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDateTime
@@ -129,6 +131,21 @@ class MedicationLogMapperTest {
         )
 
         assertEquals(MedicationLogStatus.POSTPONED, mapper.toDomain(entity).status)
+    }
+
+    @Test
+    fun `toDomain throws IllegalArgumentException for invalid status`() {
+        val entity = MedicationLogEntity(
+            id = 1L, medicationId = 1L, status = "INVALID_STATUS",
+            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00"
+        )
+
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            mapper.toDomain(entity)
+        }
+
+        assertTrue(exception.message!!.contains("INVALID_STATUS"))
+        assertTrue(exception.message!!.contains("TAKEN"))
     }
 
     @Test

@@ -2,10 +2,13 @@ package com.carenote.app.ui.screens.medication
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationRepository
+import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +30,7 @@ data class AddMedicationFormState(
     val timings: List<MedicationTiming> = emptyList(),
     val times: Map<MedicationTiming, LocalTime> = emptyMap(),
     val reminderEnabled: Boolean = true,
-    val nameError: String? = null,
+    val nameError: UiText? = null,
     val isSaving: Boolean = false
 )
 
@@ -41,6 +44,8 @@ class AddMedicationViewModel @Inject constructor(
 
     private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
     val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+
+    val snackbarController = SnackbarController()
 
     fun updateName(name: String) {
         _formState.value = _formState.value.copy(
@@ -87,7 +92,9 @@ class AddMedicationViewModel @Inject constructor(
         val current = _formState.value
 
         if (current.name.isBlank()) {
-            _formState.value = current.copy(nameError = NAME_REQUIRED_ERROR)
+            _formState.value = current.copy(
+                nameError = UiText.Resource(R.string.medication_name_required)
+            )
             return
         }
 
@@ -109,6 +116,7 @@ class AddMedicationViewModel @Inject constructor(
                 .onFailure { error ->
                     Timber.w("Failed to save medication: $error")
                     _formState.value = _formState.value.copy(isSaving = false)
+                    snackbarController.showMessage(R.string.medication_save_failed)
                 }
         }
     }
@@ -128,7 +136,4 @@ class AddMedicationViewModel @Inject constructor(
         )
     }
 
-    companion object {
-        const val NAME_REQUIRED_ERROR = "薬の名前を入力してください"
-    }
 }

@@ -1,5 +1,7 @@
 package com.carenote.app.domain.common
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -202,5 +204,15 @@ class ResultTest {
             DomainError.NotFoundError("not found")
         )
         result.getOrThrow()
+    }
+
+    @Test(expected = CancellationException::class)
+    fun `catching rethrows CancellationException`() {
+        Result.catching { throw CancellationException("cancelled") }
+    }
+
+    @Test(expected = CancellationException::class)
+    fun `catchingSuspend rethrows CancellationException`() = runTest {
+        Result.catchingSuspend { throw CancellationException("cancelled") }
     }
 }

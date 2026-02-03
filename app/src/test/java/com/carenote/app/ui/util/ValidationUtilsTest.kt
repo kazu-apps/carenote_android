@@ -146,4 +146,48 @@ class ValidationUtilsTest {
 
         assertTrue(result != null)
     }
+
+    @Test
+    fun `isValidNumber returns true for negative number`() {
+        assertTrue(ValidationUtils.isValidNumber("-5.0"))
+    }
+
+    @Test
+    fun `isValidNumber returns true for NaN string`() {
+        // toDoubleOrNull() parses "NaN" as Double.NaN - documenting this behavior
+        assertTrue(ValidationUtils.isValidNumber("NaN"))
+    }
+
+    @Test
+    fun `isValidNumber returns true for Infinity string`() {
+        // toDoubleOrNull() parses "Infinity" as Double.POSITIVE_INFINITY - documenting this behavior
+        assertTrue(ValidationUtils.isValidNumber("Infinity"))
+    }
+
+    @Test
+    fun `isValidNumber returns false for whitespace only`() {
+        assertFalse(ValidationUtils.isValidNumber("   "))
+    }
+
+    @Test
+    fun `validateNumberRange returns null at lower boundary`() {
+        assertNull(ValidationUtils.validateNumberRange("35.0", 35.0, 42.0, "体温"))
+    }
+
+    @Test
+    fun `validateNumberRange returns null at upper boundary`() {
+        assertNull(ValidationUtils.validateNumberRange("42.0", 35.0, 42.0, "体温"))
+    }
+
+    @Test
+    fun `validateNumberRange returns error just below lower boundary`() {
+        val result = ValidationUtils.validateNumberRange("34.9", 35.0, 42.0, "体温")
+        assertTrue(result != null)
+    }
+
+    @Test
+    fun `validateNumberRange returns error for empty string`() {
+        val result = ValidationUtils.validateNumberRange("", 35.0, 42.0, "体温")
+        assertTrue(result != null)
+    }
 }

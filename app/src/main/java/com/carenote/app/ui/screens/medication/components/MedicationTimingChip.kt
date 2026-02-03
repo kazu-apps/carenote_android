@@ -10,10 +10,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.carenote.app.R
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.ui.theme.CareNoteColors
 import com.carenote.app.ui.theme.ChipShape
-import com.carenote.app.ui.theme.EveningColor
-import com.carenote.app.ui.theme.MorningColor
-import com.carenote.app.ui.theme.NoonColor
 
 /**
  * タイミング表示チップ
@@ -25,10 +23,18 @@ fun MedicationTimingChip(
     timing: MedicationTiming,
     modifier: Modifier = Modifier
 ) {
+    val colors = CareNoteColors.current
+
     val backgroundColor = when (timing) {
-        MedicationTiming.MORNING -> MorningColor
-        MedicationTiming.NOON -> NoonColor
-        MedicationTiming.EVENING -> EveningColor
+        MedicationTiming.MORNING -> colors.morningColor
+        MedicationTiming.NOON -> colors.noonColor
+        MedicationTiming.EVENING -> colors.eveningColor
+    }
+
+    val textColor = when (timing) {
+        MedicationTiming.MORNING -> colors.morningTextColor
+        MedicationTiming.NOON -> colors.noonTextColor
+        MedicationTiming.EVENING -> colors.eveningTextColor
     }
 
     val label = when (timing) {
@@ -45,7 +51,7 @@ fun MedicationTimingChip(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = backgroundColor,
+            color = textColor,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }

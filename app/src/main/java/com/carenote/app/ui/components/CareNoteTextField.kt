@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.carenote.app.ui.common.UiText
 
 /**
  * バリデーション状態付きテキストフィールド
@@ -19,7 +20,7 @@ import androidx.compose.ui.unit.dp
  * @param onValueChange テキスト変更時のコールバック
  * @param label ラベルテキスト
  * @param modifier Modifier
- * @param errorMessage エラーメッセージ（null の場合エラーなし）
+ * @param errorMessage エラー（null の場合エラーなし）
  * @param placeholder プレースホルダーテキスト
  * @param singleLine 単一行入力かどうか
  * @param maxLines 最大行数
@@ -34,7 +35,7 @@ fun CareNoteTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    errorMessage: String? = null,
+    errorMessage: UiText? = null,
     placeholder: String? = null,
     singleLine: Boolean = true,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
@@ -60,7 +61,7 @@ fun CareNoteTextField(
         )
         if (errorMessage != null) {
             Text(
-                text = errorMessage,
+                text = errorMessage.asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)

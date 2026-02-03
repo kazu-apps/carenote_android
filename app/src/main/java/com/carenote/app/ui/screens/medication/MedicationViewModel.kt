@@ -1,7 +1,9 @@
 package com.carenote.app.ui.screens.medication
 
 import androidx.lifecycle.ViewModel
+import com.carenote.app.R
 import androidx.lifecycle.viewModelScope
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
@@ -33,7 +35,7 @@ class MedicationViewModel @Inject constructor(
             .map { medications -> UiState.Success(medications) as UiState<List<Medication>> }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = UiState.Loading
             )
 
@@ -41,7 +43,7 @@ class MedicationViewModel @Inject constructor(
         medicationLogRepository.getLogsForDate(LocalDate.now())
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = emptyList()
             )
 
@@ -57,10 +59,11 @@ class MedicationViewModel @Inject constructor(
             medicationLogRepository.insertLog(log)
                 .onSuccess {
                     Timber.d("Medication log recorded: medicationId=$medicationId, status=$status")
-                    snackbarController.showMessage(SNACKBAR_LOG_RECORDED)
+                    snackbarController.showMessage(R.string.medication_log_recorded)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to record medication log: $error")
+                    snackbarController.showMessage(R.string.medication_log_failed)
                 }
         }
     }
@@ -70,17 +73,13 @@ class MedicationViewModel @Inject constructor(
             medicationRepository.deleteMedication(id)
                 .onSuccess {
                     Timber.d("Medication deleted: id=$id")
-                    snackbarController.showMessage(SNACKBAR_DELETED)
+                    snackbarController.showMessage(R.string.medication_deleted)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to delete medication: $error")
+                    snackbarController.showMessage(R.string.medication_delete_failed)
                 }
         }
     }
 
-    companion object {
-        private const val STOP_TIMEOUT_MS = 5_000L
-        const val SNACKBAR_LOG_RECORDED = "服薬を記録しました"
-        const val SNACKBAR_DELETED = "薬を削除しました"
-    }
 }

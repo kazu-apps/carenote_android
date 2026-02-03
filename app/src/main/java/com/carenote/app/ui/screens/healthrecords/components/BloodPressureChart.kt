@@ -24,10 +24,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.components.CareNoteCard
 import com.carenote.app.ui.screens.healthrecords.GraphDataPoint
-import com.carenote.app.ui.theme.AccentError
-import com.carenote.app.ui.theme.AccentGreen
-import com.carenote.app.ui.theme.PrimaryGreen
-import com.carenote.app.ui.theme.TextSecondary
+import com.carenote.app.ui.theme.CareNoteColors
 
 @Composable
 fun BloodPressureChart(
@@ -43,11 +40,17 @@ fun BloodPressureChart(
     val yAxisWidth = AppConfig.Graph.Y_AXIS_LABEL_WIDTH_DP
     val xAxisHeight = AppConfig.Graph.X_AXIS_LABEL_HEIGHT_DP
 
+    val colors = CareNoteColors.current
+    val chartLabelColor = colors.chartLabelColor
+    val chartLineColor = colors.chartLineColor
+    val chartSecondaryLineColor = colors.chartSecondaryLineColor
+    val accentError = colors.accentError
+
     val textMeasurer = rememberTextMeasurer()
-    val labelStyle = remember {
-        TextStyle(fontSize = 10.sp, color = TextSecondary)
+    val labelStyle = remember(chartLabelColor) {
+        TextStyle(fontSize = AppConfig.Graph.AXIS_LABEL_FONT_SIZE_SP.sp, color = chartLabelColor)
     }
-    val gridColor = TextSecondary.copy(alpha = 0.2f)
+    val gridColor = chartLabelColor.copy(alpha = 0.2f)
 
     CareNoteCard(modifier = modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -72,7 +75,7 @@ fun BloodPressureChart(
                 drawGridLines(
                     yMin = yMin,
                     yMax = yMax,
-                    step = 40.0,
+                    step = AppConfig.Graph.BLOOD_PRESSURE_GRID_STEP,
                     chartLeft = chartLeft,
                     chartRight = chartRight,
                     chartTop = chartTop,
@@ -88,7 +91,7 @@ fun BloodPressureChart(
                     chartRight = chartRight,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
-                    color = AccentError.copy(alpha = 0.7f)
+                    color = accentError.copy(alpha = 0.7f)
                 )
 
                 drawThresholdLine(
@@ -99,18 +102,18 @@ fun BloodPressureChart(
                     chartRight = chartRight,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
-                    color = AccentError.copy(alpha = 0.5f)
+                    color = accentError.copy(alpha = 0.5f)
                 )
 
                 drawYAxisLabels(
                     textMeasurer = textMeasurer,
                     yMin = yMin,
                     yMax = yMax,
-                    step = 40.0,
+                    step = AppConfig.Graph.BLOOD_PRESSURE_GRID_STEP,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
                     labelStyle = labelStyle,
-                    labelColor = TextSecondary
+                    labelColor = chartLabelColor
                 )
 
                 drawXAxisLabels(
@@ -120,7 +123,7 @@ fun BloodPressureChart(
                     chartRight = chartRight,
                     chartBottom = chartBottom,
                     labelStyle = labelStyle,
-                    labelColor = TextSecondary
+                    labelColor = chartLabelColor
                 )
 
                 drawDataLine(
@@ -131,9 +134,9 @@ fun BloodPressureChart(
                     chartRight = chartRight,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
-                    lineColor = PrimaryGreen,
-                    pointColor = PrimaryGreen,
-                    abnormalColor = AccentError,
+                    lineColor = chartLineColor,
+                    pointColor = chartLineColor,
+                    abnormalColor = accentError,
                     abnormalThreshold = thresholdHigh
                 )
 
@@ -145,9 +148,9 @@ fun BloodPressureChart(
                     chartRight = chartRight,
                     chartTop = chartTop,
                     chartBottom = chartBottom,
-                    lineColor = AccentGreen,
-                    pointColor = AccentGreen,
-                    abnormalColor = AccentError,
+                    lineColor = chartSecondaryLineColor,
+                    pointColor = chartSecondaryLineColor,
+                    abnormalColor = accentError,
                     abnormalThreshold = thresholdLow
                 )
             }
@@ -157,6 +160,8 @@ fun BloodPressureChart(
 
 @Composable
 private fun BloodPressureLegend() {
+    val colors = CareNoteColors.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -165,15 +170,15 @@ private fun BloodPressureLegend() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         LegendItem(
-            color = PrimaryGreen,
+            color = colors.chartLineColor,
             label = stringResource(R.string.health_records_graph_bp_systolic)
         )
         LegendItem(
-            color = AccentGreen,
+            color = colors.chartSecondaryLineColor,
             label = stringResource(R.string.health_records_graph_bp_diastolic)
         )
         LegendItem(
-            color = AccentError.copy(alpha = 0.7f),
+            color = colors.accentError.copy(alpha = 0.7f),
             label = stringResource(R.string.health_records_graph_threshold),
             isDashed = true
         )
@@ -214,7 +219,7 @@ private fun LegendItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary
+            color = CareNoteColors.current.chartLabelColor
         )
     }
 }

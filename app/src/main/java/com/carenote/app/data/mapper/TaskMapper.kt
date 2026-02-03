@@ -22,10 +22,18 @@ class TaskMapper @Inject constructor() : Mapper<TaskEntity, Task> {
             description = entity.description,
             dueDate = entity.dueDate?.let { LocalDate.parse(it, dateFormatter) },
             isCompleted = entity.isCompleted == 1,
-            priority = TaskPriority.valueOf(entity.priority),
+            priority = parseTaskPriority(entity.priority),
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
             updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
         )
+    }
+
+    private fun parseTaskPriority(value: String): TaskPriority {
+        return try {
+            TaskPriority.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            TaskPriority.MEDIUM
+        }
     }
 
     override fun toEntity(domain: Task): TaskEntity {
