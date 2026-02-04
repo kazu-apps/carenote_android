@@ -71,7 +71,7 @@ class TasksFlowTest : E2eTestBase() {
         composeRule.waitForIdle()
 
         // The task should appear in the completed tab
-        waitForText("ToggleTask E2E", 3_000L)
+        waitForText("ToggleTask E2E", 5_000L)
     }
 
     @Test

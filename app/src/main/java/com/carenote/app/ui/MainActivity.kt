@@ -23,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
+import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.ui.navigation.BottomNavigationBar
 import com.carenote.app.ui.navigation.CareNoteNavHost
@@ -37,6 +38,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _ -> }
@@ -49,6 +53,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by settingsRepository.getSettings()
                 .collectAsStateWithLifecycle(initialValue = UserSettings())
+
+            val currentUser by authRepository.currentUser
+                .collectAsStateWithLifecycle(initialValue = authRepository.getCurrentUser())
+
+            val isLoggedIn = currentUser != null
+            val startDestination = if (isLoggedIn) Screen.Medication.route else Screen.Login.route
 
             val darkTheme = when (settings.themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
@@ -72,7 +82,24 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route }
+                val isAuthScreen = currentRoute in Screen.authScreens.map { it.route }
+                val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route } && !isAuthScreen
+
+                // 認証状態変更時のナビゲーション処理
+                LaunchedEffect(isLoggedIn) {
+                    val currentDestination = navController.currentDestination?.route
+                    if (isLoggedIn && currentDestination in Screen.authScreens.map { it.route }) {
+                        // ログイン成功: メイン画面へ遷移
+                        navController.navigate(Screen.Medication.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else if (!isLoggedIn && currentDestination !in Screen.authScreens.map { it.route }) {
+                        // ログアウト: ログイン画面へ遷移
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -84,7 +111,8 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     CareNoteNavHost(
                         navController = navController,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        startDestination = startDestination
                     )
                 }
             }

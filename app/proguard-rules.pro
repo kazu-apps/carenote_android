@@ -38,6 +38,10 @@
 # R8 full mode compatibility for Kotlin coroutines
 -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
+# SQLCipher
+-keep,includedescriptorclasses class net.zetetic.database.** { *; }
+-keep,includedescriptorclasses interface net.zetetic.database.** { *; }
+
 # Warnings suppressed for Apache HTTP/JNDI/GSS
 -dontwarn org.apache.http.**
 -dontwarn javax.naming.**

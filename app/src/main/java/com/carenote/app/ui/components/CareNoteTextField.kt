@@ -10,6 +10,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.carenote.app.ui.common.UiText
 
@@ -28,6 +29,7 @@ import com.carenote.app.ui.common.UiText
  * @param keyboardActions キーボードアクション
  * @param leadingIcon 先頭アイコン
  * @param trailingIcon 末尾アイコン
+ * @param visualTransformation テキスト表示の変換（パスワードマスクなど）
  */
 @Composable
 fun CareNoteTextField(
@@ -42,7 +44,8 @@ fun CareNoteTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -57,6 +60,7 @@ fun CareNoteTextField(
             keyboardActions = keyboardActions,
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
+            visualTransformation = visualTransformation,
             modifier = Modifier.fillMaxWidth()
         )
         if (errorMessage != null) {

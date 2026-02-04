@@ -12,7 +12,7 @@ import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -29,7 +29,7 @@ import java.time.LocalTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class MedicationViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
     private lateinit var viewModel: MedicationViewModel
@@ -67,43 +67,43 @@ class MedicationViewModelTest {
     )
 
     @Test
-    fun `initial state is Loading`() = runTest {
+    fun `initial state is Loading`() = runTest(testDispatcher) {
         viewModel = createViewModel()
 
         assertTrue(viewModel.uiState.value is UiState.Loading)
     }
 
     @Test
-    fun `medications are loaded as Success state`() = runTest {
+    fun `medications are loaded as Success state`() = runTest(testDispatcher) {
         val medications = listOf(
             createMedication(id = 1L, name = "薬A"),
             createMedication(id = 2L, name = "薬B")
         )
         medicationRepository.setMedications(medications)
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.uiState.test {
-            val state = awaitItem()
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
             assertTrue(state is UiState.Success)
             assertEquals(2, (state as UiState.Success).data.size)
         }
     }
 
     @Test
-    fun `empty medication list shows Success with empty list`() = runTest {
+    fun `empty medication list shows Success with empty list`() = runTest(testDispatcher) {
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.uiState.test {
-            val state = awaitItem()
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
             assertTrue(state is UiState.Success)
             assertEquals(0, (state as UiState.Success).data.size)
         }
     }
 
     @Test
-    fun `todayLogs emits today logs`() = runTest {
+    fun `todayLogs emits today logs`() = runTest(testDispatcher) {
         val now = LocalDateTime.now()
         val log = MedicationLog(
             id = 1L,
@@ -114,17 +114,17 @@ class MedicationViewModelTest {
         )
         medicationLogRepository.setLogs(listOf(log))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.TAKEN, logs[0].status)
         }
     }
 
     @Test
-    fun `recordMedication with TAKEN status inserts log`() = runTest {
+    fun `recordMedication with TAKEN status inserts log`() = runTest(testDispatcher) {
         val medication = createMedication(id = 1L)
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
@@ -134,7 +134,8 @@ class MedicationViewModelTest {
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.TAKEN, logs[0].status)
             assertEquals(1L, logs[0].medicationId)
@@ -142,7 +143,7 @@ class MedicationViewModelTest {
     }
 
     @Test
-    fun `recordMedication with SKIPPED status inserts log`() = runTest {
+    fun `recordMedication with SKIPPED status inserts log`() = runTest(testDispatcher) {
         val medication = createMedication(id = 1L)
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
@@ -152,14 +153,15 @@ class MedicationViewModelTest {
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.SKIPPED, logs[0].status)
         }
     }
 
     @Test
-    fun `recordMedication with POSTPONED status inserts log`() = runTest {
+    fun `recordMedication with POSTPONED status inserts log`() = runTest(testDispatcher) {
         val medication = createMedication(id = 1L)
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
@@ -169,14 +171,15 @@ class MedicationViewModelTest {
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.POSTPONED, logs[0].status)
         }
     }
 
     @Test
-    fun `deleteMedication removes medication from list`() = runTest {
+    fun `deleteMedication removes medication from list`() = runTest(testDispatcher) {
         val medications = listOf(
             createMedication(id = 1L, name = "薬A"),
             createMedication(id = 2L, name = "薬B")
@@ -189,7 +192,8 @@ class MedicationViewModelTest {
         advanceUntilIdle()
 
         viewModel.uiState.test {
-            val state = awaitItem()
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
             assertTrue(state is UiState.Success)
             val data = (state as UiState.Success).data
             assertEquals(1, data.size)
@@ -198,7 +202,7 @@ class MedicationViewModelTest {
     }
 
     @Test
-    fun `getLogStatusForMedication returns status from today logs`() = runTest {
+    fun `getLogStatusForMedication returns status from today logs`() = runTest(testDispatcher) {
         val now = LocalDateTime.now()
         val log = MedicationLog(
             id = 1L,
@@ -209,46 +213,47 @@ class MedicationViewModelTest {
         )
         medicationLogRepository.setLogs(listOf(log))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             val status = logs.find { it.medicationId == 1L }?.status
             assertEquals(MedicationLogStatus.TAKEN, status)
         }
     }
 
     @Test
-    fun `getLogStatusForMedication returns null when no log exists`() = runTest {
+    fun `getLogStatusForMedication returns null when no log exists`() = runTest(testDispatcher) {
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             val status = logs.find { it.medicationId == 999L }?.status
             assertNull(status)
         }
     }
 
     @Test
-    fun `medications update reactively when repository changes`() = runTest {
+    fun `medications update reactively when repository changes`() = runTest(testDispatcher) {
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.uiState.test {
-            val initial = awaitItem()
+            advanceUntilIdle()
+            val initial = expectMostRecentItem()
             assertTrue(initial is UiState.Success)
             assertEquals(0, (initial as UiState.Success).data.size)
 
             medicationRepository.setMedications(listOf(createMedication(id = 1L)))
-            val updated = awaitItem()
+            advanceUntilIdle()
+            val updated = expectMostRecentItem()
             assertTrue(updated is UiState.Success)
             assertEquals(1, (updated as UiState.Success).data.size)
         }
     }
 
     @Test
-    fun `multiple medications with different timings loaded correctly`() = runTest {
+    fun `multiple medications with different timings loaded correctly`() = runTest(testDispatcher) {
         val medications = listOf(
             createMedication(
                 id = 1L,
@@ -272,16 +277,16 @@ class MedicationViewModelTest {
         )
         medicationRepository.setMedications(medications)
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.uiState.test {
-            val state = awaitItem() as UiState.Success
+            advanceUntilIdle()
+            val state = expectMostRecentItem() as UiState.Success
             assertEquals(3, state.data.size)
         }
     }
 
     @Test
-    fun `recording log for different medications tracked independently`() = runTest {
+    fun `recording log for different medications tracked independently`() = runTest(testDispatcher) {
         val medications = listOf(
             createMedication(id = 1L, name = "薬A"),
             createMedication(id = 2L, name = "薬B")
@@ -295,7 +300,8 @@ class MedicationViewModelTest {
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
-            val logs = awaitItem()
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
             assertEquals(2, logs.size)
             val log1 = logs.find { it.medicationId == 1L }
             val log2 = logs.find { it.medicationId == 2L }
@@ -305,7 +311,7 @@ class MedicationViewModelTest {
     }
 
     @Test
-    fun `snackbar events emitted on record success`() = runTest {
+    fun `snackbar events emitted on record success`() = runTest(testDispatcher) {
         val medication = createMedication(id = 1L)
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
@@ -316,12 +322,15 @@ class MedicationViewModelTest {
             advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
-            assertEquals(R.string.medication_log_recorded, (event as SnackbarEvent.WithResId).messageResId)
+            assertEquals(
+                R.string.medication_log_recorded,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
         }
     }
 
     @Test
-    fun `snackbar events emitted on delete success`() = runTest {
+    fun `snackbar events emitted on delete success`() = runTest(testDispatcher) {
         val medication = createMedication(id = 1L)
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
@@ -332,25 +341,113 @@ class MedicationViewModelTest {
             advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
-            assertEquals(R.string.medication_deleted, (event as SnackbarEvent.WithResId).messageResId)
+            assertEquals(
+                R.string.medication_deleted,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
         }
     }
 
     @Test
-    fun `medication with empty dosage is handled`() = runTest {
+    fun `medication with empty dosage is handled`() = runTest(testDispatcher) {
         val medication = createMedication(id = 1L, dosage = "")
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.uiState.test {
-            val state = awaitItem() as UiState.Success
+            advanceUntilIdle()
+            val state = expectMostRecentItem() as UiState.Success
             assertEquals("", state.data[0].dosage)
         }
     }
 
     @Test
-    fun `medication with no timings is handled`() = runTest {
+    fun `recordMedication failure shows error snackbar`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        medicationLogRepository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.recordMedication(1L, MedicationLogStatus.TAKEN)
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.medication_log_failed,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `recordMedication failure does not add log`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        medicationLogRepository.shouldFail = true
+
+        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN)
+        advanceUntilIdle()
+
+        viewModel.todayLogs.test {
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
+            assertTrue(logs.isEmpty())
+        }
+    }
+
+    @Test
+    fun `deleteMedication failure shows error snackbar`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        medicationRepository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.deleteMedication(1L)
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.medication_delete_failed,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `deleteMedication failure does not remove medication`() = runTest(testDispatcher) {
+        val medications = listOf(
+            createMedication(id = 1L, name = "薬A"),
+            createMedication(id = 2L, name = "薬B")
+        )
+        medicationRepository.setMedications(medications)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        medicationRepository.shouldFail = true
+
+        viewModel.deleteMedication(1L)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertTrue(state is UiState.Success)
+            val data = (state as UiState.Success).data
+            assertEquals(2, data.size)
+        }
+    }
+
+    @Test
+    fun `medication with no timings is handled`() = runTest(testDispatcher) {
         val medication = createMedication(
             id = 1L,
             timings = emptyList(),
@@ -358,10 +455,10 @@ class MedicationViewModelTest {
         )
         medicationRepository.setMedications(listOf(medication))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.uiState.test {
-            val state = awaitItem() as UiState.Success
+            advanceUntilIdle()
+            val state = expectMostRecentItem() as UiState.Success
             assertEquals(0, state.data[0].timings.size)
         }
     }

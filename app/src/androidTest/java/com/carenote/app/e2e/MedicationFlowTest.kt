@@ -3,6 +3,7 @@ package com.carenote.app.e2e
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -75,11 +76,11 @@ class MedicationFlowTest : E2eTestBase() {
         waitForText("TakenMed E2E")
 
         val takenText = getString(R.string.medication_taken)
-        composeRule.onAllNodes(hasText(takenText)).apply {
-            fetchSemanticsNodes().firstOrNull()?.let {
-                get(0).performClick()
-            }
+        composeRule.waitUntil(5_000L) {
+            composeRule.onAllNodes(hasText(takenText)).fetchSemanticsNodes().isNotEmpty()
         }
+        composeRule.onAllNodes(hasText(takenText)).onFirst().assertIsDisplayed()
+        composeRule.onAllNodes(hasText(takenText)).onFirst().performClick()
         composeRule.waitForIdle()
 
         val statusTakenText = getString(R.string.medication_status_taken)

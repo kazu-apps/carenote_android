@@ -9,6 +9,7 @@ import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -198,10 +199,28 @@ class AddEditHealthRecordViewModelTest {
     }
 
     @Test
-    fun `saveRecord failure shows error via snackbar`() = runTest {
-        repository.shouldFail = true
+    fun `saveRecord failure shows error snackbar`() = runTest(testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateTemperature("36.5")
+        repository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.saveRecord()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.health_records_save_failed,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `saveRecord failure keeps isSaving false`() = runTest(testDispatcher) {
+        viewModel = createAddViewModel()
+        viewModel.updateTemperature("36.5")
+        repository.shouldFail = true
 
         viewModel.saveRecord()
         advanceUntilIdle()

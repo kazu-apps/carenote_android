@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Note
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.NoteTag
@@ -95,11 +96,21 @@ class AddEditNoteViewModel @Inject constructor(
 
         val titleError = if (current.title.isBlank()) {
             UiText.Resource(R.string.notes_title_required)
+        } else if (current.title.length > AppConfig.Note.TITLE_MAX_LENGTH) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.Note.TITLE_MAX_LENGTH)
+            )
         } else {
             null
         }
         val contentError = if (current.content.isBlank()) {
             UiText.Resource(R.string.notes_content_required)
+        } else if (current.content.length > AppConfig.Note.CONTENT_MAX_LENGTH) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.Note.CONTENT_MAX_LENGTH)
+            )
         } else {
             null
         }

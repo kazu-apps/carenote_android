@@ -95,8 +95,9 @@ class NotesFlowTest : E2eTestBase() {
         clickText(R.string.common_save)
         waitForText("Banana Note")
 
-        // Type search query into the search field (only text field on Notes list)
-        composeRule.onNode(hasSetTextAction()).performTextInput("Apple")
+        // Type search query into the search field
+        val searchHint = getString(R.string.notes_search)
+        composeRule.onNode(hasText(searchHint) and hasSetTextAction()).performTextInput("Apple")
         composeRule.waitForIdle()
 
         // Wait for filtering to take effect (Banana Note should disappear)

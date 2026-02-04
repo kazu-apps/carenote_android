@@ -2,7 +2,9 @@ package com.carenote.app.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.StickyNote2
+import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -55,6 +57,27 @@ sealed class Screen(
         titleResId = R.string.settings_title,
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
+    )
+
+    data object Login : Screen(
+        route = "login",
+        titleResId = R.string.auth_login_title,
+        selectedIcon = Icons.AutoMirrored.Filled.Login,
+        unselectedIcon = Icons.AutoMirrored.Outlined.Login
+    )
+
+    data object Register : Screen(
+        route = "register",
+        titleResId = R.string.auth_register_title,
+        selectedIcon = Icons.Filled.PersonAdd,
+        unselectedIcon = Icons.Outlined.PersonAdd
+    )
+
+    data object ForgotPassword : Screen(
+        route = "forgot_password",
+        titleResId = R.string.auth_forgot_password_title,
+        selectedIcon = Icons.Filled.LockReset,
+        unselectedIcon = Icons.Outlined.LockReset
     )
 
     data object PrivacyPolicy : Screen(
@@ -153,5 +176,6 @@ sealed class Screen(
 
     companion object {
         val bottomNavItems = listOf(Medication, Calendar, Tasks, HealthRecords, Notes)
+        val authScreens = listOf(Login, Register, ForgotPassword)
     }
 }

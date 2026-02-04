@@ -246,4 +246,88 @@ class SettingsRepositoryImplTest {
         assertTrue(result.isSuccess)
         coVerify { dataSource.clearAll() }
     }
+
+    // DB exception path tests
+
+    @Test
+    fun `updateNotifications returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateNotifications(any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateNotifications(false)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updateQuietHours returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateQuietHours(any(), any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateQuietHours(22, 6)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updateTemperatureThreshold returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateTemperatureThreshold(any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateTemperatureThreshold(38.0)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updateBloodPressureThresholds returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateBloodPressureThresholds(any(), any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateBloodPressureThresholds(140, 90)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updatePulseThresholds returns Failure on db error`() = runTest {
+        coEvery { dataSource.updatePulseThresholds(any(), any()) } throws RuntimeException("DB error")
+
+        val result = repository.updatePulseThresholds(100, 50)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updateMedicationTime returns Failure on db error`() = runTest {
+        coEvery {
+            dataSource.updateMedicationTime(any(), any(), any(), any())
+        } throws RuntimeException("DB error")
+
+        val result = repository.updateMedicationTime(MedicationTiming.MORNING, 8, 0)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `updateThemeMode returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateThemeMode(any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateThemeMode(ThemeMode.DARK)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
+    fun `resetToDefaults returns Failure on db error`() = runTest {
+        coEvery { dataSource.clearAll() } throws RuntimeException("DB error")
+
+        val result = repository.resetToDefaults()
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
 }

@@ -10,6 +10,12 @@ plugins {
     jacoco
 }
 
+// Apply Firebase plugins only if google-services.json exists
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+}
+
 val keyPropertiesFile = rootProject.file("key.properties")
 val keyProperties = Properties().apply {
     if (keyPropertiesFile.exists()) {
@@ -107,13 +113,15 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    // DataStore
-    implementation(libs.androidx.datastore.preferences)
-
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    // Security (SQLCipher + Keystore)
+    implementation(libs.sqlcipher.android)
+    implementation(libs.androidx.sqlite)
+    implementation(libs.androidx.security.crypto)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -127,15 +135,25 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Logging
     implementation(libs.timber)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
 
     // Test
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
 
     // Android Test (Espresso/Compose UI)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -227,9 +245,11 @@ tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
         "**/service/**",
         "**/worker/*",
         "**/util/*",
-        // Room DB and converters
+        // Room DB, converters, and encryption (Android Keystore — requires instrumented tests)
         "**/data/local/converter/*",
         "**/data/local/CareNoteDatabase*",
+        "**/data/local/DatabasePassphraseManager*",
+        "**/data/local/DatabaseEncryptionMigrator*",
         // Application class
         "**/CareNoteApp.*",
         // Room DAO interfaces (require instrumented tests)

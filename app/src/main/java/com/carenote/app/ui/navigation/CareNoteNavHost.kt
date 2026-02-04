@@ -24,6 +24,9 @@ import com.carenote.app.ui.screens.medication.MedicationScreen
 import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordScreen
 import com.carenote.app.ui.screens.notes.AddEditNoteScreen
 import com.carenote.app.ui.screens.notes.NotesScreen
+import com.carenote.app.ui.screens.auth.ForgotPasswordScreen
+import com.carenote.app.ui.screens.auth.LoginScreen
+import com.carenote.app.ui.screens.auth.RegisterScreen
 import com.carenote.app.ui.screens.settings.LegalDocumentScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
 import com.carenote.app.ui.screens.tasks.AddEditTaskScreen
@@ -32,11 +35,12 @@ import com.carenote.app.ui.screens.tasks.TasksScreen
 @Composable
 fun CareNoteNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: String = Screen.Medication.route
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Medication.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable(Screen.Medication.route) {
@@ -218,6 +222,44 @@ fun CareNoteNavHost(
             )
         ) {
             AddEditTaskScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.route)
+                },
+                onLoginSuccess = {
+                    navController.navigate(Screen.Medication.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Register.route) {
+            RegisterScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
+                onRegisterSuccess = {
+                    navController.navigate(Screen.Medication.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

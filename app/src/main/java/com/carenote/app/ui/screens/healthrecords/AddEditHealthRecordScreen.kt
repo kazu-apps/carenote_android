@@ -146,7 +146,8 @@ private fun AddEditHealthRecordContent(
 
         ConditionNoteField(
             value = formState.conditionNote,
-            onValueChange = viewModel::updateConditionNote
+            onValueChange = viewModel::updateConditionNote,
+            errorMessage = formState.conditionNoteError
         )
 
         FormActionButtons(
@@ -178,13 +179,15 @@ private fun GeneralErrorBanner(error: UiText) {
 @Composable
 private fun ConditionNoteField(
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    errorMessage: UiText? = null
 ) {
     CareNoteTextField(
         value = value,
         onValueChange = onValueChange,
         label = stringResource(R.string.health_records_condition),
         placeholder = stringResource(R.string.health_records_condition_placeholder),
+        errorMessage = errorMessage,
         singleLine = false,
         maxLines = Int.MAX_VALUE,
         modifier = Modifier.height((AppConfig.Note.CONTENT_MIN_LINES * 28).dp)

@@ -138,6 +138,7 @@ fun AddEditTaskScreen(
                 onValueChange = viewModel::updateDescription,
                 label = stringResource(R.string.tasks_task_description),
                 placeholder = stringResource(R.string.tasks_task_description_placeholder),
+                errorMessage = formState.descriptionError,
                 singleLine = false,
                 maxLines = AppConfig.Task.DESCRIPTION_PREVIEW_MAX_LINES + 2
             )

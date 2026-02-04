@@ -19,10 +19,13 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.rule.GrantPermissionRule
+import com.carenote.app.data.local.CareNoteDatabase
 import com.carenote.app.ui.MainActivity
 import dagger.hilt.android.testing.HiltAndroidRule
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import javax.inject.Inject
 
 /**
  * Base class for E2E tests providing common rules and helpers.
@@ -32,6 +35,9 @@ import org.junit.Rule
  * - @RunWith(AndroidJUnit4::class)
  */
 abstract class E2eTestBase {
+
+    @Inject
+    lateinit var database: CareNoteDatabase
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -56,6 +62,11 @@ abstract class E2eTestBase {
         composeRule.waitForIdle()
     }
 
+    @After
+    open fun tearDown() {
+        database.clearAllTables()
+    }
+
     // --- Navigation helpers ---
 
     protected fun navigateToTab(@StringRes tabLabelResId: Int) {
@@ -75,9 +86,13 @@ abstract class E2eTestBase {
      * Fill a text field matched by its label text.
      * Uses merged semantics tree so that OutlinedTextField label text
      * and SetTextAction are on the same node.
+     * Waits for the field to be available before interacting.
      */
-    protected fun fillTextField(label: String, text: String) {
+    protected fun fillTextField(label: String, text: String, timeoutMs: Long = 5_000L) {
         val matcher = hasText(label) and hasSetTextAction()
+        composeRule.waitUntil(timeoutMs) {
+            composeRule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNode(matcher).performTextClearance()
         composeRule.onNode(matcher).performTextInput(text)
     }

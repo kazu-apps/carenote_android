@@ -38,6 +38,7 @@ data class AddEditHealthRecordFormState(
     val bloodPressureError: UiText? = null,
     val pulseError: UiText? = null,
     val weightError: UiText? = null,
+    val conditionNoteError: UiText? = null,
     val generalError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
@@ -146,6 +147,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
     fun updateConditionNote(value: String) {
         _formState.value = _formState.value.copy(
             conditionNote = value,
+            conditionNoteError = null,
             generalError = null
         )
     }
@@ -171,7 +173,8 @@ class AddEditHealthRecordViewModel @Inject constructor(
                 temperatureError = errors.temperatureError,
                 bloodPressureError = errors.bloodPressureError,
                 pulseError = errors.pulseError,
-                weightError = errors.weightError
+                weightError = errors.weightError,
+                conditionNoteError = errors.conditionNoteError
             )
             return
         }
@@ -306,9 +309,22 @@ class AddEditHealthRecordViewModel @Inject constructor(
                 listOf(AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX)
             )
         )
+        val conditionNoteErr = if (
+            parsed.trimmedNote.length > AppConfig.HealthRecord.CONDITION_NOTE_MAX_LENGTH
+        ) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.HealthRecord.CONDITION_NOTE_MAX_LENGTH)
+            )
+        } else {
+            null
+        }
 
-        return if (tempErr != null || bpErr != null || pulseErr != null || weightErr != null) {
-            ValidationErrors(tempErr, bpErr, pulseErr, weightErr)
+        return if (
+            tempErr != null || bpErr != null || pulseErr != null ||
+            weightErr != null || conditionNoteErr != null
+        ) {
+            ValidationErrors(tempErr, bpErr, pulseErr, weightErr, conditionNoteErr)
         } else {
             null
         }
@@ -340,6 +356,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
         val temperatureError: UiText?,
         val bloodPressureError: UiText?,
         val pulseError: UiText?,
-        val weightError: UiText?
+        val weightError: UiText?,
+        val conditionNoteError: UiText?
     )
 }

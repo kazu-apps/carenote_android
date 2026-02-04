@@ -7,9 +7,12 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.carenote.app.R
 import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.util.DateTimeFormatters
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
+import java.time.YearMonth
 
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -47,10 +50,27 @@ class CalendarFlowTest : E2eTestBase() {
     fun test_calendarMonthNavigation() {
         navigateToCalendar()
 
+        // Get current month and expected month names
+        val today = LocalDate.now()
+        val currentMonth = YearMonth.from(today)
+        val nextMonth = currentMonth.plusMonths(1)
+        val prevMonth = currentMonth.minusMonths(1)
+
+        val currentMonthName = DateTimeFormatters.formatYearMonth(currentMonth.atDay(1))
+        val nextMonthName = DateTimeFormatters.formatYearMonth(nextMonth.atDay(1))
+        val prevMonthName = DateTimeFormatters.formatYearMonth(prevMonth.atDay(1))
+
+        // Verify current month is displayed
+        composeRule.onNodeWithText(currentMonthName).assertIsDisplayed()
+
         // Click next month button
         val nextMonthDesc = getString(R.string.a11y_calendar_next_month)
         composeRule.onNodeWithContentDescription(nextMonthDesc).performClick()
         composeRule.waitForIdle()
+
+        // Verify next month is displayed
+        waitForText(nextMonthName, 5_000L)
+        composeRule.onNodeWithText(nextMonthName).assertIsDisplayed()
 
         // Click previous month button twice to go to previous month from original
         val prevMonthDesc = getString(R.string.a11y_calendar_previous_month)
@@ -59,11 +79,16 @@ class CalendarFlowTest : E2eTestBase() {
         composeRule.onNodeWithContentDescription(prevMonthDesc).performClick()
         composeRule.waitForIdle()
 
+        // Verify previous month is displayed
+        waitForText(prevMonthName, 5_000L)
+        composeRule.onNodeWithText(prevMonthName).assertIsDisplayed()
+
         // Click "Today" to return to current month
         clickText(R.string.calendar_today)
         composeRule.waitForIdle()
 
-        // Verify we are back (the FAB should still be accessible)
-        composeRule.onNodeWithText(getString(R.string.calendar_today)).assertIsDisplayed()
+        // Verify we are back to current month
+        waitForText(currentMonthName, 5_000L)
+        composeRule.onNodeWithText(currentMonthName).assertIsDisplayed()
     }
 }

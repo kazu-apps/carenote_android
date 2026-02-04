@@ -121,7 +121,8 @@ fun AddMedicationScreen(
                 value = formState.dosage,
                 onValueChange = viewModel::updateDosage,
                 label = stringResource(R.string.medication_dosage),
-                placeholder = stringResource(R.string.medication_dosage_placeholder)
+                placeholder = stringResource(R.string.medication_dosage_placeholder),
+                errorMessage = formState.dosageError
             )
 
             Text(

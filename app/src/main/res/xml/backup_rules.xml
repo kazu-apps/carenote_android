@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <include domain="sharedpref" path="."/>
-    <include domain="database" path="."/>
+    <exclude domain="sharedpref" path="carenote_db_prefs.xml"/>
+    <exclude domain="sharedpref" path="carenote_settings_prefs.xml"/>
+    <exclude domain="database" path="."/>
 </full-backup-content>

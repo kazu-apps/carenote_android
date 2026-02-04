@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.TaskPriority
@@ -29,6 +30,7 @@ data class AddEditTaskFormState(
     val dueDate: LocalDate? = null,
     val priority: TaskPriority = TaskPriority.MEDIUM,
     val titleError: UiText? = null,
+    val descriptionError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -82,7 +84,10 @@ class AddEditTaskViewModel @Inject constructor(
     }
 
     fun updateDescription(description: String) {
-        _formState.value = _formState.value.copy(description = description)
+        _formState.value = _formState.value.copy(
+            description = description,
+            descriptionError = null
+        )
     }
 
     fun updateDueDate(dueDate: LocalDate?) {
@@ -98,12 +103,30 @@ class AddEditTaskViewModel @Inject constructor(
 
         val titleError = if (current.title.isBlank()) {
             UiText.Resource(R.string.tasks_task_title_required)
+        } else if (current.title.length > AppConfig.Task.TITLE_MAX_LENGTH) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.Task.TITLE_MAX_LENGTH)
+            )
+        } else {
+            null
+        }
+        val descriptionError = if (
+            current.description.length > AppConfig.Task.DESCRIPTION_MAX_LENGTH
+        ) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.Task.DESCRIPTION_MAX_LENGTH)
+            )
         } else {
             null
         }
 
-        if (titleError != null) {
-            _formState.value = current.copy(titleError = titleError)
+        if (titleError != null || descriptionError != null) {
+            _formState.value = current.copy(
+                titleError = titleError,
+                descriptionError = descriptionError
+            )
             return
         }
 

@@ -142,6 +142,7 @@ fun AddEditCalendarEventScreen(
                 onValueChange = viewModel::updateDescription,
                 label = stringResource(R.string.calendar_event_description),
                 placeholder = stringResource(R.string.calendar_event_description_placeholder),
+                errorMessage = formState.descriptionError,
                 singleLine = false,
                 maxLines = AppConfig.Calendar.DESCRIPTION_PREVIEW_MAX_LINES + 2
             )

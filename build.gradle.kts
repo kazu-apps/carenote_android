@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
 }
 
 // Detekt: Run via CLI (do NOT add as Gradle plugin — it conflicts with MockK instrumentation).

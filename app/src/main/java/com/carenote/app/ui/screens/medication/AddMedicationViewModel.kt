@@ -31,6 +31,7 @@ data class AddMedicationFormState(
     val times: Map<MedicationTiming, LocalTime> = emptyMap(),
     val reminderEnabled: Boolean = true,
     val nameError: UiText? = null,
+    val dosageError: UiText? = null,
     val isSaving: Boolean = false
 )
 
@@ -55,7 +56,10 @@ class AddMedicationViewModel @Inject constructor(
     }
 
     fun updateDosage(dosage: String) {
-        _formState.value = _formState.value.copy(dosage = dosage)
+        _formState.value = _formState.value.copy(
+            dosage = dosage,
+            dosageError = null
+        )
     }
 
     fun toggleTiming(timing: MedicationTiming) {
@@ -98,6 +102,31 @@ class AddMedicationViewModel @Inject constructor(
             return
         }
 
+        val nameError = if (current.name.length > AppConfig.Medication.NAME_MAX_LENGTH) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.Medication.NAME_MAX_LENGTH)
+            )
+        } else {
+            null
+        }
+        val dosageError = if (current.dosage.length > AppConfig.Medication.DOSAGE_MAX_LENGTH) {
+            UiText.ResourceWithArgs(
+                R.string.ui_validation_too_long,
+                listOf(AppConfig.Medication.DOSAGE_MAX_LENGTH)
+            )
+        } else {
+            null
+        }
+
+        if (nameError != null || dosageError != null) {
+            _formState.value = current.copy(
+                nameError = nameError,
+                dosageError = dosageError
+            )
+            return
+        }
+
         _formState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
@@ -110,7 +139,7 @@ class AddMedicationViewModel @Inject constructor(
             )
             medicationRepository.insertMedication(medication)
                 .onSuccess { id ->
-                    Timber.d("Medication saved: id=$id, name=${medication.name}")
+                    Timber.d("Medication saved: id=$id")
                     _savedEvent.emit(true)
                 }
                 .onFailure { error ->

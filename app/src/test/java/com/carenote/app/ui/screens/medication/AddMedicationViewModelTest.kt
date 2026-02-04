@@ -1,8 +1,11 @@
 package com.carenote.app.ui.screens.medication
 
 import app.cash.turbine.test
+import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.fakes.FakeMedicationRepository
+import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -223,5 +226,70 @@ class AddMedicationViewModelTest {
 
         assertEquals("", before.name)
         assertEquals("新しい名前", after.name)
+    }
+
+    @Test
+    fun `saveMedication failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel.updateName("テスト薬")
+        viewModel.toggleTiming(MedicationTiming.MORNING)
+        medicationRepository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.saveMedication()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.medication_save_failed,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `saveMedication failure keeps isSaving false`() = runTest(testDispatcher) {
+        viewModel.updateName("テスト薬")
+        viewModel.toggleTiming(MedicationTiming.MORNING)
+        medicationRepository.shouldFail = true
+
+        viewModel.saveMedication()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.formState.value.isSaving)
+    }
+
+    @Test
+    fun `saveMedication with name exceeding max length sets error`() {
+        val longName = "a".repeat(AppConfig.Medication.NAME_MAX_LENGTH + 1)
+        viewModel.updateName(longName)
+
+        viewModel.saveMedication()
+
+        assertNotNull(viewModel.formState.value.nameError)
+    }
+
+    @Test
+    fun `saveMedication with dosage exceeding max length sets error`() {
+        viewModel.updateName("テスト薬")
+        val longDosage = "a".repeat(AppConfig.Medication.DOSAGE_MAX_LENGTH + 1)
+        viewModel.updateDosage(longDosage)
+
+        viewModel.saveMedication()
+
+        assertNotNull(viewModel.formState.value.dosageError)
+    }
+
+    @Test
+    fun `saveMedication failure does not emit savedEvent`() = runTest(testDispatcher) {
+        viewModel.updateName("テスト薬")
+        viewModel.toggleTiming(MedicationTiming.MORNING)
+        medicationRepository.shouldFail = true
+
+        viewModel.saveMedication()
+        advanceUntilIdle()
+
+        viewModel.savedEvent.test {
+            expectNoEvents()
+        }
     }
 }
