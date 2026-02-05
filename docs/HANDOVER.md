@@ -2,10 +2,10 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v2.2 リファクタリング Phase 1-4 全完了 (Item 82-100)
+## 現在のタスク: v2.2 リファクタリング + Mapper ADR 全完了 (Item 82-101)
 
-v2.0 Firebase 統合、v2.1 セキュリティ強化、v2.2 TDD リファクタリングの全実行対象項目が完了。
-残る PENDING は v3.0 スコープの Mapper 統合 (Item 101-102) のみ。
+v2.0 Firebase 統合、v2.1 セキュリティ強化、v2.2 TDD リファクタリングの全項目が完了。
+Item 101 ADR 分析の結果、Mapper 統合は不要と判定（Item 102 はスキップ）。
 
 ## 次のアクション
 
@@ -13,7 +13,6 @@ v2.0 Firebase 統合、v2.1 セキュリティ強化、v2.2 TDD リファクタ�
    - リリース APK の実機テスト
    - Google Play Console へのアップロード準備
    - 問い合わせメールアドレスの確定（現在プレースホルダー）
-2. **v3.0 検討** (将来): Item 101-102 Mapper 統合設計・実装
 
 ## 既知の問題
 
@@ -39,23 +38,7 @@ v2.0 Firebase 統合、v2.1 セキュリティ強化、v2.2 TDD リファクタ�
 
 ## PENDING 項目
 
-### Item 101: 統合 Mapper インターフェース設計 - PENDING
-Local/Remote Mapper の統合設計を ADR として文書化。
-- 種別: 調査 + 設計
-- 対象: `docs/ADR-002-UNIFIED-MAPPER.md` (新規)
-- ファイル数: 1
-- 依存: Item 82 完了後
-- 注意: 実装は v3.0 以降に検討
-
----
-
-### Item 102: Mapper 統合実装 - PENDING (将来)
-設計に基づき全 Mapper を統合（高リスクのため v3.0 以降）。TDD で実施。
-- 種別: リファクタ (TDD)
-- 対象: 全 Mapper ファイル (12ファイル)
-- ファイル数: 12
-- 依存: Item 101 完了後
-- リスク: **高**（全データ変換に影響）
+なし（全項目完了）
 
 ---
 
@@ -84,6 +67,8 @@ Local/Remote Mapper の統合設計を ADR として文書化。
 | 93-94 | v2.2 Phase 3b: AuthViewModel TDD 分割（316→89行、AuthValidators + 3 FormHandler） | DONE |
 | 95-96 | v2.2 Phase 3c: SettingsViewModel TDD 整理（205→147行、updateSetting() 汎用化） | DONE |
 | 97-100 | v2.2 Phase 4: コード品質（キー定数整理、Premium 削除、TODO 整理、UI 定数 AppConfig 移行） | DONE |
+| 101 | Mapper 統合 ADR 作成（Option C: 統合しない を採択、`docs/ADR-002-UNIFIED-MAPPER.md`） | DONE |
+| 102 | Mapper 統合実装 — ADR-002 により不要と判定（スキップ） | SKIP |
 
 ## セキュリティレビュー結果
 
@@ -112,12 +97,13 @@ Local/Remote Mapper の統合設計を ADR として文書化。
 | Snackbar i18n | `SnackbarEvent` sealed interface (WithResId / WithString) |
 | テーマカラー | `CareNoteColors.current.xxxColor`（ハードコード Color() 禁止） |
 | 定数 | `AppConfig` オブジェクト（マジックナンバー禁止、UI 定数含む） |
+| Mapper 設計 | Local/Remote 分離維持（ADR-002 で統合しない判定） |
 | Enum パース | try-catch + フォールバック（NoteMapper, HealthRecordMapper, TaskMapper） |
 | テストパターン | StandardTestDispatcher + Turbine + FakeRepository (MutableStateFlow) |
 | Robolectric | 4.14.1（Android SDK シャドウ、Compose UI Test） |
 
 ## スコープ外 / 将来
 
-- **v3.0**: Cloud Storage（写真保存）, Google Play Billing（プレミアムサブスクリプション）, Mapper 統合 (Item 101-102)
+- **v3.0**: Cloud Storage（写真保存）, Google Play Billing（プレミアムサブスクリプション）
 - **手動**: スクリーンショット、フィーチャーグラフィック、プライバシーポリシー Web ホスティング
 - **スキップ**: LegalDocumentScreen テスト（純粋な表示、ロジックなし）
