@@ -3,6 +3,7 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.SettingsDataSource
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -224,6 +225,46 @@ class SettingsRepositoryImplTest {
 
         assertTrue(result.isSuccess)
         coVerify { dataSource.updateThemeMode("SYSTEM") }
+    }
+
+    @Test
+    fun `updateAppLanguage JAPANESE success`() = runTest {
+        coEvery { dataSource.updateAppLanguage("JAPANESE") } returns Unit
+
+        val result = repository.updateAppLanguage(AppLanguage.JAPANESE)
+
+        assertTrue(result.isSuccess)
+        coVerify { dataSource.updateAppLanguage("JAPANESE") }
+    }
+
+    @Test
+    fun `updateAppLanguage ENGLISH success`() = runTest {
+        coEvery { dataSource.updateAppLanguage("ENGLISH") } returns Unit
+
+        val result = repository.updateAppLanguage(AppLanguage.ENGLISH)
+
+        assertTrue(result.isSuccess)
+        coVerify { dataSource.updateAppLanguage("ENGLISH") }
+    }
+
+    @Test
+    fun `updateAppLanguage SYSTEM success`() = runTest {
+        coEvery { dataSource.updateAppLanguage("SYSTEM") } returns Unit
+
+        val result = repository.updateAppLanguage(AppLanguage.SYSTEM)
+
+        assertTrue(result.isSuccess)
+        coVerify { dataSource.updateAppLanguage("SYSTEM") }
+    }
+
+    @Test
+    fun `updateAppLanguage returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateAppLanguage(any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateAppLanguage(AppLanguage.JAPANESE)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
     }
 
     @Test

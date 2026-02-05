@@ -2,6 +2,7 @@ package com.carenote.app.domain.repository
 
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -37,6 +38,8 @@ interface SettingsRepository {
     ): Result<Unit, DomainError>
 
     suspend fun updateThemeMode(mode: ThemeMode): Result<Unit, DomainError>
+
+    suspend fun updateAppLanguage(language: AppLanguage): Result<Unit, DomainError>
 
     suspend fun updateSyncEnabled(enabled: Boolean): Result<Unit, DomainError>
 

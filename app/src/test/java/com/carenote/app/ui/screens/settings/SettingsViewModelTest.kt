@@ -3,6 +3,7 @@ package com.carenote.app.ui.screens.settings
 import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -275,6 +276,53 @@ class SettingsViewModelTest {
         settingsRepository.shouldFail = true
 
         viewModel.updateThemeMode(ThemeMode.DARK)
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_error_save_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `updateAppLanguage JAPANESE success`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateAppLanguage(AppLanguage.JAPANESE)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertEquals(AppLanguage.JAPANESE, settings.appLanguage)
+        }
+    }
+
+    @Test
+    fun `updateAppLanguage ENGLISH success`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateAppLanguage(AppLanguage.ENGLISH)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertEquals(AppLanguage.ENGLISH, settings.appLanguage)
+        }
+    }
+
+    @Test
+    fun `updateAppLanguage failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        settingsRepository.shouldFail = true
+
+        viewModel.updateAppLanguage(AppLanguage.JAPANESE)
         advanceUntilIdle()
 
         viewModel.snackbarController.events.test {

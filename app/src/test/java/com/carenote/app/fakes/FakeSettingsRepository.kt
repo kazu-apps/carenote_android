@@ -3,6 +3,7 @@ package com.carenote.app.fakes
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -207,6 +208,16 @@ class FakeSettingsRepository : SettingsRepository {
             return Result.Failure(DomainError.DatabaseError("Fake error"))
         }
         settings.value = settings.value.copy(themeMode = mode)
+        return Result.Success(Unit)
+    }
+
+    override suspend fun updateAppLanguage(
+        language: AppLanguage
+    ): Result<Unit, DomainError> {
+        if (shouldFail) {
+            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        }
+        settings.value = settings.value.copy(appLanguage = language)
         return Result.Success(Unit)
     }
 

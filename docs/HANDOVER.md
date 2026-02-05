@@ -2,42 +2,16 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Firebase 未初期化時グレースフルデグラデーション
+## 完了タスク（今回セッション）
 
-`google-services.json` 未配置時にアプリがクラッシュする問題を修正。
-Firebase 未初期化時は No-Op 実装に自動切替し、ローカル機能（Room）は正常動作を維持。
+### Phase 2: アプリ内言語切り替え機能 - DONE
 
-## 完了した変更
-
-### 新規ファイル
-- `di/FirebaseAvailability.kt` — Firebase 初期化チェック（`FirebaseApp.getInstance()` try-catch）
-- `data/repository/NoOpAuthRepository.kt` — 認証 No-Op（currentUser=null, 操作→NetworkError）
-- `data/repository/NoOpSyncRepository.kt` — 同期 No-Op（syncState=Idle, 操作→Failure）
-- `data/worker/NoOpSyncWorkScheduler.kt` — スケジューラ No-Op（全操作スキップ）
-
-### 変更ファイル
-- `di/FirebaseModule.kt` — `provideFirebaseAvailability()` 追加、`provideFirebaseAuth()` 削除（AuthRepository にインライン化）、availability チェックで NoOp/Real 分岐
-- `di/SyncModule.kt` — syncer パラメータを `dagger.Lazy<>` に変更、`provideSyncRepository()` に availability チェック追加
-- `di/WorkerModule.kt` — availability チェックで NoOpSyncWorkScheduler 返却
-- `data/worker/SyncWorker.kt` — `firestore` を `dagger.Lazy<FirebaseFirestore>` に変更
-- `data/service/CareNoteMessagingService.kt` — 未使用 `firebaseMessaging` フィールド注入を削除
-
-### テスト（新規）
-- `NoOpAuthRepositoryTest.kt` — 全認証操作のテスト（10テスト）
-- `NoOpSyncRepositoryTest.kt` — 全同期操作のテスト（11テスト）
-- `FirebaseAvailabilityTest.kt` — 初期化チェック + data class テスト（2テスト）
-
-### ビルド・テスト結果
-- `assembleDebug`: BUILD SUCCESSFUL
-- `testDebugUnitTest`: 966+ tests passed (all green)
+Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) による日本語/英語/システムデフォルト切り替えを実装。
 
 ## 次のアクション
 
-1. **google-services.json 配置**: Firebase Console からダウンロードして `app/` に配置
-2. **リリース準備**:
-   - リリース APK の実機テスト
-   - Google Play Console へのアップロード準備
-   - 問い合わせメールアドレスの確定（現在プレースホルダー）
+1. エミュレータ上でアプリ起動確認（Phase 1 + Phase 2 の実機確認）
+2. 設定画面 → 言語切り替え → UI が日本語/英語に切り替わることを確認
 
 ## 既知の問題
 
@@ -61,9 +35,20 @@ Firebase 未初期化時は No-Op 実装に自動切替し、ローカル機能�
 | INFO | — | 削除確認ダイアログが UI から到達不可（スワイプ削除の準備） |
 | INFO | — | Flow `.catch` が欠落（Room Flow は安定、低リスク） |
 
-## PENDING 項目
+## ロードマップ
 
-なし（全項目完了）
+### Phase 1: SQLCipher パスフレーズ消失時のグレースフルリカバリ - DONE
+`DatabaseRecoveryHelper` を追加。`Room.databaseBuilder().build()` 前にパスフレーズ検証を行い、不一致なら DB ファイルを削除して新規作成。
+- 新規: `DatabaseRecoveryHelper.kt`, `DatabaseRecoveryHelperTest.kt` (4テスト)
+- 変更: `DatabaseModule.kt` に `recoveryHelper.recoverIfNeeded()` 呼び出し追加
+
+### Phase 2: アプリ内言語切り替え機能（日本語/英語/システム） - DONE
+Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) を使用してアプリ内言語切り替えを実装。
+`AppLanguage` enum 追加、`UserSettings` に `appLanguage` フィールド追加、設定画面に `LanguageSection` 追加。
+`ComponentActivity` のまま維持（`AppCompatDelegate` はスタティックメソッド）。
+- 新規: `AppLanguage.kt`, `LanguageSelector.kt`, `LanguageSection.kt`, `locales_config.xml`
+- 変更: `libs.versions.toml`, `build.gradle.kts`, `AndroidManifest.xml`, `UserSettings.kt`, `SettingsRepository.kt`, `SettingsRepositoryImpl.kt`, `SettingsDataSource.kt`, `SettingsViewModel.kt`, `SettingsScreen.kt`, `MainActivity.kt`, `strings.xml` (JP/EN), `FakeSettingsRepository.kt`, テスト3ファイル
+- テスト: SettingsViewModelTest (3追加), SettingsRepositoryImplTest (4追加), SettingsSectionsTest (3追加)
 
 ---
 
@@ -101,7 +86,7 @@ Firebase 未初期化時は No-Op 実装に自動切替し、ローカル機能�
 |---------|----------|------|
 | CRITICAL | 0 | 重大な脆弱性なし |
 | HIGH | 0 | H-1 PII ログ (Item 79 完了), H-2 メール検証 (Item 80 完了) |
-| MEDIUM | 3 | Rate Limiting, 暗号化破損時復旧, ProGuard |
+| MEDIUM | 2 | Rate Limiting, ProGuard |
 | LOW | 1 | FCM トークン管理（サーバー側実装待ち） |
 | **全体リスクレベル** | **LOW** | HIGH 問題は全て対応完了 |
 

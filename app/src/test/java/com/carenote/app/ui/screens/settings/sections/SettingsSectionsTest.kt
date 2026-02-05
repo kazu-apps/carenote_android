@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.ThemeMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -76,6 +77,53 @@ class SettingsSectionsTest {
             .performClick()
 
         assertEquals(ThemeMode.LIGHT, selectedMode)
+    }
+
+    // =========================================================================
+    // LanguageSection (3 tests)
+    // =========================================================================
+
+    @Test
+    fun languageSection_displaysTitle() {
+        composeTestRule.setContent {
+            LanguageSection(
+                appLanguage = AppLanguage.SYSTEM,
+                onLanguageSelected = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("言語", substring = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun languageSection_currentLanguageIsDisplayed() {
+        composeTestRule.setContent {
+            LanguageSection(
+                appLanguage = AppLanguage.JAPANESE,
+                onLanguageSelected = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("日本語", substring = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun languageSection_clickLanguageCallsCallback() {
+        var selectedLanguage: AppLanguage? = null
+
+        composeTestRule.setContent {
+            LanguageSection(
+                appLanguage = AppLanguage.SYSTEM,
+                onLanguageSelected = { selectedLanguage = it }
+            )
+        }
+
+        composeTestRule.onNodeWithText("English", substring = true)
+            .performClick()
+
+        assertEquals(AppLanguage.ENGLISH, selectedLanguage)
     }
 
     // =========================================================================

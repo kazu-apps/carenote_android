@@ -4,6 +4,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.SettingsDataSource
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -201,6 +202,17 @@ class SettingsRepositoryImpl @Inject constructor(
         ) {
             dataSource.updateThemeMode(mode.name)
             Timber.d("Theme mode updated: $mode")
+        }
+    }
+
+    override suspend fun updateAppLanguage(
+        language: AppLanguage
+    ): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to save app language", it) }
+        ) {
+            dataSource.updateAppLanguage(language.name)
+            Timber.d("App language updated: $language")
         }
     }
 

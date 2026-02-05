@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -30,6 +31,7 @@ class SettingsDataSource @Inject constructor(
 
     private object PreferencesKeys {
         const val THEME_MODE = "theme_mode"
+        const val APP_LANGUAGE = "app_language"
         const val NOTIFICATIONS_ENABLED = "notifications_enabled"
         const val QUIET_HOURS_START = "quiet_hours_start"
         const val QUIET_HOURS_END = "quiet_hours_end"
@@ -74,6 +76,13 @@ class SettingsDataSource @Inject constructor(
                     ThemeMode.SYSTEM
                 }
             } ?: ThemeMode.SYSTEM,
+            appLanguage = prefs.getString(PreferencesKeys.APP_LANGUAGE, null)?.let { value ->
+                try {
+                    AppLanguage.valueOf(value)
+                } catch (_: IllegalArgumentException) {
+                    AppLanguage.SYSTEM
+                }
+            } ?: AppLanguage.SYSTEM,
             notificationsEnabled = prefs.getBoolean(
                 PreferencesKeys.NOTIFICATIONS_ENABLED,
                 true
@@ -181,6 +190,10 @@ class SettingsDataSource @Inject constructor(
 
     suspend fun updateThemeMode(mode: String) {
         prefs.edit().putString(PreferencesKeys.THEME_MODE, mode).apply()
+    }
+
+    suspend fun updateAppLanguage(language: String) {
+        prefs.edit().putString(PreferencesKeys.APP_LANGUAGE, language).apply()
     }
 
     suspend fun clearAll() {

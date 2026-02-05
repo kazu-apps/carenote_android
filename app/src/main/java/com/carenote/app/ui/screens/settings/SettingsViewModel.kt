@@ -10,6 +10,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.data.worker.SyncWorkSchedulerInterface
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
@@ -117,6 +118,10 @@ class SettingsViewModel @Inject constructor(
     fun updateThemeMode(mode: ThemeMode) = updateSetting(
         logTag = "Theme mode updated: $mode"
     ) { settingsRepository.updateThemeMode(mode) }
+
+    fun updateAppLanguage(language: AppLanguage) = updateSetting(
+        logTag = "App language updated: $language"
+    ) { settingsRepository.updateAppLanguage(language) }
 
     fun toggleSyncEnabled(enabled: Boolean) = updateSetting(
         logTag = "Sync enabled updated: $enabled",

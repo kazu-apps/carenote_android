@@ -30,6 +30,7 @@ import com.carenote.app.R
 import com.carenote.app.ui.screens.settings.dialogs.SettingsDialogs
 import com.carenote.app.ui.screens.settings.sections.AppInfoSection
 import com.carenote.app.ui.screens.settings.sections.HealthThresholdSection
+import com.carenote.app.ui.screens.settings.sections.LanguageSection
 import com.carenote.app.ui.screens.settings.sections.MedicationTimeSection
 import com.carenote.app.ui.screens.settings.sections.NotificationSection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
@@ -93,6 +94,12 @@ fun SettingsScreen(
                 ThemeSection(
                     themeMode = settings.themeMode,
                     onThemeModeSelected = { viewModel.updateThemeMode(it) }
+                )
+            }
+            item {
+                LanguageSection(
+                    appLanguage = settings.appLanguage,
+                    onLanguageSelected = { viewModel.updateAppLanguage(it) }
                 )
             }
             item {

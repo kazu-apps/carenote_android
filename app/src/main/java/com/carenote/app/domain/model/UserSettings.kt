@@ -11,6 +11,9 @@ data class UserSettings(
     // テーマ設定
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
 
+    // 言語設定
+    val appLanguage: AppLanguage = AppLanguage.SYSTEM,
+
     // 通知設定
     val notificationsEnabled: Boolean = true,
     val quietHoursStart: Int = AppConfig.Notification.DEFAULT_QUIET_HOURS_START,

@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,10 +18,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
@@ -59,6 +62,18 @@ class MainActivity : ComponentActivity() {
 
             val isLoggedIn = currentUser != null
             val startDestination = if (isLoggedIn) Screen.Medication.route else Screen.Login.route
+
+            // Apply locale from settings (only when changed)
+            LaunchedEffect(settings.appLanguage) {
+                val targetLocales = if (settings.appLanguage == AppLanguage.SYSTEM) {
+                    LocaleListCompat.getEmptyLocaleList()
+                } else {
+                    LocaleListCompat.forLanguageTags(settings.appLanguage.toLocaleTag())
+                }
+                if (AppCompatDelegate.getApplicationLocales() != targetLocales) {
+                    AppCompatDelegate.setApplicationLocales(targetLocales)
+                }
+            }
 
             val darkTheme = when (settings.themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
