@@ -2,16 +2,14 @@
 
 ## セッションステータス: 完了
 
-## 完了タスク（今回セッション）
+## 現在のタスク: Phase 10 実装完了
 
-### Phase 2: アプリ内言語切り替え機能 - DONE
-
-Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) による日本語/英語/システムデフォルト切り替えを実装。
+Phase 10（服薬ログ per-timing 修正）を実装・ビルド・テスト完了。
 
 ## 次のアクション
 
-1. エミュレータ上でアプリ起動確認（Phase 1 + Phase 2 の実機確認）
-2. 設定画面 → 言語切り替え → UI が日本語/英語に切り替わることを確認
+1. `/task-driver` で Phase 11 を実行（服薬リマインダー接続 + 未服薬チェック）
+2. `/task-driver` で Phase 12 を実行（タスクリマインダーシステム構築）
 
 ## 既知の問題
 
@@ -24,10 +22,18 @@ Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) による日�
 
 | 重要度 | 出典 | 内容 |
 |--------|------|------|
+| MEDIUM | BugHunt | `MedicationViewModel.todayLogs` が `LocalDate.now()` を VM 作成時に固定 → 深夜に古い表示 |
+| MEDIUM | BugHunt | `MedicationLogSyncer.collectionPath()` が `UnsupportedOperationException` を投げる設計 → 基底 `sync()` 誤呼び出しでクラッシュ |
+| MEDIUM | BugHunt | `NotificationHelper` の `medicationId.toInt()` — Long→Int オーバーフロー可能性 |
+| MEDIUM | BugHunt | `readAssetText()` が Compose composition 中（メインスレッド）でファイル I/O 実行 |
+| MEDIUM | BugHunt | `SettingsViewModel.isSyncing` の `LiveData.asFlow()` がライフサイクル外で購読 |
+| ~~MEDIUM~~ | ~~BugHunt~~ | ~~`startDestination` が Compose state で動的変更 → NavHost 再構築リスク~~ → **Phase 9 で修正済み** |
 | MEDIUM | M-5 | Room スキーマ JSON がコミット済み（プライベートリポジトリでは許容） |
 | MEDIUM | Item 30 | ValidationUtils.kt が未使用のデッドコード（本番インポートなし） |
 | MEDIUM | Item 32 | JaCoCo `**/util/*` 除外が広範囲（テストは存在） |
 | MEDIUM | Item 31 | テスト品質: Mapper ラウンドトリップ不完全、Repository Turbine 未使用、ViewModel Loading→Success テスト欠落 |
+| LOW | BugHunt | `DatabasePassphraseManager` — EncryptedPrefs 破損時にパスフレーズ消失 → DB 再作成（データロス） |
+| LOW | BugHunt | `AddMedicationViewModel.savedEvent` の `SharedFlow(replay=1)` が設定変更時にリプレイ |
 | LOW | L-4 | 全 DAO が OnConflictStrategy.REPLACE 使用（マルチデバイス同期リスク） |
 | LOW | Item 99 | FCM リモート通知の受信処理が未実装（`onMessageReceived` がログのみ） |
 | LOW | Item 99 | FCM トークンのサーバー送信が未実装（`onNewToken` がログのみ） |
@@ -43,12 +49,58 @@ Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) による日�
 - 変更: `DatabaseModule.kt` に `recoveryHelper.recoverIfNeeded()` 呼び出し追加
 
 ### Phase 2: アプリ内言語切り替え機能（日本語/英語/システム） - DONE
-Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) を使用してアプリ内言語切り替えを実装。
-`AppLanguage` enum 追加、`UserSettings` に `appLanguage` フィールド追加、設定画面に `LanguageSection` 追加。
-`ComponentActivity` のまま維持（`AppCompatDelegate` はスタティックメソッド）。
-- 新規: `AppLanguage.kt`, `LanguageSelector.kt`, `LanguageSection.kt`, `locales_config.xml`
-- 変更: `libs.versions.toml`, `build.gradle.kts`, `AndroidManifest.xml`, `UserSettings.kt`, `SettingsRepository.kt`, `SettingsRepositoryImpl.kt`, `SettingsDataSource.kt`, `SettingsViewModel.kt`, `SettingsScreen.kt`, `MainActivity.kt`, `strings.xml` (JP/EN), `FakeSettingsRepository.kt`, テスト3ファイル
-- テスト: SettingsViewModelTest (3追加), SettingsRepositoryImplTest (4追加), SettingsSectionsTest (3追加)
+`AppLanguage` enum + `LanguageSection` + Per-App Language API。10テスト追加。
+
+### Phase 3: Per-App Language API クラッシュ修正 (CRITICAL) - DONE
+`MainActivity` を `AppCompatActivity` に変更、テーマ親を `Theme.Material3.Light.NoActionBar` に移行、`AppLocalesMetadataHolderService` をマニフェストに追加、`com.google.android.material:material:1.12.0` 依存追加。
+- 変更: `MainActivity.kt`, `themes.xml`, `AndroidManifest.xml`, `libs.versions.toml`, `build.gradle.kts`
+
+### Phase 4: Firebase DI クラッシュ修正 (CRITICAL) - DONE
+`EntitySyncer` / `ConfigDrivenEntitySyncer` / `MedicationLogSyncer` の `FirebaseFirestore` を `dagger.Lazy<FirebaseFirestore>` に変更し、Firestore アクセスを同期実行時まで遅延。
+`FirebaseModule` の `provideFirebaseFirestore()` / `provideFirebaseMessaging()` に availability ガードを追加。
+`SyncModule` の 5 Syncer provider から `firestore.get()` の eager 呼出しを削除。テスト 3 ファイルも `DaggerLazy` に対応。
+- 変更: `EntitySyncer.kt`, `ConfigDrivenEntitySyncer.kt`, `MedicationLogSyncer.kt`, `SyncModule.kt`, `FirebaseModule.kt`, `EntitySyncerTest.kt`, `TestEntitySyncer.kt`, `SyncerConfigTest.kt`
+
+### Phase 5: CrashlyticsTree 例外キャッチ + Auth FormHandler スコープリーク修正 (HIGH) - DONE
+(A) `CrashlyticsTree.log()` の catch を `IllegalStateException` → `Exception` に拡大。
+(B) 3 FormHandler のスコープをコンストラクタ注入に変更。`AuthViewModel` が `viewModelScope` を渡す形に。テスト 3 ファイルも `TestScope` に対応。
+- 変更: `CrashlyticsTree.kt`, `LoginFormHandler.kt`, `RegisterFormHandler.kt`, `ForgotPasswordFormHandler.kt`, `AuthViewModel.kt`, テスト 3 ファイル
+
+### Phase 6: collectAsState → collectAsStateWithLifecycle 統一 (MEDIUM) - DONE
+14 Screen ファイル + UiState.kt KDoc の `collectAsState()` を `collectAsStateWithLifecycle()` に置換。
+バックグラウンド時の不要な Flow 購読を停止し、リソース消費を削減。
+- 変更: MedicationScreen, MedicationDetailScreen, AddMedicationScreen, CalendarScreen, AddEditCalendarEventScreen, TasksScreen, AddEditTaskScreen, HealthRecordsScreen, AddEditHealthRecordScreen, NotesScreen, AddEditNoteScreen, LoginScreen, RegisterScreen, ForgotPasswordScreen, UiState.kt
+
+### Phase 7: 言語切替クラッシュ修正 (CRITICAL) - DONE
+`LaunchedEffect` 内の `setApplicationLocales()` を削除し、`SettingsViewModel.updateAppLanguage()` の `onSuccess` コールバックから `LocaleManager.applyLanguage()` を呼ぶ形に変更。Compose 描画中の Activity 再生成を回避。
+- 新規: `LocaleManager.kt`（`setApplicationLocales` の1箇所集約）
+- 変更: `SettingsViewModel.kt`（onSuccess で LocaleManager 呼出し）、`MainActivity.kt`（LaunchedEffect 削除 + 不要 import 削除）
+- テスト: `SettingsViewModelTest.kt` に mockkObject テスト 2件追加
+
+### Phase 8: 設定をボトムナビタブに移動 (MEDIUM) - DONE
+`bottomNavItems` に `Settings` を追加（6番目タブ）。`MedicationScreen` の歯車アイコンと `onNavigateToSettings` を削除。`SettingsScreen` の戻る矢印と `onNavigateBack` を削除。`CareNoteNavHost` のナビゲーションラムダを更新。
+- 変更: `Screen.kt`, `MedicationScreen.kt`, `SettingsScreen.kt`, `CareNoteNavHost.kt`
+
+### Phase 9: アプリ再起動クラッシュ修正 (CRITICAL) - DONE
+`startDestination` を `remember` でラップし初回 composition 時に1回だけ評価するよう修正。`LaunchedEffect(isLoggedIn)` に `currentDestination` null ガードを追加。Auth 状態変化はプログラマティックナビゲーションで安全に処理。
+- 変更: `MainActivity.kt`（2箇所のみ）
+
+### Phase 10: 服薬ログ per-timing 修正 (CRITICAL) - DONE
+`MedicationLog` / `MedicationLogEntity` に `timing: MedicationTiming?` フィールドを追加。Room migration v7→v8。`todayLogs` のキーを `Pair<Long, String?>` に変更し、タイミングごとに独立した服薬記録を実現。
+- 変更: `MedicationLog.kt`, `MedicationLogEntity.kt`, `Migrations.kt`, `CareNoteDatabase.kt`, `MedicationLogMapper.kt`, `MedicationLogRemoteMapper.kt`, `MedicationViewModel.kt`, `MedicationScreen.kt`
+- テスト: `MigrationsTest.kt`, `MedicationLogMapperTest.kt`, `MedicationLogRemoteMapperTest.kt`, `MedicationViewModelTest.kt` に timing テスト追加
+
+### Phase 11: 服薬リマインダー接続 + 未服薬チェック (HIGH) - PENDING
+`MedicationReminderScheduler` は実装済みだが未接続（孤立コード）。飲むまで通知し続ける機能が未実装。
+**修正方針**: (A) `AddMedicationViewModel.saveMedication()` で `scheduler.scheduleAllReminders()` を呼ぶ。(B) `MedicationReminderWorker` で服薬済みチェック（`MedicationLogDao` から当日ログを照会し、TAKEN なら通知スキップ）。(C) 未服薬時のフォローアップリマインダー（N分後に再通知）。(D) 服薬記録時にフォローアップをキャンセル。
+- 対象: `AddMedicationViewModel.kt`, `MedicationReminderWorker.kt`, `MedicationReminderScheduler.kt`, `MedicationViewModel.kt`
+- 依存: Phase 10（timing フィールドが必要）
+
+### Phase 12: タスクリマインダーシステム構築 (MEDIUM) - PENDING
+タスクの繰り返し通知機能が完全未実装。
+**修正方針**: (A) `Task` モデルに `reminderEnabled: Boolean` + `recurrence: TaskRecurrence?` 追加。(B) `TaskReminderWorker` 新規作成（完了チェック付き）。(C) `TaskReminderScheduler` 新規作成。(D) `NotificationHelper` にタスク通知チャンネル追加。(E) `AddEditTaskViewModel` で scheduler 接続。(F) Room migration で Task テーブルにカラム追加。
+- 対象: `Task.kt`, `TaskEntity.kt`, 新規 Worker/Scheduler, `NotificationHelper.kt`, `AddEditTaskViewModel.kt`, DB migration
+- 依存: なし
 
 ---
 
@@ -94,7 +146,7 @@ Per-App Language API (`AppCompatDelegate.setApplicationLocales()`) を使用し�
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v7, SQLCipher 4.6.1 暗号化, sync_mappings テーブル追加 |
+| Room DB | v8, SQLCipher 4.6.1 暗号化, sync_mappings テーブル, medication_logs.timing カラム追加 |
 | DB キー保存 | EncryptedSharedPreferences (Android Keystore AES256_GCM) |
 | 設定保存 | EncryptedSharedPreferences (`carenote_settings_prefs`) |
 | バックアップ除外 | DB, DB パスフレーズ prefs, 設定 prefs |

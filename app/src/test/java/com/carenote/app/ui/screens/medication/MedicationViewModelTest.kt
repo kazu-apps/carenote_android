@@ -130,7 +130,7 @@ class MedicationViewModelTest {
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN)
+        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN, MedicationTiming.MORNING)
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
@@ -139,6 +139,7 @@ class MedicationViewModelTest {
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.TAKEN, logs[0].status)
             assertEquals(1L, logs[0].medicationId)
+            assertEquals(MedicationTiming.MORNING, logs[0].timing)
         }
     }
 
@@ -149,7 +150,7 @@ class MedicationViewModelTest {
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        viewModel.recordMedication(1L, MedicationLogStatus.SKIPPED)
+        viewModel.recordMedication(1L, MedicationLogStatus.SKIPPED, MedicationTiming.NOON)
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
@@ -157,6 +158,7 @@ class MedicationViewModelTest {
             val logs = expectMostRecentItem()
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.SKIPPED, logs[0].status)
+            assertEquals(MedicationTiming.NOON, logs[0].timing)
         }
     }
 
@@ -167,7 +169,7 @@ class MedicationViewModelTest {
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        viewModel.recordMedication(1L, MedicationLogStatus.POSTPONED)
+        viewModel.recordMedication(1L, MedicationLogStatus.POSTPONED, MedicationTiming.EVENING)
         advanceUntilIdle()
 
         viewModel.todayLogs.test {
@@ -175,6 +177,7 @@ class MedicationViewModelTest {
             val logs = expectMostRecentItem()
             assertEquals(1, logs.size)
             assertEquals(MedicationLogStatus.POSTPONED, logs[0].status)
+            assertEquals(MedicationTiming.EVENING, logs[0].timing)
         }
     }
 
@@ -460,6 +463,35 @@ class MedicationViewModelTest {
             advanceUntilIdle()
             val state = expectMostRecentItem() as UiState.Success
             assertEquals(0, state.data[0].timings.size)
+        }
+    }
+
+    @Test
+    fun `same medication different timings tracked independently`() = runTest(testDispatcher) {
+        val medication = createMedication(
+            id = 1L,
+            name = "全時間の薬",
+            timings = listOf(
+                MedicationTiming.MORNING,
+                MedicationTiming.NOON,
+                MedicationTiming.EVENING
+            )
+        )
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN, MedicationTiming.MORNING)
+        advanceUntilIdle()
+
+        viewModel.todayLogs.test {
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
+            assertEquals(1, logs.size)
+            val morningLog = logs.find { it.timing == MedicationTiming.MORNING }
+            val noonLog = logs.find { it.timing == MedicationTiming.NOON }
+            assertEquals(MedicationLogStatus.TAKEN, morningLog?.status)
+            assertNull(noonLog)
         }
     }
 }

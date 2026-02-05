@@ -3,7 +3,9 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -157,5 +159,81 @@ class MedicationLogMapperTest {
         )
 
         assertEquals("", mapper.toDomain(entity).memo)
+    }
+
+    @Test
+    fun `toDomain maps null timing to null`() {
+        val entity = MedicationLogEntity(
+            id = 1L, medicationId = 1L, status = "TAKEN",
+            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            timing = null
+        )
+
+        assertNull(mapper.toDomain(entity).timing)
+    }
+
+    @Test
+    fun `toDomain maps MORNING timing`() {
+        val entity = MedicationLogEntity(
+            id = 1L, medicationId = 1L, status = "TAKEN",
+            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            timing = "MORNING"
+        )
+
+        assertEquals(MedicationTiming.MORNING, mapper.toDomain(entity).timing)
+    }
+
+    @Test
+    fun `toEntity maps timing to name string`() {
+        val domain = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            timing = MedicationTiming.EVENING
+        )
+
+        assertEquals("EVENING", mapper.toEntity(domain).timing)
+    }
+
+    @Test
+    fun `toEntity maps null timing to null`() {
+        val domain = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            timing = null
+        )
+
+        assertNull(mapper.toEntity(domain).timing)
+    }
+
+    @Test
+    fun `roundtrip preserves timing`() {
+        val original = MedicationLogEntity(
+            id = 1L, medicationId = 10L, status = "TAKEN",
+            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:05:00",
+            timing = "NOON"
+        )
+
+        val domain = mapper.toDomain(original)
+        val roundtrip = mapper.toEntity(domain)
+
+        assertEquals(original.timing, roundtrip.timing)
+        assertEquals(MedicationTiming.NOON, domain.timing)
+    }
+
+    @Test
+    fun `toDomain falls back to null for invalid timing`() {
+        val entity = MedicationLogEntity(
+            id = 1L, medicationId = 1L, status = "TAKEN",
+            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            timing = "INVALID_TIMING"
+        )
+
+        assertNull(mapper.toDomain(entity).timing)
     }
 }

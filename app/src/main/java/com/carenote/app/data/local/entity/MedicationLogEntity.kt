@@ -38,5 +38,8 @@ data class MedicationLogEntity(
     val recordedAt: String,
 
     @ColumnInfo(name = "memo")
-    val memo: String = ""
+    val memo: String = "",
+
+    @ColumnInfo(name = "timing")
+    val timing: String? = null
 )

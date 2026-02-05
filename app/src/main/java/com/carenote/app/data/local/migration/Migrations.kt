@@ -134,6 +134,13 @@ object Migrations {
         }
     }
 
+    /** v7 -> v8: Add timing column to medication_logs for per-timing tracking */
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE medication_logs ADD COLUMN timing TEXT")
+        }
+    }
+
     /** All migrations in order, for convenient registration with Room. Returns a new array each call. */
     fun all(): Array<Migration> = arrayOf(
         MIGRATION_1_2,
@@ -141,6 +148,7 @@ object Migrations {
         MIGRATION_3_4,
         MIGRATION_4_5,
         MIGRATION_5_6,
-        MIGRATION_6_7
+        MIGRATION_6_7,
+        MIGRATION_7_8
     )
 }

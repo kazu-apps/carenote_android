@@ -3,6 +3,8 @@ package com.carenote.app.data.mapper.remote
 import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,13 +34,23 @@ class MedicationLogRemoteMapper @Inject constructor(
             throw IllegalArgumentException("Invalid status: $statusString")
         }
 
+        val timing = (data["timing"] as? String)?.let { timingStr ->
+            try {
+                MedicationTiming.valueOf(timingStr)
+            } catch (e: IllegalArgumentException) {
+                Timber.w("Unknown MedicationTiming from remote: '$timingStr', falling back to null")
+                null
+            }
+        }
+
         return MedicationLog(
             id = localId,
             medicationId = medicationLocalId,
             status = status,
             scheduledAt = timestampConverter.toLocalDateTimeFromAny(scheduledAt),
             recordedAt = timestampConverter.toLocalDateTimeFromAny(recordedAt),
-            memo = data["memo"] as? String ?: ""
+            memo = data["memo"] as? String ?: "",
+            timing = timing
         )
     }
 
@@ -49,7 +61,8 @@ class MedicationLogRemoteMapper @Inject constructor(
             "status" to domain.status.name,
             "scheduledAt" to timestampConverter.toTimestamp(domain.scheduledAt),
             "recordedAt" to timestampConverter.toTimestamp(domain.recordedAt),
-            "memo" to domain.memo
+            "memo" to domain.memo,
+            "timing" to domain.timing?.name
         )
 
         syncMetadata?.let { metadata ->

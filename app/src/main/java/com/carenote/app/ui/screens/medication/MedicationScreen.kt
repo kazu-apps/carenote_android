@@ -11,11 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Medication
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -25,7 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,11 +52,10 @@ import com.carenote.app.ui.viewmodel.UiState
 fun MedicationScreen(
     onNavigateToAddMedication: () -> Unit = {},
     onNavigateToDetail: (Long) -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
     viewModel: MedicationViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val todayLogs by viewModel.todayLogs.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val todayLogs by viewModel.todayLogs.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteMedication by remember { mutableStateOf<Medication?>(null) }
     val context = LocalContext.current
@@ -81,14 +78,6 @@ fun MedicationScreen(
                         text = stringResource(R.string.medication_title),
                         style = MaterialTheme.typography.titleLarge
                     )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = stringResource(R.string.settings_title)
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
@@ -132,10 +121,18 @@ fun MedicationScreen(
                 } else {
                     MedicationList(
                         medications = state.data,
-                        todayLogs = todayLogs.associate { it.medicationId to it.status },
-                        onTaken = { id -> viewModel.recordMedication(id, MedicationLogStatus.TAKEN) },
-                        onSkipped = { id -> viewModel.recordMedication(id, MedicationLogStatus.SKIPPED) },
-                        onPostponed = { id -> viewModel.recordMedication(id, MedicationLogStatus.POSTPONED) },
+                        todayLogs = todayLogs.associate {
+                            (it.medicationId to it.timing?.name) to it.status
+                        },
+                        onTaken = { id, timing ->
+                            viewModel.recordMedication(id, MedicationLogStatus.TAKEN, timing)
+                        },
+                        onSkipped = { id, timing ->
+                            viewModel.recordMedication(id, MedicationLogStatus.SKIPPED, timing)
+                        },
+                        onPostponed = { id, timing ->
+                            viewModel.recordMedication(id, MedicationLogStatus.POSTPONED, timing)
+                        },
                         onCardClick = onNavigateToDetail,
                         contentPadding = innerPadding
                     )
@@ -161,10 +158,10 @@ fun MedicationScreen(
 @Composable
 private fun MedicationList(
     medications: List<Medication>,
-    todayLogs: Map<Long, MedicationLogStatus>,
-    onTaken: (Long) -> Unit,
-    onSkipped: (Long) -> Unit,
-    onPostponed: (Long) -> Unit,
+    todayLogs: Map<Pair<Long, String?>, MedicationLogStatus>,
+    onTaken: (Long, MedicationTiming?) -> Unit,
+    onSkipped: (Long, MedicationTiming?) -> Unit,
+    onPostponed: (Long, MedicationTiming?) -> Unit,
     onCardClick: (Long) -> Unit,
     contentPadding: PaddingValues
 ) {
@@ -192,10 +189,10 @@ private fun MedicationList(
                 ) { medication ->
                     MedicationCard(
                         medication = medication,
-                        status = todayLogs[medication.id],
-                        onTaken = { onTaken(medication.id) },
-                        onSkipped = { onSkipped(medication.id) },
-                        onPostponed = { onPostponed(medication.id) },
+                        status = todayLogs[medication.id to timing.name],
+                        onTaken = { onTaken(medication.id, timing) },
+                        onSkipped = { onSkipped(medication.id, timing) },
+                        onPostponed = { onPostponed(medication.id, timing) },
                         onClick = { onCardClick(medication.id) }
                     )
                 }
@@ -213,10 +210,10 @@ private fun MedicationList(
             ) { medication ->
                 MedicationCard(
                     medication = medication,
-                    status = todayLogs[medication.id],
-                    onTaken = { onTaken(medication.id) },
-                    onSkipped = { onSkipped(medication.id) },
-                    onPostponed = { onPostponed(medication.id) },
+                    status = todayLogs[medication.id to null],
+                    onTaken = { onTaken(medication.id, null) },
+                    onSkipped = { onSkipped(medication.id, null) },
+                    onPostponed = { onPostponed(medication.id, null) },
                     onClick = { onCardClick(medication.id) }
                 )
             }

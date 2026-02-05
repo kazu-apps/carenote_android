@@ -3,6 +3,7 @@ package com.carenote.app.data.mapper.remote
 import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -317,7 +318,8 @@ class MedicationLogRemoteMapperTest {
             status = MedicationLogStatus.SKIPPED,
             scheduledAt = scheduledAt,
             recordedAt = recordedAt,
-            memo = "体調不良のためスキップ"
+            memo = "体調不良のためスキップ",
+            timing = MedicationTiming.MORNING
         )
 
         val remote = mapper.toRemote(original, null)
@@ -329,6 +331,7 @@ class MedicationLogRemoteMapperTest {
         assertEquals(original.scheduledAt, roundtrip.scheduledAt)
         assertEquals(original.recordedAt, roundtrip.recordedAt)
         assertEquals(original.memo, roundtrip.memo)
+        assertEquals(original.timing, roundtrip.timing)
     }
 
     // endregion
@@ -359,6 +362,106 @@ class MedicationLogRemoteMapperTest {
         assertEquals(2, result.size)
         assertEquals(MedicationLogStatus.TAKEN, result[0].status)
         assertEquals(MedicationLogStatus.SKIPPED, result[1].status)
+    }
+
+    // endregion
+
+    // region timing
+
+    @Test
+    fun `toDomain maps timing field`() {
+        val data = mapOf(
+            "localId" to 1L,
+            "medicationLocalId" to 100L,
+            "status" to "TAKEN",
+            "scheduledAt" to toTimestamp(scheduledAt),
+            "recordedAt" to toTimestamp(recordedAt),
+            "timing" to "MORNING"
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(MedicationTiming.MORNING, result.timing)
+    }
+
+    @Test
+    fun `toDomain maps null timing when field is missing`() {
+        val data = mapOf(
+            "localId" to 1L,
+            "medicationLocalId" to 100L,
+            "status" to "TAKEN",
+            "scheduledAt" to toTimestamp(scheduledAt),
+            "recordedAt" to toTimestamp(recordedAt)
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertNull(result.timing)
+    }
+
+    @Test
+    fun `toDomain falls back to null for invalid timing`() {
+        val data = mapOf(
+            "localId" to 1L,
+            "medicationLocalId" to 100L,
+            "status" to "TAKEN",
+            "scheduledAt" to toTimestamp(scheduledAt),
+            "recordedAt" to toTimestamp(recordedAt),
+            "timing" to "INVALID"
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertNull(result.timing)
+    }
+
+    @Test
+    fun `toRemote includes timing when present`() {
+        val medicationLog = MedicationLog(
+            id = 1L,
+            medicationId = 100L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = scheduledAt,
+            recordedAt = recordedAt,
+            timing = MedicationTiming.EVENING
+        )
+
+        val result = mapper.toRemote(medicationLog, null)
+
+        assertEquals("EVENING", result["timing"])
+    }
+
+    @Test
+    fun `toRemote includes null timing when absent`() {
+        val medicationLog = MedicationLog(
+            id = 1L,
+            medicationId = 100L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = scheduledAt,
+            recordedAt = recordedAt,
+            timing = null
+        )
+
+        val result = mapper.toRemote(medicationLog, null)
+
+        assertNull(result["timing"])
+    }
+
+    @Test
+    fun `roundtrip preserves timing`() {
+        val original = MedicationLog(
+            id = 1L,
+            medicationId = 100L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = scheduledAt,
+            recordedAt = recordedAt,
+            timing = MedicationTiming.NOON
+        )
+
+        val remote = mapper.toRemote(original, null)
+        val roundtrip = mapper.toDomain(remote)
+
+        assertEquals(original.timing, roundtrip.timing)
     }
 
     // endregion

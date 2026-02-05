@@ -7,6 +7,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.util.SnackbarController
@@ -47,14 +48,19 @@ class MedicationViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    fun recordMedication(medicationId: Long, status: MedicationLogStatus) {
+    fun recordMedication(
+        medicationId: Long,
+        status: MedicationLogStatus,
+        timing: MedicationTiming? = null
+    ) {
         viewModelScope.launch {
             val now = LocalDateTime.now()
             val log = MedicationLog(
                 medicationId = medicationId,
                 status = status,
                 scheduledAt = now,
-                recordedAt = now
+                recordedAt = now,
+                timing = timing
             )
             medicationLogRepository.insertLog(log)
                 .onSuccess {

@@ -3,8 +3,10 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,13 +24,22 @@ class MedicationLogMapper @Inject constructor() : Mapper<MedicationLogEntity, Me
                 e
             )
         }
+        val timing = entity.timing?.let { timingStr ->
+            try {
+                MedicationTiming.valueOf(timingStr)
+            } catch (e: IllegalArgumentException) {
+                Timber.w("Unknown MedicationTiming: '$timingStr', falling back to null")
+                null
+            }
+        }
         return MedicationLog(
             id = entity.id,
             medicationId = entity.medicationId,
             status = status,
             scheduledAt = LocalDateTime.parse(entity.scheduledAt, dateTimeFormatter),
             recordedAt = LocalDateTime.parse(entity.recordedAt, dateTimeFormatter),
-            memo = entity.memo
+            memo = entity.memo,
+            timing = timing
         )
     }
 
@@ -39,7 +50,8 @@ class MedicationLogMapper @Inject constructor() : Mapper<MedicationLogEntity, Me
             status = domain.status.name,
             scheduledAt = domain.scheduledAt.format(dateTimeFormatter),
             recordedAt = domain.recordedAt.format(dateTimeFormatter),
-            memo = domain.memo
+            memo = domain.memo,
+            timing = domain.timing?.name
         )
     }
 }

@@ -20,5 +20,6 @@ data class MedicationLog(
     val status: MedicationLogStatus,
     val scheduledAt: LocalDateTime,
     val recordedAt: LocalDateTime = LocalDateTime.now(),
-    val memo: String = ""
+    val memo: String = "",
+    val timing: MedicationTiming? = null
 )

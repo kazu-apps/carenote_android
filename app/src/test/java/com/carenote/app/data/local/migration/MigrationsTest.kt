@@ -54,9 +54,15 @@ class MigrationsTest {
     }
 
     @Test
-    fun `all() contains six migrations in order`() {
+    fun `MIGRATION_7_8 has correct version numbers`() {
+        assertEquals(7, Migrations.MIGRATION_7_8.startVersion)
+        assertEquals(8, Migrations.MIGRATION_7_8.endVersion)
+    }
+
+    @Test
+    fun `all() contains seven migrations in order`() {
         val all = Migrations.all()
-        assertEquals(6, all.size)
+        assertEquals(7, all.size)
         assertEquals(1, all[0].startVersion)
         assertEquals(2, all[0].endVersion)
         assertEquals(2, all[1].startVersion)
@@ -69,6 +75,8 @@ class MigrationsTest {
         assertEquals(6, all[4].endVersion)
         assertEquals(6, all[5].startVersion)
         assertEquals(7, all[5].endVersion)
+        assertEquals(7, all[6].startVersion)
+        assertEquals(8, all[6].endVersion)
     }
 
     @Test
@@ -79,7 +87,7 @@ class MigrationsTest {
     }
 
     @Test
-    fun `migrations form a continuous chain from version 1 to 7`() {
+    fun `migrations form a continuous chain from version 1 to 8`() {
         val all = Migrations.all()
         for (i in 0 until all.size - 1) {
             assertEquals(
@@ -90,7 +98,7 @@ class MigrationsTest {
             )
         }
         assertEquals(1, all.first().startVersion)
-        assertEquals(7, all.last().endVersion)
+        assertEquals(8, all.last().endVersion)
     }
 
     @Test
@@ -229,6 +237,22 @@ class MigrationsTest {
         assertTrue(
             "Should create unique index on entity_type and remote_id",
             sqlStatements[2].contains("index_sync_mappings_entity_type_remote_id")
+        )
+    }
+
+    @Test
+    fun `MIGRATION_7_8 adds timing column to medication_logs`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+        val sqlSlot = slot<String>()
+        every { db.execSQL(capture(sqlSlot)) } just Runs
+
+        Migrations.MIGRATION_7_8.migrate(db)
+
+        verify(exactly = 1) { db.execSQL(any()) }
+        val sql = sqlSlot.captured
+        assertTrue(
+            "Should ALTER TABLE medication_logs ADD COLUMN timing",
+            sql.contains("ALTER TABLE medication_logs ADD COLUMN timing TEXT")
         )
     }
 }
