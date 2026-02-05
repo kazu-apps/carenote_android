@@ -175,7 +175,7 @@ sealed class Screen(
     }
 
     companion object {
-        val bottomNavItems = listOf(Medication, Calendar, Tasks, HealthRecords, Notes)
-        val authScreens = listOf(Login, Register, ForgotPassword)
+        val bottomNavItems get() = listOf(Medication, Calendar, Tasks, HealthRecords, Notes)
+        val authScreens get() = listOf(Login, Register, ForgotPassword)
     }
 }
