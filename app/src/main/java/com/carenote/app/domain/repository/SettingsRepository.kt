@@ -38,5 +38,7 @@ interface SettingsRepository {
 
     suspend fun updateThemeMode(mode: ThemeMode): Result<Unit, DomainError>
 
+    suspend fun updateSyncEnabled(enabled: Boolean): Result<Unit, DomainError>
+
     suspend fun resetToDefaults(): Result<Unit, DomainError>
 }

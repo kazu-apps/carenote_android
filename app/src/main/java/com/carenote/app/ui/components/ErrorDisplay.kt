@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.theme.CardShape
@@ -50,7 +51,7 @@ fun ErrorDisplay(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = AppConfig.UI.AUTH_HORIZONTAL_PADDING_DP.dp),
             shape = CardShape,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer
@@ -59,16 +60,16 @@ fun ErrorDisplay(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(AppConfig.UI.AUTH_HORIZONTAL_PADDING_DP.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     imageVector = Icons.Filled.Warning,
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(AppConfig.UI.ICON_SIZE_LARGE_DP.dp),
                     tint = MaterialTheme.colorScheme.error
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
                 Text(
                     text = errorMessage(error),
                     style = MaterialTheme.typography.bodyLarge,
@@ -76,7 +77,7 @@ fun ErrorDisplay(
                     textAlign = TextAlign.Center
                 )
                 if (onRetry != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
                     Button(
                         onClick = onRetry,
                         shape = ButtonShape

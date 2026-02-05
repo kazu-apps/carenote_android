@@ -55,7 +55,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
 
             firebaseUser.sendEmailVerification().await()
 
-            Timber.d("User signed up: ${firebaseUser.uid}")
+            Timber.d("User signed up successfully")
             userMapper.toDomain(firebaseUser)
         }
     }
@@ -68,7 +68,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             val firebaseUser = authResult.user
                 ?: throw IllegalStateException("User is null after sign in")
-            Timber.d("User signed in: ${firebaseUser.uid}")
+            Timber.d("User signed in successfully")
             userMapper.toDomain(firebaseUser)
         }
     }
@@ -83,7 +83,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     override suspend fun sendPasswordResetEmail(email: String): Result<Unit, DomainError> {
         return Result.catchingSuspend(::mapFirebaseException) {
             firebaseAuth.sendPasswordResetEmail(email).await()
-            Timber.d("Password reset email sent to: $email")
+            Timber.d("Password reset email sent")
         }
     }
 
@@ -92,7 +92,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             val user = firebaseAuth.currentUser
                 ?: throw IllegalStateException("No user logged in")
             user.sendEmailVerification().await()
-            Timber.d("Verification email sent to: ${user.email}")
+            Timber.d("Verification email sent")
         }
     }
 
@@ -104,7 +104,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
                 ?: throw IllegalStateException("User has no email")
             val credential = EmailAuthProvider.getCredential(email, password)
             user.reauthenticate(credential).await()
-            Timber.d("User reauthenticated: ${user.uid}")
+            Timber.d("User reauthenticated successfully")
         }
     }
 
@@ -113,7 +113,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             val user = firebaseAuth.currentUser
                 ?: throw IllegalStateException("No user logged in")
             user.updatePassword(newPassword).await()
-            Timber.d("Password updated for user: ${user.uid}")
+            Timber.d("Password updated successfully")
         }
     }
 
@@ -121,14 +121,25 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(::mapFirebaseException) {
             val user = firebaseAuth.currentUser
                 ?: throw IllegalStateException("No user logged in")
-            val uid = user.uid
             user.delete().await()
-            Timber.d("Account deleted: $uid")
+            Timber.d("Account deleted successfully")
         }
     }
 
+    /**
+     * エラーメッセージから PII（メールアドレス等）を除去
+     */
+    private fun sanitizeErrorMessage(message: String?): String {
+        return message
+            ?.replace(
+                Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"),
+                "[EMAIL]"
+            )
+            ?: "Unknown error"
+    }
+
     private fun mapFirebaseException(throwable: Throwable): DomainError {
-        Timber.w("Firebase Auth error: ${throwable.message}")
+        Timber.w("Firebase Auth error: ${sanitizeErrorMessage(throwable.message)}")
 
         if (throwable is FirebaseAuthException) {
             return when (throwable.errorCode) {

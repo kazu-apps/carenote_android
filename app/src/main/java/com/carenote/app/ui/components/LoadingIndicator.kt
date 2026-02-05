@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 
 /**
  * 全画面ローディング表示コンポーネント
@@ -33,10 +34,10 @@ fun LoadingIndicator(
         verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator(
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(AppConfig.UI.ICON_SIZE_LARGE_DP.dp),
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
         Text(
             text = message,
             style = MaterialTheme.typography.bodyLarge,

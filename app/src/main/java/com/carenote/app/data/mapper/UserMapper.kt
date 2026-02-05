@@ -18,7 +18,8 @@ class UserMapper @Inject constructor() {
             email = firebaseUser.email ?: "",
             createdAt = firebaseUser.metadata?.creationTimestamp?.toLocalDateTime()
                 ?: LocalDateTime.now(),
-            isPremium = false
+            isPremium = false,
+            isEmailVerified = firebaseUser.isEmailVerified
         )
     }
 

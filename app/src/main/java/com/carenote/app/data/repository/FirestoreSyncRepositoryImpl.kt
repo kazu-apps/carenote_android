@@ -3,12 +3,8 @@ package com.carenote.app.data.repository
 import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.SettingsDataSource
 import com.carenote.app.data.local.dao.SyncMappingDao
-import com.carenote.app.data.repository.sync.CalendarEventSyncer
-import com.carenote.app.data.repository.sync.HealthRecordSyncer
+import com.carenote.app.data.repository.sync.EntitySyncer
 import com.carenote.app.data.repository.sync.MedicationLogSyncer
-import com.carenote.app.data.repository.sync.MedicationSyncer
-import com.carenote.app.data.repository.sync.NoteSyncer
-import com.carenote.app.data.repository.sync.TaskSyncer
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
@@ -19,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import java.time.LocalDateTime
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -31,12 +28,12 @@ import javax.inject.Singleton
 class FirestoreSyncRepositoryImpl @Inject constructor(
     private val settingsDataSource: SettingsDataSource,
     private val syncMappingDao: SyncMappingDao,
-    private val medicationSyncer: MedicationSyncer,
+    @Named("medication") private val medicationSyncer: EntitySyncer<*, *>,
     private val medicationLogSyncer: MedicationLogSyncer,
-    private val noteSyncer: NoteSyncer,
-    private val healthRecordSyncer: HealthRecordSyncer,
-    private val calendarEventSyncer: CalendarEventSyncer,
-    private val taskSyncer: TaskSyncer
+    @Named("note") private val noteSyncer: EntitySyncer<*, *>,
+    @Named("healthRecord") private val healthRecordSyncer: EntitySyncer<*, *>,
+    @Named("calendarEvent") private val calendarEventSyncer: EntitySyncer<*, *>,
+    @Named("task") private val taskSyncer: EntitySyncer<*, *>
 ) : SyncRepository {
 
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)

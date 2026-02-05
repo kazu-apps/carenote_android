@@ -210,6 +210,16 @@ class FakeSettingsRepository : SettingsRepository {
         return Result.Success(Unit)
     }
 
+    override suspend fun updateSyncEnabled(
+        enabled: Boolean
+    ): Result<Unit, DomainError> {
+        if (shouldFail) {
+            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        }
+        settings.value = settings.value.copy(syncEnabled = enabled)
+        return Result.Success(Unit)
+    }
+
     override suspend fun resetToDefaults(): Result<Unit, DomainError> {
         if (shouldFail) {
             return Result.Failure(DomainError.DatabaseError("Fake error"))

@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.theme.ButtonShape
 
 /**
@@ -45,10 +46,10 @@ fun EmptyState(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(AppConfig.UI.ICON_SIZE_XLARGE_DP.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
         Text(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
@@ -56,7 +57,7 @@ fun EmptyState(
             textAlign = TextAlign.Center
         )
         if (actionLabel != null && onAction != null) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
             Button(
                 onClick = onAction,
                 shape = ButtonShape

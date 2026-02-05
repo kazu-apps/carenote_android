@@ -6,7 +6,9 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
+import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeSettingsRepository
+import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,12 +29,16 @@ class SettingsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var settingsRepository: FakeSettingsRepository
+    private lateinit var authRepository: FakeAuthRepository
+    private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var viewModel: SettingsViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         settingsRepository = FakeSettingsRepository()
+        authRepository = FakeAuthRepository()
+        syncWorkScheduler = FakeSyncWorkScheduler()
     }
 
     @After
@@ -41,7 +47,7 @@ class SettingsViewModelTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsRepository)
+        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler)
     }
 
     @Test

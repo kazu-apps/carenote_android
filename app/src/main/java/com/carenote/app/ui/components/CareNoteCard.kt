@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.theme.CardShape
 
 /**
@@ -43,13 +44,13 @@ fun CareNoteCard(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
+            defaultElevation = AppConfig.UI.CARD_ELEVATION_DP.dp
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
             content = content
         )
     }

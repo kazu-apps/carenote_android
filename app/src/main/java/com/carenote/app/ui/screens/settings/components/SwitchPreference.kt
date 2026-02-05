@@ -1,6 +1,7 @@
 package com.carenote.app.ui.screens.settings.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,26 +13,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.carenote.app.config.AppConfig
 
 @Composable
 fun SwitchPreference(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    summary: String? = null
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clickable(role = Role.Switch) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(
+                horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
+                vertical = AppConfig.UI.PREFERENCE_VERTICAL_PADDING_DP.dp
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            if (summary != null) {
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange

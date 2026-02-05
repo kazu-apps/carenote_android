@@ -1,6 +1,5 @@
 package com.carenote.app.data.repository
 
-import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.SettingsDataSource
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
@@ -158,12 +157,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `updateMedicationTime MORNING success`() = runTest {
         coEvery {
-            dataSource.updateMedicationTime(
-                SettingsDataSource.MORNING_HOUR_KEY,
-                SettingsDataSource.MORNING_MINUTE_KEY,
-                7,
-                30
-            )
+            dataSource.updateMedicationTime(MedicationTiming.MORNING, 7, 30)
         } returns Unit
 
         val result = repository.updateMedicationTime(MedicationTiming.MORNING, 7, 30)
@@ -174,12 +168,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `updateMedicationTime NOON success`() = runTest {
         coEvery {
-            dataSource.updateMedicationTime(
-                SettingsDataSource.NOON_HOUR_KEY,
-                SettingsDataSource.NOON_MINUTE_KEY,
-                11,
-                45
-            )
+            dataSource.updateMedicationTime(MedicationTiming.NOON, 11, 45)
         } returns Unit
 
         val result = repository.updateMedicationTime(MedicationTiming.NOON, 11, 45)
@@ -302,7 +291,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `updateMedicationTime returns Failure on db error`() = runTest {
         coEvery {
-            dataSource.updateMedicationTime(any(), any(), any(), any())
+            dataSource.updateMedicationTime(any(), any(), any())
         } throws RuntimeException("DB error")
 
         val result = repository.updateMedicationTime(MedicationTiming.MORNING, 8, 0)

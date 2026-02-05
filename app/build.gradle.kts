@@ -90,6 +90,11 @@ android {
             excludes += "META-INF/LICENSE-notice.md"
         }
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -154,6 +159,9 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 
     // Android Test (Espresso/Compose UI)
     androidTestImplementation(platform(libs.androidx.compose.bom))

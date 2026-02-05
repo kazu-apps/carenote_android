@@ -16,6 +16,7 @@ class FakeAuthRepository : AuthRepository {
 
     var shouldFail = false
     var failureError: DomainError = DomainError.UnauthorizedError("Test error")
+    var isEmailVerified = true
 
     fun setCurrentUser(user: User?) {
         _currentUser.value = user
@@ -25,6 +26,7 @@ class FakeAuthRepository : AuthRepository {
         _currentUser.value = null
         shouldFail = false
         failureError = DomainError.UnauthorizedError("Test error")
+        isEmailVerified = true
     }
 
     override fun getCurrentUser(): User? = _currentUser.value
@@ -88,6 +90,7 @@ class FakeAuthRepository : AuthRepository {
         email = email,
         name = name,
         createdAt = LocalDateTime.now(),
-        isPremium = false
+        isPremium = false,
+        isEmailVerified = isEmailVerified
     )
 }

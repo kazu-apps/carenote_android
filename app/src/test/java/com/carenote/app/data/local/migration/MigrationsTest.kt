@@ -48,9 +48,15 @@ class MigrationsTest {
     }
 
     @Test
-    fun `all() contains five migrations in order`() {
+    fun `MIGRATION_6_7 has correct version numbers`() {
+        assertEquals(6, Migrations.MIGRATION_6_7.startVersion)
+        assertEquals(7, Migrations.MIGRATION_6_7.endVersion)
+    }
+
+    @Test
+    fun `all() contains six migrations in order`() {
         val all = Migrations.all()
-        assertEquals(5, all.size)
+        assertEquals(6, all.size)
         assertEquals(1, all[0].startVersion)
         assertEquals(2, all[0].endVersion)
         assertEquals(2, all[1].startVersion)
@@ -61,6 +67,8 @@ class MigrationsTest {
         assertEquals(5, all[3].endVersion)
         assertEquals(5, all[4].startVersion)
         assertEquals(6, all[4].endVersion)
+        assertEquals(6, all[5].startVersion)
+        assertEquals(7, all[5].endVersion)
     }
 
     @Test
@@ -71,7 +79,7 @@ class MigrationsTest {
     }
 
     @Test
-    fun `migrations form a continuous chain from version 1 to 6`() {
+    fun `migrations form a continuous chain from version 1 to 7`() {
         val all = Migrations.all()
         for (i in 0 until all.size - 1) {
             assertEquals(
@@ -82,7 +90,7 @@ class MigrationsTest {
             )
         }
         assertEquals(1, all.first().startVersion)
-        assertEquals(6, all.last().endVersion)
+        assertEquals(7, all.last().endVersion)
     }
 
     @Test
@@ -186,5 +194,41 @@ class MigrationsTest {
             sqlStatements[4].contains("index_tasks_is_completed")
         )
         assertTrue("Should create index on tasks.due_date", sqlStatements[5].contains("index_tasks_due_date"))
+    }
+
+    @Test
+    fun `MIGRATION_6_7 creates sync_mappings table with indexes`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+        val sqlStatements = mutableListOf<String>()
+        every { db.execSQL(capture(sqlStatements)) } just Runs
+
+        Migrations.MIGRATION_6_7.migrate(db)
+
+        verify(exactly = 3) { db.execSQL(any()) }
+        assertEquals(3, sqlStatements.size)
+        assertTrue(
+            "Should create sync_mappings table",
+            sqlStatements[0].contains("CREATE TABLE IF NOT EXISTS `sync_mappings`")
+        )
+        assertTrue(
+            "Should have entity_type column",
+            sqlStatements[0].contains("`entity_type` TEXT NOT NULL")
+        )
+        assertTrue(
+            "Should have local_id column",
+            sqlStatements[0].contains("`local_id` INTEGER NOT NULL")
+        )
+        assertTrue(
+            "Should have remote_id column",
+            sqlStatements[0].contains("`remote_id` TEXT NOT NULL")
+        )
+        assertTrue(
+            "Should create unique index on entity_type and local_id",
+            sqlStatements[1].contains("index_sync_mappings_entity_type_local_id")
+        )
+        assertTrue(
+            "Should create unique index on entity_type and remote_id",
+            sqlStatements[2].contains("index_sync_mappings_entity_type_remote_id")
+        )
     }
 }

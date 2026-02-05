@@ -23,20 +23,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carenote.app.BuildConfig
 import com.carenote.app.R
-import com.carenote.app.domain.model.MedicationTiming
-import com.carenote.app.ui.components.ConfirmDialog
-import com.carenote.app.ui.screens.settings.components.ClickablePreference
-import com.carenote.app.ui.screens.settings.components.NumberInputDialog
-import com.carenote.app.ui.screens.settings.components.SettingsSection
-import com.carenote.app.ui.screens.settings.components.SwitchPreference
-import com.carenote.app.ui.screens.settings.components.ThemeModeSelector
-import com.carenote.app.ui.screens.settings.components.TimePickerDialog
+import com.carenote.app.ui.screens.settings.dialogs.SettingsDialogs
+import com.carenote.app.ui.screens.settings.sections.AppInfoSection
+import com.carenote.app.ui.screens.settings.sections.HealthThresholdSection
+import com.carenote.app.ui.screens.settings.sections.MedicationTimeSection
+import com.carenote.app.ui.screens.settings.sections.NotificationSection
+import com.carenote.app.ui.screens.settings.sections.SyncSection
+import com.carenote.app.ui.screens.settings.sections.ThemeSection
 import com.carenote.app.ui.util.SnackbarEvent
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,20 +47,11 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Dialog states
-    var showQuietHoursStartDialog by remember { mutableStateOf(false) }
-    var showQuietHoursEndDialog by remember { mutableStateOf(false) }
-    var showTempDialog by remember { mutableStateOf(false) }
-    var showBpUpperDialog by remember { mutableStateOf(false) }
-    var showBpLowerDialog by remember { mutableStateOf(false) }
-    var showPulseHighDialog by remember { mutableStateOf(false) }
-    var showPulseLowDialog by remember { mutableStateOf(false) }
-    var showMorningTimeDialog by remember { mutableStateOf(false) }
-    var showNoonTimeDialog by remember { mutableStateOf(false) }
-    var showEveningTimeDialog by remember { mutableStateOf(false) }
-    var showResetDialog by remember { mutableStateOf(false) }
+    var dialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -98,313 +89,104 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
-            // Section 0: Theme
             item {
-                SettingsSection(title = stringResource(R.string.settings_theme))
-            }
-            item {
-                ThemeModeSelector(
-                    currentMode = settings.themeMode,
-                    onModeSelected = { viewModel.updateThemeMode(it) }
-                )
-            }
-
-            // Section 1: Notifications
-            item {
-                SettingsSection(title = stringResource(R.string.settings_notifications))
-            }
-            item {
-                SwitchPreference(
-                    title = stringResource(R.string.settings_notifications_enabled),
-                    checked = settings.notificationsEnabled,
-                    onCheckedChange = { viewModel.toggleNotifications(it) }
+                ThemeSection(
+                    themeMode = settings.themeMode,
+                    onThemeModeSelected = { viewModel.updateThemeMode(it) }
                 )
             }
             item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_quiet_hours),
-                    summary = stringResource(
+                val lastSyncText = settings.lastSyncTime?.let { time ->
+                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).format(time)
+                } ?: stringResource(R.string.settings_last_sync_never)
+                SyncSection(
+                    syncEnabled = settings.syncEnabled,
+                    onSyncEnabledChange = { viewModel.toggleSyncEnabled(it) },
+                    isSyncing = isSyncing,
+                    isLoggedIn = isLoggedIn,
+                    lastSyncText = lastSyncText,
+                    onSyncNowClick = { viewModel.triggerManualSync() }
+                )
+            }
+            item {
+                NotificationSection(
+                    notificationsEnabled = settings.notificationsEnabled,
+                    onNotificationsEnabledChange = { viewModel.toggleNotifications(it) },
+                    quietHoursText = stringResource(
                         R.string.settings_quiet_hours_format,
                         settings.quietHoursStart,
                         settings.quietHoursEnd
                     ),
-                    onClick = { showQuietHoursStartDialog = true }
+                    onQuietHoursClick = { dialogState = SettingsDialogState.QuietHoursStart }
                 )
             }
-
-            // Section 2: Health Thresholds
             item {
-                SettingsSection(title = stringResource(R.string.settings_health_thresholds))
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_temperature_high),
-                    summary = stringResource(
+                HealthThresholdSection(
+                    temperatureText = stringResource(
                         R.string.settings_temperature_format,
                         settings.temperatureHigh
                     ),
-                    onClick = { showTempDialog = true }
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_bp_upper),
-                    summary = stringResource(
+                    onTemperatureClick = { dialogState = SettingsDialogState.Temperature },
+                    bpUpperText = stringResource(
                         R.string.settings_bp_upper_format,
                         settings.bloodPressureHighUpper
                     ),
-                    onClick = { showBpUpperDialog = true }
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_bp_lower),
-                    summary = stringResource(
+                    onBpUpperClick = { dialogState = SettingsDialogState.BpUpper },
+                    bpLowerText = stringResource(
                         R.string.settings_bp_lower_format,
                         settings.bloodPressureHighLower
                     ),
-                    onClick = { showBpLowerDialog = true }
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_pulse_high),
-                    summary = stringResource(
+                    onBpLowerClick = { dialogState = SettingsDialogState.BpLower },
+                    pulseHighText = stringResource(
                         R.string.settings_pulse_high_format,
                         settings.pulseHigh
                     ),
-                    onClick = { showPulseHighDialog = true }
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_pulse_low),
-                    summary = stringResource(
+                    onPulseHighClick = { dialogState = SettingsDialogState.PulseHigh },
+                    pulseLowText = stringResource(
                         R.string.settings_pulse_low_format,
                         settings.pulseLow
                     ),
-                    onClick = { showPulseLowDialog = true }
+                    onPulseLowClick = { dialogState = SettingsDialogState.PulseLow }
                 )
             }
-
-            // Section 3: Medication Times
             item {
-                SettingsSection(title = stringResource(R.string.settings_medication_times))
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.medication_morning),
-                    summary = stringResource(
+                MedicationTimeSection(
+                    morningTimeText = stringResource(
                         R.string.settings_time_format,
                         settings.morningHour,
                         settings.morningMinute
                     ),
-                    onClick = { showMorningTimeDialog = true }
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.medication_noon),
-                    summary = stringResource(
+                    onMorningClick = { dialogState = SettingsDialogState.MorningTime },
+                    noonTimeText = stringResource(
                         R.string.settings_time_format,
                         settings.noonHour,
                         settings.noonMinute
                     ),
-                    onClick = { showNoonTimeDialog = true }
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.medication_evening),
-                    summary = stringResource(
+                    onNoonClick = { dialogState = SettingsDialogState.NoonTime },
+                    eveningTimeText = stringResource(
                         R.string.settings_time_format,
                         settings.eveningHour,
                         settings.eveningMinute
                     ),
-                    onClick = { showEveningTimeDialog = true }
-                )
-            }
-
-            // Section 4: App Info
-            item {
-                SettingsSection(title = stringResource(R.string.settings_app_info))
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_version),
-                    summary = BuildConfig.VERSION_NAME,
-                    onClick = {}
+                    onEveningClick = { dialogState = SettingsDialogState.EveningTime }
                 )
             }
             item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_privacy_policy),
-                    summary = stringResource(R.string.settings_privacy_policy_summary),
-                    onClick = onNavigateToPrivacyPolicy
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_terms_of_service),
-                    summary = stringResource(R.string.settings_terms_of_service_summary),
-                    onClick = onNavigateToTermsOfService
-                )
-            }
-            item {
-                ClickablePreference(
-                    title = stringResource(R.string.settings_reset_to_defaults),
-                    summary = "",
-                    onClick = { showResetDialog = true }
+                AppInfoSection(
+                    versionName = BuildConfig.VERSION_NAME,
+                    onPrivacyPolicyClick = onNavigateToPrivacyPolicy,
+                    onTermsOfServiceClick = onNavigateToTermsOfService,
+                    onResetClick = { dialogState = SettingsDialogState.ResetConfirm }
                 )
             }
         }
     }
 
-    // Dialogs
-    if (showQuietHoursStartDialog) {
-        TimePickerDialog(
-            title = stringResource(R.string.settings_quiet_hours),
-            initialHour = settings.quietHoursStart,
-            initialMinute = 0,
-            onDismiss = { showQuietHoursStartDialog = false },
-            onConfirm = { hour, _ ->
-                showQuietHoursStartDialog = false
-                showQuietHoursEndDialog = true
-                viewModel.updateQuietHours(hour, settings.quietHoursEnd)
-            }
-        )
-    }
-
-    if (showQuietHoursEndDialog) {
-        TimePickerDialog(
-            title = stringResource(R.string.settings_quiet_hours),
-            initialHour = settings.quietHoursEnd,
-            initialMinute = 0,
-            onDismiss = { showQuietHoursEndDialog = false },
-            onConfirm = { hour, _ ->
-                showQuietHoursEndDialog = false
-                viewModel.updateQuietHours(settings.quietHoursStart, hour)
-            }
-        )
-    }
-
-    if (showTempDialog) {
-        NumberInputDialog(
-            title = stringResource(R.string.settings_temperature_high),
-            currentValue = settings.temperatureHigh.toString(),
-            onDismiss = { showTempDialog = false },
-            onConfirm = { value ->
-                showTempDialog = false
-                value.toDoubleOrNull()?.let { viewModel.updateTemperatureThreshold(it) }
-            },
-            keyboardType = KeyboardType.Decimal
-        )
-    }
-
-    if (showBpUpperDialog) {
-        NumberInputDialog(
-            title = stringResource(R.string.settings_bp_upper),
-            currentValue = settings.bloodPressureHighUpper.toString(),
-            onDismiss = { showBpUpperDialog = false },
-            onConfirm = { value ->
-                showBpUpperDialog = false
-                value.toIntOrNull()?.let {
-                    viewModel.updateBloodPressureThresholds(it, settings.bloodPressureHighLower)
-                }
-            }
-        )
-    }
-
-    if (showBpLowerDialog) {
-        NumberInputDialog(
-            title = stringResource(R.string.settings_bp_lower),
-            currentValue = settings.bloodPressureHighLower.toString(),
-            onDismiss = { showBpLowerDialog = false },
-            onConfirm = { value ->
-                showBpLowerDialog = false
-                value.toIntOrNull()?.let {
-                    viewModel.updateBloodPressureThresholds(settings.bloodPressureHighUpper, it)
-                }
-            }
-        )
-    }
-
-    if (showPulseHighDialog) {
-        NumberInputDialog(
-            title = stringResource(R.string.settings_pulse_high),
-            currentValue = settings.pulseHigh.toString(),
-            onDismiss = { showPulseHighDialog = false },
-            onConfirm = { value ->
-                showPulseHighDialog = false
-                value.toIntOrNull()?.let {
-                    viewModel.updatePulseThresholds(it, settings.pulseLow)
-                }
-            }
-        )
-    }
-
-    if (showPulseLowDialog) {
-        NumberInputDialog(
-            title = stringResource(R.string.settings_pulse_low),
-            currentValue = settings.pulseLow.toString(),
-            onDismiss = { showPulseLowDialog = false },
-            onConfirm = { value ->
-                showPulseLowDialog = false
-                value.toIntOrNull()?.let {
-                    viewModel.updatePulseThresholds(settings.pulseHigh, it)
-                }
-            }
-        )
-    }
-
-    if (showMorningTimeDialog) {
-        TimePickerDialog(
-            title = stringResource(R.string.medication_morning),
-            initialHour = settings.morningHour,
-            initialMinute = settings.morningMinute,
-            onDismiss = { showMorningTimeDialog = false },
-            onConfirm = { hour, minute ->
-                showMorningTimeDialog = false
-                viewModel.updateMedicationTime(MedicationTiming.MORNING, hour, minute)
-            }
-        )
-    }
-
-    if (showNoonTimeDialog) {
-        TimePickerDialog(
-            title = stringResource(R.string.medication_noon),
-            initialHour = settings.noonHour,
-            initialMinute = settings.noonMinute,
-            onDismiss = { showNoonTimeDialog = false },
-            onConfirm = { hour, minute ->
-                showNoonTimeDialog = false
-                viewModel.updateMedicationTime(MedicationTiming.NOON, hour, minute)
-            }
-        )
-    }
-
-    if (showEveningTimeDialog) {
-        TimePickerDialog(
-            title = stringResource(R.string.medication_evening),
-            initialHour = settings.eveningHour,
-            initialMinute = settings.eveningMinute,
-            onDismiss = { showEveningTimeDialog = false },
-            onConfirm = { hour, minute ->
-                showEveningTimeDialog = false
-                viewModel.updateMedicationTime(MedicationTiming.EVENING, hour, minute)
-            }
-        )
-    }
-
-    if (showResetDialog) {
-        ConfirmDialog(
-            title = stringResource(R.string.settings_reset_confirm_title),
-            message = stringResource(R.string.settings_reset_confirm_message),
-            onConfirm = {
-                showResetDialog = false
-                viewModel.resetToDefaults()
-            },
-            onDismiss = { showResetDialog = false }
-        )
-    }
+    SettingsDialogs(
+        dialogState = dialogState,
+        settings = settings,
+        onDismiss = { dialogState = SettingsDialogState.None },
+        onDialogStateChange = { dialogState = it },
+        viewModel = viewModel
+    )
 }

@@ -7,5 +7,6 @@ data class User(
     val name: String,
     val email: String,
     val createdAt: LocalDateTime,
-    val isPremium: Boolean = false
+    val isPremium: Boolean = false,
+    val isEmailVerified: Boolean = false
 )

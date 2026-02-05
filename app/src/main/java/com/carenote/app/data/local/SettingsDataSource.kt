@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,6 +44,7 @@ class SettingsDataSource @Inject constructor(
         const val NOON_MINUTE = "noon_minute"
         const val EVENING_HOUR = "evening_hour"
         const val EVENING_MINUTE = "evening_minute"
+        const val SYNC_ENABLED = "sync_enabled"
         const val LAST_SYNC_TIME = "last_sync_time"
     }
 
@@ -127,7 +129,12 @@ class SettingsDataSource @Inject constructor(
             eveningMinute = prefs.getInt(
                 PreferencesKeys.EVENING_MINUTE,
                 AppConfig.Medication.DEFAULT_EVENING_MINUTE
-            )
+            ),
+            syncEnabled = prefs.getBoolean(
+                PreferencesKeys.SYNC_ENABLED,
+                true
+            ),
+            lastSyncTime = getLastSyncTime()
         )
     }
 
@@ -160,7 +167,12 @@ class SettingsDataSource @Inject constructor(
             .apply()
     }
 
-    suspend fun updateMedicationTime(hourKey: String, minuteKey: String, hour: Int, minute: Int) {
+    suspend fun updateMedicationTime(timing: MedicationTiming, hour: Int, minute: Int) {
+        val (hourKey, minuteKey) = when (timing) {
+            MedicationTiming.MORNING -> PreferencesKeys.MORNING_HOUR to PreferencesKeys.MORNING_MINUTE
+            MedicationTiming.NOON -> PreferencesKeys.NOON_HOUR to PreferencesKeys.NOON_MINUTE
+            MedicationTiming.EVENING -> PreferencesKeys.EVENING_HOUR to PreferencesKeys.EVENING_MINUTE
+        }
         prefs.edit()
             .putInt(hourKey, hour)
             .putInt(minuteKey, minute)
@@ -173,6 +185,15 @@ class SettingsDataSource @Inject constructor(
 
     suspend fun clearAll() {
         prefs.edit().clear().apply()
+    }
+
+    /**
+     * 同期有効/無効を更新
+     *
+     * @param enabled 同期を有効にするかどうか
+     */
+    suspend fun updateSyncEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(PreferencesKeys.SYNC_ENABLED, enabled).apply()
     }
 
     /**
@@ -246,11 +267,5 @@ class SettingsDataSource @Inject constructor(
 
     companion object {
         private const val PREFS_FILE_NAME = "carenote_settings_prefs"
-        const val MORNING_HOUR_KEY = "morning_hour"
-        const val MORNING_MINUTE_KEY = "morning_minute"
-        const val NOON_HOUR_KEY = "noon_hour"
-        const val NOON_MINUTE_KEY = "noon_minute"
-        const val EVENING_HOUR_KEY = "evening_hour"
-        const val EVENING_MINUTE_KEY = "evening_minute"
     }
 }

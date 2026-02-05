@@ -1,6 +1,7 @@
 package com.carenote.app.domain.model
 
 import com.carenote.app.config.AppConfig
+import java.time.LocalDateTime
 
 /**
  * ユーザー設定を表すドメインモデル
@@ -28,5 +29,9 @@ data class UserSettings(
     val noonHour: Int = AppConfig.Medication.DEFAULT_NOON_HOUR,
     val noonMinute: Int = AppConfig.Medication.DEFAULT_NOON_MINUTE,
     val eveningHour: Int = AppConfig.Medication.DEFAULT_EVENING_HOUR,
-    val eveningMinute: Int = AppConfig.Medication.DEFAULT_EVENING_MINUTE
+    val eveningMinute: Int = AppConfig.Medication.DEFAULT_EVENING_MINUTE,
+
+    // 同期設定
+    val syncEnabled: Boolean = true,
+    val lastSyncTime: LocalDateTime? = null
 )

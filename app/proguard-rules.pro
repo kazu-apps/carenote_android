@@ -47,3 +47,19 @@
 -dontwarn javax.naming.**
 -dontwarn org.ietf.jgss.**
 -dontwarn org.jetbrains.annotations.**
+
+# ========== Firebase ==========
+
+# Crashlytics — preserve line numbers and source file names for readable stack traces
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Firestore Remote Models — used for document serialization
+-keep class com.carenote.app.data.remote.model.** { *; }
+
+# Firebase Messaging Service
+-keep class com.carenote.app.data.service.CareNoteMessagingService { *; }
+
+# Suppress warnings for Firebase internal classes
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**

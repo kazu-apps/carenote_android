@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Pill/capsule shape for medication notification icon -->
+    <!-- Outer capsule shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M4.22,11.29L11.29,4.22c1.17,-1.17 3.07,-1.17 4.24,0l4.24,4.24c1.17,1.17 1.17,3.07 0,4.24l-7.07,7.07c-1.17,1.17 -3.07,1.17 -4.24,0l-4.24,-4.24c-1.17,-1.17 -1.17,-3.07 0,-4.24z"/>
+    <!-- Dividing line across the pill -->
+    <path
+        android:fillColor="#888888"
+        android:pathData="M9.17,17.66L17.66,9.17c0.39,-0.39 0.39,-1.02 0,-1.41l-1.41,-1.41c-0.39,-0.39 -1.02,-0.39 -1.41,0l-8.49,8.49c-0.39,0.39 -0.39,1.02 0,1.41l1.41,1.41c0.39,0.39 1.02,0.39 1.41,0z"/>
+</vector>

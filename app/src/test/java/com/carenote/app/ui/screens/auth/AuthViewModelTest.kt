@@ -5,6 +5,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -33,13 +34,15 @@ class AuthViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var authRepository: FakeAuthRepository
+    private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var viewModel: AuthViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
-        viewModel = AuthViewModel(authRepository)
+        syncWorkScheduler = FakeSyncWorkScheduler()
+        viewModel = AuthViewModel(authRepository, syncWorkScheduler)
     }
 
     @After
@@ -142,6 +145,39 @@ class AuthViewModelTest {
             val event = awaitItem()
             assertTrue(event)
         }
+    }
+
+    @Test
+    fun `signIn success with unverified email shows warning snackbar`() = runTest(testDispatcher) {
+        authRepository.isEmailVerified = false
+        viewModel.updateLoginEmail("test@example.com")
+        viewModel.updateLoginPassword("password123")
+
+        viewModel.snackbarController.events.test {
+            viewModel.signIn()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.auth_email_not_verified,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `signIn success with verified email does not show warning`() = runTest(testDispatcher) {
+        authRepository.isEmailVerified = true
+        viewModel.updateLoginEmail("test@example.com")
+        viewModel.updateLoginPassword("password123")
+
+        viewModel.authSuccessEvent.test {
+            viewModel.signIn()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event)
+        }
+        // No snackbar event for verified user (only authSuccessEvent)
     }
 
     @Test

@@ -20,11 +20,16 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.rule.GrantPermissionRule
 import com.carenote.app.data.local.CareNoteDatabase
+import com.carenote.app.domain.model.User
+import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeSyncRepository
+import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.MainActivity
 import dagger.hilt.android.testing.HiltAndroidRule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 /**
@@ -38,6 +43,15 @@ abstract class E2eTestBase {
 
     @Inject
     lateinit var database: CareNoteDatabase
+
+    @Inject
+    lateinit var fakeAuthRepository: FakeAuthRepository
+
+    @Inject
+    lateinit var fakeSyncRepository: FakeSyncRepository
+
+    @Inject
+    lateinit var fakeSyncWorkScheduler: FakeSyncWorkScheduler
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -65,6 +79,41 @@ abstract class E2eTestBase {
     @After
     open fun tearDown() {
         database.clearAllTables()
+        fakeAuthRepository.clear()
+        fakeSyncRepository.clear()
+        fakeSyncWorkScheduler.clear()
+    }
+
+    // --- Auth helpers ---
+
+    /**
+     * Create a test user for authentication tests.
+     */
+    protected fun createTestUser(
+        uid: String = "test-uid",
+        email: String = "test@example.com",
+        name: String = "Test User",
+        isPremium: Boolean = false
+    ) = User(
+        uid = uid,
+        email = email,
+        name = name,
+        createdAt = LocalDateTime.now(),
+        isPremium = isPremium
+    )
+
+    /**
+     * Set the current user to simulate a logged-in state.
+     */
+    protected fun setLoggedInUser(user: User = createTestUser()) {
+        fakeAuthRepository.setCurrentUser(user)
+    }
+
+    /**
+     * Clear the current user to simulate a logged-out state.
+     */
+    protected fun setLoggedOut() {
+        fakeAuthRepository.setCurrentUser(null)
     }
 
     // --- Navigation helpers ---

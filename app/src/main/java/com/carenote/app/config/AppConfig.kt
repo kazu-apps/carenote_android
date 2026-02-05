@@ -53,37 +53,29 @@ object AppConfig {
      * 通知関連の設定値
      */
     object Notification {
-        /** 未記録リマインド間隔（分） - 無料版 */
-        const val FREE_REMINDER_INTERVAL_MINUTES = 30
-
-        /** 未記録リマインド回数 - 無料版 */
-        const val FREE_REMINDER_COUNT = 1
-
-        /** 未記録リマインド回数 - プレミアム版 */
-        const val PREMIUM_REMINDER_COUNT = 3
-
         /** おやすみ時間デフォルト開始 */
         const val DEFAULT_QUIET_HOURS_START = 22
 
         /** おやすみ時間デフォルト終了 */
         const val DEFAULT_QUIET_HOURS_END = 7
-    }
 
-    /**
-     * プレミアム関連の設定値
-     */
-    object Premium {
-        /** 無料版の家族メンバー上限 */
-        const val FREE_MEMBER_LIMIT = 2
+        /** 通知チャンネル ID: 服薬リマインダー */
+        const val CHANNEL_ID_MEDICATION_REMINDER = "medication_reminder"
 
-        /** プレミアム版の家族メンバー上限 */
-        const val PREMIUM_MEMBER_LIMIT = 5
+        /** 通知チャンネル ID: 同期ステータス */
+        const val CHANNEL_ID_SYNC_STATUS = "sync_status"
 
-        /** 無料版のデータ保存期間（日） */
-        const val FREE_DATA_RETENTION_DAYS = 90
+        /** 通知チャンネル ID: 一般通知 */
+        const val CHANNEL_ID_GENERAL = "general"
 
-        /** 無料版のグラフ表示期間（日） */
-        const val FREE_GRAPH_DAYS = 7
+        /** 通知 ID ベース値: 服薬リマインダー */
+        const val NOTIFICATION_ID_MEDICATION_BASE = 1000
+
+        /** 通知 ID: 同期ステータス */
+        const val NOTIFICATION_ID_SYNC = 2000
+
+        /** リマインダーワーカーのタグ */
+        const val REMINDER_WORK_TAG = "medication_reminder_work"
     }
 
     /**
@@ -277,7 +269,7 @@ object AppConfig {
         const val EMAIL_MAX_LENGTH = 255
 
         /** パスワードの最小文字数 */
-        const val PASSWORD_MIN_LENGTH = 6
+        const val PASSWORD_MIN_LENGTH = 8
 
         /** パスワードの最大文字数 */
         const val PASSWORD_MAX_LENGTH = 100
@@ -304,6 +296,51 @@ object AppConfig {
 
         /** Flow の WhileSubscribed 停止タイムアウト（ミリ秒） */
         const val FLOW_STOP_TIMEOUT_MS = 5_000L
+
+        /** 画面の水平 padding（dp） */
+        const val SCREEN_HORIZONTAL_PADDING_DP = 16
+
+        /** Auth 画面の水平 padding（dp） */
+        const val AUTH_HORIZONTAL_PADDING_DP = 24
+
+        /** セクション間の垂直スペース（dp） */
+        const val CONTENT_SPACING_DP = 16
+
+        /** リストアイテム間のスペース（dp） */
+        const val ITEM_SPACING_DP = 8
+
+        /** 小さな内部スペース（dp） */
+        const val SMALL_SPACING_DP = 4
+
+        /** ボタンの高さ（dp） */
+        const val BUTTON_HEIGHT_DP = 56
+
+        /** FAB 付きリストの下部 padding（dp） */
+        const val LIST_BOTTOM_PADDING_DP = 80
+
+        /** カード内小アイコンサイズ（dp） */
+        const val ICON_SIZE_SMALL_DP = 16
+
+        /** 標準アイコンサイズ（dp） */
+        const val ICON_SIZE_MEDIUM_DP = 24
+
+        /** ローディング/空状態アイコンサイズ（dp） */
+        const val ICON_SIZE_LARGE_DP = 48
+
+        /** 大きなアイコンサイズ（dp） */
+        const val ICON_SIZE_XLARGE_DP = 64
+
+        /** チェックボックスのサイズ（dp） */
+        const val CHECKBOX_SIZE_DP = 20
+
+        /** プログレスインジケーターの線幅（dp） */
+        const val PROGRESS_STROKE_WIDTH_DP = 2
+
+        /** 設定項目の垂直 padding（dp） */
+        const val PREFERENCE_VERTICAL_PADDING_DP = 12
+
+        /** カードの elevation（dp） */
+        const val CARD_ELEVATION_DP = 1
     }
 
     /**
@@ -318,5 +355,25 @@ object AppConfig {
 
         /** 同期エンティティタイプ数（進捗計算用） */
         const val ENTITY_TYPE_COUNT = 6
+
+        /** 定期同期間隔（分） - WorkManager 最小値 15分 */
+        const val SYNC_INTERVAL_MINUTES = 15L
+
+        /** 初回同期遅延（分） */
+        const val SYNC_INITIAL_DELAY_MINUTES = 1L
+
+        /** 同期リトライ初期バックオフ（ミリ秒） */
+        const val SYNC_BACKOFF_INITIAL_MS = 30_000L
+
+        /** 同期最大リトライ回数 */
+        const val MAX_RETRIES = 3
+    }
+
+    /**
+     * Firebase Cloud Messaging 関連の設定値
+     */
+    object Fcm {
+        /** 全ユーザー向けトピック */
+        const val TOPIC_ALL_USERS = "all_users"
     }
 }

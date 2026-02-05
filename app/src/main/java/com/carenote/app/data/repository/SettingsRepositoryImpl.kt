@@ -185,15 +185,10 @@ class SettingsRepositoryImpl @Inject constructor(
                 )
             )
         }
-        val (hourKey, minuteKey) = when (timing) {
-            MedicationTiming.MORNING -> SettingsDataSource.MORNING_HOUR_KEY to SettingsDataSource.MORNING_MINUTE_KEY
-            MedicationTiming.NOON -> SettingsDataSource.NOON_HOUR_KEY to SettingsDataSource.NOON_MINUTE_KEY
-            MedicationTiming.EVENING -> SettingsDataSource.EVENING_HOUR_KEY to SettingsDataSource.EVENING_MINUTE_KEY
-        }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save medication time", it) }
         ) {
-            dataSource.updateMedicationTime(hourKey, minuteKey, hour, minute)
+            dataSource.updateMedicationTime(timing, hour, minute)
             Timber.d("Medication time updated ($timing): $hour:$minute")
         }
     }
@@ -206,6 +201,17 @@ class SettingsRepositoryImpl @Inject constructor(
         ) {
             dataSource.updateThemeMode(mode.name)
             Timber.d("Theme mode updated: $mode")
+        }
+    }
+
+    override suspend fun updateSyncEnabled(
+        enabled: Boolean
+    ): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to save sync enabled setting", it) }
+        ) {
+            dataSource.updateSyncEnabled(enabled)
+            Timber.d("Sync enabled updated: $enabled")
         }
     }
 
