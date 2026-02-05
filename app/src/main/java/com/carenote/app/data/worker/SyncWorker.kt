@@ -41,7 +41,7 @@ class SyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val syncRepository: SyncRepository,
     private val authRepository: AuthRepository,
-    private val firestore: FirebaseFirestore
+    private val firestore: dagger.Lazy<FirebaseFirestore>
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -84,7 +84,7 @@ class SyncWorker @AssistedInject constructor(
         }
 
         return try {
-            val querySnapshot = firestore.collection("careRecipientMembers")
+            val querySnapshot = firestore.get().collection("careRecipientMembers")
                 .whereEqualTo("userId", userId)
                 .limit(1)
                 .get()

@@ -24,6 +24,7 @@ import com.carenote.app.data.mapper.remote.MedicationRemoteMapper
 import com.carenote.app.data.mapper.remote.NoteRemoteMapper
 import com.carenote.app.data.mapper.remote.TaskRemoteMapper
 import com.carenote.app.data.repository.FirestoreSyncRepositoryImpl
+import com.carenote.app.data.repository.NoOpSyncRepository
 import com.carenote.app.data.repository.sync.ConfigDrivenEntitySyncer
 import com.carenote.app.data.repository.sync.EntitySyncer
 import com.carenote.app.data.repository.sync.MedicationLogSyncer
@@ -52,7 +53,7 @@ object SyncModule {
     @Singleton
     @Named("medication")
     fun provideMedicationSyncer(
-        firestore: FirebaseFirestore,
+        firestore: dagger.Lazy<FirebaseFirestore>,
         syncMappingDao: SyncMappingDao,
         timestampConverter: FirestoreTimestampConverter,
         dao: MedicationDao,
@@ -74,14 +75,16 @@ object SyncModule {
             getLocalId = { it.id },
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
-        return ConfigDrivenEntitySyncer(config, firestore, syncMappingDao, timestampConverter)
+        return ConfigDrivenEntitySyncer(
+            config, firestore.get(), syncMappingDao, timestampConverter
+        )
     }
 
     @Provides
     @Singleton
     @Named("note")
     fun provideNoteSyncer(
-        firestore: FirebaseFirestore,
+        firestore: dagger.Lazy<FirebaseFirestore>,
         syncMappingDao: SyncMappingDao,
         timestampConverter: FirestoreTimestampConverter,
         dao: NoteDao,
@@ -103,14 +106,16 @@ object SyncModule {
             getLocalId = { it.id },
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
-        return ConfigDrivenEntitySyncer(config, firestore, syncMappingDao, timestampConverter)
+        return ConfigDrivenEntitySyncer(
+            config, firestore.get(), syncMappingDao, timestampConverter
+        )
     }
 
     @Provides
     @Singleton
     @Named("healthRecord")
     fun provideHealthRecordSyncer(
-        firestore: FirebaseFirestore,
+        firestore: dagger.Lazy<FirebaseFirestore>,
         syncMappingDao: SyncMappingDao,
         timestampConverter: FirestoreTimestampConverter,
         dao: HealthRecordDao,
@@ -132,14 +137,16 @@ object SyncModule {
             getLocalId = { it.id },
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
-        return ConfigDrivenEntitySyncer(config, firestore, syncMappingDao, timestampConverter)
+        return ConfigDrivenEntitySyncer(
+            config, firestore.get(), syncMappingDao, timestampConverter
+        )
     }
 
     @Provides
     @Singleton
     @Named("calendarEvent")
     fun provideCalendarEventSyncer(
-        firestore: FirebaseFirestore,
+        firestore: dagger.Lazy<FirebaseFirestore>,
         syncMappingDao: SyncMappingDao,
         timestampConverter: FirestoreTimestampConverter,
         dao: CalendarEventDao,
@@ -161,14 +168,16 @@ object SyncModule {
             getLocalId = { it.id },
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
-        return ConfigDrivenEntitySyncer(config, firestore, syncMappingDao, timestampConverter)
+        return ConfigDrivenEntitySyncer(
+            config, firestore.get(), syncMappingDao, timestampConverter
+        )
     }
 
     @Provides
     @Singleton
     @Named("task")
     fun provideTaskSyncer(
-        firestore: FirebaseFirestore,
+        firestore: dagger.Lazy<FirebaseFirestore>,
         syncMappingDao: SyncMappingDao,
         timestampConverter: FirestoreTimestampConverter,
         dao: TaskDao,
@@ -190,30 +199,34 @@ object SyncModule {
             getLocalId = { it.id },
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
-        return ConfigDrivenEntitySyncer(config, firestore, syncMappingDao, timestampConverter)
+        return ConfigDrivenEntitySyncer(
+            config, firestore.get(), syncMappingDao, timestampConverter
+        )
     }
 
     @Provides
     @Singleton
     fun provideSyncRepository(
+        availability: FirebaseAvailability,
         settingsDataSource: SettingsDataSource,
         syncMappingDao: SyncMappingDao,
-        @Named("medication") medicationSyncer: EntitySyncer<*, *>,
-        medicationLogSyncer: MedicationLogSyncer,
-        @Named("note") noteSyncer: EntitySyncer<*, *>,
-        @Named("healthRecord") healthRecordSyncer: EntitySyncer<*, *>,
-        @Named("calendarEvent") calendarEventSyncer: EntitySyncer<*, *>,
-        @Named("task") taskSyncer: EntitySyncer<*, *>
+        @Named("medication") medicationSyncer: dagger.Lazy<EntitySyncer<*, *>>,
+        medicationLogSyncer: dagger.Lazy<MedicationLogSyncer>,
+        @Named("note") noteSyncer: dagger.Lazy<EntitySyncer<*, *>>,
+        @Named("healthRecord") healthRecordSyncer: dagger.Lazy<EntitySyncer<*, *>>,
+        @Named("calendarEvent") calendarEventSyncer: dagger.Lazy<EntitySyncer<*, *>>,
+        @Named("task") taskSyncer: dagger.Lazy<EntitySyncer<*, *>>
     ): SyncRepository {
+        if (!availability.isAvailable) return NoOpSyncRepository()
         return FirestoreSyncRepositoryImpl(
             settingsDataSource,
             syncMappingDao,
-            medicationSyncer,
-            medicationLogSyncer,
-            noteSyncer,
-            healthRecordSyncer,
-            calendarEventSyncer,
-            taskSyncer
+            medicationSyncer.get(),
+            medicationLogSyncer.get(),
+            noteSyncer.get(),
+            healthRecordSyncer.get(),
+            calendarEventSyncer.get(),
+            taskSyncer.get()
         )
     }
 }

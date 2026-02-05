@@ -1,11 +1,9 @@
 package com.carenote.app.data.service
 
-import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import javax.inject.Inject
 
 /**
  * Firebase Cloud Messaging サービス
@@ -16,9 +14,6 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class CareNoteMessagingService : FirebaseMessagingService() {
-
-    @Inject
-    lateinit var firebaseMessaging: FirebaseMessaging
 
     /**
      * FCM トークンが更新された際に呼び出される

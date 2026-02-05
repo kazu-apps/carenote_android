@@ -2,6 +2,7 @@ package com.carenote.app.di
 
 import com.carenote.app.data.mapper.UserMapper
 import com.carenote.app.data.repository.FirebaseAuthRepositoryImpl
+import com.carenote.app.data.repository.NoOpAuthRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,8 +19,8 @@ object FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth {
-        return FirebaseAuth.getInstance()
+    fun provideFirebaseAvailability(): FirebaseAvailability {
+        return FirebaseAvailability.check()
     }
 
     @Provides
@@ -37,9 +38,10 @@ object FirebaseModule {
     @Provides
     @Singleton
     fun provideAuthRepository(
-        firebaseAuth: FirebaseAuth,
+        availability: FirebaseAvailability,
         userMapper: UserMapper
     ): AuthRepository {
-        return FirebaseAuthRepositoryImpl(firebaseAuth, userMapper)
+        if (!availability.isAvailable) return NoOpAuthRepository()
+        return FirebaseAuthRepositoryImpl(FirebaseAuth.getInstance(), userMapper)
     }
 }

@@ -2,14 +2,39 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v2.2 リファクタリング + Mapper ADR 全完了 (Item 82-101)
+## 現在のタスク: Firebase 未初期化時グレースフルデグラデーション
 
-v2.0 Firebase 統合、v2.1 セキュリティ強化、v2.2 TDD リファクタリングの全項目が完了。
-Item 101 ADR 分析の結果、Mapper 統合は不要と判定（Item 102 はスキップ）。
+`google-services.json` 未配置時にアプリがクラッシュする問題を修正。
+Firebase 未初期化時は No-Op 実装に自動切替し、ローカル機能（Room）は正常動作を維持。
+
+## 完了した変更
+
+### 新規ファイル
+- `di/FirebaseAvailability.kt` — Firebase 初期化チェック（`FirebaseApp.getInstance()` try-catch）
+- `data/repository/NoOpAuthRepository.kt` — 認証 No-Op（currentUser=null, 操作→NetworkError）
+- `data/repository/NoOpSyncRepository.kt` — 同期 No-Op（syncState=Idle, 操作→Failure）
+- `data/worker/NoOpSyncWorkScheduler.kt` — スケジューラ No-Op（全操作スキップ）
+
+### 変更ファイル
+- `di/FirebaseModule.kt` — `provideFirebaseAvailability()` 追加、`provideFirebaseAuth()` 削除（AuthRepository にインライン化）、availability チェックで NoOp/Real 分岐
+- `di/SyncModule.kt` — syncer パラメータを `dagger.Lazy<>` に変更、`provideSyncRepository()` に availability チェック追加
+- `di/WorkerModule.kt` — availability チェックで NoOpSyncWorkScheduler 返却
+- `data/worker/SyncWorker.kt` — `firestore` を `dagger.Lazy<FirebaseFirestore>` に変更
+- `data/service/CareNoteMessagingService.kt` — 未使用 `firebaseMessaging` フィールド注入を削除
+
+### テスト（新規）
+- `NoOpAuthRepositoryTest.kt` — 全認証操作のテスト（10テスト）
+- `NoOpSyncRepositoryTest.kt` — 全同期操作のテスト（11テスト）
+- `FirebaseAvailabilityTest.kt` — 初期化チェック + data class テスト（2テスト）
+
+### ビルド・テスト結果
+- `assembleDebug`: BUILD SUCCESSFUL
+- `testDebugUnitTest`: 966+ tests passed (all green)
 
 ## 次のアクション
 
-1. **リリース準備**:
+1. **google-services.json 配置**: Firebase Console からダウンロードして `app/` に配置
+2. **リリース準備**:
    - リリース APK の実機テスト
    - Google Play Console へのアップロード準備
    - 問い合わせメールアドレスの確定（現在プレースホルダー）
