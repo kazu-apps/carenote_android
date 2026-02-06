@@ -63,10 +63,33 @@ class AddEditTaskViewModel @Inject constructor(
     val snackbarController = SnackbarController()
 
     private var originalTask: Task? = null
+    private var _initialFormState: AddEditTaskFormState? = null
+
+    val isDirty: Boolean
+        get() {
+            val initial = _initialFormState ?: return false
+            val current = _formState.value.copy(
+                titleError = null,
+                descriptionError = null,
+                recurrenceIntervalError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            val baseline = initial.copy(
+                titleError = null,
+                descriptionError = null,
+                recurrenceIntervalError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            return current != baseline
+        }
 
     init {
         if (taskId != null) {
             loadTask(taskId)
+        } else {
+            _initialFormState = _formState.value
         }
     }
 
@@ -85,6 +108,7 @@ class AddEditTaskViewModel @Inject constructor(
                     reminderEnabled = task.reminderEnabled,
                     reminderTime = task.reminderTime
                 )
+                _initialFormState = _formState.value
             }
         }
     }

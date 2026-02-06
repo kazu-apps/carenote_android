@@ -63,10 +63,39 @@ class AddEditHealthRecordViewModel @Inject constructor(
     val snackbarController = SnackbarController()
 
     private var originalRecord: HealthRecord? = null
+    private var _initialFormState: AddEditHealthRecordFormState? = null
+
+    val isDirty: Boolean
+        get() {
+            val initial = _initialFormState ?: return false
+            val current = _formState.value.copy(
+                temperatureError = null,
+                bloodPressureError = null,
+                pulseError = null,
+                weightError = null,
+                conditionNoteError = null,
+                generalError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            val baseline = initial.copy(
+                temperatureError = null,
+                bloodPressureError = null,
+                pulseError = null,
+                weightError = null,
+                conditionNoteError = null,
+                generalError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            return current != baseline
+        }
 
     init {
         if (recordId != null) {
             loadRecord(recordId)
+        } else {
+            _initialFormState = _formState.value
         }
     }
 
@@ -86,6 +115,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
                     conditionNote = record.conditionNote,
                     recordedAt = record.recordedAt
                 )
+                _initialFormState = _formState.value
             }
         }
     }

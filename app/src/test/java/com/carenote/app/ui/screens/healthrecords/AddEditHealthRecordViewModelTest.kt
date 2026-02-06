@@ -515,4 +515,96 @@ class AddEditHealthRecordViewModelTest {
 
         assertFalse(viewModel.formState.value.isSaving)
     }
+
+    // --- isDirty Tests ---
+
+    @Test
+    fun `isDirty is false initially in add mode`() {
+        viewModel = createAddViewModel()
+
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when temperature changed`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateTemperature("36.5")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when temperature cleared`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateTemperature("36.5")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateTemperature("")
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty is false after loading existing data`() = runTest {
+        repository.setRecords(
+            listOf(
+                HealthRecord(
+                    id = 1L,
+                    temperature = 36.5,
+                    recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when field changed in edit mode`() = runTest {
+        repository.setRecords(
+            listOf(
+                HealthRecord(
+                    id = 1L,
+                    temperature = 36.5,
+                    recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateTemperature("37.0")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when reverted to original in edit mode`() = runTest {
+        repository.setRecords(
+            listOf(
+                HealthRecord(
+                    id = 1L,
+                    temperature = 36.5,
+                    recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateTemperature("37.0")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateTemperature("36.5")
+        assertFalse(viewModel.isDirty)
+    }
 }

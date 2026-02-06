@@ -2,16 +2,15 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 17 スワイプ削除接続 完了
+## 現在のタスク: Phase 18 完了
 
-5 リスト画面（Medication, Notes, HealthRecords, Calendar, Tasks）に `SwipeToDismissBox` ベースのスワイプ削除を接続。
-左スワイプ → 赤背景+削除アイコン → 既存 `ConfirmDialog` 表示 → ViewModel.delete() 実行のフロー完成。
+Phase 18: 未保存データ保護（BackHandler + isDirty）を実装。全5つの AddEdit 画面に確認ダイアログを追加。
 
 ## 次のアクション
 
-1. 実機テスト（5画面のスワイプ削除動作確認）
-2. リリース準備
-3. 全フェーズ完了後、実機テスト + リリース APK 検証
+1. `/task-driver` で Phase 19 から順に実行
+2. 各フェーズ完了後にビルド・テスト確認
+3. リリース前に実機テスト + APK 検証
 
 ## 既知の問題
 
@@ -42,6 +41,15 @@
 | ~~LOW~~ | ~~Item 100~~ | ~~Screen ファイルの UI ハードコード値~~ → **リサーチで Color/sp は移行済み、.dp は Compose 標準プラクティスと確認、現状維持** |
 | ~~INFO~~ | ~~—~~ | ~~削除確認ダイアログが UI から到達不可（5リスト画面）~~ → **Phase 17 で接続済み** |
 | ~~INFO~~ | ~~—~~ | ~~Flow `.catch` が欠落（全 ViewModel 13箇所、SQLCipher 使用でリスク増）~~ → **Phase 15 で修正済み** |
+| ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~全 AddEdit 画面に BackHandler / 未保存確認ダイアログがない~~ → **Phase 18 で修正済み** |
+| MEDIUM | v2.3 リサーチ | 全リスト画面の ErrorDisplay に onRetry=null（リトライ不可） → **Phase 19 で対応** |
+| MEDIUM | v2.3 リサーチ | 通知タップで該当画面に遷移しない（PendingIntent 未設定） → **Phase 20 で対応** |
+| MEDIUM | v2.3 リサーチ | `AuthViewModel._authSuccessEvent` が SharedFlow(replay=1)（他VMと不統一） → **Phase 21 で対応** |
+| LOW | v2.3 リサーチ | DatePicker/TimePicker が3箇所に重複 → **Phase 21 で対応** |
+| LOW | v2.3 リサーチ | @Preview アノテーションが全画面で未定義 → **Phase 22 で対応** |
+| LOW | v2.3 リサーチ | medications テーブルにインデックスなし、tasks に複合インデックスなし → **Phase 23 で対応** |
+| LOW | v2.3 リサーチ | 依存関係が約1年古い (Compose BOM 2024.12, Kotlin 2.0, Navigation 2.8) → **Phase 23 で対応** |
+| LOW | v2.3 リサーチ | 生体認証ロックなし（個人健康情報保護） → **Phase 24 で対応** |
 
 ## ロードマップ
 
@@ -133,6 +141,44 @@ ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に�
 - 変更: `MedicationScreen.kt`（MedicationList に onDelete 追加、items 2箇所ラップ）、`NotesScreen.kt`（NoteCard ラップ）、`HealthRecordsScreen.kt`（HealthRecordListContent に onDelete 追加）、`CalendarScreen.kt`（CalendarEventCard ラップ）、`TasksScreen.kt`（TaskCard ラップ）
 - ビルド成功、全テスト PASS
 
+### Phase 18: 未保存データ保護（BackHandler + isDirty） (HIGH) - DONE
+全5つの AddEdit 画面に「保存せずに戻る？」確認ダイアログを追加。各 ViewModel に `isDirty` computed property を追加し、FormState の data class 比較でフォーム変更を検知。`BackHandler` でシステムバックもインターセプト。
+- 変更: `strings.xml` (JP/EN, 4文字列追加), 5 ViewModel (`isDirty` + `_initialFormState`), 5 Screen (`BackHandler` + `ConfirmDialog` + `handleBack`), 5 ViewModel テスト (各3-6テスト追加)
+- ビルド成功、全テスト PASS
+
+### Phase 19: エラーリトライ + Pull-to-Refresh (MEDIUM) - PENDING
+(a) 全5リスト画面の `ErrorDisplay(onRetry = null)` を `onRetry = { viewModel.refresh() }` に接続。各 ViewModel に `refresh()` メソッド追加。
+(b) 全5リスト画面に `PullToRefreshBox` を追加してデータ再読み込みを可能に。
+- 対象: 5 Screen + 5 ViewModel
+- 依存: なし
+
+### Phase 20: 通知タップナビゲーション（PendingIntent） (MEDIUM) - PENDING
+服薬リマインダー・タスクリマインダー通知タップ時に、該当画面（MedicationDetail / TaskEdit）に遷移するよう `PendingIntent` を追加。Deep Link Intent 経由で `CareNoteNavHost` へルーティング。
+- 対象: `NotificationHelper.kt`, `AndroidManifest.xml`（intent-filter）, `CareNoteNavHost.kt`（deep link 処理）, `MedicationReminderWorker.kt`, `TaskReminderWorker.kt`
+- 依存: なし
+
+### Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正 (MEDIUM) - PENDING
+(a) `AddEditTaskScreen`, `AddEditCalendarEventScreen`, `TimePickerPreference` に重複する DatePickerDialog / TimePickerDialog を共通コンポーネント `ui/components/DatePickerDialog.kt` / `TimePickerDialog.kt` に抽出。
+(b) `AuthViewModel._authSuccessEvent` を `MutableSharedFlow(replay=1)` → `Channel(Channel.BUFFERED)` に修正（他6 VM と統一）。
+- 対象: 3 Screen + `AuthViewModel.kt` + 新規2コンポーネント
+- 依存: なし
+
+### Phase 22: Compose Preview 追加 (LOW) - PENDING
+全リスト画面（5画面）+ AddEdit 画面（5画面）+ Auth 画面（3画面）の主要 Composable に `@Preview` アノテーションを追加。プレビュー用のサンプルデータを `ui/preview/` パッケージに配置。開発効率と UI 確認を向上。
+- 対象: 13+ Screen ファイル、新規 `ui/preview/PreviewData.kt`
+- 依存: なし
+
+### Phase 23: DB インデックス追加 + 依存関係アップグレード (LOW) - PENDING
+(a) `medications` テーブルに `name` インデックス、`tasks` テーブルに `(is_completed, created_at)` 複合インデックスを追加（Room migration v9→v10）。
+(b) `libs.versions.toml` の主要依存関係を最新安定版に更新: Compose BOM, Kotlin, AGP, Navigation Compose, Room, Lifecycle, Espresso, UIAutomator。
+- 対象: `Entity` ファイル（`@Index` 追加）, `Migrations.kt`, `CareNoteDatabase.kt`, `libs.versions.toml`, `build.gradle.kts`
+- 依存: なし
+
+### Phase 24: 生体認証ロック（BiometricPrompt） (LOW) - PENDING
+アプリ起動時・バックグラウンド復帰時に `BiometricPrompt` で認証。設定画面でオン/オフ切替。介護記録（個人健康情報）の保護を強化。`androidx.biometric:biometric` 依存追加。
+- 対象: 新規 `BiometricHelper.kt`, `MainActivity.kt`, `SettingsScreen.kt`, `SettingsViewModel.kt`, `SettingsDataSource.kt`
+- 依存: なし
+
 ---
 
 ## 完了タスク
@@ -195,10 +241,16 @@ ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に�
 | テストパターン | StandardTestDispatcher + Turbine + FakeRepository (MutableStateFlow) |
 | Robolectric | 4.14.1（Android SDK シャドウ、Compose UI Test） |
 | BugHunt 2026-02-06 | Agent Teams リサーチ: collectAsState 残存=0、strings.xml 不整合=0、isSyncing=正常。実バグ: todayLogs 日付固定, Long→Int, メインスレッド I/O |
+| v2.3 改善リサーチ 2026-02-06 | Agent Teams 3並列調査: コード品質=良好（800行超0, TODO 0, デッドコード0）、リスク=LOW（Coroutine安全, メモリリーク0, ProGuard完備）、UXギャップ=BackHandler未実装(5画面), onRetry=null(5画面), PullToRefresh無, 通知PendingIntent無, DatePicker重複3箇所, @Preview 0件, DBインデックス不足(medications,tasks) |
 
 ## スコープ外 / 将来
 
 - **v3.0**: Cloud Storage（写真保存）, Google Play Billing（プレミアムサブスクリプション）
 - **v3.0**: FCM リモート通知実装（バックエンド構築と合わせて）, Firestore リストアフロー
+- **v3.0**: Adaptive Layout（タブレット対応）, Dynamic Color オプション, PagingSource（大量データ対応）
+- **v3.0**: Baseline Profile / App Startup Library, Incremental Sync（updatedAt フィルター）
+- **v3.0**: 服薬編集画面（EditMedication）, 検索機能追加（服薬/タスク/カレンダー/健康記録）
+- **v3.0**: Root 検出, Certificate Pinning, material-icons-extended 最適化
 - **手動**: スクリーンショット、フィーチャーグラフィック、プライバシーポリシー Web ホスティング
+- **手動**: Play Console メタデータ（データ安全性フォーム、コンテンツレーティング、ストア説明文）
 - **スキップ**: LegalDocumentScreen テスト（純粋な表示、ロジックなし）

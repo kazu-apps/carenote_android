@@ -339,4 +339,97 @@ class AddEditNoteViewModelTest {
 
         assertEquals(NoteTag.OTHER, viewModel.formState.value.tag)
     }
+
+    // --- isDirty Tests ---
+
+    @Test
+    fun `isDirty is false initially in add mode`() {
+        viewModel = createAddViewModel()
+
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when title changed`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateTitle("新タイトル")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when title cleared`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateTitle("テスト")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateTitle("")
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty is false after loading existing data`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "既存メモ",
+                    content = "既存内容",
+                    tag = NoteTag.CONDITION,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when field changed in edit mode`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "既存メモ",
+                    content = "既存内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateTitle("変更タイトル")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when reverted to original in edit mode`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "既存メモ",
+                    content = "既存内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateTitle("変更タイトル")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateTitle("既存メモ")
+        assertFalse(viewModel.isDirty)
+    }
 }

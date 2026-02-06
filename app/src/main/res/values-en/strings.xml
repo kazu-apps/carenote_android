@@ -287,6 +287,10 @@
     <string name="ui_confirm_delete_message">Are you sure you want to delete? This cannot be undone.</string>
     <string name="ui_confirm_yes">Yes</string>
     <string name="ui_confirm_no">No</string>
+    <string name="ui_confirm_discard_title">Discard Changes</string>
+    <string name="ui_confirm_discard_message">You have unsaved changes. Discard and go back?</string>
+    <string name="ui_confirm_discard_yes">Discard</string>
+    <string name="ui_confirm_discard_no">Keep Editing</string>
     <string name="ui_validation_required">This field is required</string>
     <string name="ui_validation_too_long">Must be %1$d characters or less</string>
 

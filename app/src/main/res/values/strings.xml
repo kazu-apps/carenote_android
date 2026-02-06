@@ -287,6 +287,10 @@
     <string name="ui_confirm_delete_message">本当に削除しますか？この操作は元に戻せません。</string>
     <string name="ui_confirm_yes">はい</string>
     <string name="ui_confirm_no">いいえ</string>
+    <string name="ui_confirm_discard_title">変更の破棄</string>
+    <string name="ui_confirm_discard_message">保存されていない変更があります。保存せずに戻りますか？</string>
+    <string name="ui_confirm_discard_yes">破棄する</string>
+    <string name="ui_confirm_discard_no">編集を続ける</string>
     <string name="ui_validation_required">この項目は必須です</string>
     <string name="ui_validation_too_long">%1$d文字以内で入力してください</string>
 

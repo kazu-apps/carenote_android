@@ -52,10 +52,31 @@ class AddEditNoteViewModel @Inject constructor(
     val snackbarController = SnackbarController()
 
     private var originalNote: Note? = null
+    private var _initialFormState: AddEditNoteFormState? = null
+
+    val isDirty: Boolean
+        get() {
+            val initial = _initialFormState ?: return false
+            val current = _formState.value.copy(
+                titleError = null,
+                contentError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            val baseline = initial.copy(
+                titleError = null,
+                contentError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            return current != baseline
+        }
 
     init {
         if (noteId != null) {
             loadNote(noteId)
+        } else {
+            _initialFormState = _formState.value
         }
     }
 
@@ -69,6 +90,7 @@ class AddEditNoteViewModel @Inject constructor(
                     content = note.content,
                     tag = note.tag
                 )
+                _initialFormState = _formState.value
             }
         }
     }

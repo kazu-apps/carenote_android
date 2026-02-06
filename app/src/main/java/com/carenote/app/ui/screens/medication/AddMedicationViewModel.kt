@@ -50,6 +50,23 @@ class AddMedicationViewModel @Inject constructor(
 
     val snackbarController = SnackbarController()
 
+    private var _initialFormState: AddMedicationFormState = _formState.value
+
+    val isDirty: Boolean
+        get() {
+            val current = _formState.value.copy(
+                nameError = null,
+                dosageError = null,
+                isSaving = false
+            )
+            val initial = _initialFormState.copy(
+                nameError = null,
+                dosageError = null,
+                isSaving = false
+            )
+            return current != initial
+        }
+
     fun updateName(name: String) {
         _formState.value = _formState.value.copy(
             name = name,

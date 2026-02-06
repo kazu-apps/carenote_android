@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.calendar
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
@@ -67,8 +69,17 @@ fun AddEditCalendarEventScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    val handleBack: () -> Unit = {
+        if (viewModel.isDirty) showDiscardDialog = true else onNavigateBack()
+    }
+
+    BackHandler(enabled = viewModel.isDirty) {
+        showDiscardDialog = true
+    }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
@@ -105,7 +116,7 @@ fun AddEditCalendarEventScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_close)
@@ -178,7 +189,7 @@ fun AddEditCalendarEventScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = onNavigateBack,
+                    onClick = handleBack,
                     modifier = Modifier.weight(1f),
                     shape = ButtonShape
                 ) {
@@ -206,6 +217,21 @@ fun AddEditCalendarEventScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showDiscardDialog) {
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_discard_title),
+            message = stringResource(R.string.ui_confirm_discard_message),
+            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
+            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
+            onConfirm = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onDismiss = { showDiscardDialog = false },
+            isDestructive = true
+        )
     }
 
     if (showDatePicker) {

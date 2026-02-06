@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.medication
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,7 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
@@ -56,6 +60,15 @@ fun AddMedicationScreen(
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val handleBack: () -> Unit = {
+        if (viewModel.isDirty) showDiscardDialog = true else onNavigateBack()
+    }
+
+    BackHandler(enabled = viewModel.isDirty) {
+        showDiscardDialog = true
+    }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
@@ -86,7 +99,7 @@ fun AddMedicationScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_close)
@@ -159,7 +172,7 @@ fun AddMedicationScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = onNavigateBack,
+                    onClick = handleBack,
                     modifier = Modifier.weight(1f),
                     shape = ButtonShape
                 ) {
@@ -187,6 +200,21 @@ fun AddMedicationScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showDiscardDialog) {
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_discard_title),
+            message = stringResource(R.string.ui_confirm_discard_message),
+            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
+            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
+            onConfirm = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onDismiss = { showDiscardDialog = false },
+            isDestructive = true
+        )
     }
 }
 

@@ -56,10 +56,31 @@ class AddEditCalendarEventViewModel @Inject constructor(
     val snackbarController = SnackbarController()
 
     private var originalEvent: CalendarEvent? = null
+    private var _initialFormState: AddEditCalendarEventFormState? = null
+
+    val isDirty: Boolean
+        get() {
+            val initial = _initialFormState ?: return false
+            val current = _formState.value.copy(
+                titleError = null,
+                descriptionError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            val baseline = initial.copy(
+                titleError = null,
+                descriptionError = null,
+                isSaving = false,
+                isEditMode = false
+            )
+            return current != baseline
+        }
 
     init {
         if (eventId != null) {
             loadEvent(eventId)
+        } else {
+            _initialFormState = _formState.value
         }
     }
 
@@ -76,6 +97,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     endTime = event.endTime,
                     isAllDay = event.isAllDay
                 )
+                _initialFormState = _formState.value
             }
         }
     }

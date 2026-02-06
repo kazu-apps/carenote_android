@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.tasks
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,6 +57,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
@@ -73,8 +75,17 @@ fun AddEditTaskScreen(
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    val handleBack: () -> Unit = {
+        if (viewModel.isDirty) showDiscardDialog = true else onNavigateBack()
+    }
+
+    BackHandler(enabled = viewModel.isDirty) {
+        showDiscardDialog = true
+    }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
@@ -111,7 +122,7 @@ fun AddEditTaskScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_close)
@@ -186,7 +197,7 @@ fun AddEditTaskScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = onNavigateBack,
+                    onClick = handleBack,
                     modifier = Modifier.weight(1f),
                     shape = ButtonShape
                 ) {
@@ -214,6 +225,21 @@ fun AddEditTaskScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showDiscardDialog) {
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_discard_title),
+            message = stringResource(R.string.ui_confirm_discard_message),
+            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
+            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
+            onConfirm = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onDismiss = { showDiscardDialog = false },
+            isDestructive = true
+        )
     }
 
     if (showDatePicker) {

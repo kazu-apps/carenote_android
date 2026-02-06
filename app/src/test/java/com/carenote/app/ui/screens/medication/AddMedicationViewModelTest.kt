@@ -338,4 +338,49 @@ class AddMedicationViewModelTest {
 
         assertTrue(reminderScheduler.scheduleAllCalls.isEmpty())
     }
+
+    // --- isDirty Tests ---
+
+    @Test
+    fun `isDirty is false initially in add mode`() {
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when name changed`() {
+        viewModel.updateName("テスト薬")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when name cleared`() {
+        viewModel.updateName("テスト薬")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateName("")
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when dosage changed`() {
+        viewModel.updateDosage("1錠")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when timing toggled`() {
+        viewModel.toggleTiming(MedicationTiming.MORNING)
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty ignores error fields`() {
+        viewModel.saveMedication()
+        assertNotNull(viewModel.formState.value.nameError)
+
+        assertFalse(viewModel.isDirty)
+    }
 }

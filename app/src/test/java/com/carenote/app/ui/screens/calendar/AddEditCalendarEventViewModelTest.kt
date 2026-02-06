@@ -335,4 +335,100 @@ class AddEditCalendarEventViewModelTest {
 
         assertTrue(viewModel.formState.value.isAllDay)
     }
+
+    // --- isDirty Tests ---
+
+    @Test
+    fun `isDirty is false initially in add mode`() {
+        viewModel = createAddViewModel()
+
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when title changed`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateTitle("新予定")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when title cleared`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateTitle("テスト")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateTitle("")
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty is false after loading existing data`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "既存予定",
+                    description = "既存説明",
+                    date = LocalDate.of(2025, 3, 15),
+                    startTime = LocalTime.of(9, 0),
+                    endTime = LocalTime.of(10, 0),
+                    isAllDay = false,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty becomes true when field changed in edit mode`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "既存予定",
+                    date = LocalDate.of(2025, 3, 15),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateTitle("変更予定")
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty returns to false when reverted to original in edit mode`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "既存予定",
+                    date = LocalDate.of(2025, 3, 15),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateTitle("変更予定")
+        assertTrue(viewModel.isDirty)
+
+        viewModel.updateTitle("既存予定")
+        assertFalse(viewModel.isDirty)
+    }
 }
