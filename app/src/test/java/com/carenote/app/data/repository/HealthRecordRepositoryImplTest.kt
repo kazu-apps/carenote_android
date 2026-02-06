@@ -6,11 +6,11 @@ import com.carenote.app.data.mapper.HealthRecordMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.HealthRecord
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -66,20 +66,24 @@ class HealthRecordRepositoryImplTest {
         )
         every { dao.getAllRecords() } returns flowOf(entities)
 
-        val result = repository.getAllRecords().first()
-
-        assertEquals(2, result.size)
-        assertEquals("記録A", result[0].conditionNote)
-        assertEquals("記録B", result[1].conditionNote)
+        repository.getAllRecords().test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("記録A", result[0].conditionNote)
+            assertEquals("記録B", result[1].conditionNote)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getAllRecords returns empty list when no records`() = runTest {
         every { dao.getAllRecords() } returns flowOf(emptyList())
 
-        val result = repository.getAllRecords().first()
-
-        assertTrue(result.isEmpty())
+        repository.getAllRecords().test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -87,18 +91,22 @@ class HealthRecordRepositoryImplTest {
         val entity = createEntity(1L, conditionNote = "テスト記録")
         every { dao.getRecordById(1L) } returns flowOf(entity)
 
-        val result = repository.getRecordById(1L).first()
-
-        assertEquals("テスト記録", result?.conditionNote)
+        repository.getRecordById(1L).test {
+            val result = awaitItem()
+            assertEquals("テスト記録", result?.conditionNote)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getRecordById returns null when not found`() = runTest {
         every { dao.getRecordById(999L) } returns flowOf(null)
 
-        val result = repository.getRecordById(999L).first()
-
-        assertNull(result)
+        repository.getRecordById(999L).test {
+            val result = awaitItem()
+            assertNull(result)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -116,9 +124,11 @@ class HealthRecordRepositoryImplTest {
 
         val start = LocalDateTime.of(2025, 3, 1, 0, 0, 0)
         val end = LocalDateTime.of(2025, 3, 31, 23, 59, 59)
-        val result = repository.getRecordsByDateRange(start, end).first()
-
-        assertEquals(2, result.size)
+        repository.getRecordsByDateRange(start, end).test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -129,9 +139,11 @@ class HealthRecordRepositoryImplTest {
 
         val start = LocalDateTime.of(2025, 1, 1, 0, 0)
         val end = LocalDateTime.of(2025, 1, 31, 23, 59, 59)
-        val result = repository.getRecordsByDateRange(start, end).first()
-
-        assertTrue(result.isEmpty())
+        repository.getRecordsByDateRange(start, end).test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

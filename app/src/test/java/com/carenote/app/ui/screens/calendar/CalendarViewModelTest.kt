@@ -89,6 +89,23 @@ class CalendarViewModelTest {
     }
 
     @Test
+    fun `eventsForSelectedDate transitions from Loading to Success`() = runTest(testDispatcher) {
+        val today = LocalDate.now()
+        val events = listOf(createEvent(id = 1L, title = "予定A", date = today))
+        repository.setEvents(events)
+        viewModel = createViewModel()
+
+        viewModel.eventsForSelectedDate.test {
+            assertEquals(UiState.Loading, awaitItem())
+            advanceUntilIdle()
+            val success = awaitItem()
+            assertTrue(success is UiState.Success)
+            assertEquals(1, (success as UiState.Success).data.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `events loaded as Success for selected date`() = runTest(testDispatcher) {
         val today = LocalDate.now()
         val events = listOf(

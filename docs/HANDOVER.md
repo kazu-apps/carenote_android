@@ -2,13 +2,16 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 15 Flow .catch 追加 完了
+## 現在のタスク: Phase 16 テスト品質強化 完了
 
-全 8 ViewModel、13 箇所の `.stateIn()` パイプラインに `.catch` を追加。SQLCipher DB 破損時のクラッシュを防御。
+テスト品質ギャップ 3 件を修正:
+(a) 6 RepositoryImpl テストを `.first()` → Turbine `.test { awaitItem() }` に移行
+(b) 6 ViewModel テストに Loading→Success シーケンシャル遷移テストを追加
+(c) `UserMapperTest.kt` を新規作成（5 テストケース）
 
 ## 次のアクション
 
-1. `/task-driver` で Phase 15 から順に実行
+1. Phase 17: リスト画面の削除ダイアログ接続（スワイプ削除）
 2. 各フェーズ完了後にビルド・テスト確認
 3. 全フェーズ完了後、実機テスト + リリース準備
 
@@ -32,7 +35,7 @@
 | ~~MEDIUM~~ | ~~M-5~~ | ~~Room スキーマ JSON がコミット済み~~ → **リサーチで公式推奨プラクティスと確認、機密情報なし、現状維持** |
 | ~~MEDIUM~~ | ~~Item 30~~ | ~~ValidationUtils.kt が未使用のデッドコード~~ → **Phase 14 で削除済み** |
 | ~~MEDIUM~~ | ~~Item 32~~ | ~~JaCoCo `**/util/*` 除外が広範囲~~ → **Phase 14 で具体化済み** |
-| MEDIUM | Item 31 | テスト品質: Repository Turbine 未使用(6件)、ViewModel Loading→Success 遷移テスト PARTIAL(7件)、UserMapper テスト欠落 → **Phase 16 で対応** |
+| ~~MEDIUM~~ | ~~Item 31~~ | ~~テスト品質: Repository Turbine 未使用(6件)、ViewModel Loading→Success 遷移テスト PARTIAL(7件)、UserMapper テスト欠落~~ → **Phase 16 で修正済み** |
 | ~~LOW~~ | ~~BugHunt~~ | ~~`DatabasePassphraseManager` — EncryptedPrefs 破損~~ → **リサーチで低頻度+Firestore同期でリカバリ可と確認、v3.0スコープ** |
 | ~~LOW~~ | ~~BugHunt~~ | ~~`savedEvent` の `SharedFlow(replay=1)` が設定変更時にリプレイ~~ → **Phase 14 で Channel に変更済み** |
 | ~~LOW~~ | ~~L-4~~ | ~~全 DAO が OnConflictStrategy.REPLACE~~ → **リサーチで現在の同期フローでは重複防止済みと確認、CASCADE外部キーなし、現状維持** |
@@ -117,13 +120,14 @@ ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に�
 - MedicationDetailViewModel の FQN `com.carenote.app.domain.common.DomainError` を import に統一
 - ビルド成功、全テスト PASS
 
-### Phase 16: テスト品質強化（Repository Turbine + ViewModel 遷移 + UserMapper） (MEDIUM) - PENDING
+### Phase 16: テスト品質強化（Repository Turbine + ViewModel 遷移 + UserMapper） (MEDIUM) - DONE
 テスト品質ギャップ 3 件を修正。
-(a) 6 RepositoryImpl テストに Turbine `.test {}` を導入（`.first()` → Turbine 移行）
-(b) 7 ViewModel テストに Loading→Success シーケンシャル遷移テストを追加（`awaitItem()` で中間状態を検証）
-(c) `UserMapperTest.kt` を新規作成（`toDomain()` のフィールドマッピング + null edge case）
-- 対象: 6 RepositoryImpl テスト + 7 ViewModel テスト + 1 新規テストファイル
-- 依存: なし
+(a) 6 RepositoryImpl テストを `.first()` → Turbine `.test { awaitItem() }` に移行（Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task）
+(b) 6 ViewModel テストに Loading→Success シーケンシャル遷移テストを追加（Medication, Notes, Calendar, HealthRecords, Tasks, MedicationDetail）
+(c) `UserMapperTest.kt` を新規作成（5 テストケース: 正常マッピング、null displayName/email/metadata、isEmailVerified）
+- 変更: 6 RepositoryImpl テスト + 6 ViewModel テスト
+- 新規: `UserMapperTest.kt`
+- ビルド成功、全テスト PASS
 
 ### Phase 17: リスト画面の削除ダイアログ接続（スワイプ削除） (LOW) - PENDING
 5 リスト画面（Medication, Notes, HealthRecords, Calendar, Tasks）の未接続な削除確認ダイアログをスワイプ削除で接続。

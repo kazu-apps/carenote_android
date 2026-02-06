@@ -7,11 +7,11 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -55,20 +55,24 @@ class MedicationLogRepositoryImplTest {
         )
         every { dao.getLogsForMedication(10L) } returns flowOf(entities)
 
-        val result = repository.getLogsForMedication(10L).first()
-
-        assertEquals(2, result.size)
-        assertEquals(MedicationLogStatus.TAKEN, result[0].status)
-        assertEquals(MedicationLogStatus.SKIPPED, result[1].status)
+        repository.getLogsForMedication(10L).test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals(MedicationLogStatus.TAKEN, result[0].status)
+            assertEquals(MedicationLogStatus.SKIPPED, result[1].status)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getLogsForMedication returns empty list when no logs`() = runTest {
         every { dao.getLogsForMedication(999L) } returns flowOf(emptyList())
 
-        val result = repository.getLogsForMedication(999L).first()
-
-        assertTrue(result.isEmpty())
+        repository.getLogsForMedication(999L).test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -76,7 +80,10 @@ class MedicationLogRepositoryImplTest {
         val date = LocalDate.of(2025, 3, 15)
         every { dao.getLogsForDateRange(any(), any()) } returns flowOf(emptyList())
 
-        repository.getLogsForDate(date).first()
+        repository.getLogsForDate(date).test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
 
         coVerify {
             dao.getLogsForDateRange(
@@ -91,10 +98,12 @@ class MedicationLogRepositoryImplTest {
         val entities = listOf(createEntity(1L, 10L, "TAKEN"))
         every { dao.getLogsForDateRange(any(), any()) } returns flowOf(entities)
 
-        val result = repository.getLogsForDate(LocalDate.of(2025, 3, 15)).first()
-
-        assertEquals(1, result.size)
-        assertEquals(MedicationLogStatus.TAKEN, result[0].status)
+        repository.getLogsForDate(LocalDate.of(2025, 3, 15)).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals(MedicationLogStatus.TAKEN, result[0].status)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -214,11 +223,13 @@ class MedicationLogRepositoryImplTest {
         )
         every { dao.getLogsForMedication(20L) } returns flowOf(listOf(entity))
 
-        val result = repository.getLogsForMedication(20L).first()
-
-        assertEquals(5L, result[0].id)
-        assertEquals(20L, result[0].medicationId)
-        assertEquals(MedicationLogStatus.POSTPONED, result[0].status)
-        assertEquals("テストメモ", result[0].memo)
+        repository.getLogsForMedication(20L).test {
+            val result = awaitItem()
+            assertEquals(5L, result[0].id)
+            assertEquals(20L, result[0].medicationId)
+            assertEquals(MedicationLogStatus.POSTPONED, result[0].status)
+            assertEquals("テストメモ", result[0].memo)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

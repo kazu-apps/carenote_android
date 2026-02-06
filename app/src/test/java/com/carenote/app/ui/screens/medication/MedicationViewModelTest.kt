@@ -83,6 +83,22 @@ class MedicationViewModelTest {
     }
 
     @Test
+    fun `uiState transitions from Loading to Success`() = runTest(testDispatcher) {
+        val medications = listOf(createMedication(id = 1L, name = "薬A"))
+        medicationRepository.setMedications(medications)
+        viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            assertEquals(UiState.Loading, awaitItem())
+            advanceUntilIdle()
+            val success = awaitItem()
+            assertTrue(success is UiState.Success)
+            assertEquals(1, (success as UiState.Success).data.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `medications are loaded as Success state`() = runTest(testDispatcher) {
         val medications = listOf(
             createMedication(id = 1L, name = "薬A"),

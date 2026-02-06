@@ -93,6 +93,22 @@ class TasksViewModelTest {
     }
 
     @Test
+    fun `tasks transitions from Loading to Success`() = runTest(testDispatcher) {
+        val tasks = listOf(createTask(id = 1L, title = "タスクA"))
+        repository.setTasks(tasks)
+        viewModel = createViewModel()
+
+        viewModel.tasks.test {
+            assertEquals(UiState.Loading, awaitItem())
+            advanceUntilIdle()
+            val success = awaitItem()
+            assertTrue(success is UiState.Success)
+            assertEquals(1, (success as UiState.Success).data.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `tasks loaded as Success`() = runTest(testDispatcher) {
         val tasks = listOf(
             createTask(id = 1L, title = "タスクA"),

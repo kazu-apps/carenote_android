@@ -6,11 +6,11 @@ import com.carenote.app.data.mapper.CalendarEventMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.CalendarEvent
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -63,20 +63,24 @@ class CalendarEventRepositoryImplTest {
         )
         every { dao.getAllEvents() } returns flowOf(entities)
 
-        val result = repository.getAllEvents().first()
-
-        assertEquals(2, result.size)
-        assertEquals("予定A", result[0].title)
-        assertEquals("予定B", result[1].title)
+        repository.getAllEvents().test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("予定A", result[0].title)
+            assertEquals("予定B", result[1].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getAllEvents returns empty list when no events`() = runTest {
         every { dao.getAllEvents() } returns flowOf(emptyList())
 
-        val result = repository.getAllEvents().first()
-
-        assertTrue(result.isEmpty())
+        repository.getAllEvents().test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -84,18 +88,22 @@ class CalendarEventRepositoryImplTest {
         val entity = createEntity(1L, title = "通院")
         every { dao.getEventById(1L) } returns flowOf(entity)
 
-        val result = repository.getEventById(1L).first()
-
-        assertEquals("通院", result?.title)
+        repository.getEventById(1L).test {
+            val result = awaitItem()
+            assertEquals("通院", result?.title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getEventById returns null when not found`() = runTest {
         every { dao.getEventById(999L) } returns flowOf(null)
 
-        val result = repository.getEventById(999L).first()
-
-        assertNull(result)
+        repository.getEventById(999L).test {
+            val result = awaitItem()
+            assertNull(result)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -106,11 +114,13 @@ class CalendarEventRepositoryImplTest {
         )
         every { dao.getEventsByDate("2025-04-10") } returns flowOf(entities)
 
-        val result = repository.getEventsByDate(LocalDate.of(2025, 4, 10)).first()
-
-        assertEquals(2, result.size)
-        assertEquals("朝の予定", result[0].title)
-        assertEquals("午後の予定", result[1].title)
+        repository.getEventsByDate(LocalDate.of(2025, 4, 10)).test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("朝の予定", result[0].title)
+            assertEquals("午後の予定", result[1].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -125,9 +135,11 @@ class CalendarEventRepositoryImplTest {
 
         val start = LocalDate.of(2025, 4, 1)
         val end = LocalDate.of(2025, 4, 30)
-        val result = repository.getEventsByDateRange(start, end).first()
-
-        assertEquals(2, result.size)
+        repository.getEventsByDateRange(start, end).test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -138,9 +150,11 @@ class CalendarEventRepositoryImplTest {
 
         val start = LocalDate.of(2025, 1, 1)
         val end = LocalDate.of(2025, 1, 31)
-        val result = repository.getEventsByDateRange(start, end).first()
-
-        assertTrue(result.isEmpty())
+        repository.getEventsByDateRange(start, end).test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

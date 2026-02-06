@@ -7,11 +7,11 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -57,20 +57,24 @@ class NoteRepositoryImplTest {
         )
         every { dao.getAllNotes() } returns flowOf(entities)
 
-        val result = repository.getAllNotes().first()
-
-        assertEquals(2, result.size)
-        assertEquals("メモA", result[0].title)
-        assertEquals("メモB", result[1].title)
+        repository.getAllNotes().test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("メモA", result[0].title)
+            assertEquals("メモB", result[1].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getAllNotes returns empty list when no notes`() = runTest {
         every { dao.getAllNotes() } returns flowOf(emptyList())
 
-        val result = repository.getAllNotes().first()
-
-        assertTrue(result.isEmpty())
+        repository.getAllNotes().test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -78,18 +82,22 @@ class NoteRepositoryImplTest {
         val entity = createEntity(1L, "テストメモ")
         every { dao.getNoteById(1L) } returns flowOf(entity)
 
-        val result = repository.getNoteById(1L).first()
-
-        assertEquals("テストメモ", result?.title)
+        repository.getNoteById(1L).test {
+            val result = awaitItem()
+            assertEquals("テストメモ", result?.title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getNoteById returns null when not found`() = runTest {
         every { dao.getNoteById(999L) } returns flowOf(null)
 
-        val result = repository.getNoteById(999L).first()
-
-        assertNull(result)
+        repository.getNoteById(999L).test {
+            val result = awaitItem()
+            assertNull(result)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -97,9 +105,11 @@ class NoteRepositoryImplTest {
         val entities = listOf(createEntity(1L, "メモA"), createEntity(2L, "メモB"))
         every { dao.getAllNotes() } returns flowOf(entities)
 
-        val result = repository.searchNotes("", null).first()
-
-        assertEquals(2, result.size)
+        repository.searchNotes("", null).test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -107,10 +117,12 @@ class NoteRepositoryImplTest {
         val entities = listOf(createEntity(1L, "体調メモ"))
         every { dao.searchNotes("体調") } returns flowOf(entities)
 
-        val result = repository.searchNotes("体調", null).first()
-
-        assertEquals(1, result.size)
-        assertEquals("体調メモ", result[0].title)
+        repository.searchNotes("体調", null).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals("体調メモ", result[0].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -118,9 +130,11 @@ class NoteRepositoryImplTest {
         val entities = listOf(createEntity(1L, "体調メモ", tag = "CONDITION"))
         every { dao.getNotesByTag("CONDITION") } returns flowOf(entities)
 
-        val result = repository.searchNotes("", NoteTag.CONDITION).first()
-
-        assertEquals(1, result.size)
+        repository.searchNotes("", NoteTag.CONDITION).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -130,10 +144,12 @@ class NoteRepositoryImplTest {
         )
         every { dao.searchNotesByTag("体調", "CONDITION") } returns flowOf(entities)
 
-        val result = repository.searchNotes("体調", NoteTag.CONDITION).first()
-
-        assertEquals(1, result.size)
-        assertEquals("体調メモ", result[0].title)
+        repository.searchNotes("体調", NoteTag.CONDITION).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals("体調メモ", result[0].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

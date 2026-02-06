@@ -77,6 +77,22 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
+    fun `records transitions from Loading to Success`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L, temperature = 36.5))
+        repository.setRecords(records)
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            assertEquals(UiState.Loading, awaitItem())
+            advanceUntilIdle()
+            val success = awaitItem()
+            assertTrue(success is UiState.Success)
+            assertEquals(1, (success as UiState.Success).data.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `records are loaded as Success state`() = runTest(testDispatcher) {
         val records = listOf(
             createRecord(id = 1L, temperature = 36.5),

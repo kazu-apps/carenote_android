@@ -7,11 +7,11 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -53,20 +53,24 @@ class MedicationRepositoryImplTest {
         val entities = listOf(createEntity(1L, "薬A"), createEntity(2L, "薬B"))
         every { dao.getAllMedications() } returns flowOf(entities)
 
-        val result = repository.getAllMedications().first()
-
-        assertEquals(2, result.size)
-        assertEquals("薬A", result[0].name)
-        assertEquals("薬B", result[1].name)
+        repository.getAllMedications().test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("薬A", result[0].name)
+            assertEquals("薬B", result[1].name)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getAllMedications returns empty list when no medications`() = runTest {
         every { dao.getAllMedications() } returns flowOf(emptyList())
 
-        val result = repository.getAllMedications().first()
-
-        assertTrue(result.isEmpty())
+        repository.getAllMedications().test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -74,18 +78,22 @@ class MedicationRepositoryImplTest {
         val entity = createEntity(1L, "テスト薬")
         every { dao.getMedicationById(1L) } returns flowOf(entity)
 
-        val result = repository.getMedicationById(1L).first()
-
-        assertEquals("テスト薬", result?.name)
+        repository.getMedicationById(1L).test {
+            val result = awaitItem()
+            assertEquals("テスト薬", result?.name)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getMedicationById returns null when not found`() = runTest {
         every { dao.getMedicationById(999L) } returns flowOf(null)
 
-        val result = repository.getMedicationById(999L).first()
-
-        assertEquals(null, result)
+        repository.getMedicationById(999L).test {
+            val result = awaitItem()
+            assertEquals(null, result)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -193,8 +201,10 @@ class MedicationRepositoryImplTest {
         )
         every { dao.getAllMedications() } returns flowOf(listOf(entity))
 
-        val result = repository.getAllMedications().first()
-
-        assertEquals(3, result[0].timings.size)
+        repository.getAllMedications().test {
+            val result = awaitItem()
+            assertEquals(3, result[0].timings.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

@@ -68,6 +68,22 @@ class NotesViewModelTest {
     }
 
     @Test
+    fun `notes transitions from Loading to Success`() = runTest(testDispatcher) {
+        val notes = listOf(createNote(id = 1L, title = "メモA"))
+        noteRepository.setNotes(notes)
+        viewModel = createViewModel()
+
+        viewModel.notes.test {
+            assertEquals(UiState.Loading, awaitItem())
+            advanceUntilIdle()
+            val success = awaitItem()
+            assertTrue(success is UiState.Success)
+            assertEquals(1, (success as UiState.Success).data.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `notes are loaded as Success state`() = runTest(testDispatcher) {
         val notes = listOf(
             createNote(id = 1L, title = "メモA"),

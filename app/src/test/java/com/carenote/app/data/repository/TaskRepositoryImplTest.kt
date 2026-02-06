@@ -7,11 +7,11 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -61,20 +61,24 @@ class TaskRepositoryImplTest {
         )
         every { dao.getAllTasks() } returns flowOf(entities)
 
-        val result = repository.getAllTasks().first()
-
-        assertEquals(2, result.size)
-        assertEquals("タスクA", result[0].title)
-        assertEquals("タスクB", result[1].title)
+        repository.getAllTasks().test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("タスクA", result[0].title)
+            assertEquals("タスクB", result[1].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getAllTasks returns empty list when no tasks`() = runTest {
         every { dao.getAllTasks() } returns flowOf(emptyList())
 
-        val result = repository.getAllTasks().first()
-
-        assertTrue(result.isEmpty())
+        repository.getAllTasks().test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -82,18 +86,22 @@ class TaskRepositoryImplTest {
         val entity = createEntity(1L, title = "薬を買う")
         every { dao.getTaskById(1L) } returns flowOf(entity)
 
-        val result = repository.getTaskById(1L).first()
-
-        assertEquals("薬を買う", result?.title)
+        repository.getTaskById(1L).test {
+            val result = awaitItem()
+            assertEquals("薬を買う", result?.title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
     fun `getTaskById returns null when not found`() = runTest {
         every { dao.getTaskById(999L) } returns flowOf(null)
 
-        val result = repository.getTaskById(999L).first()
-
-        assertNull(result)
+        repository.getTaskById(999L).test {
+            val result = awaitItem()
+            assertNull(result)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -104,10 +112,12 @@ class TaskRepositoryImplTest {
         )
         every { dao.getIncompleteTasks() } returns flowOf(entities)
 
-        val result = repository.getIncompleteTasks().first()
-
-        assertEquals(2, result.size)
-        result.forEach { assertFalse(it.isCompleted) }
+        repository.getIncompleteTasks().test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            result.forEach { assertFalse(it.isCompleted) }
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -118,11 +128,13 @@ class TaskRepositoryImplTest {
         )
         every { dao.getTasksByDueDate("2025-04-10") } returns flowOf(entities)
 
-        val result = repository.getTasksByDueDate(LocalDate.of(2025, 4, 10)).first()
-
-        assertEquals(2, result.size)
-        assertEquals("今日のタスク", result[0].title)
-        assertEquals("今日の別タスク", result[1].title)
+        repository.getTasksByDueDate(LocalDate.of(2025, 4, 10)).test {
+            val result = awaitItem()
+            assertEquals(2, result.size)
+            assertEquals("今日のタスク", result[0].title)
+            assertEquals("今日の別タスク", result[1].title)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
