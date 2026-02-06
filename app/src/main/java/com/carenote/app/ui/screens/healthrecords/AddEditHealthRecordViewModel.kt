@@ -12,13 +12,13 @@ import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -57,8 +57,8 @@ class AddEditHealthRecordViewModel @Inject constructor(
     )
     val formState: StateFlow<AddEditHealthRecordFormState> = _formState.asStateFlow()
 
-    private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
-    val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+    private val _savedEvent = Channel<Boolean>(Channel.BUFFERED)
+    val savedEvent: Flow<Boolean> = _savedEvent.receiveAsFlow()
 
     val snackbarController = SnackbarController()
 
@@ -208,7 +208,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
             healthRecordRepository.updateRecord(updatedRecord)
                 .onSuccess {
                     Timber.d("Health record updated: id=$recordId")
-                    _savedEvent.emit(true)
+                    _savedEvent.send(true)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to update health record: $error")
@@ -232,7 +232,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
             healthRecordRepository.insertRecord(newRecord)
                 .onSuccess { id ->
                     Timber.d("Health record saved: id=$id")
-                    _savedEvent.emit(true)
+                    _savedEvent.send(true)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to save health record: $error")

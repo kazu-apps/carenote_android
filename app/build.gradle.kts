@@ -254,7 +254,10 @@ tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
         "**/service/*",
         "**/service/**",
         "**/worker/*",
-        "**/util/*",
+        "**/ui/util/AssetReader*",
+        "**/ui/util/CrashlyticsTree*",
+        "**/ui/util/LocaleManager*",
+        "**/ui/util/NotificationHelper*",
         // Room DB, converters, and encryption (Android Keystore — requires instrumented tests)
         "**/data/local/converter/*",
         "**/data/local/CareNoteDatabase*",

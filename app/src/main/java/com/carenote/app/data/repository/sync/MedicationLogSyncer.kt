@@ -39,6 +39,11 @@ class MedicationLogSyncer @Inject constructor(
 
     override val entityType: String = "medicationLog"
 
+    /**
+     * MedicationLog は medications/{id}/logs サブコレクション構造のため、
+     * 単一引数の collectionPath は使用不可。
+     * 代わりに [collectionPath(careRecipientId, medicationRemoteId)] を使用すること。
+     */
     override fun collectionPath(careRecipientId: String): String {
         throw UnsupportedOperationException("Use collectionPath(careRecipientId, medicationRemoteId)")
     }
@@ -49,6 +54,11 @@ class MedicationLogSyncer @Inject constructor(
     fun collectionPath(careRecipientId: String, medicationRemoteId: String): String =
         "careRecipients/$careRecipientId/medications/$medicationRemoteId/logs"
 
+    /**
+     * MedicationLog は服薬 ID ごとに取得する必要があるため、
+     * 引数なしの getAllLocal は使用不可。
+     * 代わりに [getAllLocalForMedication] を使用すること。
+     */
     override suspend fun getAllLocal(): List<MedicationLogEntity> {
         throw UnsupportedOperationException("Use getAllLocalForMedication(medicationId)")
     }

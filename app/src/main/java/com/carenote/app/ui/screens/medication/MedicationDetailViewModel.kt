@@ -13,12 +13,12 @@ import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -36,8 +36,8 @@ class MedicationDetailViewModel @Inject constructor(
 
     val snackbarController = SnackbarController()
 
-    private val _deletedEvent = MutableSharedFlow<Boolean>(replay = 1)
-    val deletedEvent: SharedFlow<Boolean> = _deletedEvent.asSharedFlow()
+    private val _deletedEvent = Channel<Boolean>(Channel.BUFFERED)
+    val deletedEvent: Flow<Boolean> = _deletedEvent.receiveAsFlow()
 
     val medication: StateFlow<UiState<Medication>> =
         medicationRepository.getMedicationById(medicationId)
@@ -72,7 +72,7 @@ class MedicationDetailViewModel @Inject constructor(
                 .onSuccess {
                     Timber.d("Medication deleted: id=$medicationId")
                     reminderScheduler.cancelReminders(medicationId)
-                    _deletedEvent.emit(true)
+                    _deletedEvent.send(true)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to delete medication: $error")

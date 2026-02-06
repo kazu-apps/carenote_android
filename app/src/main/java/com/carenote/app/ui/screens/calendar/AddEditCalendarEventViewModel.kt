@@ -10,13 +10,13 @@ import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDate
@@ -50,8 +50,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
     )
     val formState: StateFlow<AddEditCalendarEventFormState> = _formState.asStateFlow()
 
-    private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
-    val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+    private val _savedEvent = Channel<Boolean>(Channel.BUFFERED)
+    val savedEvent: Flow<Boolean> = _savedEvent.receiveAsFlow()
 
     val snackbarController = SnackbarController()
 
@@ -162,7 +162,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 calendarEventRepository.updateEvent(updatedEvent)
                     .onSuccess {
                         Timber.d("Calendar event updated: id=$eventId")
-                        _savedEvent.emit(true)
+                        _savedEvent.send(true)
                     }
                     .onFailure { error ->
                         Timber.w("Failed to update calendar event: $error")
@@ -183,7 +183,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 calendarEventRepository.insertEvent(newEvent)
                     .onSuccess { id ->
                         Timber.d("Calendar event saved: id=$id")
-                        _savedEvent.emit(true)
+                        _savedEvent.send(true)
                     }
                     .onFailure { error ->
                         Timber.w("Failed to save calendar event: $error")

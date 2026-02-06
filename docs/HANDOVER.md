@@ -2,14 +2,15 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 12 全体完了
+## 現在のタスク: Phase 14 デッドコード削除 + イベント修正 + コード品質 完了
 
-Phase 12c（タスクリマインダー UI + ViewModel）を完了。タスク繰り返し + 時間帯指定リマインダー機能の全フェーズが完了。
+Phase 14 の 4 項目を実行: (a) ValidationUtils.kt 削除（デッドコード 278行除去）、(b) savedEvent/deletedEvent を SharedFlow(replay=1) → Channel+receiveAsFlow に変更（6 ViewModel）、(c) MedicationLogSyncer に KDoc 追加、(d) JaCoCo 除外を具体化（DateTimeFormatters, SnackbarController がカバレッジ対象に復帰）。ビルド成功・全テスト PASS。
 
 ## 次のアクション
 
-1. 新機能の検討（Phase 13 以降）
-2. 既知の問題対応（下記テーブル参照）
+1. 全ロードマップ Phase 完了 — リリース準備へ
+2. 実機テスト実施
+3. 問い合わせメールアドレスの確認・設定
 
 ## 既知の問題
 
@@ -22,18 +23,18 @@ Phase 12c（タスクリマインダー UI + ViewModel）を完了。タスク�
 
 | 重要度 | 出典 | 内容 |
 |--------|------|------|
-| MEDIUM | BugHunt | `MedicationViewModel.todayLogs` が `LocalDate.now()` を VM 作成時に固定 → 深夜に古い表示 |
+| ~~MEDIUM~~ | ~~BugHunt~~ | ~~`MedicationViewModel.todayLogs` が `LocalDate.now()` を VM 作成時に固定 → 深夜に古い表示~~ → **Phase 13 で修正済み** |
 | MEDIUM | BugHunt | `MedicationLogSyncer.collectionPath()` が `UnsupportedOperationException` を投げる設計 → 基底 `sync()` 誤呼び出しでクラッシュ |
-| MEDIUM | BugHunt | `NotificationHelper` の `medicationId.toInt()` — Long→Int オーバーフロー可能性 |
-| MEDIUM | BugHunt | `readAssetText()` が Compose composition 中（メインスレッド）でファイル I/O 実行 |
-| MEDIUM | BugHunt | `SettingsViewModel.isSyncing` の `LiveData.asFlow()` がライフサイクル外で購読 |
+| ~~MEDIUM~~ | ~~BugHunt~~ | ~~`NotificationHelper` の `medicationId.toInt()` — Long→Int オーバーフロー可能性~~ → **Phase 13 で修正済み** |
+| ~~MEDIUM~~ | ~~BugHunt~~ | ~~`readAssetText()` が Compose composition 中（メインスレッド）でファイル I/O 実行~~ → **Phase 13 で修正済み** |
+| ~~MEDIUM~~ | ~~BugHunt~~ | ~~`SettingsViewModel.isSyncing` の `LiveData.asFlow()` がライフサイクル外で購読~~ → **調査の結果、WhileSubscribed で正常動作** |
 | ~~MEDIUM~~ | ~~BugHunt~~ | ~~`startDestination` が Compose state で動的変更 → NavHost 再構築リスク~~ → **Phase 9 で修正済み** |
 | MEDIUM | M-5 | Room スキーマ JSON がコミット済み（プライベートリポジトリでは許容） |
-| MEDIUM | Item 30 | ValidationUtils.kt が未使用のデッドコード（本番インポートなし） |
-| MEDIUM | Item 32 | JaCoCo `**/util/*` 除外が広範囲（テストは存在） |
+| ~~MEDIUM~~ | ~~Item 30~~ | ~~ValidationUtils.kt が未使用のデッドコード~~ → **Phase 14 で削除済み** |
+| ~~MEDIUM~~ | ~~Item 32~~ | ~~JaCoCo `**/util/*` 除外が広範囲~~ → **Phase 14 で具体化済み** |
 | MEDIUM | Item 31 | テスト品質: Mapper ラウンドトリップ不完全、Repository Turbine 未使用、ViewModel Loading→Success テスト欠落 |
 | LOW | BugHunt | `DatabasePassphraseManager` — EncryptedPrefs 破損時にパスフレーズ消失 → DB 再作成（データロス） |
-| LOW | BugHunt | `AddMedicationViewModel.savedEvent` の `SharedFlow(replay=1)` が設定変更時にリプレイ |
+| ~~LOW~~ | ~~BugHunt~~ | ~~`savedEvent` の `SharedFlow(replay=1)` が設定変更時にリプレイ~~ → **Phase 14 で Channel に変更済み** |
 | LOW | L-4 | 全 DAO が OnConflictStrategy.REPLACE 使用（マルチデバイス同期リスク） |
 | LOW | Item 99 | FCM リモート通知の受信処理が未実装（`onMessageReceived` がログのみ） |
 | LOW | Item 99 | FCM トークンのサーバー送信が未実装（`onNewToken` がログのみ） |
@@ -102,6 +103,13 @@ Phase 12c（タスクリマインダー UI + ViewModel）を完了。タスク�
 (c) UI + ViewModel: `AddEditTaskScreen` に繰り返しセクション（FilterChip + 間隔入力）とリマインダーセクション（Switch + TimePicker）追加。`AddEditTaskViewModel` に `TaskReminderSchedulerInterface` 注入、保存時にスケジュール/キャンセル。`TasksViewModel` に完了時の次回タスク自動生成、リマインダーキャンセル/再スケジュール追加。`calculateNextDueDate()` companion関数で DAILY/WEEKLY/MONTHLY 計算。テスト: AddEditTaskViewModelTest に13新規テスト、TasksViewModelTest に10新規テスト追加（全テスト PASS）。
 - 変更: `strings.xml` (JP/EN), `AddEditTaskViewModel.kt`, `AddEditTaskScreen.kt`, `TasksViewModel.kt`, `AddEditTaskViewModelTest.kt`, `TasksViewModelTest.kt`
 
+### Phase 13: ランタイムバグ修正 (MEDIUM) - DONE
+MEDIUM バグ 3 件修正: (a) `MedicationViewModel.todayLogs` を `_currentDate` flatMapLatest + `LifecycleResumeEffect` で日付変更検知、(b) `NotificationHelper.safeIntId()` で Long→Int 安全変換（下位31ビット）、(c) `CareNoteNavHost` の `readAssetText` を `produceState` + `Dispatchers.IO` で非同期化。テスト 6 件追加。
+- 変更: `MedicationViewModel.kt`, `MedicationScreen.kt`, `NotificationHelper.kt`, `CareNoteNavHost.kt`, `MedicationViewModelTest.kt`, `NotificationHelperTest.kt`
+
+### Phase 14: デッドコード削除 + イベント修正 + コード品質 (MEDIUM) - DONE
+ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に変更（6 VM）、MedicationLogSyncer KDoc 追加、JaCoCo 除外具体化。
+
 ---
 
 ## 完了タスク
@@ -163,6 +171,7 @@ Phase 12c（タスクリマインダー UI + ViewModel）を完了。タスク�
 | Enum パース | try-catch + フォールバック（NoteMapper, HealthRecordMapper, TaskMapper） |
 | テストパターン | StandardTestDispatcher + Turbine + FakeRepository (MutableStateFlow) |
 | Robolectric | 4.14.1（Android SDK シャドウ、Compose UI Test） |
+| BugHunt 2026-02-06 | Agent Teams リサーチ: collectAsState 残存=0、strings.xml 不整合=0、isSyncing=正常。実バグ: todayLogs 日付固定, Long→Int, メインスレッド I/O |
 
 ## スコープ外 / 将来
 

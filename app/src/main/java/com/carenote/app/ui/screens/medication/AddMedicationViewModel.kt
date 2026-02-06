@@ -11,12 +11,12 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalTime
@@ -45,8 +45,8 @@ class AddMedicationViewModel @Inject constructor(
     private val _formState = MutableStateFlow(AddMedicationFormState())
     val formState: StateFlow<AddMedicationFormState> = _formState.asStateFlow()
 
-    private val _savedEvent = MutableSharedFlow<Boolean>(replay = 1)
-    val savedEvent: SharedFlow<Boolean> = _savedEvent.asSharedFlow()
+    private val _savedEvent = Channel<Boolean>(Channel.BUFFERED)
+    val savedEvent: Flow<Boolean> = _savedEvent.receiveAsFlow()
 
     val snackbarController = SnackbarController()
 
@@ -149,7 +149,7 @@ class AddMedicationViewModel @Inject constructor(
                             times = current.times
                         )
                     }
-                    _savedEvent.emit(true)
+                    _savedEvent.send(true)
                 }
                 .onFailure { error ->
                     Timber.w("Failed to save medication: $error")
