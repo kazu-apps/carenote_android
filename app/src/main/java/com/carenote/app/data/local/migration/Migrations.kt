@@ -151,6 +151,14 @@ object Migrations {
         }
     }
 
+    /** v9 -> v10: Add index on medications.name and composite index on tasks(is_completed, created_at) */
+    val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_medications_name` ON `medications` (`name`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_is_completed_created_at` ON `tasks` (`is_completed`, `created_at`)")
+        }
+    }
+
     /** All migrations in order, for convenient registration with Room. Returns a new array each call. */
     fun all(): Array<Migration> = arrayOf(
         MIGRATION_1_2,
@@ -160,6 +168,7 @@ object Migrations {
         MIGRATION_5_6,
         MIGRATION_6_7,
         MIGRATION_7_8,
-        MIGRATION_8_9
+        MIGRATION_8_9,
+        MIGRATION_9_10
     )
 }

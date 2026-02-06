@@ -6,7 +6,7 @@ coreSplashscreen = "1.0.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 appcompat = "1.7.0"
-composeBom = "2024.12.01"
+composeBom = "2025.01.01"
 room = "2.6.1"
 hilt = "2.53.1"
 hiltNavigationCompose = "1.2.0"
@@ -40,11 +40,11 @@ hiltAndroidTesting = "2.53.1"
 robolectric = "4.14.1"
 
 # Android Test (Espresso/Compose UI)
-espresso = "3.5.1"
+espresso = "3.6.1"
 uiautomator = "2.2.0"
-testRunner = "1.5.2"
-testRules = "1.5.0"
-testCore = "1.5.0"
+testRunner = "1.6.2"
+testRules = "1.6.1"
+testCore = "1.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

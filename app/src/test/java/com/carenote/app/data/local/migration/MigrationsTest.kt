@@ -66,9 +66,35 @@ class MigrationsTest {
     }
 
     @Test
-    fun `all() contains eight migrations in order`() {
+    fun `MIGRATION_9_10 has correct version numbers`() {
+        assertEquals(9, Migrations.MIGRATION_9_10.startVersion)
+        assertEquals(10, Migrations.MIGRATION_9_10.endVersion)
+    }
+
+    @Test
+    fun `MIGRATION_9_10 creates medications name index and tasks composite index`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+        val sqlStatements = mutableListOf<String>()
+        every { db.execSQL(capture(sqlStatements)) } just Runs
+
+        Migrations.MIGRATION_9_10.migrate(db)
+
+        verify(exactly = 2) { db.execSQL(any()) }
+        assertEquals(2, sqlStatements.size)
+        assertTrue(
+            "Should create index on medications.name",
+            sqlStatements[0].contains("index_medications_name")
+        )
+        assertTrue(
+            "Should create composite index on tasks(is_completed, created_at)",
+            sqlStatements[1].contains("index_tasks_is_completed_created_at")
+        )
+    }
+
+    @Test
+    fun `all() contains nine migrations in order`() {
         val all = Migrations.all()
-        assertEquals(8, all.size)
+        assertEquals(9, all.size)
         assertEquals(1, all[0].startVersion)
         assertEquals(2, all[0].endVersion)
         assertEquals(2, all[1].startVersion)
@@ -85,6 +111,8 @@ class MigrationsTest {
         assertEquals(8, all[6].endVersion)
         assertEquals(8, all[7].startVersion)
         assertEquals(9, all[7].endVersion)
+        assertEquals(9, all[8].startVersion)
+        assertEquals(10, all[8].endVersion)
     }
 
     @Test
@@ -95,7 +123,7 @@ class MigrationsTest {
     }
 
     @Test
-    fun `migrations form a continuous chain from version 1 to 9`() {
+    fun `migrations form a continuous chain from version 1 to 10`() {
         val all = Migrations.all()
         for (i in 0 until all.size - 1) {
             assertEquals(
@@ -106,7 +134,7 @@ class MigrationsTest {
             )
         }
         assertEquals(1, all.first().startVersion)
-        assertEquals(9, all.last().endVersion)
+        assertEquals(10, all.last().endVersion)
     }
 
     @Test

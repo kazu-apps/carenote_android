@@ -9,7 +9,8 @@ import androidx.room.PrimaryKey
     tableName = "tasks",
     indices = [
         Index(value = ["is_completed"]),
-        Index(value = ["due_date"])
+        Index(value = ["due_date"]),
+        Index(value = ["is_completed", "created_at"])
     ]
 )
 data class TaskEntity(

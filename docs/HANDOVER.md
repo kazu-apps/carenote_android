@@ -2,10 +2,10 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 22 完了
+## 現在のタスク: Phase 23 完了
 
-Phase 22: Compose Preview 追加。
-全13画面に `@Preview` アノテーションを追加。`@LightDarkPreview` MultiPreview カスタムアノテーション + `PreviewData` サンプルデータ object を新規作成。LoginScreen / RegisterScreen は内部 composable を抽出して stateless 化し Preview 対応。その他画面は既存 private composable を直接 Preview。
+Phase 23: DB インデックス追加 + 依存関係アップグレード。
+`medications` テーブルに `name` インデックス、`tasks` テーブルに `(is_completed, created_at)` 複合インデックスを追加（Room migration v9→v10）。依存関係を最新安定版に更新（Compose BOM 2025.01.01, Espresso 3.6.1, Test Runner 1.6.2, Test Rules/Core 1.6.1）。
 
 ## 次のアクション
 
@@ -48,8 +48,8 @@ Phase 22: Compose Preview 追加。
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~`AuthViewModel._authSuccessEvent` が SharedFlow(replay=1)（他VMと不統一）~~ → **Phase 21 で修正済み** |
 | ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~DatePicker/TimePicker が3箇所に重複~~ → **Phase 21 で共通化済み** |
 | ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~@Preview アノテーションが全画面で未定義~~ → **Phase 22 で修正済み** |
-| LOW | v2.3 リサーチ | medications テーブルにインデックスなし、tasks に複合インデックスなし → **Phase 23 で対応** |
-| LOW | v2.3 リサーチ | 依存関係が約1年古い (Compose BOM 2024.12, Kotlin 2.0, Navigation 2.8) → **Phase 23 で対応** |
+| ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~medications テーブルにインデックスなし、tasks に複合インデックスなし~~ → **Phase 23 で修正済み** |
+| ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~依存関係が約1年古い (Compose BOM 2024.12, Espresso 3.5, Test Runner 1.5)~~ → **Phase 23 で更新済み** |
 | LOW | v2.3 リサーチ | 生体認証ロックなし（個人健康情報保護） → **Phase 24 で対応** |
 
 ## ロードマップ
@@ -175,11 +175,11 @@ Navigation Compose Deep Links を使用し、通知タップで該当画面に�
 - 変更: Auth 3画面（LoginScreen, RegisterScreen, ForgotPasswordScreen）, リスト 5画面（MedicationScreen, CalendarScreen, TasksScreen, HealthRecordsScreen, NotesScreen）, AddEdit 5画面（AddMedicationScreen, AddEditCalendarEventScreen, AddEditTaskScreen, AddEditHealthRecordScreen, AddEditNoteScreen）
 - ビルド成功、全テスト PASS
 
-### Phase 23: DB インデックス追加 + 依存関係アップグレード (LOW) - PENDING
+### Phase 23: DB インデックス追加 + 依存関係アップグレード (LOW) - DONE
 (a) `medications` テーブルに `name` インデックス、`tasks` テーブルに `(is_completed, created_at)` 複合インデックスを追加（Room migration v9→v10）。
-(b) `libs.versions.toml` の主要依存関係を最新安定版に更新: Compose BOM, Kotlin, AGP, Navigation Compose, Room, Lifecycle, Espresso, UIAutomator。
-- 対象: `Entity` ファイル（`@Index` 追加）, `Migrations.kt`, `CareNoteDatabase.kt`, `libs.versions.toml`, `build.gradle.kts`
-- 依存: なし
+(b) `libs.versions.toml` の依存関係を更新: Compose BOM 2024.12.01→2025.01.01, Espresso 3.5.1→3.6.1, Test Runner 1.5.2→1.6.2, Test Rules 1.5.0→1.6.1, Test Core 1.5.0→1.6.1。
+- 変更: `MedicationEntity.kt`（@Index 追加）, `TaskEntity.kt`（複合インデックス追加）, `Migrations.kt`（MIGRATION_9_10 追加）, `CareNoteDatabase.kt`（v10）, `libs.versions.toml`, `MigrationsTest.kt`（4テスト追加/更新）
+- ビルド成功、全テスト PASS
 
 ### Phase 24: 生体認証ロック（BiometricPrompt） (LOW) - PENDING
 アプリ起動時・バックグラウンド復帰時に `BiometricPrompt` で認証。設定画面でオン/オフ切替。介護記録（個人健康情報）の保護を強化。`androidx.biometric:biometric` 依存追加。
@@ -230,7 +230,7 @@ Navigation Compose Deep Links を使用し、通知タップで該当画面に�
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v9, SQLCipher 4.6.1 暗号化, sync_mappings テーブル, medication_logs.timing, tasks.recurrence/reminder カラム追加 |
+| Room DB | v10, SQLCipher 4.6.1 暗号化, sync_mappings テーブル, medication_logs.timing, tasks.recurrence/reminder カラム追加, medications.name インデックス, tasks(is_completed,created_at) 複合インデックス |
 | DB キー保存 | EncryptedSharedPreferences (Android Keystore AES256_GCM) |
 | 設定保存 | EncryptedSharedPreferences (`carenote_settings_prefs`) |
 | バックアップ除外 | DB, DB パスフレーズ prefs, 設定 prefs |
