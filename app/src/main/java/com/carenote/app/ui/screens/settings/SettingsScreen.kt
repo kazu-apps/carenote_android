@@ -29,7 +29,9 @@ import com.carenote.app.ui.screens.settings.sections.HealthThresholdSection
 import com.carenote.app.ui.screens.settings.sections.LanguageSection
 import com.carenote.app.ui.screens.settings.sections.MedicationTimeSection
 import com.carenote.app.ui.screens.settings.sections.NotificationSection
+import com.carenote.app.ui.screens.settings.sections.SecuritySection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
+import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.screens.settings.sections.ThemeSection
 import com.carenote.app.ui.util.SnackbarEvent
 import java.time.format.DateTimeFormatter
@@ -100,6 +102,16 @@ fun SettingsScreen(
                     isLoggedIn = isLoggedIn,
                     lastSyncText = lastSyncText,
                     onSyncNowClick = { viewModel.triggerManualSync() }
+                )
+            }
+            item {
+                val isBiometricAvailable = remember {
+                    BiometricHelper().canAuthenticate(context)
+                }
+                SecuritySection(
+                    biometricEnabled = settings.biometricEnabled,
+                    onBiometricEnabledChange = { viewModel.toggleBiometricEnabled(it) },
+                    isBiometricAvailable = isBiometricAvailable
                 )
             }
             item {

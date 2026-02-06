@@ -137,6 +137,10 @@ class SettingsViewModel @Inject constructor(
         onSuccess = { LocaleManager.applyLanguage(language) }
     ) { settingsRepository.updateAppLanguage(language) }
 
+    fun toggleBiometricEnabled(enabled: Boolean) = updateSetting(
+        logTag = "Biometric enabled updated: $enabled"
+    ) { settingsRepository.updateBiometricEnabled(enabled) }
+
     fun toggleSyncEnabled(enabled: Boolean) = updateSetting(
         logTag = "Sync enabled updated: $enabled",
         onSuccess = {

@@ -36,5 +36,8 @@ data class UserSettings(
 
     // 同期設定
     val syncEnabled: Boolean = true,
-    val lastSyncTime: LocalDateTime? = null
+    val lastSyncTime: LocalDateTime? = null,
+
+    // セキュリティ設定
+    val biometricEnabled: Boolean = false
 )

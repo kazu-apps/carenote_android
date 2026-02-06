@@ -227,6 +227,17 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateBiometricEnabled(
+        enabled: Boolean
+    ): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to save biometric setting", it) }
+        ) {
+            dataSource.updateBiometricEnabled(enabled)
+            Timber.d("Biometric enabled updated: $enabled")
+        }
+    }
+
     override suspend fun resetToDefaults(): Result<Unit, DomainError> {
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to reset settings", it) }

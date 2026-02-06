@@ -19,6 +19,7 @@ ksp = "2.0.21-1.0.28"
 sqlcipherAndroid = "4.6.1"
 androidxSqlite = "2.4.0"
 securityCrypto = "1.1.0-alpha06"
+biometric = "1.1.0"
 # Material Components
 material = "1.12.0"
 # Logging
@@ -90,6 +91,7 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 sqlcipher-android = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipherAndroid" }
 androidx-sqlite = { group = "androidx.sqlite", name = "sqlite-ktx", version.ref = "androidxSqlite" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }

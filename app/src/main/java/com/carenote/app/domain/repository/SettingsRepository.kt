@@ -43,5 +43,7 @@ interface SettingsRepository {
 
     suspend fun updateSyncEnabled(enabled: Boolean): Result<Unit, DomainError>
 
+    suspend fun updateBiometricEnabled(enabled: Boolean): Result<Unit, DomainError>
+
     suspend fun resetToDefaults(): Result<Unit, DomainError>
 }

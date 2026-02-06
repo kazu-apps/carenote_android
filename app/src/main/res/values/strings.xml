@@ -56,6 +56,17 @@
     <string name="settings_sync_started">同期を開始しました</string>
     <string name="settings_sync_in_progress">同期中...</string>
 
+    <!-- Security Settings -->
+    <string name="settings_security">セキュリティ</string>
+    <string name="settings_biometric_enabled">生体認証でロック</string>
+    <string name="settings_biometric_summary">アプリ起動時・復帰時に認証を要求</string>
+    <string name="settings_biometric_not_available">このデバイスでは生体認証を利用できません</string>
+
+    <!-- Biometric Prompt -->
+    <string name="biometric_prompt_title">本人確認</string>
+    <string name="biometric_prompt_subtitle">CareNote にアクセスするには認証が必要です</string>
+    <string name="biometric_auth_failed">認証に失敗しました</string>
+
     <string name="settings_reset_confirm_title">設定のリセット</string>
     <string name="settings_reset_confirm_message">すべての設定をデフォルトに戻しますか？</string>
     <string name="settings_saved">設定を保存しました</string>

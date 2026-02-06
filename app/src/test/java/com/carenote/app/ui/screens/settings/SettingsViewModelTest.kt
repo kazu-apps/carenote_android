@@ -415,6 +415,54 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `toggleBiometricEnabled true updates state`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleBiometricEnabled(true)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertTrue(settings.biometricEnabled)
+        }
+    }
+
+    @Test
+    fun `toggleBiometricEnabled false updates state`() = runTest(testDispatcher) {
+        settingsRepository.setSettings(UserSettings(biometricEnabled = true))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleBiometricEnabled(false)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertFalse(settings.biometricEnabled)
+        }
+    }
+
+    @Test
+    fun `toggleBiometricEnabled failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        settingsRepository.shouldFail = true
+
+        viewModel.toggleBiometricEnabled(true)
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_error_save_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
     fun `settings reflect pre-set values`() = runTest(testDispatcher) {
         settingsRepository.setSettings(
             UserSettings(

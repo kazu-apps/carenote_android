@@ -2,10 +2,10 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 23 完了
+## 現在のタスク: Phase 24 完了
 
-Phase 23: DB インデックス追加 + 依存関係アップグレード。
-`medications` テーブルに `name` インデックス、`tasks` テーブルに `(is_completed, created_at)` 複合インデックスを追加（Room migration v9→v10）。依存関係を最新安定版に更新（Compose BOM 2025.01.01, Espresso 3.6.1, Test Runner 1.6.2, Test Rules/Core 1.6.1）。
+Phase 24: 生体認証ロック（BiometricPrompt）。
+アプリ起動時・バックグラウンド復帰時（30秒超）に BiometricPrompt で認証を要求。設定画面のセキュリティセクションでオン/オフ切替可能。`BIOMETRIC_STRONG | DEVICE_CREDENTIAL` で指紋/顔/PIN/パターンに対応。端末非対応時は自動的に Switch を無効化。
 
 ## 次のアクション
 
@@ -50,7 +50,7 @@ Phase 23: DB インデックス追加 + 依存関係アップグレード。
 | ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~@Preview アノテーションが全画面で未定義~~ → **Phase 22 で修正済み** |
 | ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~medications テーブルにインデックスなし、tasks に複合インデックスなし~~ → **Phase 23 で修正済み** |
 | ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~依存関係が約1年古い (Compose BOM 2024.12, Espresso 3.5, Test Runner 1.5)~~ → **Phase 23 で更新済み** |
-| LOW | v2.3 リサーチ | 生体認証ロックなし（個人健康情報保護） → **Phase 24 で対応** |
+| ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~生体認証ロックなし（個人健康情報保護）~~ → **Phase 24 で修正済み** |
 
 ## ロードマップ
 
@@ -181,10 +181,11 @@ Navigation Compose Deep Links を使用し、通知タップで該当画面に�
 - 変更: `MedicationEntity.kt`（@Index 追加）, `TaskEntity.kt`（複合インデックス追加）, `Migrations.kt`（MIGRATION_9_10 追加）, `CareNoteDatabase.kt`（v10）, `libs.versions.toml`, `MigrationsTest.kt`（4テスト追加/更新）
 - ビルド成功、全テスト PASS
 
-### Phase 24: 生体認証ロック（BiometricPrompt） (LOW) - PENDING
-アプリ起動時・バックグラウンド復帰時に `BiometricPrompt` で認証。設定画面でオン/オフ切替。介護記録（個人健康情報）の保護を強化。`androidx.biometric:biometric` 依存追加。
-- 対象: 新規 `BiometricHelper.kt`, `MainActivity.kt`, `SettingsScreen.kt`, `SettingsViewModel.kt`, `SettingsDataSource.kt`
-- 依存: なし
+### Phase 24: 生体認証ロック（BiometricPrompt） (LOW) - DONE
+アプリ起動時・バックグラウンド復帰時（30秒超）に `BiometricPrompt` で認証を要求。設定画面セキュリティセクションでオン/オフ切替。`BIOMETRIC_STRONG | DEVICE_CREDENTIAL` で指紋/顔/PIN/パターンに対応。端末非対応時は Switch 自動無効化。
+- 新規: `BiometricHelper.kt`（interface `BiometricAuthenticator` + 実装）, `SecuritySection.kt`, `BiometricHelperTest.kt`
+- 変更: `libs.versions.toml`（biometric 1.1.0）, `build.gradle.kts`（依存+JaCoCo除外）, `AppConfig.kt`（Biometric定数）, `UserSettings.kt`（biometricEnabled）, `SettingsDataSource.kt`（読み書き）, `SettingsRepository.kt`/`Impl`（updateBiometricEnabled）, `SettingsViewModel.kt`（toggleBiometricEnabled）, `SettingsScreen.kt`（SecuritySection追加）, `SwitchPreference.kt`（enabled パラメータ追加）, `MainActivity.kt`（生体認証ゲート+LifecycleObserver）, `strings.xml` JP/EN（7文字列追加）, `FakeSettingsRepository.kt`, `SettingsViewModelTest.kt`（3テスト追加）
+- ビルド成功、全テスト PASS
 
 ---
 

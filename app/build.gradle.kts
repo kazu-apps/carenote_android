@@ -129,6 +129,7 @@ dependencies {
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.biometric)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -258,6 +259,7 @@ tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
         "**/ui/util/CrashlyticsTree*",
         "**/ui/util/LocaleManager*",
         "**/ui/util/NotificationHelper*",
+        "**/ui/util/BiometricHelper*",
         // Room DB, converters, and encryption (Android Keystore — requires instrumented tests)
         "**/data/local/converter/*",
         "**/data/local/CareNoteDatabase*",

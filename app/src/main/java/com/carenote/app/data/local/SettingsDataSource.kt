@@ -48,6 +48,7 @@ class SettingsDataSource @Inject constructor(
         const val EVENING_MINUTE = "evening_minute"
         const val SYNC_ENABLED = "sync_enabled"
         const val LAST_SYNC_TIME = "last_sync_time"
+        const val BIOMETRIC_ENABLED = "biometric_enabled"
     }
 
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -143,7 +144,11 @@ class SettingsDataSource @Inject constructor(
                 PreferencesKeys.SYNC_ENABLED,
                 true
             ),
-            lastSyncTime = getLastSyncTime()
+            lastSyncTime = getLastSyncTime(),
+            biometricEnabled = prefs.getBoolean(
+                PreferencesKeys.BIOMETRIC_ENABLED,
+                false
+            )
         )
     }
 
@@ -207,6 +212,10 @@ class SettingsDataSource @Inject constructor(
      */
     suspend fun updateSyncEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(PreferencesKeys.SYNC_ENABLED, enabled).apply()
+    }
+
+    suspend fun updateBiometricEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(PreferencesKeys.BIOMETRIC_ENABLED, enabled).apply()
     }
 
     /**

@@ -21,9 +21,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.util.Consumer
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
@@ -32,6 +35,7 @@ import com.carenote.app.ui.navigation.BottomNavigationBar
 import com.carenote.app.ui.navigation.CareNoteNavHost
 import com.carenote.app.ui.navigation.Screen
 import com.carenote.app.ui.theme.CareNoteTheme
+import com.carenote.app.ui.util.BiometricHelper
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -44,6 +48,10 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var authRepository: AuthRepository
 
+    private val biometricHelper = BiometricHelper()
+    private val isAuthenticated = mutableStateOf(false)
+    private var lastBackgroundTime: Long = 0L
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _ -> }
@@ -51,6 +59,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                lastBackgroundTime = System.currentTimeMillis()
+            }
+
+            override fun onStart(owner: LifecycleOwner) {
+                checkBiometricAuth()
+            }
+        })
 
         enableEdgeToEdge()
         setContent {
@@ -72,6 +90,8 @@ class MainActivity : AppCompatActivity() {
                 ThemeMode.DARK -> true
             }
 
+            val authenticated by isAuthenticated
+
             CareNoteTheme(darkTheme = darkTheme) {
                 var permissionRequested by remember { mutableStateOf(false) }
 
@@ -84,56 +104,87 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                val navController = rememberNavController()
+                if (!isLoggedIn || !settings.biometricEnabled || authenticated) {
+                    val navController = rememberNavController()
 
-                // 通知タップ等の deep link を処理（アプリ起動中）
-                DisposableEffect(Unit) {
-                    val listener = Consumer<Intent> { newIntent ->
-                        navController.handleDeepLink(newIntent)
-                    }
-                    addOnNewIntentListener(listener)
-                    onDispose {
-                        removeOnNewIntentListener(listener)
-                    }
-                }
-
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
-
-                val isAuthScreen = currentRoute in Screen.authScreens.map { it.route }
-                val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route } && !isAuthScreen
-
-                // 認証状態変更時のナビゲーション処理
-                LaunchedEffect(isLoggedIn) {
-                    val currentDestination = navController.currentDestination?.route ?: return@LaunchedEffect
-                    if (isLoggedIn && currentDestination in Screen.authScreens.map { it.route }) {
-                        // ログイン成功: メイン画面へ遷移
-                        navController.navigate(Screen.Medication.route) {
-                            popUpTo(0) { inclusive = true }
+                    // 通知タップ等の deep link を処理（アプリ起動中）
+                    DisposableEffect(Unit) {
+                        val listener = Consumer<Intent> { newIntent ->
+                            navController.handleDeepLink(newIntent)
                         }
-                    } else if (!isLoggedIn && currentDestination !in Screen.authScreens.map { it.route }) {
-                        // ログアウト: ログイン画面へ遷移
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(0) { inclusive = true }
+                        addOnNewIntentListener(listener)
+                        onDispose {
+                            removeOnNewIntentListener(listener)
                         }
                     }
-                }
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        if (showBottomBar) {
-                            BottomNavigationBar(navController = navController)
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = navBackStackEntry?.destination?.route
+
+                    val isAuthScreen = currentRoute in Screen.authScreens.map { it.route }
+                    val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route } && !isAuthScreen
+
+                    // 認証状態変更時のナビゲーション処理
+                    LaunchedEffect(isLoggedIn) {
+                        val currentDestination = navController.currentDestination?.route ?: return@LaunchedEffect
+                        if (isLoggedIn && currentDestination in Screen.authScreens.map { it.route }) {
+                            // ログイン成功: メイン画面へ遷移
+                            navController.navigate(Screen.Medication.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        } else if (!isLoggedIn && currentDestination !in Screen.authScreens.map { it.route }) {
+                            // ログアウト: ログイン画面へ遷移
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     }
-                ) { innerPadding ->
-                    CareNoteNavHost(
-                        navController = navController,
-                        modifier = Modifier.padding(innerPadding),
-                        startDestination = startDestination
-                    )
+
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        bottomBar = {
+                            if (showBottomBar) {
+                                BottomNavigationBar(navController = navController)
+                            }
+                        }
+                    ) { innerPadding ->
+                        CareNoteNavHost(
+                            navController = navController,
+                            modifier = Modifier.padding(innerPadding),
+                            startDestination = startDestination
+                        )
+                    }
                 }
+                // When biometric is required and not authenticated, show blank themed screen
             }
         }
+    }
+
+    private fun checkBiometricAuth() {
+        if (!biometricHelper.canAuthenticate(this)) {
+            isAuthenticated.value = true
+            return
+        }
+
+        val elapsed = System.currentTimeMillis() - lastBackgroundTime
+        val isFirstLaunch = lastBackgroundTime == 0L
+        val needsAuth = isFirstLaunch || elapsed > AppConfig.Biometric.BACKGROUND_TIMEOUT_MS
+
+        if (!needsAuth) {
+            isAuthenticated.value = true
+            return
+        }
+
+        // Reset to false — the Compose gate checks both biometricEnabled and this value
+        isAuthenticated.value = false
+
+        biometricHelper.authenticate(
+            activity = this,
+            onSuccess = { isAuthenticated.value = true },
+            onError = { _ ->
+                // Authentication cancelled or error — keep locked
+                // User can retry by bringing app to foreground again
+            }
+        )
     }
 }

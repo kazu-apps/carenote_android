@@ -400,6 +400,14 @@ object AppConfig {
     }
 
     /**
+     * 生体認証関連の設定値
+     */
+    object Biometric {
+        /** バックグラウンドタイムアウト（ミリ秒）— この時間を超えて復帰したら再認証を要求 */
+        const val BACKGROUND_TIMEOUT_MS = 30_000L
+    }
+
+    /**
      * Firebase Cloud Messaging 関連の設定値
      */
     object Fcm {
