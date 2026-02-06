@@ -45,6 +45,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.notes.components.NoteCard
 import com.carenote.app.ui.screens.notes.components.NoteTagChip
 import com.carenote.app.ui.testing.TestTags
@@ -207,10 +208,15 @@ private fun NoteListContent(
                 items = notes,
                 key = { it.id }
             ) { note ->
-                NoteCard(
-                    note = note,
-                    onClick = { onNoteClick(note.id) }
-                )
+                SwipeToDismissItem(
+                    item = note,
+                    onDelete = onDeleteNote
+                ) {
+                    NoteCard(
+                        note = note,
+                        onClick = { onNoteClick(note.id) }
+                    )
+                }
             }
         }
     }

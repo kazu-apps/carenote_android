@@ -43,6 +43,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.medication.components.MedicationCard
 import com.carenote.app.ui.testing.TestTags
 import com.carenote.app.ui.util.SnackbarEvent
@@ -140,6 +141,7 @@ fun MedicationScreen(
                             viewModel.recordMedication(id, MedicationLogStatus.POSTPONED, timing)
                         },
                         onCardClick = onNavigateToDetail,
+                        onDelete = { deleteMedication = it },
                         contentPadding = innerPadding
                     )
                 }
@@ -169,6 +171,7 @@ private fun MedicationList(
     onSkipped: (Long, MedicationTiming?) -> Unit,
     onPostponed: (Long, MedicationTiming?) -> Unit,
     onCardClick: (Long) -> Unit,
+    onDelete: (Medication) -> Unit,
     contentPadding: PaddingValues
 ) {
     val timingOrder = listOf(MedicationTiming.MORNING, MedicationTiming.NOON, MedicationTiming.EVENING)
@@ -193,14 +196,19 @@ private fun MedicationList(
                     items = medsForTiming,
                     key = { "${timing.name}_${it.id}" }
                 ) { medication ->
-                    MedicationCard(
-                        medication = medication,
-                        status = todayLogs[medication.id to timing.name],
-                        onTaken = { onTaken(medication.id, timing) },
-                        onSkipped = { onSkipped(medication.id, timing) },
-                        onPostponed = { onPostponed(medication.id, timing) },
-                        onClick = { onCardClick(medication.id) }
-                    )
+                    SwipeToDismissItem(
+                        item = medication,
+                        onDelete = onDelete
+                    ) {
+                        MedicationCard(
+                            medication = medication,
+                            status = todayLogs[medication.id to timing.name],
+                            onTaken = { onTaken(medication.id, timing) },
+                            onSkipped = { onSkipped(medication.id, timing) },
+                            onPostponed = { onPostponed(medication.id, timing) },
+                            onClick = { onCardClick(medication.id) }
+                        )
+                    }
                 }
                 item(key = "spacer_${timing.name}") {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -214,14 +222,19 @@ private fun MedicationList(
                 items = noTimingMeds,
                 key = { "other_${it.id}" }
             ) { medication ->
-                MedicationCard(
-                    medication = medication,
-                    status = todayLogs[medication.id to null],
-                    onTaken = { onTaken(medication.id, null) },
-                    onSkipped = { onSkipped(medication.id, null) },
-                    onPostponed = { onPostponed(medication.id, null) },
-                    onClick = { onCardClick(medication.id) }
-                )
+                SwipeToDismissItem(
+                    item = medication,
+                    onDelete = onDelete
+                ) {
+                    MedicationCard(
+                        medication = medication,
+                        status = todayLogs[medication.id to null],
+                        onTaken = { onTaken(medication.id, null) },
+                        onSkipped = { onSkipped(medication.id, null) },
+                        onPostponed = { onPostponed(medication.id, null) },
+                        onClick = { onCardClick(medication.id) }
+                    )
+                }
             }
         }
     }

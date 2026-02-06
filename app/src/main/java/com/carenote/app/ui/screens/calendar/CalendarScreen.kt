@@ -45,6 +45,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.calendar.components.CalendarEventCard
 import com.carenote.app.ui.screens.calendar.components.MonthCalendarGrid
 import com.carenote.app.ui.testing.TestTags
@@ -175,10 +176,15 @@ fun CalendarScreen(
                             items = state.data,
                             key = { it.id }
                         ) { event ->
-                            CalendarEventCard(
-                                event = event,
-                                onClick = { onNavigateToEditEvent(event.id) }
-                            )
+                            SwipeToDismissItem(
+                                item = event,
+                                onDelete = { deleteEvent = it }
+                            ) {
+                                CalendarEventCard(
+                                    event = event,
+                                    onClick = { onNavigateToEditEvent(event.id) }
+                                )
+                            }
                         }
                     }
                 }

@@ -37,6 +37,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.tasks.components.TaskCard
 import com.carenote.app.ui.screens.tasks.components.TaskFilterChips
 import com.carenote.app.ui.testing.TestTags
@@ -137,11 +138,16 @@ fun TasksScreen(
                             items = state.data,
                             key = { it.id }
                         ) { task ->
-                            TaskCard(
-                                task = task,
-                                onToggleCompletion = { viewModel.toggleCompletion(task) },
-                                onClick = { onNavigateToEditTask(task.id) }
-                            )
+                            SwipeToDismissItem(
+                                item = task,
+                                onDelete = { deleteTask = it }
+                            ) {
+                                TaskCard(
+                                    task = task,
+                                    onToggleCompletion = { viewModel.toggleCompletion(task) },
+                                    onClick = { onNavigateToEditTask(task.id) }
+                                )
+                            }
                         }
                     }
                 }

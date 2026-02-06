@@ -2,18 +2,16 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 16 テスト品質強化 完了
+## 現在のタスク: Phase 17 スワイプ削除接続 完了
 
-テスト品質ギャップ 3 件を修正:
-(a) 6 RepositoryImpl テストを `.first()` → Turbine `.test { awaitItem() }` に移行
-(b) 6 ViewModel テストに Loading→Success シーケンシャル遷移テストを追加
-(c) `UserMapperTest.kt` を新規作成（5 テストケース）
+5 リスト画面（Medication, Notes, HealthRecords, Calendar, Tasks）に `SwipeToDismissBox` ベースのスワイプ削除を接続。
+左スワイプ → 赤背景+削除アイコン → 既存 `ConfirmDialog` 表示 → ViewModel.delete() 実行のフロー完成。
 
 ## 次のアクション
 
-1. Phase 17: リスト画面の削除ダイアログ接続（スワイプ削除）
-2. 各フェーズ完了後にビルド・テスト確認
-3. 全フェーズ完了後、実機テスト + リリース準備
+1. 実機テスト（5画面のスワイプ削除動作確認）
+2. リリース準備
+3. 全フェーズ完了後、実機テスト + リリース APK 検証
 
 ## 既知の問題
 
@@ -42,7 +40,7 @@
 | ~~LOW~~ | ~~Item 99~~ | ~~FCM リモート通知の受信処理が未実装~~ → **リサーチでバックエンド未存在を確認、v3.0スコープ** |
 | ~~LOW~~ | ~~Item 99~~ | ~~FCM トークンのサーバー送信が未実装~~ → **同上、v3.0スコープ** |
 | ~~LOW~~ | ~~Item 100~~ | ~~Screen ファイルの UI ハードコード値~~ → **リサーチで Color/sp は移行済み、.dp は Compose 標準プラクティスと確認、現状維持** |
-| INFO | — | 削除確認ダイアログが UI から到達不可（5リスト画面） → **Phase 17 で接続** |
+| ~~INFO~~ | ~~—~~ | ~~削除確認ダイアログが UI から到達不可（5リスト画面）~~ → **Phase 17 で接続済み** |
 | ~~INFO~~ | ~~—~~ | ~~Flow `.catch` が欠落（全 ViewModel 13箇所、SQLCipher 使用でリスク増）~~ → **Phase 15 で修正済み** |
 
 ## ロードマップ
@@ -129,11 +127,11 @@ ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に�
 - 新規: `UserMapperTest.kt`
 - ビルド成功、全テスト PASS
 
-### Phase 17: リスト画面の削除ダイアログ接続（スワイプ削除） (LOW) - PENDING
-5 リスト画面（Medication, Notes, HealthRecords, Calendar, Tasks）の未接続な削除確認ダイアログをスワイプ削除で接続。
-各画面の既存 `deleteXxx` state 変数にスワイプアクション（`SwipeToDismissBox`）を接続し、ConfirmDialog 表示 → ViewModel.delete() 呼び出しの一連フローを完成。
-- 対象: 5 Screen ファイル + 対応する ViewModel の delete メソッド確認
-- 依存: なし
+### Phase 17: リスト画面の削除ダイアログ接続（スワイプ削除） (LOW) - DONE
+5 リスト画面に `SwipeToDismissBox` ベースのスワイプ削除を接続。共通 `SwipeToDismissItem<T>` コンポーネントを作成し、各画面の `items` ブロック内 Card を `SwipeToDismissItem` でラップ。
+- 新規: `ui/components/SwipeToDismissItem.kt`（汎用スワイプ削除ラッパー）
+- 変更: `MedicationScreen.kt`（MedicationList に onDelete 追加、items 2箇所ラップ）、`NotesScreen.kt`（NoteCard ラップ）、`HealthRecordsScreen.kt`（HealthRecordListContent に onDelete 追加）、`CalendarScreen.kt`（CalendarEventCard ラップ）、`TasksScreen.kt`（TaskCard ラップ）
+- ビルド成功、全テスト PASS
 
 ---
 

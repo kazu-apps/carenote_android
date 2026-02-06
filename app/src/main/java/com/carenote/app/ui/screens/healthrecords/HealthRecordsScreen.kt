@@ -41,6 +41,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.healthrecords.components.HealthRecordCard
 import com.carenote.app.ui.screens.healthrecords.components.HealthRecordGraphContent
 import com.carenote.app.ui.testing.TestTags
@@ -125,6 +126,7 @@ fun HealthRecordsScreen(
                             HealthRecordListContent(
                                 records = state.data,
                                 onRecordClick = onNavigateToEditRecord,
+                                onDelete = { deleteRecord = it },
                                 onNavigateToAdd = onNavigateToAddRecord,
                                 contentPadding = contentPadding
                             )
@@ -185,6 +187,7 @@ private fun ViewModeSelector(
 private fun HealthRecordListContent(
     records: List<HealthRecord>,
     onRecordClick: (Long) -> Unit,
+    onDelete: (HealthRecord) -> Unit,
     onNavigateToAdd: () -> Unit,
     contentPadding: PaddingValues
 ) {
@@ -212,10 +215,15 @@ private fun HealthRecordListContent(
                 items = records,
                 key = { it.id }
             ) { record ->
-                HealthRecordCard(
-                    record = record,
-                    onClick = { onRecordClick(record.id) }
-                )
+                SwipeToDismissItem(
+                    item = record,
+                    onDelete = onDelete
+                ) {
+                    HealthRecordCard(
+                        record = record,
+                        onClick = { onRecordClick(record.id) }
+                    )
+                }
             }
         }
     }
