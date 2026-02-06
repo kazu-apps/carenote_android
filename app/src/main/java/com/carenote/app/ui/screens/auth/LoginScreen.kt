@@ -47,7 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 
 @Composable
@@ -84,146 +87,189 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Spacer(modifier = Modifier.height(48.dp))
+        LoginContent(
+            formState = formState,
+            passwordVisible = passwordVisible,
+            onEmailChange = viewModel::updateLoginEmail,
+            onPasswordChange = viewModel::updateLoginPassword,
+            onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
+            onForgotPassword = onNavigateToForgotPassword,
+            onSignIn = viewModel::signIn,
+            onNavigateToRegister = onNavigateToRegister,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
 
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary
+@Composable
+private fun LoginContent(
+    formState: LoginFormState,
+    passwordVisible: Boolean,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onTogglePasswordVisibility: () -> Unit,
+    onForgotPassword: () -> Unit,
+    onSignIn: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val focusManager = LocalFocusManager.current
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = stringResource(R.string.auth_login_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        CareNoteTextField(
+            value = formState.email,
+            onValueChange = onEmailChange,
+            label = stringResource(R.string.auth_email),
+            placeholder = stringResource(R.string.auth_email_placeholder),
+            errorMessage = formState.emailError,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
+        )
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
+        CareNoteTextField(
+            value = formState.password,
+            onValueChange = onPasswordChange,
+            label = stringResource(R.string.auth_password),
+            placeholder = stringResource(R.string.auth_password_placeholder),
+            errorMessage = formState.passwordError,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus()
+                    onSignIn()
+                }
+            ),
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                IconButton(onClick = onTogglePasswordVisibility) {
+                    Icon(
+                        imageVector = if (passwordVisible) {
+                            Icons.Filled.VisibilityOff
+                        } else {
+                            Icons.Filled.Visibility
+                        },
+                        contentDescription = if (passwordVisible) {
+                            stringResource(R.string.auth_hide_password)
+                        } else {
+                            stringResource(R.string.auth_show_password)
+                        }
+                    )
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(
+            onClick = onForgotPassword,
+            modifier = Modifier.align(Alignment.End)
+        ) {
             Text(
-                text = stringResource(R.string.auth_login_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
+                text = stringResource(R.string.auth_forgot_password),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = onSignIn,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = ButtonShape,
+            enabled = !formState.isLoading
+        ) {
+            if (formState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.auth_sign_in),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.auth_no_account),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            CareNoteTextField(
-                value = formState.email,
-                onValueChange = viewModel::updateLoginEmail,
-                label = stringResource(R.string.auth_email),
-                placeholder = stringResource(R.string.auth_email_placeholder),
-                errorMessage = formState.emailError,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            CareNoteTextField(
-                value = formState.password,
-                onValueChange = viewModel::updateLoginPassword,
-                label = stringResource(R.string.auth_password),
-                placeholder = stringResource(R.string.auth_password_placeholder),
-                errorMessage = formState.passwordError,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        viewModel.signIn()
-                    }
-                ),
-                visualTransformation = if (passwordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) {
-                                Icons.Filled.VisibilityOff
-                            } else {
-                                Icons.Filled.Visibility
-                            },
-                            contentDescription = if (passwordVisible) {
-                                stringResource(R.string.auth_hide_password)
-                            } else {
-                                stringResource(R.string.auth_show_password)
-                            }
-                        )
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(
-                onClick = onNavigateToForgotPassword,
-                modifier = Modifier.align(Alignment.End)
-            ) {
+            TextButton(onClick = onNavigateToRegister) {
                 Text(
-                    text = stringResource(R.string.auth_forgot_password),
+                    text = stringResource(R.string.auth_sign_up_link),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = viewModel::signIn,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = ButtonShape,
-                enabled = !formState.isLoading
-            ) {
-                if (formState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.auth_sign_in),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.auth_no_account),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = onNavigateToRegister) {
-                    Text(
-                        text = stringResource(R.string.auth_sign_up_link),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(48.dp))
         }
+
+        Spacer(modifier = Modifier.height(48.dp))
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun LoginContentPreview() {
+    CareNoteTheme {
+        LoginContent(
+            formState = PreviewData.loginFormState,
+            passwordVisible = false,
+            onEmailChange = {},
+            onPasswordChange = {},
+            onTogglePasswordVisibility = {},
+            onForgotPassword = {},
+            onSignIn = {},
+            onNavigateToRegister = {}
+        )
     }
 }

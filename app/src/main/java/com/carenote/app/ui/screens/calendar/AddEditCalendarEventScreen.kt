@@ -48,7 +48,10 @@ import com.carenote.app.ui.components.CareNoteDatePickerDialog
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.CareNoteTimePickerDialog
 import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
 import java.time.LocalDate
@@ -332,6 +335,43 @@ private fun TimeSelector(
             Text(
                 text = time?.let { DateTimeFormatters.formatTime(it) } ?: "--:--",
                 style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun DateSelectorPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            DateSelector(
+                date = PreviewData.addEditCalendarEventFormState.date,
+                onClick = {}
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun AllDayTogglePreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            AllDayToggle(isAllDay = false, onToggle = {})
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun TimeSelectorPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            TimeSelector(
+                label = "Start Time",
+                time = LocalTime.of(10, 0),
+                onClick = {}
             )
         }
     }

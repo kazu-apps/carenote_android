@@ -49,7 +49,10 @@ import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.notes.components.NoteCard
 import com.carenote.app.ui.screens.notes.components.NoteTagChip
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
@@ -270,4 +273,33 @@ private fun NoteTagAllChip(
         },
         shape = com.carenote.app.ui.theme.ChipShape
     )
+}
+
+@LightDarkPreview
+@Composable
+private fun NoteListContentPreview() {
+    CareNoteTheme {
+        NoteListContent(
+            notes = PreviewData.notes,
+            searchQuery = "",
+            selectedTag = null,
+            onSearchQueryChange = {},
+            onTagSelect = {},
+            onNoteClick = {},
+            onDeleteNote = {},
+            onNavigateToAdd = {},
+            contentPadding = PaddingValues(bottom = 80.dp)
+        )
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun TagFilterRowPreview() {
+    CareNoteTheme {
+        TagFilterRow(
+            selectedTag = NoteTag.CONDITION,
+            onTagSelect = {}
+        )
+    }
 }

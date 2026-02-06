@@ -45,7 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,5 +219,37 @@ private fun EmailSentContent(
             text = stringResource(R.string.auth_back_to_login),
             style = MaterialTheme.typography.titleMedium
         )
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun ResetFormContentPreview() {
+    CareNoteTheme {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            ResetFormContent(
+                formState = PreviewData.forgotPasswordFormState,
+                onEmailChange = {},
+                onSendResetEmail = {}
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun EmailSentContentPreview() {
+    CareNoteTheme {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            EmailSentContent(onNavigateBack = {})
+        }
     }
 }

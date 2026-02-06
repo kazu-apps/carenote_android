@@ -46,7 +46,10 @@ import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.medication.components.MedicationCard
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
@@ -260,4 +263,21 @@ private fun TimingHeader(timing: MedicationTiming) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(vertical = 4.dp)
     )
+}
+
+@LightDarkPreview
+@Composable
+private fun MedicationListPreview() {
+    CareNoteTheme {
+        MedicationList(
+            medications = PreviewData.medications,
+            todayLogs = PreviewData.todayLogs,
+            onTaken = { _, _ -> },
+            onSkipped = { _, _ -> },
+            onPostponed = { _, _ -> },
+            onCardClick = {},
+            onDelete = {},
+            contentPadding = PaddingValues(bottom = 80.dp)
+        )
+    }
 }

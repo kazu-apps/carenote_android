@@ -47,7 +47,10 @@ import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.screens.notes.components.NoteTagChip
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -217,5 +220,36 @@ fun AddEditNoteScreen(
             onDismiss = { showDiscardDialog = false },
             isDestructive = true
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@LightDarkPreview
+@Composable
+private fun AddEditNoteFormPreview() {
+    CareNoteTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            CareNoteTextField(
+                value = PreviewData.addEditNoteFormState.title,
+                onValueChange = {},
+                label = "Title",
+                placeholder = ""
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                NoteTag.entries.forEach { tag ->
+                    NoteTagChip(
+                        tag = tag,
+                        selected = PreviewData.addEditNoteFormState.tag == tag,
+                        onClick = {}
+                    )
+                }
+            }
+        }
     }
 }

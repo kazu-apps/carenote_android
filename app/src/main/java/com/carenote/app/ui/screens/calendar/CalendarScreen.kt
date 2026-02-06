@@ -49,7 +49,10 @@ import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.calendar.components.CalendarEventCard
 import com.carenote.app.ui.screens.calendar.components.MonthCalendarGrid
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
@@ -253,5 +256,18 @@ private fun MonthNavigationBar(
         TextButton(onClick = onToday) {
             Text(text = stringResource(R.string.calendar_today))
         }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun MonthNavigationBarPreview() {
+    CareNoteTheme {
+        MonthNavigationBar(
+            currentMonth = java.time.YearMonth.of(2025, 1),
+            onPreviousMonth = {},
+            onNextMonth = {},
+            onToday = {}
+        )
     }
 }

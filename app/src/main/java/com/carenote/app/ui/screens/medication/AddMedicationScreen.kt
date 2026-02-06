@@ -47,7 +47,10 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
 
@@ -264,6 +267,21 @@ private fun TimingSelector(
                     }
                 }
             }
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun TimingSelectorPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            TimingSelector(
+                selectedTimings = PreviewData.addMedicationFormState.timings,
+                times = PreviewData.addMedicationFormState.times,
+                onToggleTiming = {},
+                onUpdateTime = { _, _ -> }
+            )
         }
     }
 }

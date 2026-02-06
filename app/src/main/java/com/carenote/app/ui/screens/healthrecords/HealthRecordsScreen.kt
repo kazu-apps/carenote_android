@@ -45,7 +45,10 @@ import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.healthrecords.components.HealthRecordCard
 import com.carenote.app.ui.screens.healthrecords.components.HealthRecordGraphContent
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
@@ -237,5 +240,19 @@ private fun HealthRecordListContent(
                 }
             }
         }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun HealthRecordListContentPreview() {
+    CareNoteTheme {
+        HealthRecordListContent(
+            records = PreviewData.healthRecords,
+            onRecordClick = {},
+            onDelete = {},
+            onNavigateToAdd = {},
+            contentPadding = PaddingValues(bottom = 80.dp)
+        )
     }
 }

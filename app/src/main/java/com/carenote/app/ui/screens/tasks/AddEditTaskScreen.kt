@@ -54,7 +54,10 @@ import com.carenote.app.ui.components.CareNoteDatePickerDialog
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.CareNoteTimePickerDialog
 import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
 import java.time.LocalDate
@@ -433,6 +436,48 @@ private fun ReminderSection(
                     )
                 }
             }
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun DueDateSelectorPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            DueDateSelector(
+                dueDate = PreviewData.addEditTaskFormState.dueDate,
+                onClickDate = {},
+                onClearDate = {}
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun PrioritySelectorPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            PrioritySelector(
+                selectedPriority = TaskPriority.HIGH,
+                onPrioritySelected = {}
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun ReminderSectionPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            ReminderSection(
+                enabled = true,
+                time = LocalTime.of(9, 0),
+                onToggle = {},
+                onClickTime = {}
+            )
         }
     }
 }

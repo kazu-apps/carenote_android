@@ -42,7 +42,10 @@ import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.tasks.components.TaskCard
 import com.carenote.app.ui.screens.tasks.components.TaskFilterChips
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 
@@ -178,5 +181,32 @@ fun TasksScreen(
             onDismiss = { deleteTask = null },
             isDestructive = true
         )
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun TaskCardPreview() {
+    CareNoteTheme {
+        androidx.compose.material3.Surface(modifier = Modifier.padding(16.dp)) {
+            TaskCard(
+                task = PreviewData.task1,
+                onToggleCompletion = {},
+                onClick = {}
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun TaskFilterChipsPreview() {
+    CareNoteTheme {
+        androidx.compose.material3.Surface(modifier = Modifier.padding(16.dp)) {
+            TaskFilterChips(
+                selectedFilter = TaskFilterMode.ALL,
+                onFilterSelected = {}
+            )
+        }
     }
 }

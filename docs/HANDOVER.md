@@ -2,11 +2,10 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 21 完了
+## 現在のタスク: Phase 22 完了
 
-Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正。
-(a) `AddEditTaskScreen`, `AddEditCalendarEventScreen`, `TimePickerPreference` に重複していた DatePickerDialog / TimePickerDialog を `ui/components/CareNoteDatePickerDialog.kt` / `CareNoteTimePickerDialog.kt` に共通コンポーネントとして抽出。旧 `TimePickerPreference.kt` を削除。
-(b) `AuthViewModel._authSuccessEvent` を `MutableSharedFlow(replay=1)` → `Channel(Channel.BUFFERED)` + `receiveAsFlow()` に修正（他6 VM と統一）。`LoginFormHandler` / `RegisterFormHandler` も `Channel` パラメータに変更。
+Phase 22: Compose Preview 追加。
+全13画面に `@Preview` アノテーションを追加。`@LightDarkPreview` MultiPreview カスタムアノテーション + `PreviewData` サンプルデータ object を新規作成。LoginScreen / RegisterScreen は内部 composable を抽出して stateless 化し Preview 対応。その他画面は既存 private composable を直接 Preview。
 
 ## 次のアクション
 
@@ -48,7 +47,7 @@ Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正。
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~通知タップで該当画面に遷移しない（PendingIntent 未設定）~~ → **Phase 20 で修正済み** |
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~`AuthViewModel._authSuccessEvent` が SharedFlow(replay=1)（他VMと不統一）~~ → **Phase 21 で修正済み** |
 | ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~DatePicker/TimePicker が3箇所に重複~~ → **Phase 21 で共通化済み** |
-| LOW | v2.3 リサーチ | @Preview アノテーションが全画面で未定義 → **Phase 22 で対応** |
+| ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~@Preview アノテーションが全画面で未定義~~ → **Phase 22 で修正済み** |
 | LOW | v2.3 リサーチ | medications テーブルにインデックスなし、tasks に複合インデックスなし → **Phase 23 で対応** |
 | LOW | v2.3 リサーチ | 依存関係が約1年古い (Compose BOM 2024.12, Kotlin 2.0, Navigation 2.8) → **Phase 23 で対応** |
 | LOW | v2.3 リサーチ | 生体認証ロックなし（個人健康情報保護） → **Phase 24 で対応** |
@@ -170,10 +169,11 @@ Navigation Compose Deep Links を使用し、通知タップで該当画面に�
 - テスト: `LoginFormHandlerTest.kt`, `RegisterFormHandlerTest.kt` を Channel 対応に更新
 - ビルド成功、全テスト PASS
 
-### Phase 22: Compose Preview 追加 (LOW) - PENDING
-全リスト画面（5画面）+ AddEdit 画面（5画面）+ Auth 画面（3画面）の主要 Composable に `@Preview` アノテーションを追加。プレビュー用のサンプルデータを `ui/preview/` パッケージに配置。開発効率と UI 確認を向上。
-- 対象: 13+ Screen ファイル、新規 `ui/preview/PreviewData.kt`
-- 依存: なし
+### Phase 22: Compose Preview 追加 (LOW) - DONE
+全13画面の主要 Composable に `@Preview` アノテーションを追加。`@LightDarkPreview` MultiPreview カスタムアノテーション（Light/Dark 2バリアント）+ `PreviewData` サンプルデータ object を新規作成。LoginScreen / RegisterScreen は `LoginContent` / `RegisterContent` を抽出して stateless 化し Preview 対応。
+- 新規: `ui/preview/PreviewAnnotations.kt`（`@LightDarkPreview`）, `ui/preview/PreviewData.kt`（全ドメインモデル + FormState サンプル）
+- 変更: Auth 3画面（LoginScreen, RegisterScreen, ForgotPasswordScreen）, リスト 5画面（MedicationScreen, CalendarScreen, TasksScreen, HealthRecordsScreen, NotesScreen）, AddEdit 5画面（AddMedicationScreen, AddEditCalendarEventScreen, AddEditTaskScreen, AddEditHealthRecordScreen, AddEditNoteScreen）
+- ビルド成功、全テスト PASS
 
 ### Phase 23: DB インデックス追加 + 依存関係アップグレード (LOW) - PENDING
 (a) `medications` テーブルに `name` インデックス、`tasks` テーブルに `(is_completed, created_at)` 複合インデックスを追加（Room migration v9→v10）。

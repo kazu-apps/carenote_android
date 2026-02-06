@@ -47,7 +47,10 @@ import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.screens.healthrecords.components.SelectionFormSection
 import com.carenote.app.ui.screens.healthrecords.components.VitalSignsFormSection
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -256,6 +259,33 @@ private fun FormActionButtons(
             } else {
                 Text(text = stringResource(R.string.common_save))
             }
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun FormActionButtonsPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            FormActionButtons(
+                isSaving = false,
+                onCancel = {},
+                onSave = {}
+            )
+        }
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun ConditionNoteFieldPreview() {
+    CareNoteTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            ConditionNoteField(
+                value = PreviewData.addEditHealthRecordFormState.conditionNote,
+                onValueChange = {}
+            )
         }
     }
 }

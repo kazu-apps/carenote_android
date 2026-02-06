@@ -51,7 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,147 +113,190 @@ fun RegisterScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        RegisterContent(
+            formState = formState,
+            passwordVisible = passwordVisible,
+            onDisplayNameChange = viewModel::updateDisplayName,
+            onEmailChange = viewModel::updateRegisterEmail,
+            onPasswordChange = viewModel::updateRegisterPassword,
+            onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
+            onSignUp = viewModel::signUp,
+            onNavigateToLogin = onNavigateToLogin,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@Composable
+private fun RegisterContent(
+    formState: RegisterFormState,
+    passwordVisible: Boolean,
+    onDisplayNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onTogglePasswordVisibility: () -> Unit,
+    onSignUp: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val focusManager = LocalFocusManager.current
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = stringResource(R.string.auth_register_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        CareNoteTextField(
+            value = formState.displayName,
+            onValueChange = onDisplayNameChange,
+            label = stringResource(R.string.auth_display_name),
+            placeholder = stringResource(R.string.auth_display_name_placeholder),
+            errorMessage = formState.displayNameError,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+        )
+
+        CareNoteTextField(
+            value = formState.email,
+            onValueChange = onEmailChange,
+            label = stringResource(R.string.auth_email),
+            placeholder = stringResource(R.string.auth_email_placeholder),
+            errorMessage = formState.emailError,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+        )
+
+        CareNoteTextField(
+            value = formState.password,
+            onValueChange = onPasswordChange,
+            label = stringResource(R.string.auth_password),
+            placeholder = stringResource(R.string.auth_password_placeholder),
+            errorMessage = formState.passwordError,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus()
+                    onSignUp()
+                }
+            ),
+            visualTransformation = if (passwordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            trailingIcon = {
+                IconButton(onClick = onTogglePasswordVisibility) {
+                    Icon(
+                        imageVector = if (passwordVisible) {
+                            Icons.Filled.VisibilityOff
+                        } else {
+                            Icons.Filled.Visibility
+                        },
+                        contentDescription = if (passwordVisible) {
+                            stringResource(R.string.auth_hide_password)
+                        } else {
+                            stringResource(R.string.auth_show_password)
+                        }
+                    )
+                }
+            }
+        )
+
+        Text(
+            text = stringResource(R.string.auth_password_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = onSignUp,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = ButtonShape,
+            enabled = !formState.isLoading
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = stringResource(R.string.auth_register_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            CareNoteTextField(
-                value = formState.displayName,
-                onValueChange = viewModel::updateDisplayName,
-                label = stringResource(R.string.auth_display_name),
-                placeholder = stringResource(R.string.auth_display_name_placeholder),
-                errorMessage = formState.displayNameError,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            if (formState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
-            )
-
-            CareNoteTextField(
-                value = formState.email,
-                onValueChange = viewModel::updateRegisterEmail,
-                label = stringResource(R.string.auth_email),
-                placeholder = stringResource(R.string.auth_email_placeholder),
-                errorMessage = formState.emailError,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                )
-            )
-
-            CareNoteTextField(
-                value = formState.password,
-                onValueChange = viewModel::updateRegisterPassword,
-                label = stringResource(R.string.auth_password),
-                placeholder = stringResource(R.string.auth_password_placeholder),
-                errorMessage = formState.passwordError,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        viewModel.signUp()
-                    }
-                ),
-                visualTransformation = if (passwordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) {
-                                Icons.Filled.VisibilityOff
-                            } else {
-                                Icons.Filled.Visibility
-                            },
-                            contentDescription = if (passwordVisible) {
-                                stringResource(R.string.auth_hide_password)
-                            } else {
-                                stringResource(R.string.auth_show_password)
-                            }
-                        )
-                    }
-                }
-            )
-
-            Text(
-                text = stringResource(R.string.auth_password_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = viewModel::signUp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = ButtonShape,
-                enabled = !formState.isLoading
-            ) {
-                if (formState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.auth_sign_up),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            } else {
                 Text(
-                    text = stringResource(R.string.auth_have_account),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = stringResource(R.string.auth_sign_up),
+                    style = MaterialTheme.typography.titleMedium
                 )
-                TextButton(onClick = onNavigateToLogin) {
-                    Text(
-                        text = stringResource(R.string.auth_sign_in_link),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.auth_have_account),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = onNavigateToLogin) {
+                Text(
+                    text = stringResource(R.string.auth_sign_in_link),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun RegisterContentPreview() {
+    CareNoteTheme {
+        RegisterContent(
+            formState = PreviewData.registerFormState,
+            passwordVisible = false,
+            onDisplayNameChange = {},
+            onEmailChange = {},
+            onPasswordChange = {},
+            onTogglePasswordVisibility = {},
+            onSignUp = {},
+            onNavigateToLogin = {}
+        )
     }
 }
