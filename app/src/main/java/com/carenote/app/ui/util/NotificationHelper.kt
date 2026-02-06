@@ -126,6 +126,10 @@ class NotificationHelper @Inject constructor(
      * @param medicationId 薬の ID（通知 ID の生成に使用）
      * @param medicationName 薬の名前（通知テキストに表示）
      */
+    companion object {
+        internal fun safeIntId(id: Long): Int = id.and(0x7FFFFFFF).toInt()
+    }
+
     fun showMedicationReminder(
         medicationId: Long,
         medicationName: String
@@ -138,7 +142,7 @@ class NotificationHelper @Inject constructor(
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            medicationId.toInt(),
+            safeIntId(medicationId),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -157,7 +161,7 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(pendingIntent)
             .build()
 
-        val notificationId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE + medicationId.toInt()
+        val notificationId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE + safeIntId(medicationId)
         notificationManager.notify(notificationId, notification)
         Timber.d("Medication reminder shown: id=$medicationId, name=$medicationName")
     }
@@ -179,7 +183,7 @@ class NotificationHelper @Inject constructor(
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            taskId.toInt(),
+            safeIntId(taskId),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -198,7 +202,7 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(pendingIntent)
             .build()
 
-        val notificationId = AppConfig.Notification.NOTIFICATION_ID_TASK_BASE + taskId.toInt()
+        val notificationId = AppConfig.Notification.NOTIFICATION_ID_TASK_BASE + safeIntId(taskId)
         notificationManager.notify(notificationId, notification)
         Timber.d("Task reminder shown: id=$taskId, title=$taskTitle")
     }

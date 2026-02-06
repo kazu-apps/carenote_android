@@ -23,6 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +60,11 @@ fun MedicationScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteMedication by remember { mutableStateOf<Medication?>(null) }
     val context = LocalContext.current
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshDateIfNeeded()
+        onPauseOrDispose {}
+    }
 
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->

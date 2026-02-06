@@ -1,8 +1,10 @@
 package com.carenote.app.ui.util
 
 import com.carenote.app.config.AppConfig
+import com.carenote.app.ui.util.NotificationHelper.Companion.safeIntId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -56,7 +58,7 @@ class NotificationHelperTest {
         val baseId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE
         val medicationId = 1L
 
-        val notificationId = baseId + medicationId.toInt()
+        val notificationId = baseId + safeIntId(medicationId)
 
         assertEquals(1001, notificationId)
     }
@@ -66,7 +68,7 @@ class NotificationHelperTest {
         val baseId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE
         val medicationId = 100L
 
-        val notificationId = baseId + medicationId.toInt()
+        val notificationId = baseId + safeIntId(medicationId)
 
         assertEquals(1100, notificationId)
     }
@@ -75,9 +77,9 @@ class NotificationHelperTest {
     fun `notification IDs are unique for different medications`() {
         val baseId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE
 
-        val id1 = baseId + 1
-        val id2 = baseId + 2
-        val id3 = baseId + 999
+        val id1 = baseId + safeIntId(1L)
+        val id2 = baseId + safeIntId(2L)
+        val id3 = baseId + safeIntId(999L)
 
         assertNotEquals(id1, id2)
         assertNotEquals(id2, id3)
@@ -93,6 +95,37 @@ class NotificationHelperTest {
         assertNotEquals(medicationMax, syncId)
         assertEquals(1999, medicationMax)
         assertEquals(2000, syncId)
+    }
+
+    // ========== safeIntId Tests ==========
+
+    @Test
+    fun `safeIntId returns non-negative for Long MAX_VALUE`() {
+        val result = safeIntId(Long.MAX_VALUE)
+
+        assertTrue("safeIntId(Long.MAX_VALUE) should be non-negative", result >= 0)
+    }
+
+    @Test
+    fun `safeIntId returns same value for same input`() {
+        val result1 = safeIntId(12345L)
+        val result2 = safeIntId(12345L)
+
+        assertEquals(result1, result2)
+    }
+
+    @Test
+    fun `safeIntId returns non-negative for negative input`() {
+        val result = safeIntId(-1L)
+
+        assertTrue("safeIntId(-1L) should be non-negative", result >= 0)
+    }
+
+    @Test
+    fun `safeIntId preserves small positive values`() {
+        assertEquals(1, safeIntId(1L))
+        assertEquals(100, safeIntId(100L))
+        assertEquals(999, safeIntId(999L))
     }
 
     // ========== Channel ID Uniqueness Tests ==========

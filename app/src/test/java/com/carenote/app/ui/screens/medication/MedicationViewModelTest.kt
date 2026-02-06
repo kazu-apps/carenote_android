@@ -20,10 +20,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -558,5 +560,51 @@ class MedicationViewModelTest {
         advanceUntilIdle()
 
         assertTrue(reminderScheduler.cancelRemindersCalls.isEmpty())
+    }
+
+    @Test
+    fun `refreshDateIfNeeded is safe when date has not changed`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Calling refreshDateIfNeeded when date hasn't changed should not throw
+        viewModel.refreshDateIfNeeded()
+        advanceUntilIdle()
+
+        // todayLogs should still be accessible
+        viewModel.todayLogs.test {
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
+            assertTrue(logs.isEmpty())
+        }
+    }
+
+    @Test
+    fun `todayLogs filters by current date`() = runTest(testDispatcher) {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+        val todayLog = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = today.atTime(8, 0),
+            recordedAt = today.atTime(8, 0)
+        )
+        val yesterdayLog = MedicationLog(
+            id = 2L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = yesterday.atTime(8, 0),
+            recordedAt = yesterday.atTime(8, 0)
+        )
+        medicationLogRepository.setLogs(listOf(todayLog, yesterdayLog))
+        viewModel = createViewModel()
+
+        viewModel.todayLogs.test {
+            advanceUntilIdle()
+            val logs = expectMostRecentItem()
+            assertEquals(1, logs.size)
+            assertEquals(today, logs[0].scheduledAt.toLocalDate())
+        }
     }
 }

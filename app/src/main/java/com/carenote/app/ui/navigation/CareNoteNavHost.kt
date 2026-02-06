@@ -1,8 +1,11 @@
 package com.carenote.app.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -114,7 +117,9 @@ fun CareNoteNavHost(
             val locale = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]
             val isJapanese = locale?.language == "ja"
             val fileName = if (isJapanese) "legal/privacy_policy_ja.txt" else "legal/privacy_policy_en.txt"
-            val content = remember(fileName) { readAssetText(context, fileName) }
+            val content by produceState(initialValue = "", fileName) {
+                value = withContext(Dispatchers.IO) { readAssetText(context, fileName) }
+            }
             LegalDocumentScreen(
                 title = stringResource(R.string.legal_privacy_policy_title),
                 content = content,
@@ -128,7 +133,9 @@ fun CareNoteNavHost(
             val locale = ConfigurationCompat.getLocales(LocalConfiguration.current)[0]
             val isJapanese = locale?.language == "ja"
             val fileName = if (isJapanese) "legal/terms_of_service_ja.txt" else "legal/terms_of_service_en.txt"
-            val content = remember(fileName) { readAssetText(context, fileName) }
+            val content by produceState(initialValue = "", fileName) {
+                value = withContext(Dispatchers.IO) { readAssetText(context, fileName) }
+            }
             LegalDocumentScreen(
                 title = stringResource(R.string.legal_terms_of_service_title),
                 content = content,

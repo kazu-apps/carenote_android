@@ -14,8 +14,10 @@ import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,13 +44,24 @@ class MedicationViewModel @Inject constructor(
                 initialValue = UiState.Loading
             )
 
+    private val _currentDate = MutableStateFlow(LocalDate.now())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val todayLogs: StateFlow<List<MedicationLog>> =
-        medicationLogRepository.getLogsForDate(LocalDate.now())
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
-                initialValue = emptyList()
-            )
+        _currentDate.flatMapLatest { date ->
+            medicationLogRepository.getLogsForDate(date)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
+            initialValue = emptyList()
+        )
+
+    fun refreshDateIfNeeded() {
+        val today = LocalDate.now()
+        if (_currentDate.value != today) {
+            _currentDate.value = today
+        }
+    }
 
     fun recordMedication(
         medicationId: Long,
