@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.ui.util.SnackbarController
@@ -11,6 +12,7 @@ import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,6 +32,10 @@ class HealthRecordsViewModel @Inject constructor(
                 val sorted = records.sortedByDescending { it.recordedAt }
                 @Suppress("USELESS_CAST")
                 UiState.Success(sorted) as UiState<List<HealthRecord>>
+            }
+            .catch { e ->
+                Timber.w("Failed to observe health records: $e")
+                emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
             }
             .stateIn(
                 scope = viewModelScope,

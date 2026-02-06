@@ -2,15 +2,15 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 14 デッドコード削除 + イベント修正 + コード品質 完了
+## 現在のタスク: Phase 15 Flow .catch 追加 完了
 
-Phase 14 の 4 項目を実行: (a) ValidationUtils.kt 削除（デッドコード 278行除去）、(b) savedEvent/deletedEvent を SharedFlow(replay=1) → Channel+receiveAsFlow に変更（6 ViewModel）、(c) MedicationLogSyncer に KDoc 追加、(d) JaCoCo 除外を具体化（DateTimeFormatters, SnackbarController がカバレッジ対象に復帰）。ビルド成功・全テスト PASS。
+全 8 ViewModel、13 箇所の `.stateIn()` パイプラインに `.catch` を追加。SQLCipher DB 破損時のクラッシュを防御。
 
 ## 次のアクション
 
-1. 全ロードマップ Phase 完了 — リリース準備へ
-2. 実機テスト実施
-3. 問い合わせメールアドレスの確認・設定
+1. `/task-driver` で Phase 15 から順に実行
+2. 各フェーズ完了後にビルド・テスト確認
+3. 全フェーズ完了後、実機テスト + リリース準備
 
 ## 既知の問題
 
@@ -24,23 +24,23 @@ Phase 14 の 4 項目を実行: (a) ValidationUtils.kt 削除（デッドコー�
 | 重要度 | 出典 | 内容 |
 |--------|------|------|
 | ~~MEDIUM~~ | ~~BugHunt~~ | ~~`MedicationViewModel.todayLogs` が `LocalDate.now()` を VM 作成時に固定 → 深夜に古い表示~~ → **Phase 13 で修正済み** |
-| MEDIUM | BugHunt | `MedicationLogSyncer.collectionPath()` が `UnsupportedOperationException` を投げる設計 → 基底 `sync()` 誤呼び出しでクラッシュ |
+| ~~MEDIUM~~ | ~~BugHunt~~ | ~~`MedicationLogSyncer.collectionPath()` の UnsupportedOperationException 設計~~ → **リサーチで呼出し 0 件確認、KDoc 追加済み、現状維持** |
 | ~~MEDIUM~~ | ~~BugHunt~~ | ~~`NotificationHelper` の `medicationId.toInt()` — Long→Int オーバーフロー可能性~~ → **Phase 13 で修正済み** |
 | ~~MEDIUM~~ | ~~BugHunt~~ | ~~`readAssetText()` が Compose composition 中（メインスレッド）でファイル I/O 実行~~ → **Phase 13 で修正済み** |
 | ~~MEDIUM~~ | ~~BugHunt~~ | ~~`SettingsViewModel.isSyncing` の `LiveData.asFlow()` がライフサイクル外で購読~~ → **調査の結果、WhileSubscribed で正常動作** |
 | ~~MEDIUM~~ | ~~BugHunt~~ | ~~`startDestination` が Compose state で動的変更 → NavHost 再構築リスク~~ → **Phase 9 で修正済み** |
-| MEDIUM | M-5 | Room スキーマ JSON がコミット済み（プライベートリポジトリでは許容） |
+| ~~MEDIUM~~ | ~~M-5~~ | ~~Room スキーマ JSON がコミット済み~~ → **リサーチで公式推奨プラクティスと確認、機密情報なし、現状維持** |
 | ~~MEDIUM~~ | ~~Item 30~~ | ~~ValidationUtils.kt が未使用のデッドコード~~ → **Phase 14 で削除済み** |
 | ~~MEDIUM~~ | ~~Item 32~~ | ~~JaCoCo `**/util/*` 除外が広範囲~~ → **Phase 14 で具体化済み** |
-| MEDIUM | Item 31 | テスト品質: Mapper ラウンドトリップ不完全、Repository Turbine 未使用、ViewModel Loading→Success テスト欠落 |
-| LOW | BugHunt | `DatabasePassphraseManager` — EncryptedPrefs 破損時にパスフレーズ消失 → DB 再作成（データロス） |
+| MEDIUM | Item 31 | テスト品質: Repository Turbine 未使用(6件)、ViewModel Loading→Success 遷移テスト PARTIAL(7件)、UserMapper テスト欠落 → **Phase 16 で対応** |
+| ~~LOW~~ | ~~BugHunt~~ | ~~`DatabasePassphraseManager` — EncryptedPrefs 破損~~ → **リサーチで低頻度+Firestore同期でリカバリ可と確認、v3.0スコープ** |
 | ~~LOW~~ | ~~BugHunt~~ | ~~`savedEvent` の `SharedFlow(replay=1)` が設定変更時にリプレイ~~ → **Phase 14 で Channel に変更済み** |
-| LOW | L-4 | 全 DAO が OnConflictStrategy.REPLACE 使用（マルチデバイス同期リスク） |
-| LOW | Item 99 | FCM リモート通知の受信処理が未実装（`onMessageReceived` がログのみ） |
-| LOW | Item 99 | FCM トークンのサーバー送信が未実装（`onNewToken` がログのみ） |
-| LOW | Item 100 | 個別 Screen ファイルの UI ハードコード値が未置換（共有コンポーネントのみ完了） |
-| INFO | — | 削除確認ダイアログが UI から到達不可（スワイプ削除の準備） |
-| INFO | — | Flow `.catch` が欠落（Room Flow は安定、低リスク） |
+| ~~LOW~~ | ~~L-4~~ | ~~全 DAO が OnConflictStrategy.REPLACE~~ → **リサーチで現在の同期フローでは重複防止済みと確認、CASCADE外部キーなし、現状維持** |
+| ~~LOW~~ | ~~Item 99~~ | ~~FCM リモート通知の受信処理が未実装~~ → **リサーチでバックエンド未存在を確認、v3.0スコープ** |
+| ~~LOW~~ | ~~Item 99~~ | ~~FCM トークンのサーバー送信が未実装~~ → **同上、v3.0スコープ** |
+| ~~LOW~~ | ~~Item 100~~ | ~~Screen ファイルの UI ハードコード値~~ → **リサーチで Color/sp は移行済み、.dp は Compose 標準プラクティスと確認、現状維持** |
+| INFO | — | 削除確認ダイアログが UI から到達不可（5リスト画面） → **Phase 17 で接続** |
+| ~~INFO~~ | ~~—~~ | ~~Flow `.catch` が欠落（全 ViewModel 13箇所、SQLCipher 使用でリスク増）~~ → **Phase 15 で修正済み** |
 
 ## ロードマップ
 
@@ -110,6 +110,27 @@ MEDIUM バグ 3 件修正: (a) `MedicationViewModel.todayLogs` を `_currentDate
 ### Phase 14: デッドコード削除 + イベント修正 + コード品質 (MEDIUM) - DONE
 ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に変更（6 VM）、MedicationLogSyncer KDoc 追加、JaCoCo 除外具体化。
 
+### Phase 15: Flow .catch 追加（全 ViewModel 防御的エラーハンドリング） (MEDIUM) - DONE
+全 8 ViewModel、13 箇所の `.stateIn()` パイプラインに `.catch` を追加。
+- UiState Flow (7箇所): `.catch { emit(UiState.Error(DomainError.DatabaseError(...))) }`
+- 非 UiState Flow (6箇所): `.catch { Timber.w(...); emit(フォールバック値) }`
+- MedicationDetailViewModel の FQN `com.carenote.app.domain.common.DomainError` を import に統一
+- ビルド成功、全テスト PASS
+
+### Phase 16: テスト品質強化（Repository Turbine + ViewModel 遷移 + UserMapper） (MEDIUM) - PENDING
+テスト品質ギャップ 3 件を修正。
+(a) 6 RepositoryImpl テストに Turbine `.test {}` を導入（`.first()` → Turbine 移行）
+(b) 7 ViewModel テストに Loading→Success シーケンシャル遷移テストを追加（`awaitItem()` で中間状態を検証）
+(c) `UserMapperTest.kt` を新規作成（`toDomain()` のフィールドマッピング + null edge case）
+- 対象: 6 RepositoryImpl テスト + 7 ViewModel テスト + 1 新規テストファイル
+- 依存: なし
+
+### Phase 17: リスト画面の削除ダイアログ接続（スワイプ削除） (LOW) - PENDING
+5 リスト画面（Medication, Notes, HealthRecords, Calendar, Tasks）の未接続な削除確認ダイアログをスワイプ削除で接続。
+各画面の既存 `deleteXxx` state 変数にスワイプアクション（`SwipeToDismissBox`）を接続し、ConfirmDialog 表示 → ViewModel.delete() 呼び出しの一連フローを完成。
+- 対象: 5 Screen ファイル + 対応する ViewModel の delete メソッド確認
+- 依存: なし
+
 ---
 
 ## 完了タスク
@@ -176,5 +197,6 @@ ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に�
 ## スコープ外 / 将来
 
 - **v3.0**: Cloud Storage（写真保存）, Google Play Billing（プレミアムサブスクリプション）
+- **v3.0**: FCM リモート通知実装（バックエンド構築と合わせて）, Firestore リストアフロー
 - **手動**: スクリーンショット、フィーチャーグラフィック、プライバシーポリシー Web ホスティング
 - **スキップ**: LegalDocumentScreen テスト（純粋な表示、ロジックなし）

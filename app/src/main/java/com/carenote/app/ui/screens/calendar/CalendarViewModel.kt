@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.ui.util.SnackbarController
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -46,6 +48,10 @@ class CalendarViewModel @Inject constructor(
                 @Suppress("USELESS_CAST")
                 UiState.Success(events) as UiState<List<CalendarEvent>>
             }
+            .catch { e ->
+                Timber.w("Failed to observe events for selected date: $e")
+                emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
@@ -62,6 +68,10 @@ class CalendarViewModel @Inject constructor(
             }
             .map { events ->
                 events.groupBy { it.date }
+            }
+            .catch { e ->
+                Timber.w("Failed to observe events for month: $e")
+                emit(emptyMap())
             }
             .stateIn(
                 scope = viewModelScope,

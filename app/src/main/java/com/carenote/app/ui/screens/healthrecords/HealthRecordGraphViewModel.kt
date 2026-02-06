@@ -6,10 +6,12 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.repository.HealthRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import timber.log.Timber
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -52,6 +54,9 @@ class HealthRecordGraphViewModel @Inject constructor(
             val start = now.minusDays(range.days).with(LocalTime.MIN)
             healthRecordRepository.getRecordsByDateRange(start, now)
                 .map { records -> mapToGraphState(records, range) }
+        }.catch { e ->
+            Timber.w("Failed to observe graph data: $e")
+            emit(HealthRecordGraphState(isLoading = false))
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),

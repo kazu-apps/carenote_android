@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.data.worker.TaskReminderSchedulerInterface
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.repository.TaskRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -50,6 +52,10 @@ class TasksViewModel @Inject constructor(
             .map { taskList ->
                 @Suppress("USELESS_CAST")
                 UiState.Success(taskList) as UiState<List<Task>>
+            }
+            .catch { e ->
+                Timber.w("Failed to observe tasks: $e")
+                emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
             }
             .stateIn(
                 scope = viewModelScope,

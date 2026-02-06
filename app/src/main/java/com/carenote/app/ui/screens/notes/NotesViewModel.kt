@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.repository.NoteRepository
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -50,6 +52,10 @@ class NotesViewModel @Inject constructor(
             .map { notes ->
                 @Suppress("USELESS_CAST")
                 UiState.Success(notes) as UiState<List<Note>>
+            }
+            .catch { e ->
+                Timber.w("Failed to observe notes: $e")
+                emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
             }
             .stateIn(
                 scope = viewModelScope,

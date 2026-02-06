@@ -7,6 +7,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationLogRepository
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,6 +40,10 @@ class MedicationViewModel @Inject constructor(
     val uiState: StateFlow<UiState<List<Medication>>> =
         medicationRepository.getAllMedications()
             .map { medications -> UiState.Success(medications) as UiState<List<Medication>> }
+            .catch { e ->
+                Timber.w("Failed to observe medications: $e")
+                emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
@@ -50,6 +56,9 @@ class MedicationViewModel @Inject constructor(
     val todayLogs: StateFlow<List<MedicationLog>> =
         _currentDate.flatMapLatest { date ->
             medicationLogRepository.getLogsForDate(date)
+        }.catch { e ->
+            Timber.w("Failed to observe today logs: $e")
+            emit(emptyList())
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),

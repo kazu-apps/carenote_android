@@ -21,6 +21,7 @@ import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -38,6 +39,10 @@ class SettingsViewModel @Inject constructor(
     val snackbarController = SnackbarController()
 
     val settings: StateFlow<UserSettings> = settingsRepository.getSettings()
+        .catch { e ->
+            Timber.w("Failed to observe settings: $e")
+            emit(UserSettings())
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
@@ -47,6 +52,10 @@ class SettingsViewModel @Inject constructor(
     /** 現在ログイン中かどうか */
     val isLoggedIn: StateFlow<Boolean> = authRepository.currentUser
         .map { it != null }
+        .catch { e ->
+            Timber.w("Failed to observe auth state: $e")
+            emit(false)
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
@@ -60,6 +69,9 @@ class SettingsViewModel @Inject constructor(
     ) { periodicWorkInfos, immediateWorkInfos ->
         val allWorkInfos = periodicWorkInfos + immediateWorkInfos
         allWorkInfos.any { it.state == WorkInfo.State.RUNNING }
+    }.catch { e ->
+        Timber.w("Failed to observe sync state: $e")
+        emit(false)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
