@@ -8,11 +8,9 @@ import com.carenote.app.ui.util.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -21,14 +19,12 @@ class RegisterFormHandler(
     private val authRepository: AuthRepository,
     private val syncWorkScheduler: SyncWorkSchedulerInterface,
     val snackbarController: SnackbarController = SnackbarController(),
-    private val authSuccessFlow: MutableSharedFlow<Boolean> = MutableSharedFlow(replay = 1),
+    private val authSuccessChannel: Channel<Boolean> = Channel(Channel.BUFFERED),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 ) {
 
     private val _formState = MutableStateFlow(RegisterFormState())
     val formState: StateFlow<RegisterFormState> = _formState.asStateFlow()
-
-    val authSuccessEvent: SharedFlow<Boolean> = authSuccessFlow.asSharedFlow()
 
     fun updateEmail(email: String) {
         _formState.value = _formState.value.copy(
@@ -79,7 +75,7 @@ class RegisterFormHandler(
                     Timber.d("User signed up successfully")
                     syncWorkScheduler.schedulePeriodicSync()
                     snackbarController.showMessage(R.string.auth_register_success)
-                    authSuccessFlow.emit(true)
+                    authSuccessChannel.send(true)
                 }
                 .onFailure { error ->
                     Timber.w("Sign up failed: $error")

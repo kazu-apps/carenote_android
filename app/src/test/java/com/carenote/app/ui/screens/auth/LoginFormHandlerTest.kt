@@ -9,6 +9,8 @@ import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -36,6 +38,7 @@ class LoginFormHandlerTest {
     private val testScope = TestScope(testDispatcher)
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
+    private lateinit var authSuccessChannel: Channel<Boolean>
     private lateinit var handler: LoginFormHandler
 
     @Before
@@ -43,7 +46,11 @@ class LoginFormHandlerTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
-        handler = LoginFormHandler(authRepository, syncWorkScheduler, scope = testScope)
+        authSuccessChannel = Channel(Channel.BUFFERED)
+        handler = LoginFormHandler(
+            authRepository, syncWorkScheduler,
+            authSuccessChannel = authSuccessChannel, scope = testScope
+        )
     }
 
     @After
@@ -125,7 +132,7 @@ class LoginFormHandlerTest {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
 
-        handler.authSuccessEvent.test {
+        authSuccessChannel.receiveAsFlow().test {
             handler.signIn()
             advanceUntilIdle()
             val event = awaitItem()

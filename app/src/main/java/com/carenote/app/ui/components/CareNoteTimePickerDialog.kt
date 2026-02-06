@@ -1,4 +1,4 @@
-package com.carenote.app.ui.screens.settings.components
+package com.carenote.app.ui.components
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -9,11 +9,12 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.carenote.app.R
+import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimePickerDialog(
-    title: String,
+fun CareNoteTimePickerDialog(
+    title: String? = null,
     initialHour: Int,
     initialMinute: Int,
     onDismiss: () -> Unit,
@@ -27,7 +28,7 @@ fun TimePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = title) },
+        title = title?.let { { Text(text = it) } },
         text = {
             TimePicker(state = timePickerState)
         },
@@ -35,7 +36,7 @@ fun TimePickerDialog(
             TextButton(
                 onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }
             ) {
-                Text(stringResource(R.string.common_ok))
+                Text(stringResource(R.string.ui_confirm_yes))
             }
         },
         dismissButton = {
@@ -45,3 +46,15 @@ fun TimePickerDialog(
         }
     )
 }
+
+@Composable
+fun CareNoteTimePickerDialog(
+    initialTime: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) = CareNoteTimePickerDialog(
+    initialHour = initialTime.hour,
+    initialMinute = initialTime.minute,
+    onDismiss = onDismiss,
+    onConfirm = { h, m -> onTimeSelected(LocalTime.of(h, m)) }
+)

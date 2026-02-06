@@ -2,13 +2,15 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 20 完了
+## 現在のタスク: Phase 21 完了
 
-Phase 20: 通知タップナビゲーション（PendingIntent）を実装。服薬リマインダー・タスクリマインダー通知タップ時に、該当画面（MedicationDetail / EditTask）に Deep Link で直接遷移するよう変更。
+Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正。
+(a) `AddEditTaskScreen`, `AddEditCalendarEventScreen`, `TimePickerPreference` に重複していた DatePickerDialog / TimePickerDialog を `ui/components/CareNoteDatePickerDialog.kt` / `CareNoteTimePickerDialog.kt` に共通コンポーネントとして抽出。旧 `TimePickerPreference.kt` を削除。
+(b) `AuthViewModel._authSuccessEvent` を `MutableSharedFlow(replay=1)` → `Channel(Channel.BUFFERED)` + `receiveAsFlow()` に修正（他6 VM と統一）。`LoginFormHandler` / `RegisterFormHandler` も `Channel` パラメータに変更。
 
 ## 次のアクション
 
-1. `/task-driver` で Phase 21 から順に実行
+1. `/task-driver` で Phase 22 から順に実行
 2. 各フェーズ完了後にビルド・テスト確認
 3. リリース前に実機テスト + APK 検証
 
@@ -44,8 +46,8 @@ Phase 20: 通知タップナビゲーション（PendingIntent）を実装。服
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~全 AddEdit 画面に BackHandler / 未保存確認ダイアログがない~~ → **Phase 18 で修正済み** |
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~全リスト画面の ErrorDisplay に onRetry=null（リトライ不可）~~ → **Phase 19 で修正済み** |
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~通知タップで該当画面に遷移しない（PendingIntent 未設定）~~ → **Phase 20 で修正済み** |
-| MEDIUM | v2.3 リサーチ | `AuthViewModel._authSuccessEvent` が SharedFlow(replay=1)（他VMと不統一） → **Phase 21 で対応** |
-| LOW | v2.3 リサーチ | DatePicker/TimePicker が3箇所に重複 → **Phase 21 で対応** |
+| ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~`AuthViewModel._authSuccessEvent` が SharedFlow(replay=1)（他VMと不統一）~~ → **Phase 21 で修正済み** |
+| ~~LOW~~ | ~~v2.3 リサーチ~~ | ~~DatePicker/TimePicker が3箇所に重複~~ → **Phase 21 で共通化済み** |
 | LOW | v2.3 リサーチ | @Preview アノテーションが全画面で未定義 → **Phase 22 で対応** |
 | LOW | v2.3 リサーチ | medications テーブルにインデックスなし、tasks に複合インデックスなし → **Phase 23 で対応** |
 | LOW | v2.3 リサーチ | 依存関係が約1年古い (Compose BOM 2024.12, Kotlin 2.0, Navigation 2.8) → **Phase 23 で対応** |
@@ -159,11 +161,14 @@ Navigation Compose Deep Links を使用し、通知タップで該当画面に�
 - テスト: `NotificationHelperTest.kt` に deep link URI 生成テスト 4件追加
 - ビルド成功、全テスト PASS
 
-### Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正 (MEDIUM) - PENDING
-(a) `AddEditTaskScreen`, `AddEditCalendarEventScreen`, `TimePickerPreference` に重複する DatePickerDialog / TimePickerDialog を共通コンポーネント `ui/components/DatePickerDialog.kt` / `TimePickerDialog.kt` に抽出。
-(b) `AuthViewModel._authSuccessEvent` を `MutableSharedFlow(replay=1)` → `Channel(Channel.BUFFERED)` に修正（他6 VM と統一）。
-- 対象: 3 Screen + `AuthViewModel.kt` + 新規2コンポーネント
-- 依存: なし
+### Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正 (MEDIUM) - DONE
+(a) `CareNoteDatePickerDialog.kt`, `CareNoteTimePickerDialog.kt` を `ui/components/` に新規作成。`AddEditTaskScreen`, `AddEditCalendarEventScreen` の private ダイアログを削除し共通コンポーネントに置換。`SettingsDialogs.kt` の import を変更。旧 `TimePickerPreference.kt` を削除。
+(b) `AuthViewModel._authSuccessEvent` を `MutableSharedFlow(replay=1)` → `Channel(Channel.BUFFERED)` + `receiveAsFlow()` に修正。`LoginFormHandler` / `RegisterFormHandler` のパラメータと emit/send も対応。テスト修正済み。
+- 新規: `ui/components/CareNoteDatePickerDialog.kt`, `ui/components/CareNoteTimePickerDialog.kt`
+- 変更: `AddEditTaskScreen.kt`, `AddEditCalendarEventScreen.kt`, `SettingsDialogs.kt`, `AuthViewModel.kt`, `LoginFormHandler.kt`, `RegisterFormHandler.kt`
+- 削除: `ui/screens/settings/components/TimePickerPreference.kt`
+- テスト: `LoginFormHandlerTest.kt`, `RegisterFormHandlerTest.kt` を Channel 対応に更新
+- ビルド成功、全テスト PASS
 
 ### Phase 22: Compose Preview 追加 (LOW) - PENDING
 全リスト画面（5画面）+ AddEdit 画面（5画面）+ Auth 画面（3画面）の主要 Composable に `@Preview` アノテーションを追加。プレビュー用のサンプルデータを `ui/preview/` パッケージに配置。開発効率と UI 確認を向上。

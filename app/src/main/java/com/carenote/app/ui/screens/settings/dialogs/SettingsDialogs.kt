@@ -10,7 +10,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.screens.settings.SettingsDialogState
 import com.carenote.app.ui.screens.settings.SettingsViewModel
 import com.carenote.app.ui.screens.settings.components.NumberInputDialog
-import com.carenote.app.ui.screens.settings.components.TimePickerDialog
+import com.carenote.app.ui.components.CareNoteTimePickerDialog
 
 @Composable
 fun SettingsDialogs(
@@ -24,7 +24,7 @@ fun SettingsDialogs(
         SettingsDialogState.None -> { /* No dialog shown */ }
 
         SettingsDialogState.QuietHoursStart -> {
-            TimePickerDialog(
+            CareNoteTimePickerDialog(
                 title = stringResource(R.string.settings_quiet_hours),
                 initialHour = settings.quietHoursStart,
                 initialMinute = 0,
@@ -37,7 +37,7 @@ fun SettingsDialogs(
         }
 
         SettingsDialogState.QuietHoursEnd -> {
-            TimePickerDialog(
+            CareNoteTimePickerDialog(
                 title = stringResource(R.string.settings_quiet_hours),
                 initialHour = settings.quietHoursEnd,
                 initialMinute = 0,
@@ -119,7 +119,7 @@ fun SettingsDialogs(
         }
 
         SettingsDialogState.MorningTime -> {
-            TimePickerDialog(
+            CareNoteTimePickerDialog(
                 title = stringResource(R.string.medication_morning),
                 initialHour = settings.morningHour,
                 initialMinute = settings.morningMinute,
@@ -132,7 +132,7 @@ fun SettingsDialogs(
         }
 
         SettingsDialogState.NoonTime -> {
-            TimePickerDialog(
+            CareNoteTimePickerDialog(
                 title = stringResource(R.string.medication_noon),
                 initialHour = settings.noonHour,
                 initialMinute = settings.noonMinute,
@@ -145,7 +145,7 @@ fun SettingsDialogs(
         }
 
         SettingsDialogState.EveningTime -> {
-            TimePickerDialog(
+            CareNoteTimePickerDialog(
                 title = stringResource(R.string.medication_evening),
                 initialHour = settings.eveningHour,
                 initialMinute = settings.eveningMinute,

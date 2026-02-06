@@ -7,10 +7,10 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 
 data class LoginFormState(
@@ -46,8 +46,8 @@ class AuthViewModel @Inject constructor(
 
     val snackbarController = SnackbarController()
 
-    private val _authSuccessEvent = MutableSharedFlow<Boolean>(replay = 1)
-    val authSuccessEvent: SharedFlow<Boolean> = _authSuccessEvent.asSharedFlow()
+    private val _authSuccessEvent = Channel<Boolean>(Channel.BUFFERED)
+    val authSuccessEvent: Flow<Boolean> = _authSuccessEvent.receiveAsFlow()
 
     private val loginHandler = LoginFormHandler(
         authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent,

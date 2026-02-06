@@ -15,11 +15,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -33,11 +30,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,15 +50,15 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.ui.components.CareNoteDatePickerDialog
 import com.carenote.app.ui.components.CareNoteTextField
+import com.carenote.app.ui.components.CareNoteTimePickerDialog
 import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -243,7 +237,7 @@ fun AddEditTaskScreen(
     }
 
     if (showDatePicker) {
-        TaskDatePickerDialog(
+        CareNoteDatePickerDialog(
             initialDate = formState.dueDate ?: LocalDate.now(),
             onDateSelected = { date ->
                 viewModel.updateDueDate(date)
@@ -254,7 +248,7 @@ fun AddEditTaskScreen(
     }
 
     if (showTimePicker) {
-        TimePickerDialog(
+        CareNoteTimePickerDialog(
             initialTime = formState.reminderTime ?: LocalTime.of(9, 0),
             onTimeSelected = { time ->
                 viewModel.updateReminderTime(time)
@@ -443,73 +437,3 @@ private fun ReminderSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TimePickerDialog(
-    initialTime: LocalTime,
-    onTimeSelected: (LocalTime) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialTime.hour,
-        initialMinute = initialTime.minute
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                onTimeSelected(
-                    LocalTime.of(timePickerState.hour, timePickerState.minute)
-                )
-            }) {
-                Text(text = stringResource(R.string.ui_confirm_yes))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.common_cancel))
-            }
-        },
-        text = {
-            TimePicker(state = timePickerState)
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TaskDatePickerDialog(
-    initialDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val initialMillis = initialDate
-        .atStartOfDay(ZoneId.of("UTC"))
-        .toInstant()
-        .toEpochMilli()
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                datePickerState.selectedDateMillis?.let { millis ->
-                    val selected = Instant.ofEpochMilli(millis)
-                        .atZone(ZoneId.of("UTC"))
-                        .toLocalDate()
-                    onDateSelected(selected)
-                }
-            }) {
-                Text(text = stringResource(R.string.ui_confirm_yes))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.common_cancel))
-            }
-        }
-    ) {
-        DatePicker(state = datePickerState)
-    }
-}
