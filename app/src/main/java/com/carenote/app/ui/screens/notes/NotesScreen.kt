@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -62,6 +63,7 @@ fun NotesScreen(
     val uiState by viewModel.notes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteNote by remember { mutableStateOf<Note?>(null) }
     val context = LocalContext.current
@@ -111,22 +113,28 @@ fun NotesScreen(
             is UiState.Error -> {
                 ErrorDisplay(
                     error = state.error,
-                    onRetry = null,
+                    onRetry = { viewModel.refresh() },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
             is UiState.Success -> {
-                NoteListContent(
-                    notes = state.data,
-                    searchQuery = searchQuery,
-                    selectedTag = selectedTag,
-                    onSearchQueryChange = viewModel::updateSearchQuery,
-                    onTagSelect = viewModel::selectTag,
-                    onNoteClick = onNavigateToEditNote,
-                    onDeleteNote = { note -> deleteNote = note },
-                    onNavigateToAdd = onNavigateToAddNote,
-                    contentPadding = innerPadding
-                )
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.refresh() },
+                    modifier = Modifier.fillMaxSize().padding(innerPadding)
+                ) {
+                    NoteListContent(
+                        notes = state.data,
+                        searchQuery = searchQuery,
+                        selectedTag = selectedTag,
+                        onSearchQueryChange = viewModel::updateSearchQuery,
+                        onTagSelect = viewModel::selectTag,
+                        onNoteClick = onNavigateToEditNote,
+                        onDeleteNote = { note -> deleteNote = note },
+                        onNavigateToAdd = onNavigateToAddNote,
+                        contentPadding = PaddingValues(bottom = 80.dp)
+                    )
+                }
             }
         }
     }
@@ -162,8 +170,8 @@ private fun NoteListContent(
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 80.dp
+            top = 8.dp,
+            bottom = contentPadding.calculateBottomPadding()
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

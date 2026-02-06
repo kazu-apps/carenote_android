@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -58,6 +59,7 @@ fun MedicationScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val todayLogs by viewModel.todayLogs.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteMedication by remember { mutableStateOf<Medication?>(null) }
     val context = LocalContext.current
@@ -112,38 +114,43 @@ fun MedicationScreen(
             is UiState.Error -> {
                 ErrorDisplay(
                     error = state.error,
-                    onRetry = null,
+                    onRetry = { viewModel.refresh() },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
             is UiState.Success -> {
-                if (state.data.isEmpty()) {
-                    EmptyState(
-                        icon = Icons.Filled.Medication,
-                        message = stringResource(R.string.medication_empty),
-                        actionLabel = stringResource(R.string.medication_empty_action),
-                        onAction = onNavigateToAddMedication,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                } else {
-                    MedicationList(
-                        medications = state.data,
-                        todayLogs = todayLogs.associate {
-                            (it.medicationId to it.timing?.name) to it.status
-                        },
-                        onTaken = { id, timing ->
-                            viewModel.recordMedication(id, MedicationLogStatus.TAKEN, timing)
-                        },
-                        onSkipped = { id, timing ->
-                            viewModel.recordMedication(id, MedicationLogStatus.SKIPPED, timing)
-                        },
-                        onPostponed = { id, timing ->
-                            viewModel.recordMedication(id, MedicationLogStatus.POSTPONED, timing)
-                        },
-                        onCardClick = onNavigateToDetail,
-                        onDelete = { deleteMedication = it },
-                        contentPadding = innerPadding
-                    )
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.refresh() },
+                    modifier = Modifier.fillMaxSize().padding(innerPadding)
+                ) {
+                    if (state.data.isEmpty()) {
+                        EmptyState(
+                            icon = Icons.Filled.Medication,
+                            message = stringResource(R.string.medication_empty),
+                            actionLabel = stringResource(R.string.medication_empty_action),
+                            onAction = onNavigateToAddMedication
+                        )
+                    } else {
+                        MedicationList(
+                            medications = state.data,
+                            todayLogs = todayLogs.associate {
+                                (it.medicationId to it.timing?.name) to it.status
+                            },
+                            onTaken = { id, timing ->
+                                viewModel.recordMedication(id, MedicationLogStatus.TAKEN, timing)
+                            },
+                            onSkipped = { id, timing ->
+                                viewModel.recordMedication(id, MedicationLogStatus.SKIPPED, timing)
+                            },
+                            onPostponed = { id, timing ->
+                                viewModel.recordMedication(id, MedicationLogStatus.POSTPONED, timing)
+                            },
+                            onCardClick = onNavigateToDetail,
+                            onDelete = { deleteMedication = it },
+                            contentPadding = PaddingValues(bottom = 80.dp)
+                        )
+                    }
                 }
             }
         }
@@ -181,8 +188,8 @@ private fun MedicationList(
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 80.dp
+            top = 8.dp,
+            bottom = contentPadding.calculateBottomPadding()
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

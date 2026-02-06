@@ -16,8 +16,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -38,9 +40,13 @@ class CalendarViewModel @Inject constructor(
     private val _currentMonth = MutableStateFlow(YearMonth.now())
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
 
+    private val _refreshTrigger = MutableStateFlow(0L)
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val eventsForSelectedDate: StateFlow<UiState<List<CalendarEvent>>> =
-        _selectedDate
+        combine(_selectedDate, _refreshTrigger) { date, _ -> date }
             .flatMapLatest { date ->
                 calendarEventRepository.getEventsByDate(date)
             }
@@ -52,11 +58,17 @@ class CalendarViewModel @Inject constructor(
                 Timber.w("Failed to observe events for selected date: $e")
                 emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
             }
+            .onEach { _isRefreshing.value = false }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = UiState.Loading
             )
+
+    fun refresh() {
+        _isRefreshing.value = true
+        _refreshTrigger.value = System.nanoTime()
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val eventsForMonth: StateFlow<Map<LocalDate, List<CalendarEvent>>> =

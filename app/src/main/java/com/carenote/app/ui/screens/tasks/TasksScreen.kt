@@ -3,6 +3,7 @@ package com.carenote.app.ui.screens.tasks
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -53,6 +55,7 @@ fun TasksScreen(
 ) {
     val tasksUiState by viewModel.tasks.collectAsStateWithLifecycle()
     val filterMode by viewModel.filterMode.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteTask by remember { mutableStateOf<Task?>(null) }
     val context = LocalContext.current
@@ -95,13 +98,18 @@ fun TasksScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = innerPadding.calculateTopPadding() + 8.dp,
-                bottom = innerPadding.calculateBottomPadding() + 80.dp
+                top = 8.dp,
+                bottom = 80.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -120,7 +128,10 @@ fun TasksScreen(
                 }
                 is UiState.Error -> {
                     item(key = "error") {
-                        ErrorDisplay(error = state.error, onRetry = null)
+                        ErrorDisplay(
+                            error = state.error,
+                            onRetry = { viewModel.refresh() }
+                        )
                     }
                 }
                 is UiState.Success -> {
@@ -152,6 +163,7 @@ fun TasksScreen(
                     }
                 }
             }
+        }
         }
     }
 

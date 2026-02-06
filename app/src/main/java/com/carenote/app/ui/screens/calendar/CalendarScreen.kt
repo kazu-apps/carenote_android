@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +67,7 @@ fun CalendarScreen(
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val eventsForMonth by viewModel.eventsForMonth.collectAsStateWithLifecycle()
     val eventsUiState by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteEvent by remember { mutableStateOf<CalendarEvent?>(null) }
     val context = LocalContext.current
@@ -118,13 +120,18 @@ fun CalendarScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = innerPadding.calculateTopPadding() + 8.dp,
-                bottom = innerPadding.calculateBottomPadding() + 80.dp
+                top = 8.dp,
+                bottom = 80.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -158,7 +165,10 @@ fun CalendarScreen(
                 }
                 is UiState.Error -> {
                     item(key = "error") {
-                        ErrorDisplay(error = state.error, onRetry = null)
+                        ErrorDisplay(
+                            error = state.error,
+                            onRetry = { viewModel.refresh() }
+                        )
                     }
                 }
                 is UiState.Success -> {
@@ -189,6 +199,7 @@ fun CalendarScreen(
                     }
                 }
             }
+        }
         }
     }
 

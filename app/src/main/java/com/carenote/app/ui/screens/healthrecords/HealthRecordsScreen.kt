@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +59,7 @@ fun HealthRecordsScreen(
     viewModel: HealthRecordsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.records.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteRecord by remember { mutableStateOf<HealthRecord?>(null) }
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
@@ -120,16 +122,25 @@ fun HealthRecordsScreen(
                             LoadingIndicator()
                         }
                         is UiState.Error -> {
-                            ErrorDisplay(error = state.error, onRetry = null)
+                            ErrorDisplay(
+                                error = state.error,
+                                onRetry = { viewModel.refresh() }
+                            )
                         }
                         is UiState.Success -> {
-                            HealthRecordListContent(
-                                records = state.data,
-                                onRecordClick = onNavigateToEditRecord,
-                                onDelete = { deleteRecord = it },
-                                onNavigateToAdd = onNavigateToAddRecord,
-                                contentPadding = contentPadding
-                            )
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh = { viewModel.refresh() },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                HealthRecordListContent(
+                                    records = state.data,
+                                    onRecordClick = onNavigateToEditRecord,
+                                    onDelete = { deleteRecord = it },
+                                    onNavigateToAdd = onNavigateToAddRecord,
+                                    contentPadding = contentPadding
+                                )
+                            }
                         }
                     }
                 }

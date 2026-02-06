@@ -18,8 +18,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -38,9 +40,13 @@ class TasksViewModel @Inject constructor(
     private val _filterMode = MutableStateFlow(TaskFilterMode.ALL)
     val filterMode: StateFlow<TaskFilterMode> = _filterMode.asStateFlow()
 
+    private val _refreshTrigger = MutableStateFlow(0L)
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val tasks: StateFlow<UiState<List<Task>>> =
-        _filterMode
+        combine(_filterMode, _refreshTrigger) { mode, _ -> mode }
             .flatMapLatest { mode ->
                 when (mode) {
                     TaskFilterMode.ALL -> taskRepository.getAllTasks()
@@ -57,11 +63,17 @@ class TasksViewModel @Inject constructor(
                 Timber.w("Failed to observe tasks: $e")
                 emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
             }
+            .onEach { _isRefreshing.value = false }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
                 initialValue = UiState.Loading
             )
+
+    fun refresh() {
+        _isRefreshing.value = true
+        _refreshTrigger.value = System.nanoTime()
+    }
 
     fun setFilterMode(mode: TaskFilterMode) {
         _filterMode.value = mode

@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -622,5 +623,49 @@ class MedicationViewModelTest {
             assertEquals(1, logs.size)
             assertEquals(today, logs[0].scheduledAt.toLocalDate())
         }
+    }
+
+    @Test
+    fun `refresh triggers data reload`() = runTest(testDispatcher) {
+        val medications = listOf(createMedication(id = 1L, name = "薬A"))
+        medicationRepository.setMedications(medications)
+        viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            val initial = expectMostRecentItem()
+            assertTrue(initial is UiState.Success)
+            assertEquals(1, (initial as UiState.Success).data.size)
+
+            medicationRepository.setMedications(
+                listOf(createMedication(id = 1L, name = "薬A"), createMedication(id = 2L, name = "薬B"))
+            )
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val refreshed = expectMostRecentItem()
+            assertTrue(refreshed is UiState.Success)
+            assertEquals(2, (refreshed as UiState.Success).data.size)
+        }
+    }
+
+    @Test
+    fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
+        medicationRepository.setMedications(listOf(createMedication(id = 1L)))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isRefreshing.value)
+
+        viewModel.refresh()
+        // refresh() synchronously sets isRefreshing = true
+        assertTrue(viewModel.isRefreshing.value)
+
+        // After flow re-collection completes, onEach resets isRefreshing
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertFalse(viewModel.isRefreshing.value)
     }
 }

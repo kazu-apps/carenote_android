@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -321,5 +322,47 @@ class NotesViewModelTest {
             assertEquals(1, data.size)
             assertEquals("体調A", data[0].title)
         }
+    }
+
+    @Test
+    fun `refresh triggers data reload`() = runTest(testDispatcher) {
+        val notes = listOf(createNote(id = 1L, title = "メモA"))
+        noteRepository.setNotes(notes)
+        viewModel = createViewModel()
+
+        viewModel.notes.test {
+            advanceUntilIdle()
+            val initial = expectMostRecentItem()
+            assertTrue(initial is UiState.Success)
+            assertEquals(1, (initial as UiState.Success).data.size)
+
+            noteRepository.setNotes(
+                listOf(createNote(id = 1L, title = "メモA"), createNote(id = 2L, title = "メモB"))
+            )
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val refreshed = expectMostRecentItem()
+            assertTrue(refreshed is UiState.Success)
+            assertEquals(2, (refreshed as UiState.Success).data.size)
+        }
+    }
+
+    @Test
+    fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
+        noteRepository.setNotes(listOf(createNote(id = 1L)))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isRefreshing.value)
+
+        viewModel.refresh()
+        assertTrue(viewModel.isRefreshing.value)
+
+        viewModel.notes.test {
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertFalse(viewModel.isRefreshing.value)
     }
 }

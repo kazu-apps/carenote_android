@@ -564,4 +564,46 @@ class TasksViewModelTest {
         assertEquals("繰り返しリマインダータスク", scheduler.scheduleReminderCalls[0].taskTitle)
         assertEquals(LocalTime.of(9, 0), scheduler.scheduleReminderCalls[0].time)
     }
+
+    @Test
+    fun `refresh triggers data reload`() = runTest(testDispatcher) {
+        val tasks = listOf(createTask(id = 1L, title = "タスクA"))
+        repository.setTasks(tasks)
+        viewModel = createViewModel()
+
+        viewModel.tasks.test {
+            advanceUntilIdle()
+            val initial = expectMostRecentItem()
+            assertTrue(initial is UiState.Success)
+            assertEquals(1, (initial as UiState.Success).data.size)
+
+            repository.setTasks(
+                listOf(createTask(id = 1L, title = "タスクA"), createTask(id = 2L, title = "タスクB"))
+            )
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val refreshed = expectMostRecentItem()
+            assertTrue(refreshed is UiState.Success)
+            assertEquals(2, (refreshed as UiState.Success).data.size)
+        }
+    }
+
+    @Test
+    fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
+        repository.setTasks(listOf(createTask(id = 1L)))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.isRefreshing.value)
+
+        viewModel.refresh()
+        assertTrue(viewModel.isRefreshing.value)
+
+        viewModel.tasks.test {
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertFalse(viewModel.isRefreshing.value)
+    }
 }
