@@ -3,6 +3,7 @@ package com.carenote.app.domain.repository
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.domain.model.MedicationTiming
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -17,4 +18,9 @@ interface MedicationLogRepository {
     suspend fun updateLog(log: MedicationLog): Result<Unit, DomainError>
 
     suspend fun deleteLog(id: Long): Result<Unit, DomainError>
+
+    suspend fun hasLogForMedicationToday(
+        medicationId: Long,
+        timing: MedicationTiming? = null
+    ): Boolean
 }

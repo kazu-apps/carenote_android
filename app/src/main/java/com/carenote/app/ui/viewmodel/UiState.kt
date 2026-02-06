@@ -14,7 +14,7 @@ import com.carenote.app.domain.common.DomainError
  * ```
  * val uiState: StateFlow<UiState<List<Medication>>> = ...
  *
- * when (val state = uiState.collectAsState().value) {
+ * when (val state = uiState.collectAsStateWithLifecycle().value) {
  *     is UiState.Loading -> LoadingIndicator()
  *     is UiState.Success -> MedicationList(state.data)
  *     is UiState.Error -> ErrorDisplay(state.error)

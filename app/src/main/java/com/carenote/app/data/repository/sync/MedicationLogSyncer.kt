@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import dagger.Lazy as DaggerLazy
 
 /**
  * MedicationLog エンティティの同期処理を担当
@@ -28,7 +29,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class MedicationLogSyncer @Inject constructor(
-    firestore: FirebaseFirestore,
+    firestore: DaggerLazy<FirebaseFirestore>,
     syncMappingDao: SyncMappingDao,
     timestampConverter: FirestoreTimestampConverter,
     private val medicationLogDao: MedicationLogDao,
@@ -181,7 +182,7 @@ class MedicationLogSyncer @Inject constructor(
         val remoteData = domainToRemote(domain, syncMetadata)
 
         val path = collectionPath(careRecipientId, medicationRemoteId)
-        val docRef = firestore.collection(path).document(remoteId)
+        val docRef = firestore.get().collection(path).document(remoteId)
         docRef.set(remoteData, SetOptions.merge()).await()
 
         val mapping = SyncMappingEntity(
@@ -205,7 +206,7 @@ class MedicationLogSyncer @Inject constructor(
         syncTime: LocalDateTime
     ): SyncResult {
         val path = collectionPath(careRecipientId, medicationRemoteId)
-        val query = firestore.collection(path).whereEqualTo("deletedAt", null)
+        val query = firestore.get().collection(path).whereEqualTo("deletedAt", null)
         val querySnapshot = query.get().await()
 
         var downloadedCount = 0

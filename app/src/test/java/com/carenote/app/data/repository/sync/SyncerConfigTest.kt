@@ -13,6 +13,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDateTime
+import dagger.Lazy as DaggerLazy
 
 /**
  * SyncerConfig / ConfigDrivenEntitySyncer のユニットテスト (TDD RED)
@@ -25,7 +26,7 @@ import java.time.LocalDateTime
  */
 class SyncerConfigTest {
 
-    private lateinit var firestore: FirebaseFirestore
+    private lateinit var firestore: DaggerLazy<FirebaseFirestore>
     private lateinit var syncMappingDao: FakeSyncMappingDao
     private lateinit var timestampConverter: FirestoreTimestampConverter
 
@@ -37,7 +38,8 @@ class SyncerConfigTest {
 
     @Before
     fun setUp() {
-        firestore = mockk(relaxed = true)
+        val mockFirestore: FirebaseFirestore = mockk(relaxed = true)
+        firestore = DaggerLazy<FirebaseFirestore> { mockFirestore }
         syncMappingDao = FakeSyncMappingDao()
         timestampConverter = FirestoreTimestampConverter()
         localStorage.clear()

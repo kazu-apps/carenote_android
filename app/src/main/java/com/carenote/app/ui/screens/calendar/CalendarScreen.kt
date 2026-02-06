@@ -27,7 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,10 +61,10 @@ fun CalendarScreen(
     onNavigateToEditEvent: (Long) -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
-    val currentMonth by viewModel.currentMonth.collectAsState()
-    val selectedDate by viewModel.selectedDate.collectAsState()
-    val eventsForMonth by viewModel.eventsForMonth.collectAsState()
-    val eventsUiState by viewModel.eventsForSelectedDate.collectAsState()
+    val currentMonth by viewModel.currentMonth.collectAsStateWithLifecycle()
+    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val eventsForMonth by viewModel.eventsForMonth.collectAsStateWithLifecycle()
+    val eventsUiState by viewModel.eventsForSelectedDate.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteEvent by remember { mutableStateOf<CalendarEvent?>(null) }
     val context = LocalContext.current

@@ -28,4 +28,21 @@ interface MedicationLogDao {
 
     @Query("DELETE FROM medication_logs WHERE id = :id")
     suspend fun deleteLog(id: Long)
+
+    @Query(
+        "SELECT EXISTS(" +
+            "SELECT 1 FROM medication_logs " +
+            "WHERE medication_id = :medicationId " +
+            "AND status = 'TAKEN' " +
+            "AND scheduled_at >= :startOfDay " +
+            "AND scheduled_at < :endOfDay " +
+            "AND (:timing IS NULL OR timing = :timing)" +
+            ")"
+    )
+    suspend fun hasTakenLogForDateRange(
+        medicationId: Long,
+        startOfDay: String,
+        endOfDay: String,
+        timing: String?
+    ): Boolean
 }

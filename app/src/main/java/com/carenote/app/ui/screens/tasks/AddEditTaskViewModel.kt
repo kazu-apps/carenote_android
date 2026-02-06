@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.data.worker.TaskReminderSchedulerInterface
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.TaskPriority
@@ -22,6 +24,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.inject.Inject
 
 data class AddEditTaskFormState(
@@ -29,8 +32,13 @@ data class AddEditTaskFormState(
     val description: String = "",
     val dueDate: LocalDate? = null,
     val priority: TaskPriority = TaskPriority.MEDIUM,
+    val recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
+    val recurrenceInterval: Int = AppConfig.Task.DEFAULT_RECURRENCE_INTERVAL,
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime? = null,
     val titleError: UiText? = null,
     val descriptionError: UiText? = null,
+    val recurrenceIntervalError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -38,7 +46,8 @@ data class AddEditTaskFormState(
 @HiltViewModel
 class AddEditTaskViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val taskReminderScheduler: TaskReminderSchedulerInterface
 ) : ViewModel() {
 
     private val taskId: Long? = savedStateHandle.get<Long>("taskId")
@@ -70,7 +79,11 @@ class AddEditTaskViewModel @Inject constructor(
                     title = task.title,
                     description = task.description,
                     dueDate = task.dueDate,
-                    priority = task.priority
+                    priority = task.priority,
+                    recurrenceFrequency = task.recurrenceFrequency,
+                    recurrenceInterval = task.recurrenceInterval,
+                    reminderEnabled = task.reminderEnabled,
+                    reminderTime = task.reminderTime
                 )
             }
         }
@@ -98,6 +111,30 @@ class AddEditTaskViewModel @Inject constructor(
         _formState.value = _formState.value.copy(priority = priority)
     }
 
+    fun updateRecurrenceFrequency(frequency: RecurrenceFrequency) {
+        _formState.value = _formState.value.copy(
+            recurrenceFrequency = frequency,
+            recurrenceIntervalError = null
+        )
+    }
+
+    fun updateRecurrenceInterval(interval: Int) {
+        _formState.value = _formState.value.copy(
+            recurrenceInterval = interval,
+            recurrenceIntervalError = null
+        )
+    }
+
+    fun toggleReminder() {
+        _formState.value = _formState.value.copy(
+            reminderEnabled = !_formState.value.reminderEnabled
+        )
+    }
+
+    fun updateReminderTime(time: LocalTime?) {
+        _formState.value = _formState.value.copy(reminderTime = time)
+    }
+
     fun saveTask() {
         val current = _formState.value
 
@@ -121,11 +158,21 @@ class AddEditTaskViewModel @Inject constructor(
         } else {
             null
         }
+        val recurrenceIntervalError = if (
+            current.recurrenceFrequency != RecurrenceFrequency.NONE &&
+            (current.recurrenceInterval < 1 ||
+                current.recurrenceInterval > AppConfig.Task.MAX_RECURRENCE_INTERVAL)
+        ) {
+            UiText.Resource(R.string.tasks_recurrence_interval_error)
+        } else {
+            null
+        }
 
-        if (titleError != null || descriptionError != null) {
+        if (titleError != null || descriptionError != null || recurrenceIntervalError != null) {
             _formState.value = current.copy(
                 titleError = titleError,
-                descriptionError = descriptionError
+                descriptionError = descriptionError,
+                recurrenceIntervalError = recurrenceIntervalError
             )
             return
         }
@@ -141,11 +188,21 @@ class AddEditTaskViewModel @Inject constructor(
                     description = current.description.trim(),
                     dueDate = current.dueDate,
                     priority = current.priority,
+                    recurrenceFrequency = current.recurrenceFrequency,
+                    recurrenceInterval = current.recurrenceInterval,
+                    reminderEnabled = current.reminderEnabled,
+                    reminderTime = current.reminderTime,
                     updatedAt = now
                 )
                 taskRepository.updateTask(updatedTask)
                     .onSuccess {
                         Timber.d("Task updated: id=$taskId")
+                        scheduleOrCancelReminder(
+                            taskId,
+                            current.title.trim(),
+                            current.reminderEnabled,
+                            current.reminderTime
+                        )
                         _savedEvent.emit(true)
                     }
                     .onFailure { error ->
@@ -159,12 +216,22 @@ class AddEditTaskViewModel @Inject constructor(
                     description = current.description.trim(),
                     dueDate = current.dueDate,
                     priority = current.priority,
+                    recurrenceFrequency = current.recurrenceFrequency,
+                    recurrenceInterval = current.recurrenceInterval,
+                    reminderEnabled = current.reminderEnabled,
+                    reminderTime = current.reminderTime,
                     createdAt = now,
                     updatedAt = now
                 )
                 taskRepository.insertTask(newTask)
                     .onSuccess { id ->
                         Timber.d("Task saved: id=$id")
+                        scheduleOrCancelReminder(
+                            id,
+                            current.title.trim(),
+                            current.reminderEnabled,
+                            current.reminderTime
+                        )
                         _savedEvent.emit(true)
                     }
                     .onFailure { error ->
@@ -176,4 +243,15 @@ class AddEditTaskViewModel @Inject constructor(
         }
     }
 
+    private fun scheduleOrCancelReminder(
+        id: Long,
+        title: String,
+        enabled: Boolean,
+        time: LocalTime?
+    ) {
+        taskReminderScheduler.cancelReminder(id)
+        if (enabled && time != null) {
+            taskReminderScheduler.scheduleReminder(id, title, time)
+        }
+    }
 }

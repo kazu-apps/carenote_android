@@ -5,6 +5,7 @@ import com.carenote.app.data.mapper.remote.FirestoreTimestampConverter
 import com.carenote.app.data.remote.model.SyncMetadata
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDateTime
+import dagger.Lazy as DaggerLazy
 
 /**
  * SyncerConfig に基づいて EntitySyncer の全抽象メソッドを委譲するクラス
@@ -17,7 +18,7 @@ import java.time.LocalDateTime
  */
 class ConfigDrivenEntitySyncer<Entity, Domain>(
     private val config: SyncerConfig<Entity, Domain>,
-    firestore: FirebaseFirestore,
+    firestore: DaggerLazy<FirebaseFirestore>,
     syncMappingDao: SyncMappingDao,
     timestampConverter: FirestoreTimestampConverter
 ) : EntitySyncer<Entity, Domain>(firestore, syncMappingDao, timestampConverter) {

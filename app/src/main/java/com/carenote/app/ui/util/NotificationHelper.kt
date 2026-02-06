@@ -37,6 +37,7 @@ class NotificationHelper @Inject constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channels = listOf(
                 createMedicationReminderChannel(),
+                createTaskReminderChannel(),
                 createSyncStatusChannel(),
                 createGeneralChannel()
             )
@@ -60,6 +61,25 @@ class NotificationHelper @Inject constructor(
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = context.getString(R.string.notification_channel_medication_description)
+            enableVibration(true)
+            enableLights(true)
+        }
+    }
+
+    /**
+     * タスクリマインダー用チャンネル（高重要度）
+     *
+     * タスク期限の通知に使用。ユーザーのスケジュールに直接関わるため HIGH 重要度。
+     * バイブレーション・LED 有効。
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createTaskReminderChannel(): NotificationChannel {
+        return NotificationChannel(
+            AppConfig.Notification.CHANNEL_ID_TASK_REMINDER,
+            context.getString(R.string.notification_channel_task_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.notification_channel_task_description)
             enableVibration(true)
             enableLights(true)
         }
@@ -140,5 +160,46 @@ class NotificationHelper @Inject constructor(
         val notificationId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE + medicationId.toInt()
         notificationManager.notify(notificationId, notification)
         Timber.d("Medication reminder shown: id=$medicationId, name=$medicationName")
+    }
+
+    /**
+     * タスクリマインダー通知を表示
+     *
+     * @param taskId タスクの ID（通知 ID の生成に使用）
+     * @param taskTitle タスクのタイトル（通知テキストに表示）
+     */
+    fun showTaskReminder(
+        taskId: Long,
+        taskTitle: String
+    ) {
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            taskId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(
+            context,
+            AppConfig.Notification.CHANNEL_ID_TASK_REMINDER
+        )
+            .setSmallIcon(R.drawable.ic_notification_task)
+            .setContentTitle(context.getString(R.string.notification_task_reminder_title))
+            .setContentText(
+                context.getString(R.string.notification_task_reminder_text, taskTitle)
+            )
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val notificationId = AppConfig.Notification.NOTIFICATION_ID_TASK_BASE + taskId.toInt()
+        notificationManager.notify(notificationId, notification)
+        Timber.d("Task reminder shown: id=$taskId, title=$taskTitle")
     }
 }

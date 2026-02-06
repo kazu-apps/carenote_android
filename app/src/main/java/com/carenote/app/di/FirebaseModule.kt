@@ -25,13 +25,19 @@ object FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseFirestore(): FirebaseFirestore {
+    fun provideFirebaseFirestore(availability: FirebaseAvailability): FirebaseFirestore {
+        if (!availability.isAvailable) {
+            throw IllegalStateException("Firebase is not available — this provider should only be called via dagger.Lazy")
+        }
         return FirebaseFirestore.getInstance()
     }
 
     @Provides
     @Singleton
-    fun provideFirebaseMessaging(): FirebaseMessaging {
+    fun provideFirebaseMessaging(availability: FirebaseAvailability): FirebaseMessaging {
+        if (!availability.isAvailable) {
+            throw IllegalStateException("Firebase is not available — this provider should only be called via dagger.Lazy")
+        }
         return FirebaseMessaging.getInstance()
     }
 

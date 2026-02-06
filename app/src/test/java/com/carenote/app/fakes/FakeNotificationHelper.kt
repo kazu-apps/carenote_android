@@ -24,6 +24,22 @@ class FakeNotificationHelper {
     private val _reminderHistory = mutableListOf<ReminderCall>()
     val reminderHistory: List<ReminderCall> get() = _reminderHistory.toList()
 
+    /** showTaskReminder の呼び出し回数 */
+    var showTaskReminderCallCount = 0
+        private set
+
+    /** 最後に呼び出された taskId */
+    var lastTaskId: Long? = null
+        private set
+
+    /** 最後に呼び出された taskTitle */
+    var lastTaskTitle: String? = null
+        private set
+
+    /** タスクリマインダー全呼び出し履歴 */
+    private val _taskReminderHistory = mutableListOf<TaskReminderCall>()
+    val taskReminderHistory: List<TaskReminderCall> get() = _taskReminderHistory.toList()
+
     /**
      * 服薬リマインダー通知を「表示」（実際には呼び出しを記録）
      */
@@ -35,6 +51,16 @@ class FakeNotificationHelper {
     }
 
     /**
+     * タスクリマインダー通知を「表示」（実際には呼び出しを記録）
+     */
+    fun showTaskReminder(taskId: Long, taskTitle: String) {
+        showTaskReminderCallCount++
+        lastTaskId = taskId
+        lastTaskTitle = taskTitle
+        _taskReminderHistory.add(TaskReminderCall(taskId, taskTitle))
+    }
+
+    /**
      * 状態をリセット
      */
     fun clear() {
@@ -42,13 +68,25 @@ class FakeNotificationHelper {
         lastMedicationId = null
         lastMedicationName = null
         _reminderHistory.clear()
+        showTaskReminderCallCount = 0
+        lastTaskId = null
+        lastTaskTitle = null
+        _taskReminderHistory.clear()
     }
 
     /**
-     * リマインダー呼び出しの記録
+     * 服薬リマインダー呼び出しの記録
      */
     data class ReminderCall(
         val medicationId: Long,
         val medicationName: String
+    )
+
+    /**
+     * タスクリマインダー呼び出しの記録
+     */
+    data class TaskReminderCall(
+        val taskId: Long,
+        val taskTitle: String
     )
 }

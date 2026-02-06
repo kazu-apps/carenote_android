@@ -2,8 +2,10 @@ package com.carenote.app.ui.screens.tasks
 
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
@@ -22,18 +24,21 @@ import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TasksViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeTaskRepository
+    private lateinit var scheduler: FakeTaskReminderScheduler
     private lateinit var viewModel: TasksViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeTaskRepository()
+        scheduler = FakeTaskReminderScheduler()
     }
 
     @After
@@ -42,7 +47,7 @@ class TasksViewModelTest {
     }
 
     private fun createViewModel(): TasksViewModel {
-        return TasksViewModel(repository)
+        return TasksViewModel(repository, scheduler)
     }
 
     private fun createTask(
@@ -52,6 +57,10 @@ class TasksViewModelTest {
         dueDate: LocalDate? = null,
         isCompleted: Boolean = false,
         priority: TaskPriority = TaskPriority.MEDIUM,
+        recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
+        recurrenceInterval: Int = 1,
+        reminderEnabled: Boolean = false,
+        reminderTime: LocalTime? = null,
         createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
     ) = Task(
@@ -61,6 +70,10 @@ class TasksViewModelTest {
         dueDate = dueDate,
         isCompleted = isCompleted,
         priority = priority,
+        recurrenceFrequency = recurrenceFrequency,
+        recurrenceInterval = recurrenceInterval,
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -240,6 +253,154 @@ class TasksViewModelTest {
     }
 
     @Test
+    fun `toggleCompletion cancels reminder when completing task`() = runTest(testDispatcher) {
+        val task = createTask(
+            id = 1L,
+            title = "リマインダータスク",
+            isCompleted = false,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(10, 0)
+        )
+        repository.setTasks(listOf(task))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleCompletion(task)
+        advanceUntilIdle()
+
+        assertEquals(1, scheduler.cancelReminderCalls.size)
+        assertEquals(1L, scheduler.cancelReminderCalls[0].taskId)
+        assertEquals(1, scheduler.cancelFollowUpCalls.size)
+        assertEquals(1L, scheduler.cancelFollowUpCalls[0].taskId)
+    }
+
+    @Test
+    fun `toggleCompletion reschedules reminder when uncompleting task`() = runTest(testDispatcher) {
+        val task = createTask(
+            id = 1L,
+            title = "リマインダータスク",
+            isCompleted = true,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(10, 0)
+        )
+        repository.setTasks(listOf(task))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleCompletion(task)
+        advanceUntilIdle()
+
+        assertEquals(1, scheduler.scheduleReminderCalls.size)
+        assertEquals(1L, scheduler.scheduleReminderCalls[0].taskId)
+        assertEquals("リマインダータスク", scheduler.scheduleReminderCalls[0].taskTitle)
+        assertEquals(LocalTime.of(10, 0), scheduler.scheduleReminderCalls[0].time)
+    }
+
+    @Test
+    fun `toggleCompletion does not reschedule if reminder not enabled`() = runTest(testDispatcher) {
+        val task = createTask(
+            id = 1L,
+            title = "タスク",
+            isCompleted = true,
+            reminderEnabled = false,
+            reminderTime = null
+        )
+        repository.setTasks(listOf(task))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleCompletion(task)
+        advanceUntilIdle()
+
+        assertTrue(scheduler.scheduleReminderCalls.isEmpty())
+    }
+
+    @Test
+    fun `toggleCompletion generates next task for recurring task`() = runTest(testDispatcher) {
+        val task = createTask(
+            id = 1L,
+            title = "繰り返しタスク",
+            isCompleted = false,
+            dueDate = LocalDate.of(2025, 3, 15),
+            recurrenceFrequency = RecurrenceFrequency.DAILY,
+            recurrenceInterval = 1
+        )
+        repository.setTasks(listOf(task))
+        viewModel = createViewModel()
+
+        viewModel.tasks.test {
+            advanceUntilIdle()
+
+            viewModel.toggleCompletion(task)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertTrue(state is UiState.Success)
+            val data = (state as UiState.Success).data
+            assertEquals(2, data.size)
+            val nextTask = data.find { !it.isCompleted }
+            assertFalse(nextTask!!.isCompleted)
+            assertEquals(LocalDate.of(2025, 3, 16), nextTask.dueDate)
+        }
+    }
+
+    @Test
+    fun `next task has correct due date for daily recurrence`() {
+        val result = TasksViewModel.calculateNextDueDate(
+            LocalDate.of(2025, 3, 15),
+            RecurrenceFrequency.DAILY,
+            3
+        )
+        assertEquals(LocalDate.of(2025, 3, 18), result)
+    }
+
+    @Test
+    fun `next task has correct due date for weekly recurrence`() {
+        val result = TasksViewModel.calculateNextDueDate(
+            LocalDate.of(2025, 3, 15),
+            RecurrenceFrequency.WEEKLY,
+            2
+        )
+        assertEquals(LocalDate.of(2025, 3, 29), result)
+    }
+
+    @Test
+    fun `next task has correct due date for monthly recurrence`() {
+        val result = TasksViewModel.calculateNextDueDate(
+            LocalDate.of(2025, 1, 31),
+            RecurrenceFrequency.MONTHLY,
+            1
+        )
+        assertEquals(LocalDate.of(2025, 2, 28), result)
+    }
+
+    @Test
+    fun `recurring task without due date does not generate next task`() = runTest(testDispatcher) {
+        val task = createTask(
+            id = 1L,
+            title = "繰り返しタスク",
+            isCompleted = false,
+            dueDate = null,
+            recurrenceFrequency = RecurrenceFrequency.DAILY,
+            recurrenceInterval = 1
+        )
+        repository.setTasks(listOf(task))
+        viewModel = createViewModel()
+
+        viewModel.tasks.test {
+            advanceUntilIdle()
+
+            viewModel.toggleCompletion(task)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertTrue(state is UiState.Success)
+            val data = (state as UiState.Success).data
+            assertEquals(1, data.size)
+        }
+    }
+
+    @Test
     fun `deleteTask removes task`() = runTest(testDispatcher) {
         val tasks = listOf(
             createTask(id = 1L, title = "タスクA"),
@@ -260,6 +421,21 @@ class TasksViewModelTest {
             assertEquals(1, data.size)
             assertEquals("タスクB", data[0].title)
         }
+    }
+
+    @Test
+    fun `deleteTask cancels reminder`() = runTest(testDispatcher) {
+        repository.setTasks(listOf(createTask(id = 1L)))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.deleteTask(1L)
+        advanceUntilIdle()
+
+        assertEquals(1, scheduler.cancelReminderCalls.size)
+        assertEquals(1L, scheduler.cancelReminderCalls[0].taskId)
+        assertEquals(1, scheduler.cancelFollowUpCalls.size)
+        assertEquals(1L, scheduler.cancelFollowUpCalls[0].taskId)
     }
 
     @Test
@@ -345,5 +521,31 @@ class TasksViewModelTest {
             assertTrue(updated is UiState.Success)
             assertEquals(1, (updated as UiState.Success).data.size)
         }
+    }
+
+    @Test
+    fun `next recurring task schedules reminder if enabled`() = runTest(testDispatcher) {
+        val task = createTask(
+            id = 1L,
+            title = "繰り返しリマインダータスク",
+            isCompleted = false,
+            dueDate = LocalDate.of(2025, 3, 15),
+            recurrenceFrequency = RecurrenceFrequency.WEEKLY,
+            recurrenceInterval = 1,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(9, 0)
+        )
+        repository.setTasks(listOf(task))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleCompletion(task)
+        advanceUntilIdle()
+
+        // cancelReminder for completed task + scheduleReminder for new task
+        assertEquals(1, scheduler.cancelReminderCalls.size)
+        assertEquals(1, scheduler.scheduleReminderCalls.size)
+        assertEquals("繰り返しリマインダータスク", scheduler.scheduleReminderCalls[0].taskTitle)
+        assertEquals(LocalTime.of(9, 0), scheduler.scheduleReminderCalls[0].time)
     }
 }

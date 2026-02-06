@@ -29,7 +29,7 @@ import com.carenote.app.data.local.entity.TaskEntity
         TaskEntity::class,
         SyncMappingEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)

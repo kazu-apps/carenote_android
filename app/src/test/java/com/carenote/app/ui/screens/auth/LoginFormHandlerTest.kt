@@ -10,6 +10,7 @@ import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,7 @@ import org.robolectric.annotation.Config
 class LoginFormHandlerTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var handler: LoginFormHandler
@@ -41,7 +43,7 @@ class LoginFormHandlerTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
-        handler = LoginFormHandler(authRepository, syncWorkScheduler)
+        handler = LoginFormHandler(authRepository, syncWorkScheduler, scope = testScope)
     }
 
     @After

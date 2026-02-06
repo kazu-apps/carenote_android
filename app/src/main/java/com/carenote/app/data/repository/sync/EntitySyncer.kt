@@ -13,6 +13,7 @@ import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
+import dagger.Lazy as DaggerLazy
 
 /**
  * エンティティタイプ別の同期ロジックを抽象化した基底クラス
@@ -21,7 +22,7 @@ import java.util.UUID
  * @param Domain Domain Model 型
  */
 abstract class EntitySyncer<Entity, Domain>(
-    protected val firestore: FirebaseFirestore,
+    protected val firestore: DaggerLazy<FirebaseFirestore>,
     protected val syncMappingDao: SyncMappingDao,
     protected val timestampConverter: FirestoreTimestampConverter
 ) {
@@ -143,7 +144,7 @@ abstract class EntitySyncer<Entity, Domain>(
         lastSyncTime: LocalDateTime?,
         syncTime: LocalDateTime
     ): SyncResult {
-        val collectionRef = firestore.collection(collectionPath(careRecipientId))
+        val collectionRef = firestore.get().collection(collectionPath(careRecipientId))
         val query = collectionRef.whereEqualTo("deletedAt", null)
 
         val querySnapshot = query.get().await()
@@ -202,7 +203,7 @@ abstract class EntitySyncer<Entity, Domain>(
         )
         val remoteData = domainToRemote(domain, syncMetadata)
 
-        val docRef = firestore.collection(collectionPath(careRecipientId)).document(remoteId)
+        val docRef = firestore.get().collection(collectionPath(careRecipientId)).document(remoteId)
         docRef.set(remoteData, SetOptions.merge()).await()
 
         val mapping = SyncMappingEntity(

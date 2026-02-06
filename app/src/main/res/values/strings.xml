@@ -162,6 +162,16 @@
     <string name="tasks_filter_all">すべて</string>
     <string name="tasks_filter_incomplete">未完了</string>
     <string name="tasks_filter_completed">完了済み</string>
+    <string name="tasks_recurrence">繰り返し</string>
+    <string name="tasks_recurrence_none">なし</string>
+    <string name="tasks_recurrence_daily">毎日</string>
+    <string name="tasks_recurrence_weekly">毎週</string>
+    <string name="tasks_recurrence_monthly">毎月</string>
+    <string name="tasks_recurrence_interval">間隔</string>
+    <string name="tasks_recurrence_interval_error">1〜99の数値を入力してください</string>
+    <string name="tasks_reminder_enabled">リマインダー</string>
+    <string name="tasks_reminder_time">通知時刻</string>
+    <string name="tasks_reminder_time_not_set">未設定</string>
     <string name="tasks_empty">タスクはありません</string>
     <string name="tasks_empty_action">タスクを追加する</string>
 
@@ -341,4 +351,10 @@
     <!-- Medication Reminder Notifications -->
     <string name="notification_medication_reminder_title">服薬の時間です</string>
     <string name="notification_medication_reminder_text">%1$s を服用してください</string>
+
+    <!-- Task Reminder Notifications -->
+    <string name="notification_channel_task_name">タスクリマインダー</string>
+    <string name="notification_channel_task_description">タスクの期限をお知らせします</string>
+    <string name="notification_task_reminder_title">タスクのリマインダー</string>
+    <string name="notification_task_reminder_text">%1$s</string>
 </resources>

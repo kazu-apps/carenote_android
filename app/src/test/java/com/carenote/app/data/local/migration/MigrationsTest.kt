@@ -60,9 +60,15 @@ class MigrationsTest {
     }
 
     @Test
-    fun `all() contains seven migrations in order`() {
+    fun `MIGRATION_8_9 has correct version numbers`() {
+        assertEquals(8, Migrations.MIGRATION_8_9.startVersion)
+        assertEquals(9, Migrations.MIGRATION_8_9.endVersion)
+    }
+
+    @Test
+    fun `all() contains eight migrations in order`() {
         val all = Migrations.all()
-        assertEquals(7, all.size)
+        assertEquals(8, all.size)
         assertEquals(1, all[0].startVersion)
         assertEquals(2, all[0].endVersion)
         assertEquals(2, all[1].startVersion)
@@ -77,6 +83,8 @@ class MigrationsTest {
         assertEquals(7, all[5].endVersion)
         assertEquals(7, all[6].startVersion)
         assertEquals(8, all[6].endVersion)
+        assertEquals(8, all[7].startVersion)
+        assertEquals(9, all[7].endVersion)
     }
 
     @Test
@@ -87,7 +95,7 @@ class MigrationsTest {
     }
 
     @Test
-    fun `migrations form a continuous chain from version 1 to 8`() {
+    fun `migrations form a continuous chain from version 1 to 9`() {
         val all = Migrations.all()
         for (i in 0 until all.size - 1) {
             assertEquals(
@@ -98,7 +106,7 @@ class MigrationsTest {
             )
         }
         assertEquals(1, all.first().startVersion)
-        assertEquals(8, all.last().endVersion)
+        assertEquals(9, all.last().endVersion)
     }
 
     @Test
@@ -253,6 +261,34 @@ class MigrationsTest {
         assertTrue(
             "Should ALTER TABLE medication_logs ADD COLUMN timing",
             sql.contains("ALTER TABLE medication_logs ADD COLUMN timing TEXT")
+        )
+    }
+
+    @Test
+    fun `MIGRATION_8_9 adds 4 columns to tasks table`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+        val sqlStatements = mutableListOf<String>()
+        every { db.execSQL(capture(sqlStatements)) } just Runs
+
+        Migrations.MIGRATION_8_9.migrate(db)
+
+        verify(exactly = 4) { db.execSQL(any()) }
+        assertEquals(4, sqlStatements.size)
+        assertTrue(
+            "Should add recurrence_frequency column",
+            sqlStatements[0].contains("ALTER TABLE tasks ADD COLUMN recurrence_frequency TEXT NOT NULL DEFAULT 'NONE'")
+        )
+        assertTrue(
+            "Should add recurrence_interval column",
+            sqlStatements[1].contains("ALTER TABLE tasks ADD COLUMN recurrence_interval INTEGER NOT NULL DEFAULT 1")
+        )
+        assertTrue(
+            "Should add reminder_enabled column",
+            sqlStatements[2].contains("ALTER TABLE tasks ADD COLUMN reminder_enabled INTEGER NOT NULL DEFAULT 0")
+        )
+        assertTrue(
+            "Should add reminder_time column",
+            sqlStatements[3].contains("ALTER TABLE tasks ADD COLUMN reminder_time TEXT")
         )
     }
 }

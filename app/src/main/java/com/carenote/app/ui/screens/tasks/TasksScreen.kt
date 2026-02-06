@@ -20,7 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,8 +50,8 @@ fun TasksScreen(
     onNavigateToEditTask: (Long) -> Unit = {},
     viewModel: TasksViewModel = hiltViewModel()
 ) {
-    val tasksUiState by viewModel.tasks.collectAsState()
-    val filterMode by viewModel.filterMode.collectAsState()
+    val tasksUiState by viewModel.tasks.collectAsStateWithLifecycle()
+    val filterMode by viewModel.filterMode.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteTask by remember { mutableStateOf<Task?>(null) }
     val context = LocalContext.current

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.repository.MedicationLogRepository
@@ -27,7 +28,8 @@ import javax.inject.Inject
 class MedicationDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val medicationRepository: MedicationRepository,
-    private val medicationLogRepository: MedicationLogRepository
+    private val medicationLogRepository: MedicationLogRepository,
+    private val reminderScheduler: MedicationReminderSchedulerInterface
 ) : ViewModel() {
 
     private val medicationId: Long = checkNotNull(savedStateHandle["medicationId"])
@@ -69,6 +71,7 @@ class MedicationDetailViewModel @Inject constructor(
             medicationRepository.deleteMedication(medicationId)
                 .onSuccess {
                     Timber.d("Medication deleted: id=$medicationId")
+                    reminderScheduler.cancelReminders(medicationId)
                     _deletedEvent.emit(true)
                 }
                 .onFailure { error ->

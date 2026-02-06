@@ -9,6 +9,7 @@ import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.fakes.FakeMedicationLogRepository
+import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
@@ -33,12 +34,14 @@ class MedicationDetailViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
+    private lateinit var reminderScheduler: FakeMedicationReminderScheduler
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         medicationRepository = FakeMedicationRepository()
         medicationLogRepository = FakeMedicationLogRepository()
+        reminderScheduler = FakeMedicationReminderScheduler()
     }
 
     @After
@@ -51,7 +54,8 @@ class MedicationDetailViewModelTest {
         return MedicationDetailViewModel(
             savedStateHandle = savedStateHandle,
             medicationRepository = medicationRepository,
-            medicationLogRepository = medicationLogRepository
+            medicationLogRepository = medicationLogRepository,
+            reminderScheduler = reminderScheduler
         )
     }
 
@@ -179,5 +183,18 @@ class MedicationDetailViewModelTest {
                 (event as SnackbarEvent.WithResId).messageResId
             )
         }
+    }
+
+    @Test
+    fun `delete success cancels reminders`() = runTest(testDispatcher) {
+        medicationRepository.setMedications(listOf(createMedication(id = 1L)))
+        val viewModel = createViewModel(medicationId = 1L)
+        advanceUntilIdle()
+
+        viewModel.deleteMedication()
+        advanceUntilIdle()
+
+        assertEquals(1, reminderScheduler.cancelRemindersCalls.size)
+        assertEquals(1L, reminderScheduler.cancelRemindersCalls[0].medicationId)
     }
 }

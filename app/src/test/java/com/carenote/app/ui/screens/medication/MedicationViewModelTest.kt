@@ -7,6 +7,7 @@ import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.fakes.FakeMedicationLogRepository
+import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
@@ -32,6 +33,7 @@ class MedicationViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
+    private lateinit var reminderScheduler: FakeMedicationReminderScheduler
     private lateinit var viewModel: MedicationViewModel
 
     @Before
@@ -39,6 +41,7 @@ class MedicationViewModelTest {
         Dispatchers.setMain(testDispatcher)
         medicationRepository = FakeMedicationRepository()
         medicationLogRepository = FakeMedicationLogRepository()
+        reminderScheduler = FakeMedicationReminderScheduler()
     }
 
     @After
@@ -47,7 +50,11 @@ class MedicationViewModelTest {
     }
 
     private fun createViewModel(): MedicationViewModel {
-        return MedicationViewModel(medicationRepository, medicationLogRepository)
+        return MedicationViewModel(
+            medicationRepository,
+            medicationLogRepository,
+            reminderScheduler
+        )
     }
 
     private fun createMedication(
@@ -493,5 +500,63 @@ class MedicationViewModelTest {
             assertEquals(MedicationLogStatus.TAKEN, morningLog?.status)
             assertNull(noonLog)
         }
+    }
+
+    @Test
+    fun `recordMedication TAKEN cancels follow-up`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN, MedicationTiming.MORNING)
+        advanceUntilIdle()
+
+        assertEquals(1, reminderScheduler.cancelFollowUpCalls.size)
+        val call = reminderScheduler.cancelFollowUpCalls[0]
+        assertEquals(1L, call.medicationId)
+        assertEquals(MedicationTiming.MORNING, call.timing)
+    }
+
+    @Test
+    fun `recordMedication SKIPPED does not cancel follow-up`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.recordMedication(1L, MedicationLogStatus.SKIPPED, MedicationTiming.MORNING)
+        advanceUntilIdle()
+
+        assertTrue(reminderScheduler.cancelFollowUpCalls.isEmpty())
+    }
+
+    @Test
+    fun `deleteMedication success cancels reminders`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.deleteMedication(1L)
+        advanceUntilIdle()
+
+        assertEquals(1, reminderScheduler.cancelRemindersCalls.size)
+        assertEquals(1L, reminderScheduler.cancelRemindersCalls[0].medicationId)
+    }
+
+    @Test
+    fun `deleteMedication failure does not cancel reminders`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        medicationRepository.shouldFail = true
+
+        viewModel.deleteMedication(1L)
+        advanceUntilIdle()
+
+        assertTrue(reminderScheduler.cancelRemindersCalls.isEmpty())
     }
 }

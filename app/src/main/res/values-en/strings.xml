@@ -162,6 +162,16 @@
     <string name="tasks_filter_all">All</string>
     <string name="tasks_filter_incomplete">Incomplete</string>
     <string name="tasks_filter_completed">Completed</string>
+    <string name="tasks_recurrence">Recurrence</string>
+    <string name="tasks_recurrence_none">None</string>
+    <string name="tasks_recurrence_daily">Daily</string>
+    <string name="tasks_recurrence_weekly">Weekly</string>
+    <string name="tasks_recurrence_monthly">Monthly</string>
+    <string name="tasks_recurrence_interval">Interval</string>
+    <string name="tasks_recurrence_interval_error">Enter a number between 1 and 99</string>
+    <string name="tasks_reminder_enabled">Reminder</string>
+    <string name="tasks_reminder_time">Reminder Time</string>
+    <string name="tasks_reminder_time_not_set">Not set</string>
     <string name="tasks_empty">No tasks</string>
     <string name="tasks_empty_action">Add a task</string>
 
@@ -341,4 +351,10 @@
     <!-- Medication Reminder Notifications -->
     <string name="notification_medication_reminder_title">Time to take your medication</string>
     <string name="notification_medication_reminder_text">Please take %1$s</string>
+
+    <!-- Task Reminder Notifications -->
+    <string name="notification_channel_task_name">Task Reminder</string>
+    <string name="notification_channel_task_description">Reminds you about task deadlines</string>
+    <string name="notification_task_reminder_title">Task Reminder</string>
+    <string name="notification_task_reminder_text">%1$s</string>
 </resources>

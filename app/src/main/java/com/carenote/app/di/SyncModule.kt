@@ -76,7 +76,7 @@ object SyncModule {
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
         return ConfigDrivenEntitySyncer(
-            config, firestore.get(), syncMappingDao, timestampConverter
+            config, firestore, syncMappingDao, timestampConverter
         )
     }
 
@@ -107,7 +107,7 @@ object SyncModule {
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
         return ConfigDrivenEntitySyncer(
-            config, firestore.get(), syncMappingDao, timestampConverter
+            config, firestore, syncMappingDao, timestampConverter
         )
     }
 
@@ -138,7 +138,7 @@ object SyncModule {
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
         return ConfigDrivenEntitySyncer(
-            config, firestore.get(), syncMappingDao, timestampConverter
+            config, firestore, syncMappingDao, timestampConverter
         )
     }
 
@@ -169,7 +169,7 @@ object SyncModule {
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
         return ConfigDrivenEntitySyncer(
-            config, firestore.get(), syncMappingDao, timestampConverter
+            config, firestore, syncMappingDao, timestampConverter
         )
     }
 
@@ -200,7 +200,7 @@ object SyncModule {
             getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
         )
         return ConfigDrivenEntitySyncer(
-            config, firestore.get(), syncMappingDao, timestampConverter
+            config, firestore, syncMappingDao, timestampConverter
         )
     }
 

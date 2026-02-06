@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -23,17 +25,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,10 +48,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.theme.ButtonShape
@@ -53,6 +61,7 @@ import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,8 +70,9 @@ fun AddEditTaskScreen(
     onNavigateBack: () -> Unit = {},
     viewModel: AddEditTaskViewModel = hiltViewModel()
 ) {
-    val formState by viewModel.formState.collectAsState()
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -154,6 +164,21 @@ fun AddEditTaskScreen(
                 onPrioritySelected = viewModel::updatePriority
             )
 
+            RecurrenceSection(
+                frequency = formState.recurrenceFrequency,
+                interval = formState.recurrenceInterval,
+                intervalError = formState.recurrenceIntervalError,
+                onFrequencySelected = viewModel::updateRecurrenceFrequency,
+                onIntervalChanged = viewModel::updateRecurrenceInterval
+            )
+
+            ReminderSection(
+                enabled = formState.reminderEnabled,
+                time = formState.reminderTime,
+                onToggle = viewModel::toggleReminder,
+                onClickTime = { showTimePicker = true }
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -199,6 +224,17 @@ fun AddEditTaskScreen(
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false }
+        )
+    }
+
+    if (showTimePicker) {
+        TimePickerDialog(
+            initialTime = formState.reminderTime ?: LocalTime.of(9, 0),
+            onTimeSelected = { time ->
+                viewModel.updateReminderTime(time)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false }
         )
     }
 }
@@ -271,6 +307,148 @@ private fun PrioritySelector(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RecurrenceSection(
+    frequency: RecurrenceFrequency,
+    interval: Int,
+    intervalError: com.carenote.app.ui.common.UiText?,
+    onFrequencySelected: (RecurrenceFrequency) -> Unit,
+    onIntervalChanged: (Int) -> Unit
+) {
+    Column {
+        Text(
+            text = stringResource(R.string.tasks_recurrence),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.NONE,
+                onClick = { onFrequencySelected(RecurrenceFrequency.NONE) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_none)) }
+            )
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.DAILY,
+                onClick = { onFrequencySelected(RecurrenceFrequency.DAILY) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_daily)) }
+            )
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.WEEKLY,
+                onClick = { onFrequencySelected(RecurrenceFrequency.WEEKLY) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_weekly)) }
+            )
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.MONTHLY,
+                onClick = { onFrequencySelected(RecurrenceFrequency.MONTHLY) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_monthly)) }
+            )
+        }
+        if (frequency != RecurrenceFrequency.NONE) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = interval.toString(),
+                onValueChange = { text ->
+                    val parsed = text.filter { it.isDigit() }.toIntOrNull()
+                    if (parsed != null) {
+                        onIntervalChanged(parsed)
+                    }
+                },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_interval)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                isError = intervalError != null,
+                supportingText = intervalError?.let { error ->
+                    { Text(text = error.asString()) }
+                },
+                modifier = Modifier.width(120.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReminderSection(
+    enabled: Boolean,
+    time: LocalTime?,
+    onToggle: () -> Unit,
+    onClickTime: () -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.tasks_reminder_enabled),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Switch(
+                checked = enabled,
+                onCheckedChange = { onToggle() }
+            )
+        }
+        if (enabled) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(R.string.tasks_reminder_time),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                TextButton(onClick = onClickTime) {
+                    Text(
+                        text = time?.let {
+                            String.format("%02d:%02d", it.hour, it.minute)
+                        } ?: stringResource(R.string.tasks_reminder_time_not_set),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    initialTime: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onTimeSelected(
+                    LocalTime.of(timePickerState.hour, timePickerState.minute)
+                )
+            }) {
+                Text(text = stringResource(R.string.ui_confirm_yes))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.common_cancel))
+            }
+        },
+        text = {
+            TimePicker(state = timePickerState)
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

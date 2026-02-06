@@ -76,6 +76,27 @@ object AppConfig {
 
         /** リマインダーワーカーのタグ */
         const val REMINDER_WORK_TAG = "medication_reminder_work"
+
+        /** フォローアップリマインダーの間隔（分） */
+        const val FOLLOW_UP_INTERVAL_MINUTES = 30L
+
+        /** フォローアップリマインダーの最大回数 */
+        const val FOLLOW_UP_MAX_ATTEMPTS = 3
+
+        /** フォローアップワーカーのタグ */
+        const val FOLLOW_UP_WORK_TAG = "medication_follow_up_work"
+
+        /** 通知チャンネル ID: タスクリマインダー */
+        const val CHANNEL_ID_TASK_REMINDER = "task_reminder"
+
+        /** 通知 ID ベース値: タスクリマインダー */
+        const val NOTIFICATION_ID_TASK_BASE = 3000
+
+        /** タスクリマインダーワーカーのタグ */
+        const val TASK_REMINDER_WORK_TAG = "task_reminder_work"
+
+        /** タスクフォローアップワーカーのタグ */
+        const val TASK_FOLLOW_UP_WORK_TAG = "task_follow_up_work"
     }
 
     /**
@@ -230,6 +251,12 @@ object AppConfig {
 
         /** 説明プレビューの最大行数 */
         const val DESCRIPTION_PREVIEW_MAX_LINES = 2
+
+        /** 繰り返し間隔のデフォルト値 */
+        const val DEFAULT_RECURRENCE_INTERVAL = 1
+
+        /** 繰り返し間隔の最大値 */
+        const val MAX_RECURRENCE_INTERVAL = 99
     }
 
     /**

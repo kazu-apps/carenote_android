@@ -29,7 +29,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,8 +59,8 @@ fun MedicationDetailScreen(
     onNavigateBack: () -> Unit = {},
     viewModel: MedicationDetailViewModel = hiltViewModel()
 ) {
-    val medicationState by viewModel.medication.collectAsState()
-    val logs by viewModel.logs.collectAsState()
+    val medicationState by viewModel.medication.collectAsStateWithLifecycle()
+    val logs by viewModel.logs.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current

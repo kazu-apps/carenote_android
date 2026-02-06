@@ -141,6 +141,16 @@ object Migrations {
         }
     }
 
+    /** v8 -> v9: Add recurrence and reminder columns to tasks table */
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE tasks ADD COLUMN recurrence_frequency TEXT NOT NULL DEFAULT 'NONE'")
+            db.execSQL("ALTER TABLE tasks ADD COLUMN recurrence_interval INTEGER NOT NULL DEFAULT 1")
+            db.execSQL("ALTER TABLE tasks ADD COLUMN reminder_enabled INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE tasks ADD COLUMN reminder_time TEXT")
+        }
+    }
+
     /** All migrations in order, for convenient registration with Room. Returns a new array each call. */
     fun all(): Array<Migration> = arrayOf(
         MIGRATION_1_2,
@@ -149,6 +159,7 @@ object Migrations {
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
-        MIGRATION_7_8
+        MIGRATION_7_8,
+        MIGRATION_8_9
     )
 }

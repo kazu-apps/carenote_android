@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.data.worker.TaskReminderSchedulerInterface
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.ui.util.SnackbarController
@@ -19,12 +21,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class TasksViewModel @Inject constructor(
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val taskReminderScheduler: TaskReminderSchedulerInterface
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -59,13 +63,27 @@ class TasksViewModel @Inject constructor(
 
     fun toggleCompletion(task: Task) {
         viewModelScope.launch {
+            val completing = !task.isCompleted
             val updatedTask = task.copy(
-                isCompleted = !task.isCompleted,
+                isCompleted = completing,
                 updatedAt = LocalDateTime.now()
             )
             taskRepository.updateTask(updatedTask)
                 .onSuccess {
-                    Timber.d("Task completion toggled: id=${task.id}, completed=${updatedTask.isCompleted}")
+                    Timber.d("Task completion toggled: id=${task.id}, completed=$completing")
+                    if (completing) {
+                        taskReminderScheduler.cancelReminder(task.id)
+                        taskReminderScheduler.cancelFollowUp(task.id)
+                        generateNextRecurringTask(task)
+                    } else {
+                        if (task.reminderEnabled && task.reminderTime != null) {
+                            taskReminderScheduler.scheduleReminder(
+                                task.id,
+                                task.title,
+                                task.reminderTime
+                            )
+                        }
+                    }
                 }
                 .onFailure { error ->
                     Timber.w("Failed to toggle task completion: $error")
@@ -76,6 +94,8 @@ class TasksViewModel @Inject constructor(
 
     fun deleteTask(id: Long) {
         viewModelScope.launch {
+            taskReminderScheduler.cancelReminder(id)
+            taskReminderScheduler.cancelFollowUp(id)
             taskRepository.deleteTask(id)
                 .onSuccess {
                     Timber.d("Task deleted: id=$id")
@@ -88,4 +108,49 @@ class TasksViewModel @Inject constructor(
         }
     }
 
+    private suspend fun generateNextRecurringTask(task: Task) {
+        if (task.recurrenceFrequency == RecurrenceFrequency.NONE) return
+        val baseDueDate = task.dueDate ?: return
+
+        val nextDueDate = calculateNextDueDate(
+            baseDueDate,
+            task.recurrenceFrequency,
+            task.recurrenceInterval
+        )
+        val now = LocalDateTime.now()
+        val nextTask = task.copy(
+            id = 0,
+            isCompleted = false,
+            dueDate = nextDueDate,
+            createdAt = now,
+            updatedAt = now
+        )
+        taskRepository.insertTask(nextTask)
+            .onSuccess { newId ->
+                Timber.d("Next recurring task created: id=$newId, dueDate=$nextDueDate")
+                if (nextTask.reminderEnabled && nextTask.reminderTime != null) {
+                    taskReminderScheduler.scheduleReminder(
+                        newId,
+                        nextTask.title,
+                        nextTask.reminderTime
+                    )
+                }
+            }
+            .onFailure { error ->
+                Timber.w("Failed to create next recurring task: $error")
+            }
+    }
+
+    companion object {
+        fun calculateNextDueDate(
+            current: LocalDate,
+            frequency: RecurrenceFrequency,
+            interval: Int
+        ): LocalDate = when (frequency) {
+            RecurrenceFrequency.NONE -> current
+            RecurrenceFrequency.DAILY -> current.plusDays(interval.toLong())
+            RecurrenceFrequency.WEEKLY -> current.plusWeeks(interval.toLong())
+            RecurrenceFrequency.MONTHLY -> current.plusMonths(interval.toLong())
+        }
+    }
 }

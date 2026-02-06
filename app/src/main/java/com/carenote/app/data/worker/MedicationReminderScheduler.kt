@@ -36,19 +36,9 @@ import javax.inject.Singleton
 @Singleton
 class MedicationReminderScheduler @Inject constructor(
     private val workManager: WorkManager
-) {
-    /**
-     * 特定の薬のリマインダーをスケジュール
-     *
-     * 指定された時刻に通知が発行されるようワーカーをスケジュールする。
-     * 同じ薬・タイミングの既存リマインダーは上書きされる。
-     *
-     * @param medicationId 薬の ID
-     * @param medicationName 薬の名前
-     * @param timing 服用タイミング（朝/昼/夕）
-     * @param time 通知時刻
-     */
-    fun scheduleReminder(
+) : MedicationReminderSchedulerInterface {
+
+    override fun scheduleReminder(
         medicationId: Long,
         medicationName: String,
         timing: MedicationTiming,
@@ -62,7 +52,9 @@ class MedicationReminderScheduler @Inject constructor(
 
         val inputData = workDataOf(
             MedicationReminderWorker.KEY_MEDICATION_ID to medicationId,
-            MedicationReminderWorker.KEY_MEDICATION_NAME to medicationName
+            MedicationReminderWorker.KEY_MEDICATION_NAME to medicationName,
+            MedicationReminderWorker.KEY_TIMING to timing.name,
+            MedicationReminderWorker.KEY_FOLLOW_UP_ATTEMPT to 0
         )
 
         val workRequest = OneTimeWorkRequestBuilder<MedicationReminderWorker>()
@@ -83,14 +75,7 @@ class MedicationReminderScheduler @Inject constructor(
         )
     }
 
-    /**
-     * 全タイミングのリマインダーをまとめてスケジュール
-     *
-     * @param medicationId 薬の ID
-     * @param medicationName 薬の名前
-     * @param times タイミングごとの通知時刻マップ
-     */
-    fun scheduleAllReminders(
+    override fun scheduleAllReminders(
         medicationId: Long,
         medicationName: String,
         times: Map<MedicationTiming, LocalTime>
@@ -100,30 +85,59 @@ class MedicationReminderScheduler @Inject constructor(
         }
     }
 
-    /**
-     * 薬に関連する全リマインダーをキャンセル
-     *
-     * @param medicationId 薬の ID
-     */
-    fun cancelReminders(medicationId: Long) {
+    override fun cancelReminders(medicationId: Long) {
         workManager.cancelAllWorkByTag(createMedicationTag(medicationId))
         Timber.d("Cancelled reminders for medication: $medicationId")
     }
 
-    /**
-     * 全てのリマインダーをキャンセル
-     */
-    fun cancelAllReminders() {
+    override fun cancelAllReminders() {
         workManager.cancelAllWorkByTag(AppConfig.Notification.REMINDER_WORK_TAG)
         Timber.d("Cancelled all medication reminders")
     }
 
-    /**
-     * 指定時刻までの遅延時間（ミリ秒）を計算
-     *
-     * @param time 目標時刻
-     * @return 遅延時間（ミリ秒）。時刻が過ぎている場合は -1
-     */
+    override fun scheduleFollowUp(
+        medicationId: Long,
+        medicationName: String,
+        timing: MedicationTiming?,
+        attemptNumber: Int
+    ) {
+        if (attemptNumber >= AppConfig.Notification.FOLLOW_UP_MAX_ATTEMPTS) {
+            Timber.d("Max follow-up attempts reached: id=$medicationId, timing=$timing")
+            return
+        }
+
+        val inputData = workDataOf(
+            MedicationReminderWorker.KEY_MEDICATION_ID to medicationId,
+            MedicationReminderWorker.KEY_MEDICATION_NAME to medicationName,
+            MedicationReminderWorker.KEY_TIMING to timing?.name,
+            MedicationReminderWorker.KEY_FOLLOW_UP_ATTEMPT to attemptNumber
+        )
+
+        val workRequest = OneTimeWorkRequestBuilder<MedicationReminderWorker>()
+            .setInitialDelay(AppConfig.Notification.FOLLOW_UP_INTERVAL_MINUTES, TimeUnit.MINUTES)
+            .setInputData(inputData)
+            .addTag(AppConfig.Notification.FOLLOW_UP_WORK_TAG)
+            .addTag(createMedicationTag(medicationId))
+            .addTag(createFollowUpTag(medicationId, timing))
+            .build()
+
+        val uniqueWorkName = createFollowUpWorkName(medicationId, timing)
+        workManager.enqueueUniqueWork(
+            uniqueWorkName,
+            ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
+        Timber.d(
+            "Scheduled follow-up: id=$medicationId, timing=$timing, attempt=$attemptNumber"
+        )
+    }
+
+    override fun cancelFollowUp(medicationId: Long, timing: MedicationTiming?) {
+        val tag = createFollowUpTag(medicationId, timing)
+        workManager.cancelAllWorkByTag(tag)
+        Timber.d("Cancelled follow-up: id=$medicationId, timing=$timing")
+    }
+
     private fun calculateDelay(time: LocalTime): Long {
         val now = LocalDateTime.now()
         val target = LocalDateTime.of(now.toLocalDate(), time)
@@ -135,17 +149,19 @@ class MedicationReminderScheduler @Inject constructor(
         }
     }
 
-    /**
-     * 薬 ID 用のタグを生成
-     */
     private fun createMedicationTag(medicationId: Long): String {
         return "medication_$medicationId"
     }
 
-    /**
-     * 一意なワーク名を生成
-     */
     private fun createUniqueWorkName(medicationId: Long, timing: MedicationTiming): String {
         return "reminder_${medicationId}_${timing.name}"
+    }
+
+    private fun createFollowUpTag(medicationId: Long, timing: MedicationTiming?): String {
+        return "follow_up_${medicationId}_${timing?.name ?: "ALL"}"
+    }
+
+    private fun createFollowUpWorkName(medicationId: Long, timing: MedicationTiming?): String {
+        return "follow_up_${medicationId}_${timing?.name ?: "ALL"}"
     }
 }

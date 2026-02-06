@@ -21,9 +21,9 @@ class LoginFormHandler(
     private val authRepository: AuthRepository,
     private val syncWorkScheduler: SyncWorkSchedulerInterface,
     val snackbarController: SnackbarController = SnackbarController(),
-    private val authSuccessFlow: MutableSharedFlow<Boolean> = MutableSharedFlow(replay = 1)
+    private val authSuccessFlow: MutableSharedFlow<Boolean> = MutableSharedFlow(replay = 1),
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 ) {
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private val _formState = MutableStateFlow(LoginFormState())
     val formState: StateFlow<LoginFormState> = _formState.asStateFlow()

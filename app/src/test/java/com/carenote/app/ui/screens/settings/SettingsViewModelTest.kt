@@ -10,7 +10,12 @@ import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
+import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.SnackbarEvent
+import io.mockk.every
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -376,6 +381,37 @@ class SettingsViewModelTest {
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(R.string.settings_error_save_failed, (event as SnackbarEvent.WithResId).messageResId)
         }
+    }
+
+    @Test
+    fun `updateAppLanguage calls LocaleManager applyLanguage on success`() = runTest(testDispatcher) {
+        mockkObject(LocaleManager)
+        every { LocaleManager.applyLanguage(any()) } returns Unit
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateAppLanguage(AppLanguage.ENGLISH)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { LocaleManager.applyLanguage(AppLanguage.ENGLISH) }
+        unmockkObject(LocaleManager)
+    }
+
+    @Test
+    fun `updateAppLanguage does not call LocaleManager on failure`() = runTest(testDispatcher) {
+        mockkObject(LocaleManager)
+        every { LocaleManager.applyLanguage(any()) } returns Unit
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        settingsRepository.shouldFail = true
+
+        viewModel.updateAppLanguage(AppLanguage.JAPANESE)
+        advanceUntilIdle()
+
+        verify(exactly = 0) { LocaleManager.applyLanguage(any()) }
+        unmockkObject(LocaleManager)
     }
 
     @Test

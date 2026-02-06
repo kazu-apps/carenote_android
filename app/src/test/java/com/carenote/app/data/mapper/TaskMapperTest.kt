@@ -1,6 +1,7 @@
 package com.carenote.app.data.mapper
 
 import com.carenote.app.data.local.entity.TaskEntity
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import org.junit.Assert.assertEquals
@@ -11,6 +12,7 @@ import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class TaskMapperTest {
 
@@ -88,6 +90,74 @@ class TaskMapperTest {
     }
 
     @Test
+    fun `toDomain maps recurrence fields correctly`() {
+        val entity = createEntity(
+            recurrenceFrequency = "WEEKLY",
+            recurrenceInterval = 2
+        )
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(RecurrenceFrequency.WEEKLY, result.recurrenceFrequency)
+        assertEquals(2, result.recurrenceInterval)
+    }
+
+    @Test
+    fun `toDomain maps each recurrence frequency correctly`() {
+        assertEquals(
+            RecurrenceFrequency.NONE,
+            mapper.toDomain(createEntity(recurrenceFrequency = "NONE")).recurrenceFrequency
+        )
+        assertEquals(
+            RecurrenceFrequency.DAILY,
+            mapper.toDomain(createEntity(recurrenceFrequency = "DAILY")).recurrenceFrequency
+        )
+        assertEquals(
+            RecurrenceFrequency.WEEKLY,
+            mapper.toDomain(createEntity(recurrenceFrequency = "WEEKLY")).recurrenceFrequency
+        )
+        assertEquals(
+            RecurrenceFrequency.MONTHLY,
+            mapper.toDomain(createEntity(recurrenceFrequency = "MONTHLY")).recurrenceFrequency
+        )
+    }
+
+    @Test
+    fun `toDomain defaults recurrenceFrequency to NONE for invalid value`() {
+        val result = mapper.toDomain(createEntity(recurrenceFrequency = "YEARLY"))
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+    }
+
+    @Test
+    fun `toDomain defaults recurrenceFrequency to NONE for empty value`() {
+        val result = mapper.toDomain(createEntity(recurrenceFrequency = ""))
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+    }
+
+    @Test
+    fun `toDomain maps reminder fields correctly`() {
+        val entity = createEntity(
+            reminderEnabled = 1,
+            reminderTime = "09:30:00"
+        )
+
+        val result = mapper.toDomain(entity)
+
+        assertTrue(result.reminderEnabled)
+        assertEquals(LocalTime.of(9, 30), result.reminderTime)
+    }
+
+    @Test
+    fun `toDomain defaults reminderTime to null when not set`() {
+        val entity = createEntity(reminderEnabled = 0, reminderTime = null)
+
+        val result = mapper.toDomain(entity)
+
+        assertFalse(result.reminderEnabled)
+        assertNull(result.reminderTime)
+    }
+
+    @Test
     fun `toEntity maps domain model with all fields to entity`() {
         val domain = createTask(
             id = 2L,
@@ -138,6 +208,40 @@ class TaskMapperTest {
     }
 
     @Test
+    fun `toEntity maps recurrence and reminder fields correctly`() {
+        val domain = createTask(
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceInterval = 3,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(14, 0)
+        )
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("MONTHLY", result.recurrenceFrequency)
+        assertEquals(3, result.recurrenceInterval)
+        assertEquals(1, result.reminderEnabled)
+        assertEquals("14:00:00", result.reminderTime)
+    }
+
+    @Test
+    fun `toEntity maps disabled reminder correctly`() {
+        val domain = createTask(
+            recurrenceFrequency = RecurrenceFrequency.NONE,
+            recurrenceInterval = 1,
+            reminderEnabled = false,
+            reminderTime = null
+        )
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("NONE", result.recurrenceFrequency)
+        assertEquals(1, result.recurrenceInterval)
+        assertEquals(0, result.reminderEnabled)
+        assertNull(result.reminderTime)
+    }
+
+    @Test
     fun `roundtrip entity to domain to entity preserves data`() {
         val original = createEntity(
             id = 3L,
@@ -145,7 +249,11 @@ class TaskMapperTest {
             description = "内科",
             dueDate = "2025-04-20",
             isCompleted = 0,
-            priority = "HIGH"
+            priority = "HIGH",
+            recurrenceFrequency = "WEEKLY",
+            recurrenceInterval = 2,
+            reminderEnabled = 1,
+            reminderTime = "08:30:00"
         )
 
         val domain = mapper.toDomain(original)
@@ -157,6 +265,10 @@ class TaskMapperTest {
         assertEquals(original.dueDate, roundtrip.dueDate)
         assertEquals(original.isCompleted, roundtrip.isCompleted)
         assertEquals(original.priority, roundtrip.priority)
+        assertEquals(original.recurrenceFrequency, roundtrip.recurrenceFrequency)
+        assertEquals(original.recurrenceInterval, roundtrip.recurrenceInterval)
+        assertEquals(original.reminderEnabled, roundtrip.reminderEnabled)
+        assertEquals(original.reminderTime, roundtrip.reminderTime)
         assertEquals(original.createdAt, roundtrip.createdAt)
         assertEquals(original.updatedAt, roundtrip.updatedAt)
     }
@@ -169,6 +281,16 @@ class TaskMapperTest {
         val roundtrip = mapper.toEntity(domain)
 
         assertNull(roundtrip.dueDate)
+    }
+
+    @Test
+    fun `roundtrip with null reminderTime preserves null`() {
+        val original = createEntity(reminderTime = null)
+
+        val domain = mapper.toDomain(original)
+        val roundtrip = mapper.toEntity(domain)
+
+        assertNull(roundtrip.reminderTime)
     }
 
     @Test
@@ -215,6 +337,10 @@ class TaskMapperTest {
         dueDate: String? = "2025-04-10",
         isCompleted: Int = 0,
         priority: String = "MEDIUM",
+        recurrenceFrequency: String = "NONE",
+        recurrenceInterval: Int = 1,
+        reminderEnabled: Int = 0,
+        reminderTime: String? = null,
         createdAt: String = "2025-03-15T10:00:00",
         updatedAt: String = "2025-03-15T11:00:00"
     ): TaskEntity = TaskEntity(
@@ -224,6 +350,10 @@ class TaskMapperTest {
         dueDate = dueDate,
         isCompleted = isCompleted,
         priority = priority,
+        recurrenceFrequency = recurrenceFrequency,
+        recurrenceInterval = recurrenceInterval,
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -235,6 +365,10 @@ class TaskMapperTest {
         dueDate: LocalDate? = LocalDate.of(2025, 4, 10),
         isCompleted: Boolean = false,
         priority: TaskPriority = TaskPriority.MEDIUM,
+        recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
+        recurrenceInterval: Int = 1,
+        reminderEnabled: Boolean = false,
+        reminderTime: LocalTime? = null,
         createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
     ): Task = Task(
@@ -244,6 +378,10 @@ class TaskMapperTest {
         dueDate = dueDate,
         isCompleted = isCompleted,
         priority = priority,
+        recurrenceFrequency = recurrenceFrequency,
+        recurrenceInterval = recurrenceInterval,
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

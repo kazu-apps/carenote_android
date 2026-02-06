@@ -31,6 +31,18 @@ data class TaskEntity(
     @ColumnInfo(name = "priority")
     val priority: String = "MEDIUM",
 
+    @ColumnInfo(name = "recurrence_frequency")
+    val recurrenceFrequency: String = "NONE",
+
+    @ColumnInfo(name = "recurrence_interval")
+    val recurrenceInterval: Int = 1,
+
+    @ColumnInfo(name = "reminder_enabled")
+    val reminderEnabled: Int = 0,
+
+    @ColumnInfo(name = "reminder_time")
+    val reminderTime: String? = null,
+
     @ColumnInfo(name = "created_at")
     val createdAt: String,
 

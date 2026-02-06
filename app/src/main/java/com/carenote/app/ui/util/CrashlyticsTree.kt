@@ -29,8 +29,9 @@ class CrashlyticsTree : Timber.Tree() {
             if (t != null) {
                 crashlytics.recordException(t)
             }
-        } catch (e: IllegalStateException) {
+        } catch (e: Exception) {
             // Crashlytics not initialized (e.g., google-services.json missing)
+            // FirebaseApp.getInstance() may throw RuntimeException, not just IllegalStateException
             // Silently ignore - this is expected in development environments
         }
     }

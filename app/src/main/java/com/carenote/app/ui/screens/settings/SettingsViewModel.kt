@@ -16,6 +16,7 @@ import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -120,7 +121,8 @@ class SettingsViewModel @Inject constructor(
     ) { settingsRepository.updateThemeMode(mode) }
 
     fun updateAppLanguage(language: AppLanguage) = updateSetting(
-        logTag = "App language updated: $language"
+        logTag = "App language updated: $language",
+        onSuccess = { LocaleManager.applyLanguage(language) }
     ) { settingsRepository.updateAppLanguage(language) }
 
     fun toggleSyncEnabled(enabled: Boolean) = updateSetting(

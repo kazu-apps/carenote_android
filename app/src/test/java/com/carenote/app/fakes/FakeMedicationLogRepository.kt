@@ -3,6 +3,8 @@ package com.carenote.app.fakes
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationLogRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,5 +57,18 @@ class FakeMedicationLogRepository : MedicationLogRepository {
         if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake delete error"))
         logs.value = logs.value.filter { it.id != id }
         return Result.Success(Unit)
+    }
+
+    override suspend fun hasLogForMedicationToday(
+        medicationId: Long,
+        timing: MedicationTiming?
+    ): Boolean {
+        val today = LocalDate.now()
+        return logs.value.any { log ->
+            log.medicationId == medicationId &&
+                log.status == MedicationLogStatus.TAKEN &&
+                log.scheduledAt.toLocalDate() == today &&
+                (timing == null || log.timing == timing)
+        }
     }
 }

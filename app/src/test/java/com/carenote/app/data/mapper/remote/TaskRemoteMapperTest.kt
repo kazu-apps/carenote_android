@@ -1,16 +1,19 @@
 package com.carenote.app.data.mapper.remote
 
 import com.carenote.app.data.remote.model.SyncMetadata
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 
 class TaskRemoteMapperTest {
@@ -71,6 +74,10 @@ class TaskRemoteMapperTest {
         assertNull(result.dueDate)
         assertEquals(false, result.isCompleted)
         assertEquals(TaskPriority.MEDIUM, result.priority)
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+        assertEquals(1, result.recurrenceInterval)
+        assertFalse(result.reminderEnabled)
+        assertNull(result.reminderTime)
     }
 
     @Test
@@ -167,6 +174,78 @@ class TaskRemoteMapperTest {
         val result = mapper.toDomain(data)
 
         assertNull(result.dueDate)
+    }
+
+    @Test
+    fun `toDomain maps recurrence and reminder fields`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスク",
+            "recurrenceFrequency" to "WEEKLY",
+            "recurrenceInterval" to 2,
+            "reminderEnabled" to true,
+            "reminderTime" to "09:30",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.WEEKLY, result.recurrenceFrequency)
+        assertEquals(2, result.recurrenceInterval)
+        assertTrue(result.reminderEnabled)
+        assertEquals(LocalTime.of(9, 30), result.reminderTime)
+    }
+
+    @Test
+    fun `toDomain defaults recurrence and reminder fields`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスク",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+        assertEquals(1, result.recurrenceInterval)
+        assertFalse(result.reminderEnabled)
+        assertNull(result.reminderTime)
+    }
+
+    @Test
+    fun `toDomain uses NONE for invalid recurrenceFrequency`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスク",
+            "recurrenceFrequency" to "YEARLY",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+    }
+
+    @Test
+    fun `toDomain uses NONE for null recurrenceFrequency`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスク",
+            "recurrenceFrequency" to null,
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -274,6 +353,48 @@ class TaskRemoteMapperTest {
 
             assertEquals(priority.name, result["priority"])
         }
+    }
+
+    @Test
+    fun `toRemote includes recurrence and reminder fields`() {
+        val task = Task(
+            id = 1L,
+            title = "タスク",
+            recurrenceFrequency = RecurrenceFrequency.DAILY,
+            recurrenceInterval = 3,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(14, 30),
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val result = mapper.toRemote(task, null)
+
+        assertEquals("DAILY", result["recurrenceFrequency"])
+        assertEquals(3, result["recurrenceInterval"])
+        assertEquals(true, result["reminderEnabled"])
+        assertEquals("14:30", result["reminderTime"])
+    }
+
+    @Test
+    fun `toRemote handles null reminderTime`() {
+        val task = Task(
+            id = 1L,
+            title = "タスク",
+            recurrenceFrequency = RecurrenceFrequency.NONE,
+            recurrenceInterval = 1,
+            reminderEnabled = false,
+            reminderTime = null,
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val result = mapper.toRemote(task, null)
+
+        assertEquals("NONE", result["recurrenceFrequency"])
+        assertEquals(1, result["recurrenceInterval"])
+        assertEquals(false, result["reminderEnabled"])
+        assertNull(result["reminderTime"])
     }
 
     @Test
@@ -400,6 +521,10 @@ class TaskRemoteMapperTest {
             dueDate = dueDate,
             isCompleted = true,
             priority = TaskPriority.LOW,
+            recurrenceFrequency = RecurrenceFrequency.WEEKLY,
+            recurrenceInterval = 2,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(9, 0),
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
@@ -413,6 +538,10 @@ class TaskRemoteMapperTest {
         assertEquals(original.dueDate, roundtrip.dueDate)
         assertEquals(original.isCompleted, roundtrip.isCompleted)
         assertEquals(original.priority, roundtrip.priority)
+        assertEquals(original.recurrenceFrequency, roundtrip.recurrenceFrequency)
+        assertEquals(original.recurrenceInterval, roundtrip.recurrenceInterval)
+        assertEquals(original.reminderEnabled, roundtrip.reminderEnabled)
+        assertEquals(original.reminderTime, roundtrip.reminderTime)
         assertEquals(original.createdAt, roundtrip.createdAt)
         assertEquals(original.updatedAt, roundtrip.updatedAt)
     }
@@ -431,6 +560,24 @@ class TaskRemoteMapperTest {
         val roundtrip = mapper.toDomain(remote)
 
         assertNull(roundtrip.dueDate)
+    }
+
+    @Test
+    fun `roundtrip with null reminderTime preserves data`() {
+        val original = Task(
+            id = 1L,
+            title = "タスク",
+            reminderEnabled = false,
+            reminderTime = null,
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val remote = mapper.toRemote(original, null)
+        val roundtrip = mapper.toDomain(remote)
+
+        assertFalse(roundtrip.reminderEnabled)
+        assertNull(roundtrip.reminderTime)
     }
 
     // endregion

@@ -5,6 +5,7 @@ import com.carenote.app.data.mapper.MedicationLogMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationLogRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -58,5 +59,20 @@ class MedicationLogRepositoryImpl @Inject constructor(
         ) {
             medicationLogDao.deleteLog(id)
         }
+    }
+
+    override suspend fun hasLogForMedicationToday(
+        medicationId: Long,
+        timing: MedicationTiming?
+    ): Boolean {
+        val today = LocalDate.now()
+        val startOfDay = today.atTime(LocalTime.MIN).format(dateTimeFormatter)
+        val endOfDay = today.plusDays(1).atTime(LocalTime.MIN).format(dateTimeFormatter)
+        return medicationLogDao.hasTakenLogForDateRange(
+            medicationId = medicationId,
+            startOfDay = startOfDay,
+            endOfDay = endOfDay,
+            timing = timing?.name
+        )
     }
 }

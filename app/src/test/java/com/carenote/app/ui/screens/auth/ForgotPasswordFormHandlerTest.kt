@@ -9,6 +9,7 @@ import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -31,6 +32,7 @@ import org.robolectric.annotation.Config
 class ForgotPasswordFormHandlerTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var handler: ForgotPasswordFormHandler
 
@@ -38,7 +40,7 @@ class ForgotPasswordFormHandlerTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
-        handler = ForgotPasswordFormHandler(authRepository)
+        handler = ForgotPasswordFormHandler(authRepository, scope = testScope)
     }
 
     @After

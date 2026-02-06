@@ -3,11 +3,10 @@ package com.carenote.app.ui
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,12 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
@@ -36,7 +33,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -61,18 +58,9 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(initialValue = authRepository.getCurrentUser())
 
             val isLoggedIn = currentUser != null
-            val startDestination = if (isLoggedIn) Screen.Medication.route else Screen.Login.route
-
-            // Apply locale from settings (only when changed)
-            LaunchedEffect(settings.appLanguage) {
-                val targetLocales = if (settings.appLanguage == AppLanguage.SYSTEM) {
-                    LocaleListCompat.getEmptyLocaleList()
-                } else {
-                    LocaleListCompat.forLanguageTags(settings.appLanguage.toLocaleTag())
-                }
-                if (AppCompatDelegate.getApplicationLocales() != targetLocales) {
-                    AppCompatDelegate.setApplicationLocales(targetLocales)
-                }
+            val startDestination = remember {
+                if (authRepository.getCurrentUser() != null) Screen.Medication.route
+                else Screen.Login.route
             }
 
             val darkTheme = when (settings.themeMode) {
@@ -102,7 +90,7 @@ class MainActivity : ComponentActivity() {
 
                 // 認証状態変更時のナビゲーション処理
                 LaunchedEffect(isLoggedIn) {
-                    val currentDestination = navController.currentDestination?.route
+                    val currentDestination = navController.currentDestination?.route ?: return@LaunchedEffect
                     if (isLoggedIn && currentDestination in Screen.authScreens.map { it.route }) {
                         // ログイン成功: メイン画面へ遷移
                         navController.navigate(Screen.Medication.route) {

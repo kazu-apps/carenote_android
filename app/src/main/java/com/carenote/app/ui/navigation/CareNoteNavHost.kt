@@ -50,9 +50,6 @@ fun CareNoteNavHost(
                 },
                 onNavigateToDetail = { medicationId ->
                     navController.navigate(Screen.MedicationDetail.createRoute(medicationId))
-                },
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -103,7 +100,6 @@ fun CareNoteNavHost(
 
         composable(Screen.Settings.route) {
             SettingsScreen(
-                onNavigateBack = { navController.popBackStack() },
                 onNavigateToPrivacyPolicy = {
                     navController.navigate(Screen.PrivacyPolicy.route)
                 },

@@ -24,7 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +56,7 @@ fun HealthRecordsScreen(
     onNavigateToEditRecord: (Long) -> Unit = {},
     viewModel: HealthRecordsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.records.collectAsState()
+    val uiState by viewModel.records.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteRecord by remember { mutableStateOf<HealthRecord?>(null) }
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
@@ -133,7 +133,7 @@ fun HealthRecordsScreen(
                 }
                 ViewMode.GRAPH -> {
                     val graphViewModel: HealthRecordGraphViewModel = hiltViewModel()
-                    val graphState by graphViewModel.graphState.collectAsState()
+                    val graphState by graphViewModel.graphState.collectAsStateWithLifecycle()
                     HealthRecordGraphContent(
                         state = graphState,
                         onDateRangeSelected = graphViewModel::setDateRange,

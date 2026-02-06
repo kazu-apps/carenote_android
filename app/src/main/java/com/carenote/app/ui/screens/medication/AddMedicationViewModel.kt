@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.util.SnackbarController
+import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationRepository
@@ -37,7 +38,8 @@ data class AddMedicationFormState(
 
 @HiltViewModel
 class AddMedicationViewModel @Inject constructor(
-    private val medicationRepository: MedicationRepository
+    private val medicationRepository: MedicationRepository,
+    private val reminderScheduler: MedicationReminderSchedulerInterface
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(AddMedicationFormState())
@@ -140,6 +142,13 @@ class AddMedicationViewModel @Inject constructor(
             medicationRepository.insertMedication(medication)
                 .onSuccess { id ->
                     Timber.d("Medication saved: id=$id")
+                    if (current.reminderEnabled && current.times.isNotEmpty()) {
+                        reminderScheduler.scheduleAllReminders(
+                            medicationId = id,
+                            medicationName = current.name.trim(),
+                            times = current.times
+                        )
+                    }
                     _savedEvent.emit(true)
                 }
                 .onFailure { error ->

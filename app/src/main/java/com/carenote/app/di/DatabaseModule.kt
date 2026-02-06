@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.carenote.app.data.local.CareNoteDatabase
 import com.carenote.app.data.local.DatabaseEncryptionMigrator
 import com.carenote.app.data.local.DatabasePassphraseManager
+import com.carenote.app.data.local.DatabaseRecoveryHelper
 import com.carenote.app.data.local.dao.CalendarEventDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
@@ -30,7 +31,8 @@ object DatabaseModule {
     fun provideDatabase(
         @ApplicationContext context: Context,
         passphraseManager: DatabasePassphraseManager,
-        encryptionMigrator: DatabaseEncryptionMigrator
+        encryptionMigrator: DatabaseEncryptionMigrator,
+        recoveryHelper: DatabaseRecoveryHelper
     ): CareNoteDatabase {
         System.loadLibrary("sqlcipher")
 
@@ -38,6 +40,7 @@ object DatabaseModule {
         val dbFile = context.getDatabasePath(CareNoteDatabase.DATABASE_NAME)
 
         encryptionMigrator.migrateIfNeeded(dbFile, passphrase)
+        recoveryHelper.recoverIfNeeded(dbFile, passphrase)
 
         val factory = SupportOpenHelperFactory(passphrase)
 

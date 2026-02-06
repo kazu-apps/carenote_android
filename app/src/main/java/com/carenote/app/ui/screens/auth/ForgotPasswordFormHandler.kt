@@ -15,9 +15,9 @@ import timber.log.Timber
 
 class ForgotPasswordFormHandler(
     private val authRepository: AuthRepository,
-    val snackbarController: SnackbarController = SnackbarController()
+    val snackbarController: SnackbarController = SnackbarController(),
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 ) {
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private val _formState = MutableStateFlow(ForgotPasswordFormState())
     val formState: StateFlow<ForgotPasswordFormState> = _formState.asStateFlow()

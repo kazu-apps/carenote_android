@@ -27,7 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,9 +58,9 @@ fun NotesScreen(
     onNavigateToEditNote: (Long) -> Unit = {},
     viewModel: NotesViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.notes.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedTag by viewModel.selectedTag.collectAsState()
+    val uiState by viewModel.notes.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteNote by remember { mutableStateOf<Note?>(null) }
     val context = LocalContext.current

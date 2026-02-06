@@ -12,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDateTime
+import dagger.Lazy as DaggerLazy
 
 /**
  * EntitySyncer のユニットテスト
@@ -25,7 +26,7 @@ import java.time.LocalDateTime
  */
 class EntitySyncerTest {
 
-    private lateinit var firestore: FirebaseFirestore
+    private lateinit var firestore: DaggerLazy<FirebaseFirestore>
     private lateinit var syncMappingDao: FakeSyncMappingDao
     private lateinit var timestampConverter: FirestoreTimestampConverter
     private lateinit var syncer: TestEntitySyncer
@@ -34,7 +35,8 @@ class EntitySyncerTest {
 
     @Before
     fun setUp() {
-        firestore = mockk(relaxed = true)
+        val mockFirestore: FirebaseFirestore = mockk(relaxed = true)
+        firestore = DaggerLazy<FirebaseFirestore> { mockFirestore }
         syncMappingDao = FakeSyncMappingDao()
         timestampConverter = FirestoreTimestampConverter()
         syncer = TestEntitySyncer(firestore, syncMappingDao, timestampConverter)

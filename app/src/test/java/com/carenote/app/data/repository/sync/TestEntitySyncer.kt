@@ -8,6 +8,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDateTime
 import java.time.ZoneId
+import dagger.Lazy as DaggerLazy
 
 /**
  * EntitySyncer のテスト用具象クラス
@@ -41,7 +42,7 @@ data class TestDomain(
  * Firestore 呼び出しはモック経由で制御する。
  */
 class TestEntitySyncer(
-    firestore: FirebaseFirestore,
+    firestore: DaggerLazy<FirebaseFirestore>,
     syncMappingDao: SyncMappingDao,
     timestampConverter: FirestoreTimestampConverter
 ) : EntitySyncer<TestEntity, TestDomain>(firestore, syncMappingDao, timestampConverter) {

@@ -1,8 +1,10 @@
 package com.carenote.app.data.mapper.remote
 
 import com.carenote.app.data.remote.model.SyncMetadata
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,6 +35,10 @@ class TaskRemoteMapper @Inject constructor(
             },
             isCompleted = data["isCompleted"] as? Boolean ?: false,
             priority = parsePriority(data["priority"] as? String),
+            recurrenceFrequency = parseRecurrenceFrequency(data["recurrenceFrequency"] as? String),
+            recurrenceInterval = (data["recurrenceInterval"] as? Number)?.toInt() ?: 1,
+            reminderEnabled = data["reminderEnabled"] as? Boolean ?: false,
+            reminderTime = (data["reminderTime"] as? String)?.let { LocalTime.parse(it) },
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
             updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt)
         )
@@ -46,6 +52,10 @@ class TaskRemoteMapper @Inject constructor(
             "dueDate" to domain.dueDate?.let { timestampConverter.toDateString(it) },
             "isCompleted" to domain.isCompleted,
             "priority" to domain.priority.name,
+            "recurrenceFrequency" to domain.recurrenceFrequency.name,
+            "recurrenceInterval" to domain.recurrenceInterval,
+            "reminderEnabled" to domain.reminderEnabled,
+            "reminderTime" to domain.reminderTime?.toString(),
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
             "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt)
         )
@@ -79,6 +89,15 @@ class TaskRemoteMapper @Inject constructor(
             TaskPriority.valueOf(value)
         } catch (_: IllegalArgumentException) {
             TaskPriority.MEDIUM
+        }
+    }
+
+    private fun parseRecurrenceFrequency(value: String?): RecurrenceFrequency {
+        if (value == null) return RecurrenceFrequency.NONE
+        return try {
+            RecurrenceFrequency.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            RecurrenceFrequency.NONE
         }
     }
 }

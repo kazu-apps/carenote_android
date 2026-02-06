@@ -3,6 +3,7 @@ package com.carenote.app.ui.screens.auth
 import androidx.lifecycle.ViewModel
 import com.carenote.app.data.worker.SyncWorkSchedulerInterface
 import com.carenote.app.domain.repository.AuthRepository
+import androidx.lifecycle.viewModelScope
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,13 +50,16 @@ class AuthViewModel @Inject constructor(
     val authSuccessEvent: SharedFlow<Boolean> = _authSuccessEvent.asSharedFlow()
 
     private val loginHandler = LoginFormHandler(
-        authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent
+        authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent,
+        scope = viewModelScope
     )
     private val registerHandler = RegisterFormHandler(
-        authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent
+        authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent,
+        scope = viewModelScope
     )
     private val forgotPasswordHandler = ForgotPasswordFormHandler(
-        authRepository, snackbarController
+        authRepository, snackbarController,
+        scope = viewModelScope
     )
 
     val loginFormState: StateFlow<LoginFormState> = loginHandler.formState

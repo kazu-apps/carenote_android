@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.carenote.app.R
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.config.AppConfig
+import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
@@ -26,7 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MedicationViewModel @Inject constructor(
     private val medicationRepository: MedicationRepository,
-    private val medicationLogRepository: MedicationLogRepository
+    private val medicationLogRepository: MedicationLogRepository,
+    private val reminderScheduler: MedicationReminderSchedulerInterface
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -65,6 +67,9 @@ class MedicationViewModel @Inject constructor(
             medicationLogRepository.insertLog(log)
                 .onSuccess {
                     Timber.d("Medication log recorded: medicationId=$medicationId, status=$status")
+                    if (status == MedicationLogStatus.TAKEN) {
+                        reminderScheduler.cancelFollowUp(medicationId, timing)
+                    }
                     snackbarController.showMessage(R.string.medication_log_recorded)
                 }
                 .onFailure { error ->
@@ -79,6 +84,7 @@ class MedicationViewModel @Inject constructor(
             medicationRepository.deleteMedication(id)
                 .onSuccess {
                     Timber.d("Medication deleted: id=$id")
+                    reminderScheduler.cancelReminders(id)
                     snackbarController.showMessage(R.string.medication_deleted)
                 }
                 .onFailure { error ->

@@ -2,14 +2,14 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 10 実装完了
+## 現在のタスク: Phase 12 全体完了
 
-Phase 10（服薬ログ per-timing 修正）を実装・ビルド・テスト完了。
+Phase 12c（タスクリマインダー UI + ViewModel）を完了。タスク繰り返し + 時間帯指定リマインダー機能の全フェーズが完了。
 
 ## 次のアクション
 
-1. `/task-driver` で Phase 11 を実行（服薬リマインダー接続 + 未服薬チェック）
-2. `/task-driver` で Phase 12 を実行（タスクリマインダーシステム構築）
+1. 新機能の検討（Phase 13 以降）
+2. 既知の問題対応（下記テーブル参照）
 
 ## 既知の問題
 
@@ -90,17 +90,17 @@ Phase 10（服薬ログ per-timing 修正）を実装・ビルド・テスト完
 - 変更: `MedicationLog.kt`, `MedicationLogEntity.kt`, `Migrations.kt`, `CareNoteDatabase.kt`, `MedicationLogMapper.kt`, `MedicationLogRemoteMapper.kt`, `MedicationViewModel.kt`, `MedicationScreen.kt`
 - テスト: `MigrationsTest.kt`, `MedicationLogMapperTest.kt`, `MedicationLogRemoteMapperTest.kt`, `MedicationViewModelTest.kt` に timing テスト追加
 
-### Phase 11: 服薬リマインダー接続 + 未服薬チェック (HIGH) - PENDING
-`MedicationReminderScheduler` は実装済みだが未接続（孤立コード）。飲むまで通知し続ける機能が未実装。
-**修正方針**: (A) `AddMedicationViewModel.saveMedication()` で `scheduler.scheduleAllReminders()` を呼ぶ。(B) `MedicationReminderWorker` で服薬済みチェック（`MedicationLogDao` から当日ログを照会し、TAKEN なら通知スキップ）。(C) 未服薬時のフォローアップリマインダー（N分後に再通知）。(D) 服薬記録時にフォローアップをキャンセル。
-- 対象: `AddMedicationViewModel.kt`, `MedicationReminderWorker.kt`, `MedicationReminderScheduler.kt`, `MedicationViewModel.kt`
-- 依存: Phase 10（timing フィールドが必要）
+### Phase 11: 服薬リマインダー接続 + 未服薬チェック (HIGH) - DONE
+`MedicationReminderSchedulerInterface` を抽出し、ViewModel に接続。Worker に服薬済みチェック（TAKEN ログあればスキップ）とフォローアップ再通知を追加。削除時・服薬記録時にリマインダー/フォローアップをキャンセル。
+- 新規: `MedicationReminderSchedulerInterface.kt`, `FakeMedicationReminderScheduler.kt`
+- 変更: `AppConfig.kt`（3定数追加）, `MedicationLogDao.kt`（hasTakenLogForDateRange）, `MedicationLogRepository.kt`/`Impl`（hasLogForMedicationToday）, `MedicationReminderScheduler.kt`（interface実装+followUp）, `MedicationReminderWorker.kt`（taken-check+followUp）, `WorkerModule.kt`（provider追加）, `AddMedicationViewModel.kt`/`MedicationViewModel.kt`/`MedicationDetailViewModel.kt`（scheduler接続）
+- テスト: 3 ViewModel テストに新規 8 テスト追加（schedule/cancel/follow-up 検証）
 
-### Phase 12: タスクリマインダーシステム構築 (MEDIUM) - PENDING
-タスクの繰り返し通知機能が完全未実装。
-**修正方針**: (A) `Task` モデルに `reminderEnabled: Boolean` + `recurrence: TaskRecurrence?` 追加。(B) `TaskReminderWorker` 新規作成（完了チェック付き）。(C) `TaskReminderScheduler` 新規作成。(D) `NotificationHelper` にタスク通知チャンネル追加。(E) `AddEditTaskViewModel` で scheduler 接続。(F) Room migration で Task テーブルにカラム追加。
-- 対象: `Task.kt`, `TaskEntity.kt`, 新規 Worker/Scheduler, `NotificationHelper.kt`, `AddEditTaskViewModel.kt`, DB migration
-- 依存: なし
+### Phase 12: タスク繰り返し + 時間帯指定リマインダー (HIGH) - DONE
+(a) ドメインモデル + DB migration v8→v9: `Task`/`TaskEntity` に recurrence/reminder 4フィールド追加、`RecurrenceFrequency` enum 新規作成
+(b) Worker + Scheduler: `TaskReminderWorker`, `TaskReminderScheduler`, `TaskReminderSchedulerInterface` 追加、`NotificationHelper` にタスク通知チャンネル追加
+(c) UI + ViewModel: `AddEditTaskScreen` に繰り返しセクション（FilterChip + 間隔入力）とリマインダーセクション（Switch + TimePicker）追加。`AddEditTaskViewModel` に `TaskReminderSchedulerInterface` 注入、保存時にスケジュール/キャンセル。`TasksViewModel` に完了時の次回タスク自動生成、リマインダーキャンセル/再スケジュール追加。`calculateNextDueDate()` companion関数で DAILY/WEEKLY/MONTHLY 計算。テスト: AddEditTaskViewModelTest に13新規テスト、TasksViewModelTest に10新規テスト追加（全テスト PASS）。
+- 変更: `strings.xml` (JP/EN), `AddEditTaskViewModel.kt`, `AddEditTaskScreen.kt`, `TasksViewModel.kt`, `AddEditTaskViewModelTest.kt`, `TasksViewModelTest.kt`
 
 ---
 
@@ -146,7 +146,7 @@ Phase 10（服薬ログ per-timing 修正）を実装・ビルド・テスト完
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v8, SQLCipher 4.6.1 暗号化, sync_mappings テーブル, medication_logs.timing カラム追加 |
+| Room DB | v9, SQLCipher 4.6.1 暗号化, sync_mappings テーブル, medication_logs.timing, tasks.recurrence/reminder カラム追加 |
 | DB キー保存 | EncryptedSharedPreferences (Android Keystore AES256_GCM) |
 | 設定保存 | EncryptedSharedPreferences (`carenote_settings_prefs`) |
 | バックアップ除外 | DB, DB パスフレーズ prefs, 設定 prefs |

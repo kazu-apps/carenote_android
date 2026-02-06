@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -28,13 +29,15 @@ class AddMedicationViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var medicationRepository: FakeMedicationRepository
+    private lateinit var reminderScheduler: FakeMedicationReminderScheduler
     private lateinit var viewModel: AddMedicationViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         medicationRepository = FakeMedicationRepository()
-        viewModel = AddMedicationViewModel(medicationRepository)
+        reminderScheduler = FakeMedicationReminderScheduler()
+        viewModel = AddMedicationViewModel(medicationRepository, reminderScheduler)
     }
 
     @After
@@ -291,5 +294,48 @@ class AddMedicationViewModelTest {
         viewModel.savedEvent.test {
             expectNoEvents()
         }
+    }
+
+    @Test
+    fun `saveMedication with reminder enabled and times schedules reminders`() =
+        runTest(testDispatcher) {
+            viewModel.updateName("テスト薬")
+            viewModel.toggleTiming(MedicationTiming.MORNING)
+            viewModel.toggleTiming(MedicationTiming.EVENING)
+
+            viewModel.saveMedication()
+            advanceUntilIdle()
+
+            assertEquals(1, reminderScheduler.scheduleAllCalls.size)
+            val call = reminderScheduler.scheduleAllCalls[0]
+            assertEquals("テスト薬", call.medicationName)
+            assertEquals(2, call.times.size)
+            assertTrue(call.times.containsKey(MedicationTiming.MORNING))
+            assertTrue(call.times.containsKey(MedicationTiming.EVENING))
+        }
+
+    @Test
+    fun `saveMedication with reminder disabled does not schedule reminders`() =
+        runTest(testDispatcher) {
+            viewModel.updateName("テスト薬")
+            viewModel.toggleTiming(MedicationTiming.MORNING)
+            viewModel.toggleReminder()
+
+            viewModel.saveMedication()
+            advanceUntilIdle()
+
+            assertTrue(reminderScheduler.scheduleAllCalls.isEmpty())
+        }
+
+    @Test
+    fun `saveMedication failure does not schedule reminders`() = runTest(testDispatcher) {
+        viewModel.updateName("テスト薬")
+        viewModel.toggleTiming(MedicationTiming.MORNING)
+        medicationRepository.shouldFail = true
+
+        viewModel.saveMedication()
+        advanceUntilIdle()
+
+        assertTrue(reminderScheduler.scheduleAllCalls.isEmpty())
     }
 }

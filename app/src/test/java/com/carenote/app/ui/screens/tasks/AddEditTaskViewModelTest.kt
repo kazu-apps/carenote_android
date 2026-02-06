@@ -3,8 +3,11 @@ package com.carenote.app.ui.screens.tasks
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
@@ -24,18 +27,21 @@ import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddEditTaskViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeTaskRepository
+    private lateinit var scheduler: FakeTaskReminderScheduler
     private lateinit var viewModel: AddEditTaskViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeTaskRepository()
+        scheduler = FakeTaskReminderScheduler()
     }
 
     @After
@@ -44,13 +50,14 @@ class AddEditTaskViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditTaskViewModel {
-        return AddEditTaskViewModel(SavedStateHandle(), repository)
+        return AddEditTaskViewModel(SavedStateHandle(), repository, scheduler)
     }
 
     private fun createEditViewModel(taskId: Long): AddEditTaskViewModel {
         return AddEditTaskViewModel(
             SavedStateHandle(mapOf("taskId" to taskId)),
-            repository
+            repository,
+            scheduler
         )
     }
 
@@ -67,6 +74,19 @@ class AddEditTaskViewModelTest {
         assertNull(state.titleError)
         assertFalse(state.isSaving)
         assertFalse(state.isEditMode)
+    }
+
+    @Test
+    fun `initial form state has default recurrence and reminder values`() {
+        viewModel = createAddViewModel()
+
+        val state = viewModel.formState.value
+
+        assertEquals(RecurrenceFrequency.NONE, state.recurrenceFrequency)
+        assertEquals(AppConfig.Task.DEFAULT_RECURRENCE_INTERVAL, state.recurrenceInterval)
+        assertFalse(state.reminderEnabled)
+        assertNull(state.reminderTime)
+        assertNull(state.recurrenceIntervalError)
     }
 
     @Test
@@ -116,6 +136,32 @@ class AddEditTaskViewModelTest {
         assertEquals("既存説明", state.description)
         assertEquals(LocalDate.of(2025, 3, 20), state.dueDate)
         assertEquals(TaskPriority.HIGH, state.priority)
+    }
+
+    @Test
+    fun `edit mode loads existing recurrence and reminder data`() = runTest {
+        repository.setTasks(
+            listOf(
+                Task(
+                    id = 1L,
+                    title = "繰り返しタスク",
+                    recurrenceFrequency = RecurrenceFrequency.WEEKLY,
+                    recurrenceInterval = 2,
+                    reminderEnabled = true,
+                    reminderTime = LocalTime.of(14, 30),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        val state = viewModel.formState.value
+        assertEquals(RecurrenceFrequency.WEEKLY, state.recurrenceFrequency)
+        assertEquals(2, state.recurrenceInterval)
+        assertTrue(state.reminderEnabled)
+        assertEquals(LocalTime.of(14, 30), state.reminderTime)
     }
 
     @Test
@@ -199,6 +245,82 @@ class AddEditTaskViewModelTest {
     }
 
     @Test
+    fun `updateRecurrenceFrequency updates form state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+
+        assertEquals(RecurrenceFrequency.DAILY, viewModel.formState.value.recurrenceFrequency)
+    }
+
+    @Test
+    fun `updateRecurrenceFrequency clears interval error`() {
+        viewModel = createAddViewModel()
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(0)
+        viewModel.updateTitle("タスク")
+        viewModel.saveTask()
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.WEEKLY)
+
+        assertNull(viewModel.formState.value.recurrenceIntervalError)
+    }
+
+    @Test
+    fun `updateRecurrenceInterval updates form state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateRecurrenceInterval(5)
+
+        assertEquals(5, viewModel.formState.value.recurrenceInterval)
+    }
+
+    @Test
+    fun `updateRecurrenceInterval clears interval error`() {
+        viewModel = createAddViewModel()
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(0)
+        viewModel.updateTitle("タスク")
+        viewModel.saveTask()
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+
+        viewModel.updateRecurrenceInterval(3)
+
+        assertNull(viewModel.formState.value.recurrenceIntervalError)
+    }
+
+    @Test
+    fun `toggleReminder updates form state`() {
+        viewModel = createAddViewModel()
+        assertFalse(viewModel.formState.value.reminderEnabled)
+
+        viewModel.toggleReminder()
+
+        assertTrue(viewModel.formState.value.reminderEnabled)
+    }
+
+    @Test
+    fun `toggleReminder twice reverts to false`() {
+        viewModel = createAddViewModel()
+
+        viewModel.toggleReminder()
+        viewModel.toggleReminder()
+
+        assertFalse(viewModel.formState.value.reminderEnabled)
+    }
+
+    @Test
+    fun `updateReminderTime updates form state`() {
+        viewModel = createAddViewModel()
+        val time = LocalTime.of(8, 30)
+
+        viewModel.updateReminderTime(time)
+
+        assertEquals(time, viewModel.formState.value.reminderTime)
+    }
+
+    @Test
     fun `saveTask with empty title sets title error`() {
         viewModel = createAddViewModel()
 
@@ -219,6 +341,47 @@ class AddEditTaskViewModelTest {
         viewModel.saveTask()
 
         assertNotNull(viewModel.formState.value.titleError)
+    }
+
+    @Test
+    fun `saveTask validates recurrence interval range`() {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("タスク")
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(0)
+
+        viewModel.saveTask()
+
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+        assertEquals(
+            UiText.Resource(R.string.tasks_recurrence_interval_error),
+            viewModel.formState.value.recurrenceIntervalError
+        )
+    }
+
+    @Test
+    fun `saveTask with invalid interval over max shows error`() {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("タスク")
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.WEEKLY)
+        viewModel.updateRecurrenceInterval(100)
+
+        viewModel.saveTask()
+
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+    }
+
+    @Test
+    fun `saveTask skips interval validation when frequency is NONE`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("タスク")
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.NONE)
+        viewModel.updateRecurrenceInterval(0)
+
+        viewModel.saveTask()
+        advanceUntilIdle()
+
+        assertNull(viewModel.formState.value.recurrenceIntervalError)
     }
 
     @Test
@@ -323,6 +486,60 @@ class AddEditTaskViewModelTest {
             val tasks = awaitItem()
             assertEquals(TaskPriority.LOW, tasks[0].priority)
         }
+    }
+
+    @Test
+    fun `saveTask schedules reminder when enabled`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("リマインダータスク")
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(10, 0))
+
+        viewModel.saveTask()
+        advanceUntilIdle()
+
+        assertEquals(1, scheduler.scheduleReminderCalls.size)
+        assertEquals("リマインダータスク", scheduler.scheduleReminderCalls[0].taskTitle)
+        assertEquals(LocalTime.of(10, 0), scheduler.scheduleReminderCalls[0].time)
+    }
+
+    @Test
+    fun `saveTask cancels reminder when disabled`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("タスク")
+
+        viewModel.saveTask()
+        advanceUntilIdle()
+
+        assertEquals(1, scheduler.cancelReminderCalls.size)
+        assertTrue(scheduler.scheduleReminderCalls.isEmpty())
+    }
+
+    @Test
+    fun `saveTask in edit mode cancels then reschedules reminder`() = runTest {
+        repository.setTasks(
+            listOf(
+                Task(
+                    id = 1L,
+                    title = "タスク",
+                    reminderEnabled = true,
+                    reminderTime = LocalTime.of(8, 0),
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateReminderTime(LocalTime.of(9, 0))
+        viewModel.saveTask()
+        advanceUntilIdle()
+
+        assertEquals(1, scheduler.cancelReminderCalls.size)
+        assertEquals(1L, scheduler.cancelReminderCalls[0].taskId)
+        assertEquals(1, scheduler.scheduleReminderCalls.size)
+        assertEquals(LocalTime.of(9, 0), scheduler.scheduleReminderCalls[0].time)
     }
 
     @Test

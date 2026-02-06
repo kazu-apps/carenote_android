@@ -2,9 +2,13 @@ package com.carenote.app.di
 
 import android.content.Context
 import androidx.work.WorkManager
+import com.carenote.app.data.worker.MedicationReminderScheduler
+import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
 import com.carenote.app.data.worker.NoOpSyncWorkScheduler
 import com.carenote.app.data.worker.SyncWorkScheduler
 import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.data.worker.TaskReminderScheduler
+import com.carenote.app.data.worker.TaskReminderSchedulerInterface
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,5 +34,21 @@ object WorkerModule {
     ): SyncWorkSchedulerInterface {
         if (!availability.isAvailable) return NoOpSyncWorkScheduler()
         return SyncWorkScheduler(workManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMedicationReminderScheduler(
+        workManager: WorkManager
+    ): MedicationReminderSchedulerInterface {
+        return MedicationReminderScheduler(workManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskReminderScheduler(
+        workManager: WorkManager
+    ): TaskReminderSchedulerInterface {
+        return TaskReminderScheduler(workManager)
     }
 }
