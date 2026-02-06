@@ -18,6 +18,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.carenote.app.ui.screens.calendar.AddEditCalendarEventScreen
 import com.carenote.app.ui.screens.calendar.CalendarScreen
 import com.carenote.app.ui.screens.healthrecords.HealthRecordsScreen
@@ -154,6 +155,11 @@ fun CareNoteNavHost(
             route = Screen.MedicationDetail.route,
             arguments = listOf(
                 navArgument("medicationId") { type = NavType.LongType }
+            ),
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "${AppConfig.Notification.DEEP_LINK_SCHEME}://medication_detail/{medicationId}"
+                }
             )
         ) {
             MedicationDetailScreen(
@@ -222,6 +228,11 @@ fun CareNoteNavHost(
             route = Screen.EditTask.route,
             arguments = listOf(
                 navArgument("taskId") { type = NavType.LongType }
+            ),
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "${AppConfig.Notification.DEEP_LINK_SCHEME}://edit_task/{taskId}"
+                }
             )
         ) {
             AddEditTaskScreen(

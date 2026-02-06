@@ -2,13 +2,13 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 18 完了
+## 現在のタスク: Phase 20 完了
 
-Phase 18: 未保存データ保護（BackHandler + isDirty）を実装。全5つの AddEdit 画面に確認ダイアログを追加。
+Phase 20: 通知タップナビゲーション（PendingIntent）を実装。服薬リマインダー・タスクリマインダー通知タップ時に、該当画面（MedicationDetail / EditTask）に Deep Link で直接遷移するよう変更。
 
 ## 次のアクション
 
-1. `/task-driver` で Phase 19 から順に実行
+1. `/task-driver` で Phase 21 から順に実行
 2. 各フェーズ完了後にビルド・テスト確認
 3. リリース前に実機テスト + APK 検証
 
@@ -42,8 +42,8 @@ Phase 18: 未保存データ保護（BackHandler + isDirty）を実装。全5つ
 | ~~INFO~~ | ~~—~~ | ~~削除確認ダイアログが UI から到達不可（5リスト画面）~~ → **Phase 17 で接続済み** |
 | ~~INFO~~ | ~~—~~ | ~~Flow `.catch` が欠落（全 ViewModel 13箇所、SQLCipher 使用でリスク増）~~ → **Phase 15 で修正済み** |
 | ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~全 AddEdit 画面に BackHandler / 未保存確認ダイアログがない~~ → **Phase 18 で修正済み** |
-| MEDIUM | v2.3 リサーチ | 全リスト画面の ErrorDisplay に onRetry=null（リトライ不可） → **Phase 19 で対応** |
-| MEDIUM | v2.3 リサーチ | 通知タップで該当画面に遷移しない（PendingIntent 未設定） → **Phase 20 で対応** |
+| ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~全リスト画面の ErrorDisplay に onRetry=null（リトライ不可）~~ → **Phase 19 で修正済み** |
+| ~~MEDIUM~~ | ~~v2.3 リサーチ~~ | ~~通知タップで該当画面に遷移しない（PendingIntent 未設定）~~ → **Phase 20 で修正済み** |
 | MEDIUM | v2.3 リサーチ | `AuthViewModel._authSuccessEvent` が SharedFlow(replay=1)（他VMと不統一） → **Phase 21 で対応** |
 | LOW | v2.3 リサーチ | DatePicker/TimePicker が3箇所に重複 → **Phase 21 で対応** |
 | LOW | v2.3 リサーチ | @Preview アノテーションが全画面で未定義 → **Phase 22 で対応** |
@@ -146,16 +146,18 @@ ValidationUtils 削除、savedEvent/deletedEvent を Channel+receiveAsFlow に�
 - 変更: `strings.xml` (JP/EN, 4文字列追加), 5 ViewModel (`isDirty` + `_initialFormState`), 5 Screen (`BackHandler` + `ConfirmDialog` + `handleBack`), 5 ViewModel テスト (各3-6テスト追加)
 - ビルド成功、全テスト PASS
 
-### Phase 19: エラーリトライ + Pull-to-Refresh (MEDIUM) - PENDING
-(a) 全5リスト画面の `ErrorDisplay(onRetry = null)` を `onRetry = { viewModel.refresh() }` に接続。各 ViewModel に `refresh()` メソッド追加。
-(b) 全5リスト画面に `PullToRefreshBox` を追加してデータ再読み込みを可能に。
-- 対象: 5 Screen + 5 ViewModel
-- 依存: なし
+### Phase 19: エラーリトライ + Pull-to-Refresh (MEDIUM) - DONE
+(a) 全5 ViewModel に `_refreshTrigger`, `_isRefreshing`, `refresh()` 追加。`flatMapLatest` / `combine` で Flow 再収集をトリガー。`onEach` で `isRefreshing` をリセット。
+(b) 全5リスト画面の `ErrorDisplay(onRetry = null)` を `onRetry = { viewModel.refresh() }` に接続。
+(c) 全5リスト画面に `PullToRefreshBox` を追加。Success/Empty コンテンツをラップし、スワイプダウンでデータ再読み込み。
+- 変更: 5 ViewModel, 5 Screen, 5 ViewModel テスト (各2テスト追加: refresh triggers reload, isRefreshing lifecycle)
+- ビルド成功、全テスト PASS
 
-### Phase 20: 通知タップナビゲーション（PendingIntent） (MEDIUM) - PENDING
-服薬リマインダー・タスクリマインダー通知タップ時に、該当画面（MedicationDetail / TaskEdit）に遷移するよう `PendingIntent` を追加。Deep Link Intent 経由で `CareNoteNavHost` へルーティング。
-- 対象: `NotificationHelper.kt`, `AndroidManifest.xml`（intent-filter）, `CareNoteNavHost.kt`（deep link 処理）, `MedicationReminderWorker.kt`, `TaskReminderWorker.kt`
-- 依存: なし
+### Phase 20: 通知タップナビゲーション（PendingIntent） (MEDIUM) - DONE
+Navigation Compose Deep Links を使用し、通知タップで該当画面に直接遷移。`carenote://` カスタム URI スキームで MedicationDetail / EditTask にルーティング。
+- 変更: `AppConfig.kt`（DEEP_LINK_SCHEME 定数追加）, `NotificationHelper.kt`（deep link URI ビルダー + Intent ACTION_VIEW 設定）, `CareNoteNavHost.kt`（navDeepLink 追加 2箇所）, `MainActivity.kt`（addOnNewIntentListener で起動中 deep link 処理）, `AndroidManifest.xml`（carenote:// intent-filter 追加）
+- テスト: `NotificationHelperTest.kt` に deep link URI 生成テスト 4件追加
+- ビルド成功、全テスト PASS
 
 ### Phase 21: DatePicker/TimePicker 共通化 + AuthEvent Channel 修正 (MEDIUM) - PENDING
 (a) `AddEditTaskScreen`, `AddEditCalendarEventScreen`, `TimePickerPreference` に重複する DatePickerDialog / TimePickerDialog を共通コンポーネント `ui/components/DatePickerDialog.kt` / `TimePickerDialog.kt` に抽出。

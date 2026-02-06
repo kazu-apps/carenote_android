@@ -1,6 +1,8 @@
 package com.carenote.app.ui.util
 
 import com.carenote.app.config.AppConfig
+import com.carenote.app.ui.util.NotificationHelper.Companion.buildMedicationDeepLink
+import com.carenote.app.ui.util.NotificationHelper.Companion.buildTaskDeepLink
 import com.carenote.app.ui.util.NotificationHelper.Companion.safeIntId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -166,5 +168,42 @@ class NotificationHelperTest {
 
         // 22:00 〜 7:00 は日をまたぐ
         assert(start > end)
+    }
+
+    // ========== Deep Link URI Tests ==========
+
+    @Test
+    fun `buildMedicationDeepLink generates correct URI`() {
+        val uri = buildMedicationDeepLink(123L)
+
+        assertEquals("carenote://medication_detail/123", uri)
+    }
+
+    @Test
+    fun `buildTaskDeepLink generates correct URI`() {
+        val uri = buildTaskDeepLink(456L)
+
+        assertEquals("carenote://edit_task/456", uri)
+    }
+
+    @Test
+    fun `buildMedicationDeepLink uses AppConfig scheme`() {
+        val uri = buildMedicationDeepLink(1L)
+
+        assertTrue(
+            "URI should start with configured scheme",
+            uri.startsWith("${AppConfig.Notification.DEEP_LINK_SCHEME}://")
+        )
+    }
+
+    @Test
+    fun `deep link URIs for medication and task have different paths`() {
+        val medicationUri = buildMedicationDeepLink(1L)
+        val taskUri = buildTaskDeepLink(1L)
+
+        // 同じ ID でもパスが異なる
+        assertTrue(medicationUri.contains("medication_detail"))
+        assertTrue(taskUri.contains("edit_task"))
+        assertNotEquals(medicationUri, taskUri)
     }
 }

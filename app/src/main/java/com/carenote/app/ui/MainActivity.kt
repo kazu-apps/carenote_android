@@ -1,6 +1,7 @@
 package com.carenote.app.ui
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -11,12 +12,14 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.util.Consumer
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -82,6 +85,18 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val navController = rememberNavController()
+
+                // 通知タップ等の deep link を処理（アプリ起動中）
+                DisposableEffect(Unit) {
+                    val listener = Consumer<Intent> { newIntent ->
+                        navController.handleDeepLink(newIntent)
+                    }
+                    addOnNewIntentListener(listener)
+                    onDispose {
+                        removeOnNewIntentListener(listener)
+                    }
+                }
+
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 

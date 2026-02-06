@@ -97,6 +97,9 @@ object AppConfig {
 
         /** タスクフォローアップワーカーのタグ */
         const val TASK_FOLLOW_UP_WORK_TAG = "task_follow_up_work"
+
+        /** Deep Link URI スキーム */
+        const val DEEP_LINK_SCHEME = "carenote"
     }
 
     /**

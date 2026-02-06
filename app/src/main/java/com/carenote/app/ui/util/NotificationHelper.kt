@@ -10,6 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import androidx.core.net.toUri
 import com.carenote.app.ui.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
@@ -128,6 +129,12 @@ class NotificationHelper @Inject constructor(
      */
     companion object {
         internal fun safeIntId(id: Long): Int = id.and(0x7FFFFFFF).toInt()
+
+        internal fun buildMedicationDeepLink(medicationId: Long): String =
+            "${AppConfig.Notification.DEEP_LINK_SCHEME}://medication_detail/$medicationId"
+
+        internal fun buildTaskDeepLink(taskId: Long): String =
+            "${AppConfig.Notification.DEEP_LINK_SCHEME}://edit_task/$taskId"
     }
 
     fun showMedicationReminder(
@@ -136,8 +143,9 @@ class NotificationHelper @Inject constructor(
     ) {
         val notificationManager = context.getSystemService(NotificationManager::class.java)
 
-        // PendingIntent: 通知タップでアプリを開く
-        val intent = Intent(context, MainActivity::class.java).apply {
+        // PendingIntent: 通知タップで薬詳細画面を開く（Deep Link）
+        val intent = Intent(Intent.ACTION_VIEW, buildMedicationDeepLink(medicationId).toUri()).apply {
+            setClass(context, MainActivity::class.java)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
@@ -178,7 +186,8 @@ class NotificationHelper @Inject constructor(
     ) {
         val notificationManager = context.getSystemService(NotificationManager::class.java)
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = Intent(Intent.ACTION_VIEW, buildTaskDeepLink(taskId).toUri()).apply {
+            setClass(context, MainActivity::class.java)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
