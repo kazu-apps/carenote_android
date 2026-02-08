@@ -16,6 +16,9 @@
     <string name="settings_theme_system">システムに合わせる</string>
     <string name="settings_theme_light">ライト</string>
     <string name="settings_theme_dark">ダーク</string>
+    <string name="settings_dynamic_color_title">ダイナミックカラー</string>
+    <string name="settings_dynamic_color_summary">端末の壁紙に合わせた配色を使用します</string>
+    <string name="settings_dynamic_color_unavailable">Android 12以降の端末で利用できます</string>
     <string name="settings_language">言語</string>
     <string name="settings_language_system">システムに合わせる</string>
     <string name="settings_language_japanese">日本語</string>
@@ -61,6 +64,58 @@
     <string name="settings_biometric_enabled">生体認証でロック</string>
     <string name="settings_biometric_summary">アプリ起動時・復帰時に認証を要求</string>
     <string name="settings_biometric_not_available">このデバイスでは生体認証を利用できません</string>
+
+    <!-- Account Settings -->
+    <string name="settings_account">アカウント</string>
+    <string name="settings_change_password">パスワードを変更</string>
+    <string name="settings_change_password_summary">現在のパスワードを変更します</string>
+    <string name="settings_delete_account">アカウントを削除</string>
+    <string name="settings_delete_account_summary">アカウントと全データを完全に削除します</string>
+    <string name="settings_send_email_verification">確認メールを送信</string>
+    <string name="settings_email_verification_summary">メールアドレスの確認メールを再送信します</string>
+    <string name="settings_sign_out">ログアウト</string>
+    <string name="settings_sign_out_summary">アカウントからログアウトします</string>
+    <string name="settings_change_password_title">パスワードの変更</string>
+    <string name="settings_current_password">現在のパスワード</string>
+    <string name="settings_new_password">新しいパスワード</string>
+    <string name="settings_confirm_password">新しいパスワード（確認）</string>
+    <string name="settings_password_changed">パスワードを変更しました</string>
+    <string name="settings_password_change_failed">パスワードの変更に失敗しました</string>
+    <string name="settings_password_mismatch">新しいパスワードが一致しません</string>
+    <string name="settings_delete_account_title">アカウントの削除</string>
+    <string name="settings_delete_account_message">アカウントと全データが完全に削除されます。この操作は元に戻せません。続けますか？</string>
+    <string name="settings_account_deleted">アカウントを削除しました</string>
+    <string name="settings_account_delete_failed">アカウントの削除に失敗しました</string>
+    <string name="settings_reauthenticate_title">本人確認</string>
+    <string name="settings_reauthenticate_message">セキュリティのため、パスワードを入力してください</string>
+    <string name="settings_reauthenticate_failed">認証に失敗しました</string>
+    <string name="settings_email_verification_sent">確認メールを送信しました</string>
+    <string name="settings_email_verification_failed">確認メールの送信に失敗しました</string>
+    <string name="settings_sign_out_confirm_title">ログアウト</string>
+    <string name="settings_sign_out_confirm_message">ログアウトしますか？</string>
+    <string name="settings_signed_out">ログアウトしました</string>
+    <string name="settings_sign_out_failed">ログアウトに失敗しました</string>
+    <string name="settings_email_not_verified">メール未確認</string>
+    <string name="settings_email_verified">メール確認済み</string>
+
+    <!-- Care Recipient -->
+    <string name="care_recipient_section_title">ケア対象者</string>
+    <string name="care_recipient_profile">プロフィール</string>
+    <string name="care_recipient_profile_summary">ケア対象者の基本情報を設定</string>
+    <string name="care_recipient_not_set">未設定</string>
+    <string name="care_recipient_name">お名前</string>
+    <string name="care_recipient_name_hint">ケア対象者のお名前</string>
+    <string name="care_recipient_birth_date">生年月日</string>
+    <string name="care_recipient_birth_date_not_set">未設定</string>
+    <string name="care_recipient_gender">性別</string>
+    <string name="care_recipient_gender_male">男性</string>
+    <string name="care_recipient_gender_female">女性</string>
+    <string name="care_recipient_gender_other">その他</string>
+    <string name="care_recipient_gender_unspecified">未指定</string>
+    <string name="care_recipient_memo">メモ</string>
+    <string name="care_recipient_memo_hint">特記事項・アレルギー・好みなど</string>
+    <string name="care_recipient_save_success">プロフィールを保存しました</string>
+    <string name="care_recipient_save_error">プロフィールの保存に失敗しました</string>
 
     <!-- Biometric Prompt -->
     <string name="biometric_prompt_title">本人確認</string>
@@ -245,6 +300,39 @@
     <string name="health_records_graph_unit_celsius">℃</string>
     <string name="health_records_graph_unit_mmhg">mmHg</string>
 
+    <!-- Health Records Export -->
+    <string name="health_records_export">エクスポート</string>
+    <string name="health_records_export_csv">CSV でエクスポート</string>
+    <string name="health_records_export_pdf">PDF でエクスポート</string>
+    <string name="health_records_exporting">エクスポート中…</string>
+    <string name="health_records_export_success">エクスポートが完了しました</string>
+    <string name="health_records_export_failed">エクスポートに失敗しました</string>
+    <string name="health_records_export_empty">エクスポートする記録がありません</string>
+    <string name="health_records_export_title">健康記録</string>
+
+    <!-- Export CSV Headers -->
+    <string name="export_header_recorded_at">記録日時</string>
+    <string name="export_header_temperature">体温</string>
+    <string name="export_header_bp_high">血圧(上)</string>
+    <string name="export_header_bp_low">血圧(下)</string>
+    <string name="export_header_pulse">脈拍</string>
+    <string name="export_header_weight">体重</string>
+    <string name="export_header_meal">食事量</string>
+    <string name="export_header_excretion">排泄</string>
+    <string name="export_header_condition_note">体調メモ</string>
+
+    <!-- Export Enum Localization -->
+    <string name="meal_full">全量</string>
+    <string name="meal_mostly">ほぼ全量</string>
+    <string name="meal_half">半量</string>
+    <string name="meal_little">少量</string>
+    <string name="meal_none">なし</string>
+    <string name="excretion_normal">普通</string>
+    <string name="excretion_soft">軟便</string>
+    <string name="excretion_hard">硬便</string>
+    <string name="excretion_diarrhea">下痢</string>
+    <string name="excretion_none">なし</string>
+
     <!-- Notes -->
     <string name="notes_title">メモ・申し送り</string>
     <string name="notes_add">メモを追加</string>
@@ -282,6 +370,7 @@
     <string name="common_photo_add">写真を追加</string>
     <string name="common_notification">通知</string>
     <string name="common_reminder">リマインダー</string>
+    <string name="common_search">検索…</string>
 
     <!-- Common UI Components -->
     <string name="ui_loading">読み込み中…</string>
@@ -305,6 +394,15 @@
     <string name="ui_validation_required">この項目は必須です</string>
     <string name="ui_validation_too_long">%1$d文字以内で入力してください</string>
 
+    <!-- Photos -->
+    <string name="photo_section_title">写真</string>
+    <string name="photo_add">写真を追加</string>
+    <string name="photo_remove">写真を削除</string>
+    <string name="photo_max_reached">写真は最大%d枚です</string>
+    <string name="photo_compress_failed">画像の圧縮に失敗しました</string>
+    <string name="photo_upload_pending">アップロード待ち</string>
+    <string name="photo_upload_failed">アップロード失敗</string>
+
     <!-- Accessibility -->
     <string name="a11y_calendar_previous_month">前の月</string>
     <string name="a11y_calendar_next_month">次の月</string>
@@ -312,6 +410,7 @@
     <string name="a11y_day_cell_today">%1$d日、今日</string>
     <string name="a11y_day_cell_selected">%1$d日、選択中</string>
     <string name="a11y_day_cell_has_events">%1$d日、予定あり</string>
+    <string name="a11y_long_press_for_options">長押しで操作メニューを表示</string>
 
     <!-- Auth -->
     <string name="auth_login_title">ログイン</string>

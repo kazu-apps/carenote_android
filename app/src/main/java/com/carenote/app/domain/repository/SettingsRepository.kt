@@ -45,5 +45,7 @@ interface SettingsRepository {
 
     suspend fun updateBiometricEnabled(enabled: Boolean): Result<Unit, DomainError>
 
+    suspend fun updateDynamicColor(enabled: Boolean): Result<Unit, DomainError>
+
     suspend fun resetToDefaults(): Result<Unit, DomainError>
 }

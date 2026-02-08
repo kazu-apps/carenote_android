@@ -9,16 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.core.util.Consumer
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -31,7 +27,7 @@ import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SettingsRepository
-import com.carenote.app.ui.navigation.BottomNavigationBar
+import com.carenote.app.ui.navigation.AdaptiveNavigationScaffold
 import com.carenote.app.ui.navigation.CareNoteNavHost
 import com.carenote.app.ui.navigation.Screen
 import com.carenote.app.ui.theme.CareNoteTheme
@@ -92,7 +88,7 @@ class MainActivity : AppCompatActivity() {
 
             val authenticated by isAuthenticated
 
-            CareNoteTheme(darkTheme = darkTheme) {
+            CareNoteTheme(darkTheme = darkTheme, useDynamicColor = settings.useDynamicColor) {
                 var permissionRequested by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
@@ -140,17 +136,16 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        bottomBar = {
-                            if (showBottomBar) {
-                                BottomNavigationBar(navController = navController)
-                            }
+                    if (showBottomBar) {
+                        AdaptiveNavigationScaffold(navController = navController) {
+                            CareNoteNavHost(
+                                navController = navController,
+                                startDestination = startDestination
+                            )
                         }
-                    ) { innerPadding ->
+                    } else {
                         CareNoteNavHost(
                             navController = navController,
-                            modifier = Modifier.padding(innerPadding),
                             startDestination = startDestination
                         )
                     }

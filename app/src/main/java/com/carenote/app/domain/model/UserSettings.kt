@@ -39,5 +39,8 @@ data class UserSettings(
     val lastSyncTime: LocalDateTime? = null,
 
     // セキュリティ設定
-    val biometricEnabled: Boolean = false
+    val biometricEnabled: Boolean = false,
+
+    // テーマ拡張設定
+    val useDynamicColor: Boolean = false
 )

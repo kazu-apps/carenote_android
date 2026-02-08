@@ -6,6 +6,7 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.User
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeCareRecipientRepository
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.util.SnackbarEvent
@@ -37,6 +38,7 @@ class SettingsViewModelUpdateTest {
     private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
+    private lateinit var careRecipientRepository: FakeCareRecipientRepository
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -45,6 +47,7 @@ class SettingsViewModelUpdateTest {
         settingsRepository = FakeSettingsRepository()
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
+        careRecipientRepository = FakeCareRecipientRepository()
     }
 
     @After
@@ -53,7 +56,7 @@ class SettingsViewModelUpdateTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler)
+        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler, careRecipientRepository)
     }
 
     // --- 汎用パターン: 成功時 Snackbar ---
@@ -227,6 +230,47 @@ class SettingsViewModelUpdateTest {
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(
                 R.string.settings_saved,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    // --- toggleDynamicColor パターン ---
+
+    @Test
+    fun `toggleDynamicColor success shows saved snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleDynamicColor(true)
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.settings_saved,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `toggleDynamicColor failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        settingsRepository.shouldFail = true
+
+        viewModel.toggleDynamicColor(true)
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.settings_error_save_failed,
                 (event as SnackbarEvent.WithResId).messageResId
             )
         }

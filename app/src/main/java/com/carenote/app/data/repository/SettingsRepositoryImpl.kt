@@ -238,6 +238,17 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateDynamicColor(
+        enabled: Boolean
+    ): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to save dynamic color setting", it) }
+        ) {
+            dataSource.updateDynamicColor(enabled)
+            Timber.d("Dynamic color updated: $enabled")
+        }
+    }
+
     override suspend fun resetToDefaults(): Result<Unit, DomainError> {
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to reset settings", it) }

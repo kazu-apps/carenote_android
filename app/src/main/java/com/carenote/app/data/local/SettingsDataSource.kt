@@ -49,6 +49,7 @@ class SettingsDataSource @Inject constructor(
         const val SYNC_ENABLED = "sync_enabled"
         const val LAST_SYNC_TIME = "last_sync_time"
         const val BIOMETRIC_ENABLED = "biometric_enabled"
+        const val DYNAMIC_COLOR = "dynamic_color"
     }
 
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -148,6 +149,10 @@ class SettingsDataSource @Inject constructor(
             biometricEnabled = prefs.getBoolean(
                 PreferencesKeys.BIOMETRIC_ENABLED,
                 false
+            ),
+            useDynamicColor = prefs.getBoolean(
+                PreferencesKeys.DYNAMIC_COLOR,
+                false
             )
         )
     }
@@ -216,6 +221,10 @@ class SettingsDataSource @Inject constructor(
 
     suspend fun updateBiometricEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(PreferencesKeys.BIOMETRIC_ENABLED, enabled).apply()
+    }
+
+    suspend fun updateDynamicColor(enabled: Boolean) {
+        prefs.edit().putBoolean(PreferencesKeys.DYNAMIC_COLOR, enabled).apply()
     }
 
     /**

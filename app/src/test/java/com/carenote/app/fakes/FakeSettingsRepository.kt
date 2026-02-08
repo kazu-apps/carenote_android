@@ -231,6 +231,16 @@ class FakeSettingsRepository : SettingsRepository {
         return Result.Success(Unit)
     }
 
+    override suspend fun updateDynamicColor(
+        enabled: Boolean
+    ): Result<Unit, DomainError> {
+        if (shouldFail) {
+            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        }
+        settings.value = settings.value.copy(useDynamicColor = enabled)
+        return Result.Success(Unit)
+    }
+
     override suspend fun updateSyncEnabled(
         enabled: Boolean
     ): Result<Unit, DomainError> {

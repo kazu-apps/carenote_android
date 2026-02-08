@@ -8,6 +8,7 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeCareRecipientRepository
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.util.LocaleManager
@@ -26,6 +27,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,6 +39,7 @@ class SettingsViewModelTest {
     private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
+    private lateinit var careRecipientRepository: FakeCareRecipientRepository
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -45,6 +48,7 @@ class SettingsViewModelTest {
         settingsRepository = FakeSettingsRepository()
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
+        careRecipientRepository = FakeCareRecipientRepository()
     }
 
     @After
@@ -53,7 +57,7 @@ class SettingsViewModelTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler)
+        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler, careRecipientRepository)
     }
 
     @Test
@@ -415,6 +419,54 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `toggleDynamicColor true updates state`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleDynamicColor(true)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertTrue(settings.useDynamicColor)
+        }
+    }
+
+    @Test
+    fun `toggleDynamicColor false updates state`() = runTest(testDispatcher) {
+        settingsRepository.setSettings(UserSettings(useDynamicColor = true))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleDynamicColor(false)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertFalse(settings.useDynamicColor)
+        }
+    }
+
+    @Test
+    fun `toggleDynamicColor failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        settingsRepository.shouldFail = true
+
+        viewModel.toggleDynamicColor(true)
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_error_save_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
     fun `toggleBiometricEnabled true updates state`() = runTest(testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -497,6 +549,210 @@ class SettingsViewModelTest {
             assertEquals(40, settings.pulseLow)
             assertEquals(7, settings.morningHour)
             assertEquals(30, settings.morningMinute)
+        }
+    }
+
+    // --- Account Management Tests ---
+
+    @Test
+    fun `signOut success clears user and shows snackbar`() = runTest(testDispatcher) {
+        authRepository.setCurrentUser(
+            com.carenote.app.domain.model.User(
+                uid = "test-uid",
+                email = "test@example.com",
+                name = "Test",
+                createdAt = java.time.LocalDateTime.now()
+            )
+        )
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.isLoggedIn.value)
+
+        viewModel.signOut()
+        advanceUntilIdle()
+
+        viewModel.isLoggedIn.test {
+            advanceUntilIdle()
+            assertFalse(expectMostRecentItem())
+        }
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_signed_out, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `signOut failure shows error snackbar`() = runTest(testDispatcher) {
+        authRepository.setCurrentUser(
+            com.carenote.app.domain.model.User(
+                uid = "test-uid",
+                email = "test@example.com",
+                name = "Test",
+                createdAt = java.time.LocalDateTime.now()
+            )
+        )
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        authRepository.shouldFail = true
+
+        viewModel.signOut()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_sign_out_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `changePassword success shows snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.changePassword("oldpass", "newpassword")
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_password_changed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `changePassword failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Reauthenticate succeeds but updatePassword fails
+        // We need a more nuanced approach: first call succeeds, second fails
+        // Since FakeAuthRepository uses a single shouldFail flag, we test the case where
+        // reauthenticate fails (which is the more critical security path)
+        authRepository.shouldFail = true
+
+        viewModel.changePassword("oldpass", "newpassword")
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_reauthenticate_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `deleteAccount success clears user and shows snackbar`() = runTest(testDispatcher) {
+        authRepository.setCurrentUser(
+            com.carenote.app.domain.model.User(
+                uid = "test-uid",
+                email = "test@example.com",
+                name = "Test",
+                createdAt = java.time.LocalDateTime.now()
+            )
+        )
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.isLoggedIn.value)
+
+        viewModel.deleteAccount("password")
+        advanceUntilIdle()
+
+        viewModel.isLoggedIn.test {
+            advanceUntilIdle()
+            assertFalse(expectMostRecentItem())
+        }
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_account_deleted, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `deleteAccount failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        authRepository.shouldFail = true
+
+        viewModel.deleteAccount("password")
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_reauthenticate_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `sendEmailVerification success shows snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.sendEmailVerification()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_email_verification_sent, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `sendEmailVerification failure shows error snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        authRepository.shouldFail = true
+
+        viewModel.sendEmailVerification()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_email_verification_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `currentUser emits user when logged in`() = runTest(testDispatcher) {
+        val user = com.carenote.app.domain.model.User(
+            uid = "test-uid",
+            email = "test@example.com",
+            name = "Test User",
+            createdAt = java.time.LocalDateTime.now(),
+            isEmailVerified = true
+        )
+        authRepository.setCurrentUser(user)
+        viewModel = createViewModel()
+
+        viewModel.currentUser.test {
+            advanceUntilIdle()
+            val currentUser = expectMostRecentItem()
+            assertEquals("test-uid", currentUser?.uid)
+            assertTrue(currentUser?.isEmailVerified == true)
+        }
+    }
+
+    @Test
+    fun `currentUser emits null when not logged in`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+
+        viewModel.currentUser.test {
+            advanceUntilIdle()
+            val currentUser = expectMostRecentItem()
+            assertNull(currentUser)
         }
     }
 }

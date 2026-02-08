@@ -13,8 +13,10 @@ import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
+import com.carenote.app.domain.model.User
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
+import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.SnackbarController
@@ -33,7 +35,8 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val authRepository: AuthRepository,
-    private val syncWorkScheduler: SyncWorkSchedulerInterface
+    private val syncWorkScheduler: SyncWorkSchedulerInterface,
+    private val careRecipientRepository: CareRecipientRepository
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -62,6 +65,18 @@ class SettingsViewModel @Inject constructor(
             initialValue = authRepository.getCurrentUser() != null
         )
 
+    /** 現在のユーザー（メール確認状態の判定用） */
+    val currentUser: StateFlow<User?> = authRepository.currentUser
+        .catch { e ->
+            Timber.w("Failed to observe current user: $e")
+            emit(null)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
+            initialValue = authRepository.getCurrentUser()
+        )
+
     /** 同期中かどうか */
     val isSyncing: StateFlow<Boolean> = combine(
         syncWorkScheduler.getSyncWorkInfo().asFlow(),
@@ -77,6 +92,18 @@ class SettingsViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
         initialValue = false
     )
+
+    val careRecipientName: StateFlow<String?> = careRecipientRepository.getCareRecipient()
+        .map { it?.name }
+        .catch { e ->
+            Timber.w("Failed to observe care recipient: $e")
+            emit(null)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
+            initialValue = null
+        )
 
     private fun updateSetting(
         logTag: String,
@@ -141,6 +168,10 @@ class SettingsViewModel @Inject constructor(
         logTag = "Biometric enabled updated: $enabled"
     ) { settingsRepository.updateBiometricEnabled(enabled) }
 
+    fun toggleDynamicColor(enabled: Boolean) = updateSetting(
+        logTag = "Dynamic color updated: $enabled"
+    ) { settingsRepository.updateDynamicColor(enabled) }
+
     fun toggleSyncEnabled(enabled: Boolean) = updateSetting(
         logTag = "Sync enabled updated: $enabled",
         onSuccess = {
@@ -165,6 +196,76 @@ class SettingsViewModel @Inject constructor(
         syncWorkScheduler.triggerImmediateSync()
         viewModelScope.launch {
             snackbarController.showMessage(R.string.settings_sync_started)
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+                .onSuccess {
+                    Timber.d("User signed out")
+                    snackbarController.showMessage(R.string.settings_signed_out)
+                }
+                .onFailure { error ->
+                    Timber.w("Sign out failed: $error")
+                    snackbarController.showMessage(R.string.settings_sign_out_failed)
+                }
+        }
+    }
+
+    fun changePassword(currentPassword: String, newPassword: String) {
+        viewModelScope.launch {
+            authRepository.reauthenticate(currentPassword)
+                .onSuccess {
+                    authRepository.updatePassword(newPassword)
+                        .onSuccess {
+                            Timber.d("Password changed")
+                            snackbarController.showMessage(R.string.settings_password_changed)
+                        }
+                        .onFailure { error ->
+                            Timber.w("Password update failed: $error")
+                            snackbarController.showMessage(R.string.settings_password_change_failed)
+                        }
+                }
+                .onFailure { error ->
+                    Timber.w("Reauthentication failed for password change: $error")
+                    snackbarController.showMessage(R.string.settings_reauthenticate_failed)
+                }
+        }
+    }
+
+    fun deleteAccount(password: String) {
+        viewModelScope.launch {
+            authRepository.reauthenticate(password)
+                .onSuccess {
+                    authRepository.deleteAccount()
+                        .onSuccess {
+                            Timber.d("Account deleted")
+                            snackbarController.showMessage(R.string.settings_account_deleted)
+                        }
+                        .onFailure { error ->
+                            Timber.w("Account deletion failed: $error")
+                            snackbarController.showMessage(R.string.settings_account_delete_failed)
+                        }
+                }
+                .onFailure { error ->
+                    Timber.w("Reauthentication failed for account deletion: $error")
+                    snackbarController.showMessage(R.string.settings_reauthenticate_failed)
+                }
+        }
+    }
+
+    fun sendEmailVerification() {
+        viewModelScope.launch {
+            authRepository.sendEmailVerification()
+                .onSuccess {
+                    Timber.d("Email verification sent")
+                    snackbarController.showMessage(R.string.settings_email_verification_sent)
+                }
+                .onFailure { error ->
+                    Timber.w("Email verification failed: $error")
+                    snackbarController.showMessage(R.string.settings_email_verification_failed)
+                }
         }
     }
 }

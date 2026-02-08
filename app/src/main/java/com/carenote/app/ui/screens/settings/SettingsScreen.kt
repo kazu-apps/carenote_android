@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import android.os.Build
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -29,6 +30,8 @@ import com.carenote.app.ui.screens.settings.sections.HealthThresholdSection
 import com.carenote.app.ui.screens.settings.sections.LanguageSection
 import com.carenote.app.ui.screens.settings.sections.MedicationTimeSection
 import com.carenote.app.ui.screens.settings.sections.NotificationSection
+import com.carenote.app.ui.screens.settings.sections.AccountSection
+import com.carenote.app.ui.screens.settings.sections.CareRecipientSection
 import com.carenote.app.ui.screens.settings.sections.SecuritySection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
 import com.carenote.app.ui.util.BiometricHelper
@@ -42,11 +45,14 @@ import java.time.format.FormatStyle
 fun SettingsScreen(
     onNavigateToPrivacyPolicy: () -> Unit = {},
     onNavigateToTermsOfService: () -> Unit = {},
+    onNavigateToCareRecipient: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
+    val careRecipientName by viewModel.careRecipientName.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var dialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
@@ -80,9 +86,21 @@ fun SettingsScreen(
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
             item {
+                CareRecipientSection(
+                    careRecipientName = careRecipientName,
+                    onProfileClick = onNavigateToCareRecipient
+                )
+            }
+            item {
+                val isDynamicColorAvailable = remember {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                }
                 ThemeSection(
                     themeMode = settings.themeMode,
-                    onThemeModeSelected = { viewModel.updateThemeMode(it) }
+                    onThemeModeSelected = { viewModel.updateThemeMode(it) },
+                    useDynamicColor = settings.useDynamicColor,
+                    onDynamicColorChange = { viewModel.toggleDynamicColor(it) },
+                    isDynamicColorAvailable = isDynamicColorAvailable
                 )
             }
             item {
@@ -112,6 +130,24 @@ fun SettingsScreen(
                     biometricEnabled = settings.biometricEnabled,
                     onBiometricEnabledChange = { viewModel.toggleBiometricEnabled(it) },
                     isBiometricAvailable = isBiometricAvailable
+                )
+            }
+            item {
+                AccountSection(
+                    isLoggedIn = isLoggedIn,
+                    currentUser = currentUser,
+                    onChangePasswordClick = {
+                        dialogState = SettingsDialogState.ChangePassword
+                    },
+                    onSendEmailVerificationClick = {
+                        viewModel.sendEmailVerification()
+                    },
+                    onSignOutClick = {
+                        dialogState = SettingsDialogState.SignOutConfirm
+                    },
+                    onDeleteAccountClick = {
+                        dialogState = SettingsDialogState.DeleteAccountConfirm
+                    }
                 )
             }
             item {
