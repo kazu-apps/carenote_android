@@ -1,5 +1,6 @@
 package com.carenote.app.fakes
 
+import androidx.paging.PagingData
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.HealthRecord
@@ -39,6 +40,16 @@ class FakeHealthRecordRepository : HealthRecordRepository {
             list.filter { record ->
                 !record.recordedAt.isBefore(start) && !record.recordedAt.isAfter(end)
             }
+        }
+    }
+
+    override fun getPagedRecords(query: String): Flow<PagingData<HealthRecord>> {
+        return records.map { list ->
+            val filtered = if (query.isBlank()) list
+            else list.filter { record ->
+                record.conditionNote.contains(query, ignoreCase = true)
+            }
+            PagingData.from(filtered)
         }
     }
 

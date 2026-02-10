@@ -2,13 +2,17 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 35 Dynamic Color + テーマ拡張 完了
+## 現在のタスク: v4.0 Phase 10 PagingSource 展開（Note + HealthRecord） 完了
 
-Android 12+ の Dynamic Color（Material You）対応を追加。`useDynamicColor: Boolean` を UserSettings に追加し、Settings 画面のテーマセクションで ON/OFF 切替可能に。非対応端末では自動的にスイッチ無効化＋説明表示。CareNoteColors（独自ブランドカラー）は Dynamic Color 有効時もそのまま維持。Preview 安全ガード（`!view.isInEditMode`）でプレビュー時の Dynamic Color クラッシュを防止。ビルド成功、全テスト PASS。
+Phase 9 の Task Paging 3 パターンを Note と HealthRecord に横展開。
+- **Note**: 全レイヤー PagingSource 化（DAO `getPagedNotes`/`getPagedNotesByTag` → Repository `searchPagedNotes` → ViewModel `Flow<PagingData<Note>>` + `cachedIn` → Screen `collectAsLazyPagingItems` + `LoadState`）。`_refreshTrigger`/`_isRefreshing`/`refresh()` 削除。
+- **HealthRecord**: ハイブリッド実装。LIST モード用に `pagedRecords: Flow<PagingData<HealthRecord>>` を追加。既存 `records: StateFlow<UiState<List<HealthRecord>>>` は GRAPH/エクスポート用に維持。
+- **CalendarEvent**: 対象外（月別グループ化 UI と PagingSource が非互換）。
+- **テスト**: NotesViewModelTest を `UnconfinedTestDispatcher` + Repository 直接検証パターンに全面書き換え。HealthRecordsViewModelTest は変更不要。
 
 ## 次のアクション
 
-1. `/task-driver` で Phase 30 から順に実行
+1. `/task-driver` で v4.0 Phase 11（BottomNav Badge）から順に実行
 2. 各フェーズ完了後にビルド・テスト確認
 3. リリース前に実機テスト + APK 検証
 
@@ -265,6 +269,197 @@ Macrobenchmark + Baseline Profile モジュール追加（`baselineprofile/` + `
 
 ---
 
+## コードベース監査リサーチサマリー (2026-02-08)
+
+Agent Teams 3並列調査の統合結果:
+
+**researcher**: デッドコード4件（BottomNavigationBar.kt、firebase-analytics依存、placeholder_coming_soon/common_photo_add文字列）。@Suppress 7箇所（USELESS_CAST 4, UNCHECKED_CAST 2, UNUSED_PARAMETER 1）。TODO/FIXME 0件。コメントアウトコード 0件。
+
+**architect**: 写真 parentId 更新の非トランザクション設計（delete→add 2操作）がデータ整合性リスク。Note/HealthRecord の cascading delete で写真削除結果未チェック。ExportState リセット機構あり（`resetExportState()`）だが Screen 側呼出し要確認。MedicationLogSyncer の LSP 違反は設計負債だが現行フローで安全（`syncForMedication()` で完全バイパス）。
+
+**critic**: MedicationLogSyncer の UnsupportedOperationException は KDoc で明記済み＋実際の呼び出しフロー（`FirestoreSyncRepositoryImpl.syncAllMedicationLogs()`）で基底クラス `sync()` は呼ばれない → **仕様通り**。SyncWorker careRecipientId null は `Result.failure()` で終了しリトライしない → **仕様通り**。isDirty は BackHandler チェック時のみ呼ばれ data class copy/equals は軽量 → **許容範囲**。CareRecipientViewModel の mutable var は `viewModelScope.launch` = Dispatchers.Main で単一スレッド → **実質安全**。isSaving 未リセットは画面遷移で VM 破棄されるため **実質影響なし**。
+
+### Phase 36: デッドコード削除 + 未使用リソース整理 - DONE
+デッドコード4件と未使用リソースを安全に削除。@Deprecated BottomNavigationBar.kt ファイル削除、firebase-analytics 依存削除、未使用 strings.xml エントリ 2件（`common_photo_add`, `placeholder_coming_soon`）削除。ビルド成功、全テスト PASS。
+- 削除: `BottomNavigationBar.kt`
+- 変更: `app/build.gradle.kts`(firebase-analytics削除), `strings.xml` JP/EN(2エントリ削除)
+- 依存: なし
+
+### Phase 37: 写真 parentId 更新のトランザクション化 - DONE
+写真 parentId 更新を `deletePhoto` + `addPhoto` の非アトミック2操作から `PhotoDao.updateParentId()` 単一 UPDATE クエリに変更。`PhotoRepository.updatePhotosParentId()` メソッドを追加し、両 ViewModel の `updatePhotosParentId()` を安全な単一操作に置換。テスト 3 件追加。
+- 変更: `PhotoDao.kt`(updateParentId追加), `PhotoRepository.kt`/`Impl`(updatePhotosParentId追加), `AddEditNoteViewModel.kt`(updatePhotosParentId修正), `AddEditHealthRecordViewModel.kt`(同修正), `FakePhotoRepository.kt`(updatePhotosParentId追加), `PhotoRepositoryImplTest.kt`(+3テスト)
+- ビルド成功、全テスト PASS
+
+### Phase 38: cascading delete の写真削除結果チェック - DONE
+`NoteRepositoryImpl.deleteNote()` と `HealthRecordRepositoryImpl.deleteRecord()` で `photoRepository.deletePhotosForParent()` の Result に `.onFailure { Timber.w(...) }` を追加。写真削除失敗時も親エンティティ削除を続行（ベストエフォート）。テスト 2 件追加（写真削除失敗時に親削除が成功することを検証）。
+- 変更: `NoteRepositoryImpl.kt`(Timber import + onFailure), `HealthRecordRepositoryImpl.kt`(同), `NoteRepositoryImplTest.kt`(+1テスト), `HealthRecordRepositoryImplTest.kt`(+1テスト)
+- ビルド成功、全テスト PASS
+
+### Phase 39: ExportState リセット + @Suppress 整理 - DONE
+(a) `HealthRecordsScreen.kt` の `LaunchedEffect(exportState)` に `ExportState.Error` 分岐を追加し `resetExportState()` を確実に呼ぶように修正。`when` 式に変更して全分岐を明示化。
+(b) `DateTimeFormatters.kt` の `formatDateShort()` から `@Suppress("UNUSED_PARAMETER")` を削除。`M/d` フォーマットはロケール非依存だが他関数との API 統一性のため `locale` パラメータは保持。KDoc に理由を記載。
+(c) 4 ViewModel（Calendar, Tasks, HealthRecords, Notes）の `@Suppress("USELESS_CAST")` に `// Required: stateIn needs explicit UiState<List<T>> type` コメント追記。
+(d) `HealthRecordsViewModelTest.kt` に ExportState.Error→Idle リセットテスト追加（Phase 40 から前倒し）。
+- 変更: `HealthRecordsScreen.kt`, `DateTimeFormatters.kt`, `CalendarViewModel.kt`, `TasksViewModel.kt`, `HealthRecordsViewModel.kt`, `NotesViewModel.kt`, `HealthRecordsViewModelTest.kt`
+- ビルド成功、全テスト PASS
+
+### Phase 40: テスト補強（エクスポート） - DONE
+Phase 39 に統合して実施済み。ExportState リセットテストは Phase 39 で追加完了。
+
+---
+
+## v4.0 リサーチサマリー (2026-02-08)
+
+Agent Teams 3並列調査の統合結果:
+
+**researcher**: 実装ファイル 221 / 23,237行、テスト 98ファイル / 24,052行 / 1,239テスト。最大ファイル 484行（800行超=0）。TODO/FIXME=0。@Suppress 8箇所（全て妥当・文書化済み）。依存関係は Phase 25 で全て最新化済み。Layer boundary 違反 13箇所（ui→data import）。テスト未存在モジュール 6件（ImageCompressor, CareRecipientRepositoryImpl, FirebaseStorageRepositoryImpl, CareNoteMessagingService, DatabasePassphraseManager, DatabaseEncryptionMigrator）。libs.versions.toml に firebase-analytics カタログエントリ残存（未使用）。
+
+**architect**: 優先順位付け — Tier 1（CI/CD, AGP更新, R8 full mode, Layer修正, Migration squash, Incremental Sync, BottomNav Badge, グラフa11y）、Tier 2（Firestoreリストア, PagingSource, タイムライン, スクリーンショットテスト, material-icons最適化, cache cleanup, 在庫管理, 緊急連絡先）、Tier 3（Root検出, Cert Pinning, Billing, Glance）。PagingSource は DAO+Repo+VM+Screen+Fake+テスト=約40ファイル変更で2フェーズに分割推奨。
+
+**critic**: PII ログ残存（NotificationHelper:174, MedicationReminderWorker:63 の medicationName — Logcat のみだが薬品名は機微情報）。Layer boundary 13箇所の内訳=9 interface + 4 concrete class（ImageCompressor, CsvExporter, PdfExporter）。Room v12 は versionCode=1（未リリース）なので squash 安全。リリースブロッカー=問い合わせメール未確定。Deep link `carenote://` は world-accessible だがローカル Room データのみで低リスク。ImageCompressor cache に eviction 機構なし。
+
+### v4.0 ロードマップ
+
+#### Part A: インフラ基盤（Phase 1-5）
+
+### Phase 1: GitHub Actions CI/CD - DONE
+`.github/workflows/ci.yml` 新規作成。Job 1: Build + Unit Test (JaCoCo 80% LINE) + Detekt 2.0.0-alpha.2（全 PR + master push）。Job 2: E2E Test（master push のみ、android-emulator-runner）。`concurrency` で同一 PR の重複実行キャンセル。`dorny/test-reporter` で PR にテスト結果表示。compileSdk 36 は `sdkmanager` で明示インストール。`:app:` プレフィックスで baselineprofile/benchmark モジュールを除外。
+- 新規: `.github/workflows/ci.yml`
+- 依存: なし
+
+### Phase 2: targetSdk 36 + 依存整理 - DONE
+targetSdk 35→36。`enableOnBackInvokedCallback="true"` + `tools:targetApi="36"` をマニフェストに追加。`libs.versions.toml` から未使用 `firebase-analytics` カタログエントリ削除。AGP 9.1.0 は alpha のみで stable 未リリースのため 9.0.0 を維持。Robolectric SDK 36 は Java 21 必須のため `robolectric.properties` で `sdk=35` にピン留め。baselineprofile/benchmark の targetSdk も 36 に更新。
+- 変更: `app/build.gradle.kts`, `baselineprofile/build.gradle.kts`, `benchmark/build.gradle.kts`, `libs.versions.toml`, `AndroidManifest.xml`
+- 新規: `app/src/test/resources/robolectric.properties`
+- 依存: なし
+
+### Phase 3: R8 full mode + リリースビルド検証 - DONE
+`gradle.properties` に `android.enableR8.fullMode=true` 明示追加（AGP 9.0 デフォルト有効、ドキュメンテーション目的）。`backup_rules.xml` / `data_extraction_rules.xml` の不正な `<exclude domain="database" path="."/>` を削除（database domain 未 include のため exclude は lint エラー）。ProGuard rules は既に R8 full mode 互換で変更不要。リリースビルド成功、全ユニットテスト PASS。
+- 変更: `gradle.properties`, `backup_rules.xml`, `data_extraction_rules.xml`
+- 依存: Phase 2
+
+### Phase 4: PII ログ修正 + テストカバレッジ補強 - DONE
+(a) `NotificationHelper.kt`(2箇所) と `MedicationReminderWorker.kt`(1箇所) の medicationName/taskTitle ログを除去。通知 UI テキストは変更なし。(b) `CareRecipientRepositoryImplTest.kt` 新規作成（6テスト、MockK DAO + 実 Mapper）。(c) `CareNoteMessagingService` テスト はスコープ外（ログのみ stub 実装、ROI 低）。
+- 変更: `NotificationHelper.kt`, `MedicationReminderWorker.kt`
+- 新規: `CareRecipientRepositoryImplTest.kt`
+- ビルド成功、全テスト PASS
+
+### Phase 5: Layer boundary 修正（ui→data 直接参照解消） - DONE
+13箇所の ui→data import を Clean Architecture 準拠に修正。3 Scheduler interface を domain 層に移動、2 concrete class（ImageCompressor, CsvExporter/PdfExporter）に domain interface を抽出。ExportState は既に ui 層配置で変更不要。
+- 移動: `SyncWorkSchedulerInterface.kt`, `MedicationReminderSchedulerInterface.kt`, `TaskReminderSchedulerInterface.kt` → `domain/repository/`
+- 新規: `ImageCompressorInterface.kt`, `HealthRecordExporterInterface.kt`（CSV/PDF 2 interface）
+- 変更: AppModule.kt（DI バインディング 3件追加）, WorkerModule.kt（import更新）, 計 30+ ファイルの import 更新
+- ビルド成功、全テスト PASS
+
+### Phase 6: Room Migration squash（v12 → baseline） - DONE
+`Migrations.kt` + `MigrationsTest.kt` 削除、スキーマ JSON 1-11 削除、`DatabaseModule.kt` に `fallbackToDestructiveMigration(dropAllTables = true)` 追加。v12 を baseline に。
+
+#### Part B: 同期・データ基盤（Phase 7-10）
+
+### Phase 7: Incremental Sync（updatedAt フィルター） - DONE
+5 DAO に `getModifiedSince()` 追加。`EntitySyncer` Push 側は `getModifiedSince()` で DB レベルフィルタリング、Pull 側は `whereGreaterThan("updatedAt", lastSyncTime)` でFirestore クエリ最適化。`MedicationLogSyncer` は `recordedAt` フィルター追加。`SyncerConfig` / `ConfigDrivenEntitySyncer` に `getModifiedSince` 委譲追加。テスト 6 件追加。
+- 変更: 5 DAO, `EntitySyncer.kt`, `SyncerConfig.kt`, `ConfigDrivenEntitySyncer.kt`, `MedicationLogSyncer.kt`, `SyncModule.kt`, `EntitySyncerTest.kt`, `TestEntitySyncer.kt`, `SyncerConfigTest.kt`
+
+### Phase 8: Firestore リストアフロー（機種変更対応） - DONE
+ログイン/登録成功時に `triggerImmediateSync()` を1行追加。既存インフラ（`lastSyncTime=null` → 全データ pull）を活用し最小変更で実現。テスト 2 件追加（`triggerImmediateSyncCallCount == 1` 検証）。
+- 変更: `LoginFormHandler.kt`, `RegisterFormHandler.kt`, `LoginFormHandlerTest.kt`, `RegisterFormHandlerTest.kt`
+- ビルド成功、全テスト PASS
+
+### Phase 9: PagingSource 導入（Medication + Task） - DONE
+Task に Paging 3 導入（DAO `PagingSource<Int, TaskEntity>` 3クエリ + Repository `Pager`+`PagingConfig` + ViewModel `Flow<PagingData<Task>>`+`cachedIn` + Screen `collectAsLazyPagingItems`+`LoadState`）。Medication は DB レベル検索のみ（`MedicationDao.searchMedications()` LIKE クエリ + `MedicationViewModel` の `flatMapLatest` を DB 委譲に変更）。テストは `cachedIn(viewModelScope)` の `UncompletedCoroutinesError` 回避のため Repository 直接検証パターンを採用。
+- 変更: `libs.versions.toml`, `build.gradle.kts`, `AppConfig.kt`, `TaskDao.kt`, `MedicationDao.kt`, `TaskRepository.kt`, `MedicationRepository.kt`, `TaskRepositoryImpl.kt`, `MedicationRepositoryImpl.kt`, `TasksViewModel.kt`, `TasksScreen.kt`, `MedicationViewModel.kt`, `FakeTaskRepository.kt`, `FakeMedicationRepository.kt`, `TasksViewModelTest.kt`
+- 依存: Phase 7
+
+### Phase 10: PagingSource 展開（Note + HealthRecord） - DONE
+Phase 9 パターンを Note と HealthRecord に横展開。Note は全レイヤー PagingSource 化。HealthRecord はハイブリッド（LIST=PagingData, GRAPH/Export=既存 UiState）。CalendarEvent は月別グループ化 UI と非互換のため対象外。NotesViewModelTest を UnconfinedTestDispatcher + Repository 直接検証パターンに書き換え。
+- 変更: `NoteDao.kt`, `HealthRecordDao.kt`, `NoteRepository.kt`, `HealthRecordRepository.kt`, `NoteRepositoryImpl.kt`, `HealthRecordRepositoryImpl.kt`, `NotesViewModel.kt`, `NotesScreen.kt`, `HealthRecordsViewModel.kt`, `HealthRecordsScreen.kt`, `FakeNoteRepository.kt`, `FakeHealthRecordRepository.kt`, `NotesViewModelTest.kt`
+- 依存: Phase 9
+
+#### Part C: UX 改善（Phase 11-17）
+
+### Phase 11: BottomNav Badge（未完了タスク数表示） - PENDING
+`NavigationSuiteItem` の `badge` パラメータを活用。`TaskDao.getIncompleteTaskCount()` Flow で未完了数をリアルタイム表示。
+- 対象: 3-4 files（AdaptiveNavigationScaffold, TaskDao, AppModule/DI, MainActivity）
+- 依存: なし
+
+### Phase 12: HealthRecords グラフ a11y 対応 - PENDING
+Canvas の `semantics` + `contentDescription` 追加。TalkBack でグラフデータを読み上げ可能に。
+- 対象: 3-5 files（HealthRecordGraphContent, 関連コンポーネント）
+- 依存: なし
+
+### Phase 13: ImageCompressor cache クリーンアップ - PENDING
+`cacheDir/photos/` の eviction 機構追加。古いキャッシュファイルの定期削除 or サイズ上限。
+- 対象: 2-3 files（ImageCompressor, AppConfig）
+- 依存: なし
+
+### Phase 14: material-icons-extended 最適化 - PENDING
+extended 専用 11 アイコンを custom drawable (XML Vector) に変換し、material-icons-extended 依存を削除。ビルド時間改善。
+- 対象: 5-8 files（drawable XML 11個新規, build.gradle.kts, 使用箇所の import 変更）
+- 依存: なし
+
+### Phase 15: 統合タイムラインビュー - PENDING
+全 Repository 横断の統合 UseCase 新規作成。日ごとの全イベント（服薬、カレンダー、タスク、健康記録、メモ）を統合表示する新画面。
+- 対象: 6-10 files（UseCase, ViewModel, Screen, Screen.kt ルート追加, CareNoteNavHost）
+- 依存: Phase 10
+
+### Phase 16: 緊急連絡先 - PENDING
+新テーブル（EmergencyContact）+ 新画面 + Intent.ACTION_CALL で 1-tap ダイヤル。Room migration 追加。
+- 対象: 8-10 files
+- 依存: Phase 6
+
+### Phase 17: 服薬在庫管理 - PENDING
+Medication に在庫フィールド追加。服薬記録時に自動減算。残数少通知。Room migration 追加。
+- 対象: 6-8 files
+- 依存: Phase 6
+
+#### Part D: テスト高度化（Phase 18-20）
+
+### Phase 18: Roborazzi スクリーンショットテスト - PENDING
+Phase 22（v3.0）の Preview 基盤を活用。Roborazzi 導入 + 全画面 golden image 生成。CI 連携で回帰テスト。
+- 対象: 6-10 files（build 設定 + テストファイル群）
+- 依存: Phase 1
+
+### Phase 19: Macrobenchmark テスト拡張 - PENDING
+Phase 34（v3.0）の基盤を拡張。各画面遷移のフレームタイミング計測追加。
+- 対象: 3-5 files
+- 依存: なし
+
+### Phase 20: E2E テスト拡充（写真・エクスポートフロー） - PENDING
+写真添付フロー、PDF/CSV エクスポートフローの E2E テスト追加。
+- 対象: 5-8 files
+- 依存: なし
+
+#### Part E: セキュリティ強化（Phase 21-23）
+
+### Phase 21: Root 検出（Play Integrity API） - PENDING
+Play Integrity API でデバイス検証。Root 検出時の警告表示（ブロックではなく警告）。
+- 対象: 4-6 files
+- 依存: なし
+
+### Phase 22: Certificate Pinning - PENDING
+`network_security_config.xml` に Firestore / Firebase Auth の pin-set 追加。
+- 対象: 2-3 files（network_security_config.xml, AppConfig）
+- 依存: なし
+
+### Phase 23: Compose パフォーマンス監査 - PENDING
+Composition tracing で recomposition ホットスポットを特定。`derivedStateOf`, `remember`, `key` の最適化。
+- 対象: 3-8 files
+- 依存: なし
+
+#### Part F: 先進機能（Phase 24-25）
+
+### Phase 24: Glance ウィジェット（服薬リマインダー + 今日のタスク） - PENDING
+Glance 1.1.x 安定版でホーム画面ウィジェット。服薬状況と今日のタスクを表示。
+- 対象: 8-12 files（Glance WidgetReceiver, UI, build 設定）
+- 依存: なし
+
+### Phase 25: 依存関係アップグレード + CLAUDE.md 更新 - PENDING
+v4.0 完了時点の依存関係アップグレード（Kotlin 等）。CLAUDE.md に v4.0 の新規パターン・規約を反映。
+- 対象: 3-5 files
+- 依存: Phase 24（全フェーズ完了後）
+
+---
+
 ## 完了タスク
 
 | Item | 概要 | Status |
@@ -307,11 +502,11 @@ Macrobenchmark + Baseline Profile モジュール追加（`baselineprofile/` + `
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v12, SQLCipher 4.6.1 暗号化, sync_mappings テーブル, medication_logs.timing, tasks.recurrence/reminder カラム追加, medications.name インデックス, tasks(is_completed,created_at) 複合インデックス, care_recipients テーブル（v10→v11）, photos テーブル（v11→v12, parent_type+parent_id ポリモーフィック） |
+| Room DB | v12 (baseline, migration squash 済み), SQLCipher 4.6.1 暗号化, fallbackToDestructiveMigration, 9 Entity (Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, SyncMapping, CareRecipient, Photo) |
 | DB キー保存 | EncryptedSharedPreferences (Android Keystore AES256_GCM) |
 | 設定保存 | EncryptedSharedPreferences (`carenote_settings_prefs`) |
 | バックアップ除外 | DB, DB パスフレーズ prefs, 設定 prefs |
-| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Analytics) |
+| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage) |
 | Firebase プラグイン | google-services.json 存在時のみ適用（条件付き） |
 | 同期パターン | ConfigDrivenEntitySyncer + SyncerConfig（MedicationLogSyncer のみカスタム） |
 | Worker | SyncWorker (15分定期), MedicationReminderWorker (指定時刻) |
@@ -322,20 +517,20 @@ Macrobenchmark + Baseline Profile モジュール追加（`baselineprofile/` + `
 | 定数 | `AppConfig` オブジェクト（マジックナンバー禁止、UI 定数含む） |
 | Mapper 設計 | Local/Remote 分離維持（ADR-002 で統合しない判定） |
 | Enum パース | try-catch + フォールバック（NoteMapper, HealthRecordMapper, TaskMapper） |
+| Paging 3 | Task/Note/HealthRecord(LIST): `PagingSource<Int, Entity>` + `Pager(PagingConfig(pageSize=20))` + `cachedIn(viewModelScope)` + `collectAsLazyPagingItems()` + `LoadState`。HealthRecord(GRAPH/Export): 既存 `StateFlow<UiState<List<HealthRecord>>>` 維持。テストは `cachedIn` の `UncompletedCoroutinesError` 回避のため `asSnapshot()` 不使用、Repository 直接検証。Medication: DB検索のみ（PagingSource 非互換: タイミング別グルーピング UI）。CalendarEvent: 対象外（月別グループ化 UI と非互換） |
 | テストパターン | StandardTestDispatcher + Turbine + FakeRepository (MutableStateFlow) |
 | Robolectric | 4.16（Android SDK シャドウ、Compose UI Test） |
 | BugHunt 2026-02-06 | Agent Teams リサーチ: collectAsState 残存=0、strings.xml 不整合=0、isSyncing=正常。実バグ: todayLogs 日付固定, Long→Int, メインスレッド I/O |
 | v2.3 改善リサーチ 2026-02-06 | Agent Teams 3並列調査: コード品質=良好（800行超0, TODO 0, デッドコード0）、リスク=LOW（Coroutine安全, メモリリーク0, ProGuard完備）、UXギャップ=BackHandler未実装(5画面), onRetry=null(5画面), PullToRefresh無, 通知PendingIntent無, DatePicker重複3箇所, @Preview 0件, DBインデックス不足(medications,tasks) |
 | v3.0 リサーチ 2026-02-06 | Agent Teams 3並列調査: 依存関係=大幅に古い（Kotlin 2.0→2.3, AGP 8.7→9.0, Firebase BOM 33→34）、機能ギャップ=~~EditMedication未実装~~(Phase 26)/~~検索4画面未展開~~(Phase 27)/~~アカウント管理画面なし~~(Phase 28)/~~ケア対象者プロフィールなし~~(Phase 29)、セキュリティ=堅実（Firestore Rules要確認）、パフォーマンス=良好（将来Paging+BaselineProfile） |
+| コードベース監査 2026-02-08 | Agent Teams 3並列調査: デッドコード=4件（BottomNavigationBar, firebase-analytics, strings 2件）、バグ=写真parentId非トランザクション(HIGH)/cascading delete未チェック(HIGH)、誤検知=MedicationLogSyncer UnsupportedOp(仕様通り)/SyncWorker null(仕様通り)/isDirty性能(許容)/isSaving未リセット(VM破棄で無害)/CareRecipientVM mutableVar(Main単一スレッド) |
+| v4.0 リサーチ 2026-02-08 | Agent Teams 3並列調査: コード規模=221実装/98テスト/1,239テスト数、品質=TODO 0/最大484行/PII残存2箇所(LOW-MEDIUM)、アーキテクチャ負債=Layer boundary違反13箇所/Migration squash推奨(versionCode=1)、未テスト6モジュール、firebase-analyticsカタログ残存、ImageCompressor cache eviction なし |
 
 ## スコープ外 / 将来
 
-- **v4.0**: Google Play Billing（プレミアムサブスクリプション）
-- **v4.0**: FCM リモート通知実装（バックエンド構築と合わせて）, Firestore リストアフロー
-- **v4.0**: PagingSource（大量データ対応）, Incremental Sync（updatedAt フィルター）
-- **v4.0**: Root 検出, Certificate Pinning, material-icons-extended 最適化
-- **v4.0**: 統合タイムラインビュー（日ごとの全イベント統合表示）, 服薬在庫管理, 緊急連絡先
-- **v4.0**: BottomNav Badge（未完了タスク数表示）, HealthRecords グラフ a11y 対応
+- **v5.0**: Google Play Billing（プレミアムサブスクリプション）— BillingClient 8.1.0 + サーバーサイド検証が必要、外部依存大
+- **v5.0**: FCM リモート通知実装（Cloud Functions or バックエンド構築が前提）
+- **v5.0**: Wear OS 対応（Horologist + Health Services、ユーザーベース限定）
 - **手動**: スクリーンショット、フィーチャーグラフィック、プライバシーポリシー Web ホスティング
 - **手動**: Play Console メタデータ（データ安全性フォーム、コンテンツレーティング、ストア説明文）
 - **手動**: Firestore Security Rules の確認・設定（Firebase Console）

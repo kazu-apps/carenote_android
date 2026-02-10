@@ -39,9 +39,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.carenote.app.R
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
@@ -54,7 +57,6 @@ import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
 import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
-import com.carenote.app.ui.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,10 +65,10 @@ fun NotesScreen(
     onNavigateToEditNote: (Long) -> Unit = {},
     viewModel: NotesViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.notes.collectAsStateWithLifecycle()
+    val lazyPagingItems = viewModel.notes.collectAsLazyPagingItems()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteNote by remember { mutableStateOf<Note?>(null) }
     val context = LocalContext.current
@@ -109,34 +111,93 @@ fun NotesScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        when (val state = uiState) {
-            is UiState.Loading -> {
-                LoadingIndicator(modifier = Modifier.padding(innerPadding))
-            }
-            is UiState.Error -> {
-                ErrorDisplay(
-                    error = state.error,
-                    onRetry = { viewModel.refresh() },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            is UiState.Success -> {
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.fillMaxSize().padding(innerPadding)
-                ) {
-                    NoteListContent(
-                        notes = state.data,
-                        searchQuery = searchQuery,
-                        selectedTag = selectedTag,
-                        onSearchQueryChange = viewModel::updateSearchQuery,
-                        onTagSelect = viewModel::selectTag,
-                        onNoteClick = onNavigateToEditNote,
-                        onDeleteNote = { note -> deleteNote = note },
-                        onNavigateToAdd = onNavigateToAddNote,
-                        contentPadding = PaddingValues(bottom = 80.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { lazyPagingItems.refresh() },
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = 80.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item(key = "search_bar") {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = viewModel::updateSearchQuery,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = {
+                            Text(text = stringResource(R.string.notes_search))
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = null
+                            )
+                        },
+                        singleLine = true
                     )
+                }
+
+                item(key = "tag_filter") {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    TagFilterRow(
+                        selectedTag = selectedTag,
+                        onTagSelect = viewModel::selectTag
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                when (val refreshState = lazyPagingItems.loadState.refresh) {
+                    is LoadState.Loading -> {
+                        item(key = "loading") {
+                            LoadingIndicator()
+                        }
+                    }
+                    is LoadState.Error -> {
+                        item(key = "error") {
+                            ErrorDisplay(
+                                error = DomainError.DatabaseError(
+                                    refreshState.error.message ?: "Unknown error"
+                                ),
+                                onRetry = { lazyPagingItems.refresh() }
+                            )
+                        }
+                    }
+                    is LoadState.NotLoading -> {
+                        if (lazyPagingItems.itemCount == 0) {
+                            item(key = "empty_state") {
+                                EmptyState(
+                                    icon = Icons.Filled.NoteAlt,
+                                    message = stringResource(R.string.notes_empty),
+                                    actionLabel = stringResource(R.string.notes_empty_action),
+                                    onAction = onNavigateToAddNote
+                                )
+                            }
+                        } else {
+                            items(
+                                count = lazyPagingItems.itemCount,
+                                key = { index -> lazyPagingItems.peek(index)?.id ?: index }
+                            ) { index ->
+                                lazyPagingItems[index]?.let { note ->
+                                    SwipeToDismissItem(
+                                        item = note,
+                                        onDelete = { deleteNote = it }
+                                    ) {
+                                        NoteCard(
+                                            note = note,
+                                            onClick = { onNavigateToEditNote(note.id) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -153,83 +214,6 @@ fun NotesScreen(
             onDismiss = { deleteNote = null },
             isDestructive = true
         )
-    }
-}
-
-@Composable
-private fun NoteListContent(
-    notes: List<Note>,
-    searchQuery: String,
-    selectedTag: NoteTag?,
-    onSearchQueryChange: (String) -> Unit,
-    onTagSelect: (NoteTag?) -> Unit,
-    onNoteClick: (Long) -> Unit,
-    onDeleteNote: (Note) -> Unit,
-    onNavigateToAdd: () -> Unit,
-    contentPadding: PaddingValues
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = 8.dp,
-            bottom = contentPadding.calculateBottomPadding()
-        ),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item(key = "search_bar") {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text(text = stringResource(R.string.notes_search))
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null
-                    )
-                },
-                singleLine = true
-            )
-        }
-
-        item(key = "tag_filter") {
-            Spacer(modifier = Modifier.height(4.dp))
-            TagFilterRow(
-                selectedTag = selectedTag,
-                onTagSelect = onTagSelect
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        if (notes.isEmpty()) {
-            item(key = "empty_state") {
-                EmptyState(
-                    icon = Icons.Filled.NoteAlt,
-                    message = stringResource(R.string.notes_empty),
-                    actionLabel = stringResource(R.string.notes_empty_action),
-                    onAction = onNavigateToAdd
-                )
-            }
-        } else {
-            items(
-                items = notes,
-                key = { it.id }
-            ) { note ->
-                SwipeToDismissItem(
-                    item = note,
-                    onDelete = onDeleteNote
-                ) {
-                    NoteCard(
-                        note = note,
-                        onClick = { onNoteClick(note.id) }
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -279,17 +263,64 @@ private fun NoteTagAllChip(
 @Composable
 private fun NoteListContentPreview() {
     CareNoteTheme {
-        NoteListContent(
+        NoteListContentPreviewBody(
             notes = PreviewData.notes,
             searchQuery = "",
-            selectedTag = null,
-            onSearchQueryChange = {},
-            onTagSelect = {},
-            onNoteClick = {},
-            onDeleteNote = {},
-            onNavigateToAdd = {},
-            contentPadding = PaddingValues(bottom = 80.dp)
+            selectedTag = null
         )
+    }
+}
+
+@Composable
+private fun NoteListContentPreviewBody(
+    notes: List<Note>,
+    searchQuery: String,
+    selectedTag: NoteTag?
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 80.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item(key = "search_bar") {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(text = stringResource(R.string.notes_search))
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = null
+                    )
+                },
+                singleLine = true
+            )
+        }
+        item(key = "tag_filter") {
+            Spacer(modifier = Modifier.height(4.dp))
+            TagFilterRow(
+                selectedTag = selectedTag,
+                onTagSelect = {}
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+        items(
+            items = notes,
+            key = { it.id }
+        ) { note ->
+            NoteCard(
+                note = note,
+                onClick = {}
+            )
+        }
     }
 }
 

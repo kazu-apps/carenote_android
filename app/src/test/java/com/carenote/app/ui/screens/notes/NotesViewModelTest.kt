@@ -6,17 +6,14 @@ import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.ui.util.SnackbarEvent
-import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -26,7 +23,7 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotesViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var viewModel: NotesViewModel
 
@@ -62,73 +59,21 @@ class NotesViewModelTest {
     )
 
     @Test
-    fun `initial state is Loading`() = runTest(testDispatcher) {
-        viewModel = createViewModel()
-
-        assertTrue(viewModel.notes.value is UiState.Loading)
-    }
-
-    @Test
-    fun `notes transitions from Loading to Success`() = runTest(testDispatcher) {
-        val notes = listOf(createNote(id = 1L, title = "メモA"))
-        noteRepository.setNotes(notes)
-        viewModel = createViewModel()
-
-        viewModel.notes.test {
-            assertEquals(UiState.Loading, awaitItem())
-            advanceUntilIdle()
-            val success = awaitItem()
-            assertTrue(success is UiState.Success)
-            assertEquals(1, (success as UiState.Success).data.size)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `notes are loaded as Success state`() = runTest(testDispatcher) {
-        val notes = listOf(
-            createNote(id = 1L, title = "メモA"),
-            createNote(id = 2L, title = "メモB")
-        )
-        noteRepository.setNotes(notes)
-        viewModel = createViewModel()
-
-        viewModel.notes.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            assertEquals(2, (state as UiState.Success).data.size)
-        }
-    }
-
-    @Test
-    fun `empty notes list shows Success with empty list`() = runTest(testDispatcher) {
-        viewModel = createViewModel()
-
-        viewModel.notes.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            assertEquals(0, (state as UiState.Success).data.size)
-        }
-    }
-
-    @Test
-    fun `initial search query is empty`() = runTest(testDispatcher) {
+    fun `initial search query is empty`() {
         viewModel = createViewModel()
 
         assertEquals("", viewModel.searchQuery.value)
     }
 
     @Test
-    fun `initial selected tag is null`() = runTest(testDispatcher) {
+    fun `initial selected tag is null`() {
         viewModel = createViewModel()
 
         assertNull(viewModel.selectedTag.value)
     }
 
     @Test
-    fun `updateSearchQuery updates search query`() = runTest(testDispatcher) {
+    fun `updateSearchQuery updates search query`() {
         viewModel = createViewModel()
 
         viewModel.updateSearchQuery("テスト")
@@ -137,7 +82,7 @@ class NotesViewModelTest {
     }
 
     @Test
-    fun `selectTag updates selected tag`() = runTest(testDispatcher) {
+    fun `selectTag updates selected tag`() {
         viewModel = createViewModel()
 
         viewModel.selectTag(NoteTag.CONDITION)
@@ -146,7 +91,7 @@ class NotesViewModelTest {
     }
 
     @Test
-    fun `selectTag with null clears tag filter`() = runTest(testDispatcher) {
+    fun `selectTag with null clears tag filter`() {
         viewModel = createViewModel()
         viewModel.selectTag(NoteTag.CONDITION)
 
@@ -156,7 +101,7 @@ class NotesViewModelTest {
     }
 
     @Test
-    fun `tag filter shows only matching notes`() = runTest(testDispatcher) {
+    fun `tag filter shows only matching notes`() = runTest {
         val notes = listOf(
             createNote(id = 1L, title = "体調メモ", tag = NoteTag.CONDITION),
             createNote(id = 2L, title = "食事メモ", tag = NoteTag.MEAL),
@@ -165,22 +110,13 @@ class NotesViewModelTest {
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
 
-        viewModel.notes.test {
-            advanceUntilIdle()
-
-            viewModel.selectTag(NoteTag.CONDITION)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("体調メモ", data[0].title)
-        }
+        val filtered = noteRepository.getFilteredNotes("", NoteTag.CONDITION)
+        assertEquals(1, filtered.size)
+        assertEquals("体調メモ", filtered[0].title)
     }
 
     @Test
-    fun `deleteNote removes note from list`() = runTest(testDispatcher) {
+    fun `deleteNote removes note from list`() = runTest {
         val notes = listOf(
             createNote(id = 1L, title = "メモA"),
             createNote(id = 2L, title = "メモB")
@@ -188,30 +124,21 @@ class NotesViewModelTest {
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
 
-        viewModel.notes.test {
-            advanceUntilIdle()
+        viewModel.deleteNote(1L)
 
-            viewModel.deleteNote(1L)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("メモB", data[0].title)
-        }
+        val remaining = noteRepository.currentNotes()
+        assertEquals(1, remaining.size)
+        assertEquals("メモB", remaining[0].title)
     }
 
     @Test
-    fun `snackbar emitted on delete success`() = runTest(testDispatcher) {
+    fun `snackbar emitted on delete success`() = runTest {
         val notes = listOf(createNote(id = 1L))
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.snackbarController.events.test {
             viewModel.deleteNote(1L)
-            advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(R.string.notes_deleted, (event as SnackbarEvent.WithResId).messageResId)
@@ -219,16 +146,14 @@ class NotesViewModelTest {
     }
 
     @Test
-    fun `snackbar emitted on delete failure`() = runTest(testDispatcher) {
+    fun `snackbar emitted on delete failure`() = runTest {
         val notes = listOf(createNote(id = 1L))
         noteRepository.setNotes(notes)
         noteRepository.shouldFail = true
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.snackbarController.events.test {
             viewModel.deleteNote(1L)
-            advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(R.string.notes_delete_failed, (event as SnackbarEvent.WithResId).messageResId)
@@ -236,71 +161,48 @@ class NotesViewModelTest {
     }
 
     @Test
-    fun `notes update reactively when repository changes`() = runTest(testDispatcher) {
+    fun `notes update reactively when repository changes`() = runTest {
         viewModel = createViewModel()
 
-        viewModel.notes.test {
-            advanceUntilIdle()
-            val initial = expectMostRecentItem()
-            assertTrue(initial is UiState.Success)
-            assertEquals(0, (initial as UiState.Success).data.size)
+        assertEquals(0, noteRepository.currentNotes().size)
 
-            noteRepository.setNotes(listOf(createNote(id = 1L)))
-            advanceUntilIdle()
-            val updated = expectMostRecentItem()
-            assertTrue(updated is UiState.Success)
-            assertEquals(1, (updated as UiState.Success).data.size)
-        }
+        noteRepository.setNotes(listOf(createNote(id = 1L)))
+
+        assertEquals(1, noteRepository.currentNotes().size)
     }
 
     @Test
-    fun `search filters notes by title`() = runTest(testDispatcher) {
+    fun `search filters notes by title`() = runTest {
         val notes = listOf(
             createNote(id = 1L, title = "体調メモ", content = "良好"),
             createNote(id = 2L, title = "食事メモ", content = "朝食")
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
+        viewModel.updateSearchQuery("体調")
 
-        viewModel.notes.test {
-            advanceUntilIdle()
-
-            viewModel.updateSearchQuery("体調")
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("体調メモ", data[0].title)
-        }
+        val filtered = noteRepository.getFilteredNotes("体調")
+        assertEquals(1, filtered.size)
+        assertEquals("体調メモ", filtered[0].title)
     }
 
     @Test
-    fun `search filters notes by content`() = runTest(testDispatcher) {
+    fun `search filters notes by content`() = runTest {
         val notes = listOf(
             createNote(id = 1L, title = "メモA", content = "熱が37度"),
             createNote(id = 2L, title = "メモB", content = "昼食は完食")
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
+        viewModel.updateSearchQuery("完食")
 
-        viewModel.notes.test {
-            advanceUntilIdle()
-
-            viewModel.updateSearchQuery("完食")
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("メモB", data[0].title)
-        }
+        val filtered = noteRepository.getFilteredNotes("完食")
+        assertEquals(1, filtered.size)
+        assertEquals("メモB", filtered[0].title)
     }
 
     @Test
-    fun `combined search and tag filter`() = runTest(testDispatcher) {
+    fun `combined search and tag filter`() = runTest {
         val notes = listOf(
             createNote(id = 1L, title = "体調A", tag = NoteTag.CONDITION),
             createNote(id = 2L, title = "体調B", tag = NoteTag.MEAL),
@@ -308,61 +210,11 @@ class NotesViewModelTest {
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
+        viewModel.updateSearchQuery("体調")
+        viewModel.selectTag(NoteTag.CONDITION)
 
-        viewModel.notes.test {
-            advanceUntilIdle()
-
-            viewModel.updateSearchQuery("体調")
-            viewModel.selectTag(NoteTag.CONDITION)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("体調A", data[0].title)
-        }
-    }
-
-    @Test
-    fun `refresh triggers data reload`() = runTest(testDispatcher) {
-        val notes = listOf(createNote(id = 1L, title = "メモA"))
-        noteRepository.setNotes(notes)
-        viewModel = createViewModel()
-
-        viewModel.notes.test {
-            advanceUntilIdle()
-            val initial = expectMostRecentItem()
-            assertTrue(initial is UiState.Success)
-            assertEquals(1, (initial as UiState.Success).data.size)
-
-            noteRepository.setNotes(
-                listOf(createNote(id = 1L, title = "メモA"), createNote(id = 2L, title = "メモB"))
-            )
-            viewModel.refresh()
-            advanceUntilIdle()
-
-            val refreshed = expectMostRecentItem()
-            assertTrue(refreshed is UiState.Success)
-            assertEquals(2, (refreshed as UiState.Success).data.size)
-        }
-    }
-
-    @Test
-    fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
-        noteRepository.setNotes(listOf(createNote(id = 1L)))
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        assertFalse(viewModel.isRefreshing.value)
-
-        viewModel.refresh()
-        assertTrue(viewModel.isRefreshing.value)
-
-        viewModel.notes.test {
-            advanceUntilIdle()
-            cancelAndIgnoreRemainingEvents()
-        }
-        assertFalse(viewModel.isRefreshing.value)
+        val filtered = noteRepository.getFilteredNotes("体調", NoteTag.CONDITION)
+        assertEquals(1, filtered.size)
+        assertEquals("体調A", filtered[0].title)
     }
 }

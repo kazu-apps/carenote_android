@@ -1,21 +1,29 @@
 package com.carenote.app.ui.screens.healthrecords
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -36,7 +44,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.carenote.app.R
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
@@ -61,11 +72,15 @@ fun HealthRecordsScreen(
     onNavigateToEditRecord: (Long) -> Unit = {},
     viewModel: HealthRecordsViewModel = hiltViewModel()
 ) {
+    val lazyPagingItems = viewModel.pagedRecords.collectAsLazyPagingItems()
     val uiState by viewModel.records.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteRecord by remember { mutableStateOf<HealthRecord?>(null) }
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
+    var showExportMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -78,6 +93,30 @@ fun HealthRecordsScreen(
         }
     }
 
+    LaunchedEffect(exportState) {
+        val state = exportState
+        when (state) {
+            is ExportState.Success -> {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = state.mimeType
+                    putExtra(Intent.EXTRA_STREAM, state.uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(
+                    Intent.createChooser(
+                        shareIntent,
+                        context.getString(R.string.health_records_export)
+                    )
+                )
+                viewModel.resetExportState()
+            }
+            is ExportState.Error -> {
+                viewModel.resetExportState()
+            }
+            else -> { /* Idle, Exporting — no action needed */ }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -86,6 +125,33 @@ fun HealthRecordsScreen(
                         text = stringResource(R.string.health_records_title),
                         style = MaterialTheme.typography.titleLarge
                     )
+                },
+                actions = {
+                    IconButton(onClick = { showExportMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.FileDownload,
+                            contentDescription = stringResource(R.string.health_records_export)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showExportMenu,
+                        onDismissRequest = { showExportMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.health_records_export_csv)) },
+                            onClick = {
+                                showExportMenu = false
+                                viewModel.exportCsv()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.health_records_export_pdf)) },
+                            onClick = {
+                                showExportMenu = false
+                                viewModel.exportPdf()
+                            }
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
@@ -120,29 +186,85 @@ fun HealthRecordsScreen(
 
             when (viewMode) {
                 ViewMode.LIST -> {
-                    when (val state = uiState) {
-                        is UiState.Loading -> {
-                            LoadingIndicator()
-                        }
-                        is UiState.Error -> {
-                            ErrorDisplay(
-                                error = state.error,
-                                onRetry = { viewModel.refresh() }
-                            )
-                        }
-                        is UiState.Success -> {
-                            PullToRefreshBox(
-                                isRefreshing = isRefreshing,
-                                onRefresh = { viewModel.refresh() },
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                HealthRecordListContent(
-                                    records = state.data,
-                                    onRecordClick = onNavigateToEditRecord,
-                                    onDelete = { deleteRecord = it },
-                                    onNavigateToAdd = onNavigateToAddRecord,
-                                    contentPadding = contentPadding
+                    val listIsRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
+                    PullToRefreshBox(
+                        isRefreshing = listIsRefreshing,
+                        onRefresh = { lazyPagingItems.refresh() },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 8.dp,
+                                bottom = contentPadding.calculateBottomPadding() + 80.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item(key = "search_bar") {
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = viewModel::updateSearchQuery,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = {
+                                        Text(text = stringResource(R.string.common_search))
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Search,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    singleLine = true
                                 )
+                            }
+
+                            when (val refreshState = lazyPagingItems.loadState.refresh) {
+                                is LoadState.Loading -> {
+                                    item(key = "loading") {
+                                        LoadingIndicator()
+                                    }
+                                }
+                                is LoadState.Error -> {
+                                    item(key = "error") {
+                                        ErrorDisplay(
+                                            error = DomainError.DatabaseError(
+                                                refreshState.error.message ?: "Unknown error"
+                                            ),
+                                            onRetry = { lazyPagingItems.refresh() }
+                                        )
+                                    }
+                                }
+                                is LoadState.NotLoading -> {
+                                    if (lazyPagingItems.itemCount == 0) {
+                                        item(key = "empty_state") {
+                                            EmptyState(
+                                                icon = Icons.Filled.MonitorHeart,
+                                                message = stringResource(R.string.health_records_empty),
+                                                actionLabel = stringResource(R.string.health_records_empty_action),
+                                                onAction = onNavigateToAddRecord
+                                            )
+                                        }
+                                    } else {
+                                        items(
+                                            count = lazyPagingItems.itemCount,
+                                            key = { index -> lazyPagingItems.peek(index)?.id ?: index }
+                                        ) { index ->
+                                            lazyPagingItems[index]?.let { record ->
+                                                SwipeToDismissItem(
+                                                    item = record,
+                                                    onDelete = { deleteRecord = it }
+                                                ) {
+                                                    HealthRecordCard(
+                                                        record = record,
+                                                        onClick = { onNavigateToEditRecord(record.id) }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -197,13 +319,19 @@ private fun ViewModeSelector(
     }
 }
 
+@LightDarkPreview
 @Composable
-private fun HealthRecordListContent(
-    records: List<HealthRecord>,
-    onRecordClick: (Long) -> Unit,
-    onDelete: (HealthRecord) -> Unit,
-    onNavigateToAdd: () -> Unit,
-    contentPadding: PaddingValues
+private fun HealthRecordListContentPreview() {
+    CareNoteTheme {
+        HealthRecordListPreviewBody(
+            records = PreviewData.healthRecords
+        )
+    }
+}
+
+@Composable
+private fun HealthRecordListPreviewBody(
+    records: List<HealthRecord>
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -211,48 +339,35 @@ private fun HealthRecordListContent(
             start = 16.dp,
             end = 16.dp,
             top = 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 80.dp
+            bottom = 80.dp
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (records.isEmpty()) {
-            item(key = "empty_state") {
-                EmptyState(
-                    icon = Icons.Filled.MonitorHeart,
-                    message = stringResource(R.string.health_records_empty),
-                    actionLabel = stringResource(R.string.health_records_empty_action),
-                    onAction = onNavigateToAdd
-                )
-            }
-        } else {
-            items(
-                items = records,
-                key = { it.id }
-            ) { record ->
-                SwipeToDismissItem(
-                    item = record,
-                    onDelete = onDelete
-                ) {
-                    HealthRecordCard(
-                        record = record,
-                        onClick = { onRecordClick(record.id) }
+        item(key = "search_bar") {
+            OutlinedTextField(
+                value = "",
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(text = stringResource(R.string.common_search))
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = null
                     )
-                }
-            }
+                },
+                singleLine = true
+            )
         }
-    }
-}
-
-@LightDarkPreview
-@Composable
-private fun HealthRecordListContentPreview() {
-    CareNoteTheme {
-        HealthRecordListContent(
-            records = PreviewData.healthRecords,
-            onRecordClick = {},
-            onDelete = {},
-            onNavigateToAdd = {},
-            contentPadding = PaddingValues(bottom = 80.dp)
-        )
+        items(
+            items = records,
+            key = { it.id }
+        ) { record ->
+            HealthRecordCard(
+                record = record,
+                onClick = {}
+            )
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.carenote.app.domain.repository
 
+import androidx.paging.PagingData
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.HealthRecord
@@ -13,6 +14,8 @@ interface HealthRecordRepository {
     fun getRecordById(id: Long): Flow<HealthRecord?>
 
     fun getRecordsByDateRange(start: LocalDateTime, end: LocalDateTime): Flow<List<HealthRecord>>
+
+    fun getPagedRecords(query: String): Flow<PagingData<HealthRecord>>
 
     suspend fun insertRecord(record: HealthRecord): Result<Long, DomainError>
 

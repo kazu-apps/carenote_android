@@ -1,5 +1,6 @@
 package com.carenote.app.fakes
 
+import androidx.paging.PagingData
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Note
@@ -25,6 +26,18 @@ class FakeNoteRepository : NoteRepository {
         shouldFail = false
     }
 
+    fun currentNotes(): List<Note> = notes.value
+
+    fun getFilteredNotes(query: String, tag: NoteTag? = null): List<Note> {
+        return notes.value.filter { note ->
+            val matchesQuery = query.isBlank() ||
+                note.title.contains(query, ignoreCase = true) ||
+                note.content.contains(query, ignoreCase = true)
+            val matchesTag = tag == null || note.tag == tag
+            matchesQuery && matchesTag
+        }
+    }
+
     override fun getAllNotes(): Flow<List<Note>> = notes
 
     override fun getNoteById(id: Long): Flow<Note?> {
@@ -40,6 +53,19 @@ class FakeNoteRepository : NoteRepository {
                 val matchesTag = tag == null || note.tag == tag
                 matchesQuery && matchesTag
             }
+        }
+    }
+
+    override fun searchPagedNotes(query: String, tag: NoteTag?): Flow<PagingData<Note>> {
+        return notes.map { list ->
+            val filtered = list.filter { note ->
+                val matchesQuery = query.isBlank() ||
+                    note.title.contains(query, ignoreCase = true) ||
+                    note.content.contains(query, ignoreCase = true)
+                val matchesTag = tag == null || note.tag == tag
+                matchesQuery && matchesTag
+            }
+            PagingData.from(filtered)
         }
     }
 

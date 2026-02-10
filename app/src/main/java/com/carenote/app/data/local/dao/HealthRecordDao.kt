@@ -1,5 +1,6 @@
 package com.carenote.app.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -24,6 +25,13 @@ interface HealthRecordDao {
     )
     fun getRecordsByDateRange(start: String, end: String): Flow<List<HealthRecordEntity>>
 
+    @Query(
+        "SELECT * FROM health_records " +
+            "WHERE (:query = '' OR condition_note LIKE '%' || :query || '%') " +
+            "ORDER BY recorded_at DESC"
+    )
+    fun getPagedRecords(query: String): PagingSource<Int, HealthRecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecord(record: HealthRecordEntity): Long
 
@@ -32,4 +40,7 @@ interface HealthRecordDao {
 
     @Query("DELETE FROM health_records WHERE id = :id")
     suspend fun deleteRecord(id: Long)
+
+    @Query("SELECT * FROM health_records WHERE updated_at > :lastSyncTime")
+    suspend fun getModifiedSince(lastSyncTime: String): List<HealthRecordEntity>
 }

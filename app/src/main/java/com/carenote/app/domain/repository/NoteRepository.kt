@@ -1,5 +1,6 @@
 package com.carenote.app.domain.repository
 
+import androidx.paging.PagingData
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Note
@@ -13,6 +14,8 @@ interface NoteRepository {
     fun getNoteById(id: Long): Flow<Note?>
 
     fun searchNotes(query: String, tag: NoteTag?): Flow<List<Note>>
+
+    fun searchPagedNotes(query: String, tag: NoteTag?): Flow<PagingData<Note>>
 
     suspend fun insertNote(note: Note): Result<Long, DomainError>
 
