@@ -3,10 +3,11 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.baselineprofile)
+    alias(libs.plugins.roborazzi)
     jacoco
 }
 
@@ -25,16 +26,21 @@ val keyProperties = Properties().apply {
 
 android {
     namespace = "com.carenote.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.carenote.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
         testInstrumentationRunner = "com.carenote.app.HiltTestRunner"
+
+    }
+
+    androidResources {
+        localeFilters += listOf("ja", "en")
     }
 
     if (keyPropertiesFile.exists()) {
@@ -75,9 +81,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -93,7 +96,20 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+            all {
+                it.systemProperties["robolectric.pixelCopyRenderMode"] = "hardware"
+            }
         }
+    }
+}
+
+@OptIn(com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
+roborazzi {
+    outputDir.set(file("src/test/snapshots"))
+    generateComposePreviewRobolectricTests {
+        enable = true
+        includePrivatePreviews = true
+        packages = listOf("com.carenote.app.ui")
     }
 }
 
@@ -115,6 +131,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Navigation
@@ -123,7 +140,12 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.paging)
     ksp(libs.androidx.room.compiler)
+
+    // Paging
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
 
     // Security (SQLCipher + Keystore)
     implementation(libs.sqlcipher.android)
@@ -154,7 +176,14 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.storage)
+
+    // Image Loading
+    implementation(libs.coil.compose)
+
+    // Baseline Profile
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
 
     // Test
     testImplementation(libs.junit)
@@ -162,6 +191,10 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose.preview.scanner)
+    testImplementation(libs.composable.preview.scanner.android)
+    testImplementation(libs.androidx.paging.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -260,6 +293,10 @@ tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
         "**/ui/util/LocaleManager*",
         "**/ui/util/NotificationHelper*",
         "**/ui/util/BiometricHelper*",
+        // ImageCompressor (requires Android Context — instrumented tests)
+        "**/data/local/ImageCompressor*",
+        // Export (requires Android Context — FileProvider, PdfDocument)
+        "**/data/export/*",
         // Room DB, converters, and encryption (Android Keystore — requires instrumented tests)
         "**/data/local/converter/*",
         "**/data/local/CareNoteDatabase*",

@@ -2,17 +2,18 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v4.0 Phase 10 PagingSource 展開（Note + HealthRecord） 完了
+## 現在のタスク: v4.0 Phase 18 Roborazzi スクリーンショットテスト - DONE
 
-Phase 9 の Task Paging 3 パターンを Note と HealthRecord に横展開。
-- **Note**: 全レイヤー PagingSource 化（DAO `getPagedNotes`/`getPagedNotesByTag` → Repository `searchPagedNotes` → ViewModel `Flow<PagingData<Note>>` + `cachedIn` → Screen `collectAsLazyPagingItems` + `LoadState`）。`_refreshTrigger`/`_isRefreshing`/`refresh()` 削除。
-- **HealthRecord**: ハイブリッド実装。LIST モード用に `pagedRecords: Flow<PagingData<HealthRecord>>` を追加。既存 `records: StateFlow<UiState<List<HealthRecord>>>` は GRAPH/エクスポート用に維持。
-- **CalendarEvent**: 対象外（月別グループ化 UI と PagingSource が非互換）。
-- **テスト**: NotesViewModelTest を `UnconfinedTestDispatcher` + Repository 直接検証パターンに全面書き換え。HealthRecordsViewModelTest は変更不要。
+Roborazzi 1.58.0 + ComposablePreviewScanner 0.8.1 で全 Preview 関数の golden image スクリーンショットテストを自動生成。手動テストクラス不要（`generateComposePreviewRobolectricTests`）。
+- **Gradle 設定**: `libs.versions.toml`（roborazzi 1.58.0, composablePreviewScanner 0.8.1, plugin 追加）、`build.gradle.kts`(root, plugin apply false)、`app/build.gradle.kts`（plugin + roborazzi config + dependencies）
+- **Roborazzi 設定**: `outputDir = src/test/snapshots`（Git 追跡可能）、`includePrivatePreviews = true`、`packages = ["com.carenote.app.ui"]`、`pixelCopyRenderMode = "hardware"` で高忠実度レンダリング
+- **Golden Images**: 21 Preview × Light/Dark = 42 PNG を `app/src/test/snapshots/` に生成・コミット可能
+- **CI 連携**: `.github/workflows/ci.yml` に `verifyRoborazziDebug` ステップ + failure 時 diff アップロード追加
+- **検証**: `recordRoborazziDebug` 成功、`verifyRoborazziDebug` PASS、既存全テスト PASS
 
 ## 次のアクション
 
-1. `/task-driver` で v4.0 Phase 11（BottomNav Badge）から順に実行
+1. `/task-driver` で v4.0 Phase 19（Macrobenchmark テスト拡張）から順に実行
 2. 各フェーズ完了後にビルド・テスト確認
 3. リリース前に実機テスト + APK 検証
 
@@ -377,46 +378,49 @@ Phase 9 パターンを Note と HealthRecord に横展開。Note は全レイ�
 
 #### Part C: UX 改善（Phase 11-17）
 
-### Phase 11: BottomNav Badge（未完了タスク数表示） - PENDING
-`NavigationSuiteItem` の `badge` パラメータを活用。`TaskDao.getIncompleteTaskCount()` Flow で未完了数をリアルタイム表示。
-- 対象: 3-4 files（AdaptiveNavigationScaffold, TaskDao, AppModule/DI, MainActivity）
-- 依存: なし
+### Phase 11: BottomNav Badge（未完了タスク数表示） - DONE
+`TaskDao.getIncompleteTaskCount(): Flow<Int>` COUNT クエリ → `TaskRepository` → `MainActivity` で `collectAsStateWithLifecycle` 購読 → `AdaptiveNavigationScaffold` の Tasks アイテムに `Badge` 表示。0件時は非表示、99超は "99+" 表示。ログアウト時は `flowOf(0)` でガード。`AppConfig.UI.BADGE_MAX_COUNT = 99`。strings.xml JP/EN に `nav_tasks_badge` 追加。テスト 2 件追加。
+- 変更: `TaskDao.kt`, `TaskRepository.kt`, `TaskRepositoryImpl.kt`, `AppConfig.kt`, `AdaptiveNavigationScaffold.kt`, `MainActivity.kt`, `strings.xml` JP/EN, `FakeTaskRepository.kt`, `TaskRepositoryImplTest.kt`
 
-### Phase 12: HealthRecords グラフ a11y 対応 - PENDING
-Canvas の `semantics` + `contentDescription` 追加。TalkBack でグラフデータを読み上げ可能に。
-- 対象: 3-5 files（HealthRecordGraphContent, 関連コンポーネント）
-- 依存: なし
+### Phase 12: HealthRecords グラフ a11y 対応 - DONE
+Canvas の `semantics` + `contentDescription` 追加。TalkBack でグラフデータを読み上げ可能に。`remember(points)` でメモ化し再計算最小化。異常値ありなし分岐でサマリー文言を切替。
+- 変更: `TemperatureChart.kt`, `BloodPressureChart.kt`, `strings.xml` JP/EN（4文字列追加）
+- ビルド成功、全テスト PASS
 
-### Phase 13: ImageCompressor cache クリーンアップ - PENDING
-`cacheDir/photos/` の eviction 機構追加。古いキャッシュファイルの定期削除 or サイズ上限。
-- 対象: 2-3 files（ImageCompressor, AppConfig）
-- 依存: なし
+### Phase 13: ImageCompressor cache クリーンアップ - DONE
+TTL 7日 + サイズ上限 100MB の2段階 eviction。SyncWorker で sync 後に非ブロッキング呼び出し。
+- 変更: `AppConfig.kt`(3定数追加), `ImageCompressorInterface.kt`(cleanupCache追加), `ImageCompressor.kt`(cleanupCache実装+CACHE_DIR_NAME使用), `SyncWorker.kt`(imageCompressor注入+cleanupCacheQuietly)
+- 新規: `ImageCompressorTest.kt`(5テスト)
+- ビルド成功、全テスト PASS
 
-### Phase 14: material-icons-extended 最適化 - PENDING
-extended 専用 11 アイコンを custom drawable (XML Vector) に変換し、material-icons-extended 依存を削除。ビルド時間改善。
-- 対象: 5-8 files（drawable XML 11個新規, build.gradle.kts, 使用箇所の import 変更）
-- 依存: なし
+### Phase 14: material-icons-extended 最適化 - DONE (SKIP)
+R8 full mode が未使用の material-icons-extended クラスを完全 tree-shake していることを Release APK のビルド + mapping.txt 分析で確認。残存アイコンは実使用の 37 バリアントのみ（~2000 中）。手動置換の ROI なし。
+- 計測: Release APK 26MB, mapping.txt に `material.icons.extended` 参照 0 件
+- 変更: なし（コード変更不要）
 
-### Phase 15: 統合タイムラインビュー - PENDING
-全 Repository 横断の統合 UseCase 新規作成。日ごとの全イベント（服薬、カレンダー、タスク、健康記録、メモ）を統合表示する新画面。
-- 対象: 6-10 files（UseCase, ViewModel, Screen, Screen.kt ルート追加, CareNoteNavHost）
-- 依存: Phase 10
+### Phase 15: 統合タイムラインビュー - DONE
+全 Repository 横断の統合タイムラインビュー新画面。6 Repository combine + 部分失敗耐性 + MedicationLog 薬名解決。CalendarScreen TopAppBar History アイコンからアクセス。
+- 新規: `TimelineItem.kt`, `TimelineRepository.kt`, `TimelineRepositoryImpl.kt`, `TimelineViewModel.kt`, `TimelineScreen.kt`, `TimelineItemCard.kt`, `FakeTimelineRepository.kt`, `TimelineRepositoryImplTest.kt`(6テスト), `TimelineViewModelTest.kt`(7テスト)
+- 変更: `NoteDao.kt`, `NoteRepository.kt`, `NoteRepositoryImpl.kt`, `FakeNoteRepository.kt`, `Screen.kt`, `CareNoteNavHost.kt`, `CalendarScreen.kt`, `AppModule.kt`, `AppConfig.kt`, `strings.xml` JP/EN
+- ビルド成功、全テスト PASS
 
-### Phase 16: 緊急連絡先 - PENDING
-新テーブル（EmergencyContact）+ 新画面 + Intent.ACTION_CALL で 1-tap ダイヤル。Room migration 追加。
-- 対象: 8-10 files
+### Phase 16: 緊急連絡先 - DONE
+`EmergencyContact` テーブル（Room v13）+ リスト画面 + AddEdit 画面 + Settings 統合。Intent.ACTION_DIAL でワンタップダイヤル。RelationshipType 6種。BackHandler + isDirty。テスト 37 件追加。
+- 新規: 17 files（domain 3, data 4, ui 4, settings 1, test 5）
+- 変更: 9 files（CareNoteDatabase, DatabaseModule, AppModule, Screen, CareNoteNavHost, SettingsScreen, AppConfig, strings.xml JP/EN）
 - 依存: Phase 6
 
-### Phase 17: 服薬在庫管理 - PENDING
-Medication に在庫フィールド追加。服薬記録時に自動減算。残数少通知。Room migration 追加。
-- 対象: 6-8 files
+### Phase 17: 服薬在庫管理 - DONE
+`Medication` に `currentStock`/`lowStockThreshold` (nullable) 追加。DB v13→v14。TAKEN 時に `decrementStock` DAO クエリで自動減算（updatedAt 更新で LWW 同期対応）。しきい値以下で Snackbar 警告。AddEdit 画面に在庫フォーム追加。テスト 15 件追加。
+- 変更: `Medication.kt`, `AppConfig.kt`, `MedicationEntity.kt`, `CareNoteDatabase.kt`, `MedicationDao.kt`, `MedicationMapper.kt`, `MedicationRemoteMapper.kt`, `MedicationRepository.kt`, `MedicationRepositoryImpl.kt`, `MedicationViewModel.kt`, `AddEditMedicationViewModel.kt`, `MedicationScreen.kt`(MedicationCard), `MedicationDetailScreen.kt`, `AddEditMedicationScreen.kt`, `PreviewData.kt`, `strings.xml` JP/EN, テスト 6 ファイル
 - 依存: Phase 6
 
 #### Part D: テスト高度化（Phase 18-20）
 
-### Phase 18: Roborazzi スクリーンショットテスト - PENDING
-Phase 22（v3.0）の Preview 基盤を活用。Roborazzi 導入 + 全画面 golden image 生成。CI 連携で回帰テスト。
-- 対象: 6-10 files（build 設定 + テストファイル群）
+### Phase 18: Roborazzi スクリーンショットテスト - DONE
+Roborazzi 1.58.0 + ComposablePreviewScanner 0.8.1。`generateComposePreviewRobolectricTests` で 21 Preview × Light/Dark = 42 golden images を自動生成。`app/src/test/snapshots/` に保存。CI で `verifyRoborazziDebug` 回帰テスト。
+- 変更: `libs.versions.toml`, `build.gradle.kts`(root), `app/build.gradle.kts`, `.github/workflows/ci.yml`
+- 新規: `app/src/test/snapshots/` (42 PNG golden images)
 - 依存: Phase 1
 
 ### Phase 19: Macrobenchmark テスト拡張 - PENDING
@@ -502,7 +506,7 @@ v4.0 完了時点の依存関係アップグレード（Kotlin 等）。CLAUDE.m
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v12 (baseline, migration squash 済み), SQLCipher 4.6.1 暗号化, fallbackToDestructiveMigration, 9 Entity (Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, SyncMapping, CareRecipient, Photo) |
+| Room DB | v14 (baseline v12, v13=EmergencyContact, v14=MedicationStock), SQLCipher 4.6.1 暗号化, fallbackToDestructiveMigration, 10 Entity (Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, SyncMapping, CareRecipient, Photo, EmergencyContact) |
 | DB キー保存 | EncryptedSharedPreferences (Android Keystore AES256_GCM) |
 | 設定保存 | EncryptedSharedPreferences (`carenote_settings_prefs`) |
 | バックアップ除外 | DB, DB パスフレーズ prefs, 設定 prefs |
@@ -520,6 +524,7 @@ v4.0 完了時点の依存関係アップグレード（Kotlin 等）。CLAUDE.m
 | Paging 3 | Task/Note/HealthRecord(LIST): `PagingSource<Int, Entity>` + `Pager(PagingConfig(pageSize=20))` + `cachedIn(viewModelScope)` + `collectAsLazyPagingItems()` + `LoadState`。HealthRecord(GRAPH/Export): 既存 `StateFlow<UiState<List<HealthRecord>>>` 維持。テストは `cachedIn` の `UncompletedCoroutinesError` 回避のため `asSnapshot()` 不使用、Repository 直接検証。Medication: DB検索のみ（PagingSource 非互換: タイミング別グルーピング UI）。CalendarEvent: 対象外（月別グループ化 UI と非互換） |
 | テストパターン | StandardTestDispatcher + Turbine + FakeRepository (MutableStateFlow) |
 | Robolectric | 4.16（Android SDK シャドウ、Compose UI Test） |
+| Roborazzi | 1.58.0 + ComposablePreviewScanner 0.8.1。`generateComposePreviewRobolectricTests` で Preview 自動キャプチャ。golden images: `app/src/test/snapshots/`。record: `recordRoborazziDebug`、verify: `verifyRoborazziDebug` |
 | BugHunt 2026-02-06 | Agent Teams リサーチ: collectAsState 残存=0、strings.xml 不整合=0、isSyncing=正常。実バグ: todayLogs 日付固定, Long→Int, メインスレッド I/O |
 | v2.3 改善リサーチ 2026-02-06 | Agent Teams 3並列調査: コード品質=良好（800行超0, TODO 0, デッドコード0）、リスク=LOW（Coroutine安全, メモリリーク0, ProGuard完備）、UXギャップ=BackHandler未実装(5画面), onRetry=null(5画面), PullToRefresh無, 通知PendingIntent無, DatePicker重複3箇所, @Preview 0件, DBインデックス不足(medications,tasks) |
 | v3.0 リサーチ 2026-02-06 | Agent Teams 3並列調査: 依存関係=大幅に古い（Kotlin 2.0→2.3, AGP 8.7→9.0, Firebase BOM 33→34）、機能ギャップ=~~EditMedication未実装~~(Phase 26)/~~検索4画面未展開~~(Phase 27)/~~アカウント管理画面なし~~(Phase 28)/~~ケア対象者プロフィールなし~~(Phase 29)、セキュリティ=堅実（Firestore Rules要確認）、パフォーマンス=良好（将来Paging+BaselineProfile） |
