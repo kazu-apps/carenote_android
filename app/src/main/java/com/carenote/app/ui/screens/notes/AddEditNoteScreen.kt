@@ -44,8 +44,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.config.AppConfig.Photo
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.components.PhotoPickerSection
 import com.carenote.app.ui.screens.notes.components.NoteTagChip
 import com.carenote.app.ui.preview.LightDarkPreview
 import com.carenote.app.ui.preview.PreviewData
@@ -60,6 +62,7 @@ fun AddEditNoteScreen(
     viewModel: AddEditNoteViewModel = hiltViewModel()
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
+    val photos by viewModel.photos.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -169,6 +172,13 @@ fun AddEditNoteScreen(
                     )
                 }
             }
+
+            PhotoPickerSection(
+                photos = photos,
+                onAddPhotos = viewModel::addPhotos,
+                onRemovePhoto = viewModel::removePhoto,
+                maxPhotos = Photo.MAX_PHOTOS_PER_PARENT
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 

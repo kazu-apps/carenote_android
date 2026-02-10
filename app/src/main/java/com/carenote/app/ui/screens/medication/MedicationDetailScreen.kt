@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -57,6 +58,7 @@ import com.carenote.app.ui.viewmodel.UiState
 @Composable
 fun MedicationDetailScreen(
     onNavigateBack: () -> Unit = {},
+    onNavigateToEdit: (Long) -> Unit = {},
     viewModel: MedicationDetailViewModel = hiltViewModel()
 ) {
     val medicationState by viewModel.medication.collectAsStateWithLifecycle()
@@ -101,6 +103,18 @@ fun MedicationDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            (medicationState as? UiState.Success)?.data?.id?.let { id ->
+                                onNavigateToEdit(id)
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = stringResource(R.string.medication_edit)
+                        )
+                    }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.Delete,
@@ -206,6 +220,39 @@ private fun MedicationDetailContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                if (medication.currentStock != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.medication_stock_section),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val threshold = medication.lowStockThreshold
+                        ?: com.carenote.app.config.AppConfig.Medication.DEFAULT_LOW_STOCK_THRESHOLD
+                    val isLow = medication.currentStock <= threshold
+                    Text(
+                        text = stringResource(
+                            R.string.medication_current_stock,
+                            medication.currentStock
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isLow) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                    if (medication.lowStockThreshold != null) {
+                        Text(
+                            text = stringResource(
+                                R.string.medication_low_stock_threshold,
+                                medication.lowStockThreshold
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

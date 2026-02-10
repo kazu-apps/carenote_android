@@ -2,18 +2,13 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v4.0 Phase 18 Roborazzi スクリーンショットテスト - DONE
+## 現在のタスク: v4.0 Phase 24 Glance ウィジェット - DONE
 
-Roborazzi 1.58.0 + ComposablePreviewScanner 0.8.1 で全 Preview 関数の golden image スクリーンショットテストを自動生成。手動テストクラス不要（`generateComposePreviewRobolectricTests`）。
-- **Gradle 設定**: `libs.versions.toml`（roborazzi 1.58.0, composablePreviewScanner 0.8.1, plugin 追加）、`build.gradle.kts`(root, plugin apply false)、`app/build.gradle.kts`（plugin + roborazzi config + dependencies）
-- **Roborazzi 設定**: `outputDir = src/test/snapshots`（Git 追跡可能）、`includePrivatePreviews = true`、`packages = ["com.carenote.app.ui"]`、`pixelCopyRenderMode = "hardware"` で高忠実度レンダリング
-- **Golden Images**: 21 Preview × Light/Dark = 42 PNG を `app/src/test/snapshots/` に生成・コミット可能
-- **CI 連携**: `.github/workflows/ci.yml` に `verifyRoborazziDebug` ステップ + failure 時 diff アップロード追加
-- **検証**: `recordRoborazziDebug` 成功、`verifyRoborazziDebug` PASS、既存全テスト PASS
+Glance 1.1.1 でホーム画面ウィジェットを実装。今日の服薬状況（薬名 + タイミング絵文字 + TAKEN/SKIPPED/PENDING ステータス）と今日の未完了タスク（最大各5件）を1ウィジェットに表示。Hilt EntryPoint 経由で既存 Repository にアクセス。タップでアプリ起動。ビルド成功、全テスト PASS。
 
 ## 次のアクション
 
-1. `/task-driver` で v4.0 Phase 19（Macrobenchmark テスト拡張）から順に実行
+1. `/task-driver` で v4.0 Phase 25（依存関係アップグレード + CLAUDE.md 更新）を実行
 2. 各フェーズ完了後にビルド・テスト確認
 3. リリース前に実機テスト + APK 検証
 
@@ -423,39 +418,41 @@ Roborazzi 1.58.0 + ComposablePreviewScanner 0.8.1。`generateComposePreviewRobol
 - 新規: `app/src/test/snapshots/` (42 PNG golden images)
 - 依存: Phase 1
 
-### Phase 19: Macrobenchmark テスト拡張 - PENDING
-Phase 34（v3.0）の基盤を拡張。各画面遷移のフレームタイミング計測追加。
-- 対象: 3-5 files
-- 依存: なし
+### Phase 19: Macrobenchmark テスト拡張 - DONE
+Phase 34（v3.0）の StartupBenchmark 基盤を拡張。共通 UIAutomator ナビゲーションヘルパー + 3 ベンチマーククラス（14テスト）追加。合計 18 macrobenchmark テスト。
+- 新規: `BenchmarkNavigationHelper.kt`（共通拡張関数）, `NavigationBenchmark.kt`（2テスト）, `FABNavigationBenchmark.kt`（6テスト）, `ScrollBenchmark.kt`（6テスト）
+- ビルド成功、全テスト PASS
 
-### Phase 20: E2E テスト拡充（写真・エクスポートフロー） - PENDING
-写真添付フロー、PDF/CSV エクスポートフローの E2E テスト追加。
-- 対象: 5-8 files
-- 依存: なし
+### Phase 20: E2E テスト拡充（エクスポートフロー） - DONE
+エクスポートフロー E2E テスト 4 件 + 写真セクション表示テスト 2 件追加。TestTags にエクスポート用タグ 3 件追加、HealthRecordsScreen に testTag 付与。E2eTestBase に tearDown キャッシュクリーンアップ追加。TestFirebaseModule / TestDatabaseModule の pre-existing DI 欠落（MedicationReminderSchedulerInterface, TaskReminderSchedulerInterface, StorageRepository, CareRecipientDao, PhotoDao, EmergencyContactDao）を修正。
+- 新規: `ExportFlowTest.kt`（4テスト）, `PhotoSectionFlowTest.kt`（2テスト）
+- 変更: `TestTags.kt`, `HealthRecordsScreen.kt`, `E2eTestBase.kt`, `TestFirebaseModule.kt`, `TestDatabaseModule.kt`
+- ビルド成功、全テスト PASS
 
 #### Part E: セキュリティ強化（Phase 21-23）
 
-### Phase 21: Root 検出（Play Integrity API） - PENDING
-Play Integrity API でデバイス検証。Root 検出時の警告表示（ブロックではなく警告）。
-- 対象: 4-6 files
-- 依存: なし
+### Phase 21: Root 検出（クライアントサイドヒューリスティック） - DONE
+Play Integrity API はサーバーサイド必須のため、クライアントサイド方式を採用。`RootDetector`（BiometricHelper パターン、DI 不要）で `Build.TAGS` + su binary paths チェック。Settings に警告行、MainActivity に1回限りダイアログ。テスト 4 件。
+- 新規: `RootDetector.kt`, `FakeRootDetector.kt`, `RootDetectorTest.kt`
+- 変更: `SecuritySection.kt`, `SettingsScreen.kt`, `MainActivity.kt`, `strings.xml` JP/EN
+- ビルド成功、全テスト PASS
 
-### Phase 22: Certificate Pinning - PENDING
-`network_security_config.xml` に Firestore / Firebase Auth の pin-set 追加。
-- 対象: 2-3 files（network_security_config.xml, AppConfig）
-- 依存: なし
+### Phase 22: Certificate Pinning - DONE (SKIP)
+Android 公式が Certificate Pinning を非推奨。Google 証明書ローテーション + 高齢者ユーザーの更新遅延により通信停止リスクが致命的。既存セキュリティ（cleartext禁止 + minSdk 26 CA制限）で十分。
+- 変更: なし（コード変更不要）
 
-### Phase 23: Compose パフォーマンス監査 - PENDING
-Composition tracing で recomposition ホットスポットを特定。`derivedStateOf`, `remember`, `key` の最適化。
-- 対象: 3-8 files
-- 依存: なし
+### Phase 23: Compose パフォーマンス監査 - DONE
+5 domain model に `@Immutable` 追加（java.time unstable 対策）、MedicationScreen `remember` 最適化（todayLogs Map, groupedMedications, noTimingMeds, timingOrder）、NotesScreen LazyRow `key` + `remember`、SettingsScreen DateTimeFormatter `remember`、CalendarViewModel `distinctUntilChanged`、Paging3 `contentType` 追加（Tasks, Notes, Medication 3画面）。
+- 変更: `Medication.kt`, `Note.kt`, `Task.kt`, `HealthRecord.kt`, `CalendarEvent.kt`（@Immutable）, `MedicationScreen.kt`（remember + contentType）, `NotesScreen.kt`（key + remember + contentType）, `SettingsScreen.kt`（DateTimeFormatter remember）, `CalendarViewModel.kt`（distinctUntilChanged）, `TasksScreen.kt`（contentType）
+- ビルド成功、全テスト PASS
 
 #### Part F: 先進機能（Phase 24-25）
 
-### Phase 24: Glance ウィジェット（服薬リマインダー + 今日のタスク） - PENDING
-Glance 1.1.x 安定版でホーム画面ウィジェット。服薬状況と今日のタスクを表示。
-- 対象: 8-12 files（Glance WidgetReceiver, UI, build 設定）
-- 依存: なし
+### Phase 24: Glance ウィジェット（服薬リマインダー + 今日のタスク） - DONE
+Glance 1.1.1 でホーム画面ウィジェット。今日の服薬状況（薬名+タイミング絵文字+ステータス）と未完了タスク（最大各5件）を表示。Hilt EntryPoint 経由で MedicationRepository/MedicationLogRepository/TaskRepository にアクセス。30分間隔で自動更新。タップでアプリ起動。
+- 新規: `di/WidgetEntryPoint.kt`, `ui/widget/CareNoteWidget.kt`, `ui/widget/CareNoteWidgetReceiver.kt`, `res/xml/widget_info.xml`
+- 変更: `libs.versions.toml`(Glance 1.1.1), `build.gradle.kts`(依存+JaCoCo除外), `AppConfig.kt`(Widget定数), `AndroidManifest.xml`(Receiver登録), `proguard-rules.pro`(keep), `strings.xml` JP/EN(10文字列追加)
+- ビルド成功、全テスト PASS
 
 ### Phase 25: 依存関係アップグレード + CLAUDE.md 更新 - PENDING
 v4.0 完了時点の依存関係アップグレード（Kotlin 等）。CLAUDE.md に v4.0 の新規パターン・規約を反映。

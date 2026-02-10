@@ -73,7 +73,8 @@ object SyncModule {
             remoteToDomain = { remoteMapper.toDomain(it) },
             extractSyncMetadata = { remoteMapper.extractSyncMetadata(it) },
             getLocalId = { it.id },
-            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
+            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) },
+            getModifiedSince = { lastSyncTime -> dao.getModifiedSince(lastSyncTime.toString()) }
         )
         return ConfigDrivenEntitySyncer(
             config, firestore, syncMappingDao, timestampConverter
@@ -104,7 +105,8 @@ object SyncModule {
             remoteToDomain = { remoteMapper.toDomain(it) },
             extractSyncMetadata = { remoteMapper.extractSyncMetadata(it) },
             getLocalId = { it.id },
-            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
+            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) },
+            getModifiedSince = { lastSyncTime -> dao.getModifiedSince(lastSyncTime.toString()) }
         )
         return ConfigDrivenEntitySyncer(
             config, firestore, syncMappingDao, timestampConverter
@@ -135,7 +137,8 @@ object SyncModule {
             remoteToDomain = { remoteMapper.toDomain(it) },
             extractSyncMetadata = { remoteMapper.extractSyncMetadata(it) },
             getLocalId = { it.id },
-            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
+            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) },
+            getModifiedSince = { lastSyncTime -> dao.getModifiedSince(lastSyncTime.toString()) }
         )
         return ConfigDrivenEntitySyncer(
             config, firestore, syncMappingDao, timestampConverter
@@ -166,7 +169,8 @@ object SyncModule {
             remoteToDomain = { remoteMapper.toDomain(it) },
             extractSyncMetadata = { remoteMapper.extractSyncMetadata(it) },
             getLocalId = { it.id },
-            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
+            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) },
+            getModifiedSince = { lastSyncTime -> dao.getModifiedSince(lastSyncTime.toString()) }
         )
         return ConfigDrivenEntitySyncer(
             config, firestore, syncMappingDao, timestampConverter
@@ -197,7 +201,8 @@ object SyncModule {
             remoteToDomain = { remoteMapper.toDomain(it) },
             extractSyncMetadata = { remoteMapper.extractSyncMetadata(it) },
             getLocalId = { it.id },
-            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) }
+            getUpdatedAt = { LocalDateTime.parse(it.updatedAt) },
+            getModifiedSince = { lastSyncTime -> dao.getModifiedSince(lastSyncTime.toString()) }
         )
         return ConfigDrivenEntitySyncer(
             config, firestore, syncMappingDao, timestampConverter

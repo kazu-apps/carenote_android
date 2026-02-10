@@ -1,5 +1,6 @@
 package com.carenote.app.fakes
 
+import androidx.paging.PagingData
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Task
@@ -25,6 +26,19 @@ class FakeTaskRepository : TaskRepository {
         shouldFail = false
     }
 
+    fun currentTasks(): List<Task> = tasks.value
+
+    fun getFilteredTasks(query: String): List<Task> {
+        return tasks.value.filter { task ->
+            task.title.contains(query, ignoreCase = true) ||
+                task.description.contains(query, ignoreCase = true)
+        }
+    }
+
+    override fun getIncompleteTaskCount(): Flow<Int> {
+        return tasks.map { list -> list.count { !it.isCompleted } }
+    }
+
     override fun getAllTasks(): Flow<List<Task>> = tasks
 
     override fun getTaskById(id: Long): Flow<Task?> {
@@ -37,6 +51,43 @@ class FakeTaskRepository : TaskRepository {
 
     override fun getTasksByDueDate(date: LocalDate): Flow<List<Task>> {
         return tasks.map { list -> list.filter { it.dueDate == date } }
+    }
+
+    override fun getPagedAllTasks(query: String): Flow<PagingData<Task>> {
+        return tasks.map { list ->
+            val filtered = if (query.isBlank()) list
+            else list.filter { task ->
+                task.title.contains(query, ignoreCase = true) ||
+                    task.description.contains(query, ignoreCase = true)
+            }
+            PagingData.from(filtered)
+        }
+    }
+
+    override fun getPagedIncompleteTasks(query: String): Flow<PagingData<Task>> {
+        return tasks.map { list ->
+            val filtered = list.filter { !it.isCompleted }.let { incomplete ->
+                if (query.isBlank()) incomplete
+                else incomplete.filter { task ->
+                    task.title.contains(query, ignoreCase = true) ||
+                        task.description.contains(query, ignoreCase = true)
+                }
+            }
+            PagingData.from(filtered)
+        }
+    }
+
+    override fun getPagedCompletedTasks(query: String): Flow<PagingData<Task>> {
+        return tasks.map { list ->
+            val filtered = list.filter { it.isCompleted }.let { completed ->
+                if (query.isBlank()) completed
+                else completed.filter { task ->
+                    task.title.contains(query, ignoreCase = true) ||
+                        task.description.contains(query, ignoreCase = true)
+                }
+            }
+            PagingData.from(filtered)
+        }
     }
 
     override suspend fun insertTask(task: Task): Result<Long, DomainError> {

@@ -168,5 +168,49 @@ fun SettingsDialogs(
                 onDismiss = onDismiss
             )
         }
+
+        SettingsDialogState.ChangePassword -> {
+            ChangePasswordDialog(
+                onConfirm = { currentPassword, newPassword ->
+                    onDismiss()
+                    viewModel.changePassword(currentPassword, newPassword)
+                },
+                onDismiss = onDismiss
+            )
+        }
+
+        SettingsDialogState.DeleteAccountConfirm -> {
+            ConfirmDialog(
+                title = stringResource(R.string.settings_delete_account_title),
+                message = stringResource(R.string.settings_delete_account_message),
+                onConfirm = {
+                    onDialogStateChange(SettingsDialogState.ReauthenticateForDelete)
+                },
+                onDismiss = onDismiss,
+                isDestructive = true
+            )
+        }
+
+        SettingsDialogState.ReauthenticateForDelete -> {
+            ReauthenticateDialog(
+                onConfirm = { password ->
+                    onDismiss()
+                    viewModel.deleteAccount(password)
+                },
+                onDismiss = onDismiss
+            )
+        }
+
+        SettingsDialogState.SignOutConfirm -> {
+            ConfirmDialog(
+                title = stringResource(R.string.settings_sign_out_confirm_title),
+                message = stringResource(R.string.settings_sign_out_confirm_message),
+                onConfirm = {
+                    onDismiss()
+                    viewModel.signOut()
+                },
+                onDismiss = onDismiss
+            )
+        }
     }
 }

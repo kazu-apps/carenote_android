@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
-import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
+import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog

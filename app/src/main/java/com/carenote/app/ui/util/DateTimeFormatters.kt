@@ -51,8 +51,11 @@ object DateTimeFormatters {
     /**
      * 短い日付フォーマット（月/日のみ）
      * 3/5
+     *
+     * 現在の `M/d` フォーマットはロケール非依存だが、他の関数との API 統一性のため
+     * [locale] パラメータを保持している。
      */
-    fun formatDateShort(date: LocalDate, @Suppress("UNUSED_PARAMETER") locale: Locale = Locale.getDefault()): String {
+    fun formatDateShort(date: LocalDate, locale: Locale = Locale.getDefault()): String {
         return date.format(DATE_SHORT_FORMAT)
     }
 

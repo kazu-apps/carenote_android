@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.ui.util.NotificationHelper
 import dagger.assisted.Assisted

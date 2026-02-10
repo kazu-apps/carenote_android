@@ -16,7 +16,8 @@
         android:supportsRtl="true"
         android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.CareNote"
-        tools:targetApi="35">
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="36">
 
         <!-- Disable default WorkManagerInitializer (using on-demand initialization) -->
         <provider
@@ -54,6 +55,29 @@
                 android:name="autoStoreLocales"
                 android:value="true" />
         </service>
+
+        <!-- FileProvider for sharing exported files -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Glance Widget Receiver -->
+        <receiver
+            android:name=".ui.widget.CareNoteWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
 
         <!-- Firebase Cloud Messaging Service -->
         <service

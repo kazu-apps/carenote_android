@@ -1,0 +1,210 @@
+package com.carenote.app.ui.screens.emergencycontact
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carenote.app.R
+import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.RelationshipType
+import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.util.SnackbarEvent
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun AddEditEmergencyContactScreen(
+    onNavigateBack: () -> Unit = {},
+    viewModel: AddEditEmergencyContactViewModel = hiltViewModel()
+) {
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.savedEvent.collect {
+            onNavigateBack()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.snackbarController.events.collect { event ->
+            val message = when (event) {
+                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    val handleBack: () -> Unit = {
+        if (viewModel.isDirty) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    BackHandler(onBack = handleBack)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(
+                            if (formState.isEditMode) R.string.emergency_contact_edit
+                            else R.string.emergency_contact_add
+                        ),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = handleBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_close)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
+        ) {
+            OutlinedTextField(
+                value = formState.name,
+                onValueChange = viewModel::updateName,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.emergency_contact_name_label)) },
+                placeholder = { Text(stringResource(R.string.emergency_contact_name_placeholder)) },
+                isError = formState.nameError != null,
+                supportingText = formState.nameError?.let { error ->
+                    { Text(error.asString()) }
+                },
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = formState.phoneNumber,
+                onValueChange = viewModel::updatePhoneNumber,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.emergency_contact_phone_label)) },
+                placeholder = { Text(stringResource(R.string.emergency_contact_phone_placeholder)) },
+                isError = formState.phoneNumberError != null,
+                supportingText = formState.phoneNumberError?.let { error ->
+                    { Text(error.asString()) }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+
+            Text(
+                text = stringResource(R.string.emergency_contact_relationship_label),
+                style = MaterialTheme.typography.titleSmall
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                RelationshipType.entries.forEach { type ->
+                    FilterChip(
+                        selected = formState.relationship == type,
+                        onClick = { viewModel.updateRelationship(type) },
+                        label = { Text(relationshipChipLabel(type)) }
+                    )
+                }
+            }
+
+            OutlinedTextField(
+                value = formState.memo,
+                onValueChange = viewModel::updateMemo,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.emergency_contact_memo_label)) },
+                placeholder = { Text(stringResource(R.string.emergency_contact_memo_placeholder)) },
+                minLines = 2,
+                maxLines = 4
+            )
+
+            Button(
+                onClick = viewModel::save,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                enabled = !formState.isSaving
+            ) {
+                Text(stringResource(R.string.common_save))
+            }
+        }
+    }
+
+    if (showDiscardDialog) {
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_discard_title),
+            message = stringResource(R.string.ui_confirm_discard_message),
+            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
+            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
+            onConfirm = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onDismiss = { showDiscardDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun relationshipChipLabel(type: RelationshipType): String {
+    return when (type) {
+        RelationshipType.FAMILY -> stringResource(R.string.emergency_contact_rel_family)
+        RelationshipType.FRIEND -> stringResource(R.string.emergency_contact_rel_friend)
+        RelationshipType.DOCTOR -> stringResource(R.string.emergency_contact_rel_doctor)
+        RelationshipType.HOSPITAL -> stringResource(R.string.emergency_contact_rel_hospital)
+        RelationshipType.EMERGENCY -> stringResource(R.string.emergency_contact_rel_emergency)
+        RelationshipType.OTHER -> stringResource(R.string.emergency_contact_rel_other)
+    }
+}

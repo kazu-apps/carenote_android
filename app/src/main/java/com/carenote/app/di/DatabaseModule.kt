@@ -6,14 +6,16 @@ import com.carenote.app.data.local.CareNoteDatabase
 import com.carenote.app.data.local.DatabaseEncryptionMigrator
 import com.carenote.app.data.local.DatabasePassphraseManager
 import com.carenote.app.data.local.DatabaseRecoveryHelper
+import com.carenote.app.data.local.dao.CareRecipientDao
 import com.carenote.app.data.local.dao.CalendarEventDao
+import com.carenote.app.data.local.dao.EmergencyContactDao
+import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.SyncMappingDao
 import com.carenote.app.data.local.dao.TaskDao
-import com.carenote.app.data.local.migration.Migrations
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -50,7 +52,7 @@ object DatabaseModule {
             CareNoteDatabase.DATABASE_NAME
         )
             .openHelperFactory(factory)
-            .addMigrations(*Migrations.all())
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 
@@ -94,5 +96,23 @@ object DatabaseModule {
     @Singleton
     fun provideSyncMappingDao(database: CareNoteDatabase): SyncMappingDao {
         return database.syncMappingDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCareRecipientDao(database: CareNoteDatabase): CareRecipientDao {
+        return database.careRecipientDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePhotoDao(database: CareNoteDatabase): PhotoDao {
+        return database.photoDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmergencyContactDao(database: CareNoteDatabase): EmergencyContactDao {
+        return database.emergencyContactDao()
     }
 }

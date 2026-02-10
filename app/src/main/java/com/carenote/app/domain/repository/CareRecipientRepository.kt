@@ -1,0 +1,13 @@
+package com.carenote.app.domain.repository
+
+import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.common.Result
+import com.carenote.app.domain.model.CareRecipient
+import kotlinx.coroutines.flow.Flow
+
+interface CareRecipientRepository {
+
+    fun getCareRecipient(): Flow<CareRecipient?>
+
+    suspend fun saveCareRecipient(careRecipient: CareRecipient): Result<Unit, DomainError>
+}

@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -62,10 +64,36 @@ fun BloodPressureChart(
 
             BloodPressureLegend()
 
+            val abnormalCount = remember(highPoints, lowPoints) {
+                highPoints.count { it.value >= thresholdHigh } +
+                    lowPoints.count { it.value >= thresholdLow }
+            }
+            val graphDescription = if (abnormalCount > 0) {
+                stringResource(
+                    R.string.a11y_graph_bp_summary,
+                    highPoints.size,
+                    highPoints.minOf { it.value }.toInt(),
+                    highPoints.maxOf { it.value }.toInt(),
+                    lowPoints.minOf { it.value }.toInt(),
+                    lowPoints.maxOf { it.value }.toInt(),
+                    abnormalCount
+                )
+            } else {
+                stringResource(
+                    R.string.a11y_graph_bp_summary_no_abnormal,
+                    highPoints.size,
+                    highPoints.minOf { it.value }.toInt(),
+                    highPoints.maxOf { it.value }.toInt(),
+                    lowPoints.minOf { it.value }.toInt(),
+                    lowPoints.maxOf { it.value }.toInt()
+                )
+            }
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(chartHeight.dp)
+                    .semantics { contentDescription = graphDescription }
             ) {
                 val chartLeft = yAxisWidth.dp.toPx()
                 val chartRight = size.width - 8.dp.toPx()

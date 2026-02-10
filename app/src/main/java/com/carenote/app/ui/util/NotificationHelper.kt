@@ -171,7 +171,7 @@ class NotificationHelper @Inject constructor(
 
         val notificationId = AppConfig.Notification.NOTIFICATION_ID_MEDICATION_BASE + safeIntId(medicationId)
         notificationManager.notify(notificationId, notification)
-        Timber.d("Medication reminder shown: id=$medicationId, name=$medicationName")
+        Timber.d("Medication reminder shown: id=$medicationId")
     }
 
     /**
@@ -213,6 +213,6 @@ class NotificationHelper @Inject constructor(
 
         val notificationId = AppConfig.Notification.NOTIFICATION_ID_TASK_BASE + safeIntId(taskId)
         notificationManager.notify(notificationId, notification)
-        Timber.d("Task reminder shown: id=$taskId, title=$taskTitle")
+        Timber.d("Task reminder shown: id=$taskId")
     }
 }

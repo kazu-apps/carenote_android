@@ -4,10 +4,13 @@ import android.content.Context
 import androidx.room.Room
 import com.carenote.app.data.local.CareNoteDatabase
 import com.carenote.app.data.local.dao.CalendarEventDao
+import com.carenote.app.data.local.dao.CareRecipientDao
+import com.carenote.app.data.local.dao.EmergencyContactDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
+import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.TaskDao
 import dagger.Module
 import dagger.Provides
@@ -73,5 +76,23 @@ object TestDatabaseModule {
     @Singleton
     fun provideTaskDao(database: CareNoteDatabase): TaskDao {
         return database.taskDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCareRecipientDao(database: CareNoteDatabase): CareRecipientDao {
+        return database.careRecipientDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePhotoDao(database: CareNoteDatabase): PhotoDao {
+        return database.photoDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmergencyContactDao(database: CareNoteDatabase): EmergencyContactDao {
+        return database.emergencyContactDao()
     }
 }

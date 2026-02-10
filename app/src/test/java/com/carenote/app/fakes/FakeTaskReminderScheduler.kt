@@ -1,6 +1,6 @@
 package com.carenote.app.fakes
 
-import com.carenote.app.data.worker.TaskReminderSchedulerInterface
+import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import java.time.LocalTime
 
 class FakeTaskReminderScheduler : TaskReminderSchedulerInterface {

@@ -74,6 +74,23 @@ fun MedicationCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                if (medication.currentStock != null) {
+                    val threshold = medication.lowStockThreshold
+                        ?: com.carenote.app.config.AppConfig.Medication.DEFAULT_LOW_STOCK_THRESHOLD
+                    val isLow = medication.currentStock <= threshold
+                    Text(
+                        text = stringResource(
+                            R.string.medication_stock_info,
+                            medication.currentStock
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isLow) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
             }
 
             if (status != null) {

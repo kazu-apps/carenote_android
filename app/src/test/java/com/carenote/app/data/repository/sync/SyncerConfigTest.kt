@@ -302,4 +302,50 @@ class SyncerConfigTest {
         // Then
         assertEquals(0, localStorage.size)
     }
+
+    // ========== カテゴリ D: getModifiedSince テスト ==========
+
+    @Test
+    fun `SyncerConfig getModifiedSince defaults to null`() {
+        // Given: getModifiedSince を指定しない
+        val config = createTestConfig()
+
+        // Then
+        assertEquals(null, config.getModifiedSince)
+    }
+
+    @Test
+    fun `ConfigDrivenEntitySyncer delegates getModifiedSince to config`() = runTest {
+        // Given: getModifiedSince を設定
+        localStorage[1L] = TestEntity(id = 1, name = "Old", updatedAt = now.minusDays(5))
+        localStorage[2L] = TestEntity(id = 2, name = "New", updatedAt = now)
+
+        val cutoff = now.minusDays(1)
+        val config = createTestConfig().copy(
+            getModifiedSince = { lastSyncTime ->
+                localStorage.values.filter { it.updatedAt.isAfter(lastSyncTime) }
+            }
+        )
+        val syncer = createSyncer(config)
+
+        // When
+        val result = syncer.getModifiedSince(cutoff)
+
+        // Then: cutoff より後の 1 件のみ
+        assertNotNull(result)
+        assertEquals(1, result!!.size)
+        assertEquals("New", result[0].name)
+    }
+
+    @Test
+    fun `ConfigDrivenEntitySyncer getModifiedSince returns null when config has no getModifiedSince`() = runTest {
+        // Given: デフォルトの config（getModifiedSince = null）
+        val syncer = createSyncer()
+
+        // When
+        val result = syncer.getModifiedSince(now)
+
+        // Then
+        assertNull(result)
+    }
 }

@@ -2,27 +2,25 @@ package com.carenote.app.ui.screens.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
-import com.carenote.app.data.worker.TaskReminderSchedulerInterface
-import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.ui.util.SnackbarController
-import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDate
@@ -37,43 +35,30 @@ class TasksViewModel @Inject constructor(
 
     val snackbarController = SnackbarController()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     private val _filterMode = MutableStateFlow(TaskFilterMode.ALL)
     val filterMode: StateFlow<TaskFilterMode> = _filterMode.asStateFlow()
 
-    private val _refreshTrigger = MutableStateFlow(0L)
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val tasks: StateFlow<UiState<List<Task>>> =
-        combine(_filterMode, _refreshTrigger) { mode, _ -> mode }
-            .flatMapLatest { mode ->
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val tasks: Flow<PagingData<Task>> =
+        combine(
+            _searchQuery.debounce(AppConfig.UI.SEARCH_DEBOUNCE_MS),
+            _filterMode
+        ) { query, mode -> query to mode }
+            .flatMapLatest { (query, mode) ->
                 when (mode) {
-                    TaskFilterMode.ALL -> taskRepository.getAllTasks()
-                    TaskFilterMode.INCOMPLETE -> taskRepository.getIncompleteTasks()
-                    TaskFilterMode.COMPLETED -> taskRepository.getAllTasks()
-                        .map { list -> list.filter { it.isCompleted } }
+                    TaskFilterMode.ALL -> taskRepository.getPagedAllTasks(query)
+                    TaskFilterMode.INCOMPLETE -> taskRepository.getPagedIncompleteTasks(query)
+                    TaskFilterMode.COMPLETED -> taskRepository.getPagedCompletedTasks(query)
                 }
             }
-            .map { taskList ->
-                @Suppress("USELESS_CAST")
-                UiState.Success(taskList) as UiState<List<Task>>
-            }
-            .catch { e ->
-                Timber.w("Failed to observe tasks: $e")
-                emit(UiState.Error(DomainError.DatabaseError(e.message ?: "Unknown error")))
-            }
-            .onEach { _isRefreshing.value = false }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
-                initialValue = UiState.Loading
-            )
-
-    fun refresh() {
-        _isRefreshing.value = true
-        _refreshTrigger.value = System.nanoTime()
-    }
+            .cachedIn(viewModelScope)
 
     fun setFilterMode(mode: TaskFilterMode) {
         _filterMode.value = mode

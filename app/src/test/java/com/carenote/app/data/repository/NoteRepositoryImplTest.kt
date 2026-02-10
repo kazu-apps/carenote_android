@@ -7,6 +7,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.domain.repository.PhotoRepository
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -25,13 +26,15 @@ class NoteRepositoryImplTest {
 
     private lateinit var dao: NoteDao
     private lateinit var mapper: NoteMapper
+    private lateinit var photoRepository: PhotoRepository
     private lateinit var repository: NoteRepositoryImpl
 
     @Before
     fun setUp() {
         dao = mockk()
         mapper = NoteMapper()
-        repository = NoteRepositoryImpl(dao, mapper)
+        photoRepository = mockk()
+        repository = NoteRepositoryImpl(dao, mapper, photoRepository)
     }
 
     private fun createEntity(
@@ -218,6 +221,7 @@ class NoteRepositoryImplTest {
 
     @Test
     fun `deleteNote returns Success`() = runTest {
+        coEvery { photoRepository.deletePhotosForParent("note", 1L) } returns Result.Success(Unit)
         coEvery { dao.deleteNote(1L) } returns Unit
 
         val result = repository.deleteNote(1L)
@@ -228,10 +232,53 @@ class NoteRepositoryImplTest {
 
     @Test
     fun `deleteNote returns Failure on db error`() = runTest {
+        coEvery { photoRepository.deletePhotosForParent("note", 1L) } returns Result.Success(Unit)
         coEvery { dao.deleteNote(1L) } throws RuntimeException("DB error")
 
         val result = repository.deleteNote(1L)
 
         assertTrue(result is Result.Failure)
+    }
+
+    @Test
+    fun `deleteNote cascades photo deletion`() = runTest {
+        coEvery { photoRepository.deletePhotosForParent("note", 5L) } returns Result.Success(Unit)
+        coEvery { dao.deleteNote(5L) } returns Unit
+
+        repository.deleteNote(5L)
+
+        coVerify { photoRepository.deletePhotosForParent("note", 5L) }
+        coVerify { dao.deleteNote(5L) }
+    }
+
+    @Test
+    fun `deleteNote deletes photos before note`() = runTest {
+        val callOrder = mutableListOf<String>()
+        coEvery { photoRepository.deletePhotosForParent("note", 1L) } coAnswers {
+            callOrder.add("photos")
+            Result.Success(Unit)
+        }
+        coEvery { dao.deleteNote(1L) } coAnswers {
+            callOrder.add("note")
+            Unit
+        }
+
+        repository.deleteNote(1L)
+
+        assertEquals(listOf("photos", "note"), callOrder)
+    }
+
+    @Test
+    fun `deleteNote still succeeds when photo deletion fails`() = runTest {
+        coEvery {
+            photoRepository.deletePhotosForParent("note", 1L)
+        } returns Result.Failure(DomainError.DatabaseError("Photo DB error"))
+        coEvery { dao.deleteNote(1L) } returns Unit
+
+        val result = repository.deleteNote(1L)
+
+        assertTrue(result is Result.Success)
+        coVerify { photoRepository.deletePhotosForParent("note", 1L) }
+        coVerify { dao.deleteNote(1L) }
     }
 }

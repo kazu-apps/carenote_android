@@ -8,6 +8,8 @@ import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.repository.MedicationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,6 +28,12 @@ class MedicationRepositoryImpl @Inject constructor(
     override fun getMedicationById(id: Long): Flow<Medication?> {
         return medicationDao.getMedicationById(id).map { entity ->
             entity?.let { mapper.toDomain(it) }
+        }
+    }
+
+    override fun searchMedications(query: String): Flow<List<Medication>> {
+        return medicationDao.searchMedications(query).map { entities ->
+            mapper.toDomainList(entities)
         }
     }
 
@@ -50,6 +58,15 @@ class MedicationRepositoryImpl @Inject constructor(
             errorTransform = { DomainError.DatabaseError("Failed to delete medication", it) }
         ) {
             medicationDao.deleteMedication(id)
+        }
+    }
+
+    override suspend fun decrementStock(medicationId: Long, amount: Int): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to decrement stock", it) }
+        ) {
+            val updatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            medicationDao.decrementStock(medicationId, amount, updatedAt)
         }
     }
 }

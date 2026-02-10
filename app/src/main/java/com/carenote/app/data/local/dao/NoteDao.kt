@@ -67,6 +67,13 @@ interface NoteDao {
     @Query("DELETE FROM notes WHERE id = :id")
     suspend fun deleteNote(id: Long)
 
+    @Query(
+        "SELECT * FROM notes " +
+            "WHERE created_at >= :startOfDay AND created_at < :startOfNextDay " +
+            "ORDER BY created_at DESC"
+    )
+    fun getNotesByDateRange(startOfDay: String, startOfNextDay: String): Flow<List<NoteEntity>>
+
     @Query("SELECT * FROM notes WHERE updated_at > :lastSyncTime")
     suspend fun getModifiedSince(lastSyncTime: String): List<NoteEntity>
 }

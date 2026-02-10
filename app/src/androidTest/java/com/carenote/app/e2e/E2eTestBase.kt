@@ -29,6 +29,7 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -82,6 +83,13 @@ abstract class E2eTestBase {
         fakeAuthRepository.clear()
         fakeSyncRepository.clear()
         fakeSyncWorkScheduler.clear()
+        cleanupCacheDir("photos")
+        cleanupCacheDir("exports")
+    }
+
+    private fun cleanupCacheDir(dirName: String) {
+        val dir = File(context.cacheDir, dirName)
+        if (dir.exists()) dir.deleteRecursively()
     }
 
     // --- Auth helpers ---

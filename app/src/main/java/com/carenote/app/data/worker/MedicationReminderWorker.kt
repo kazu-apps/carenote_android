@@ -7,6 +7,7 @@ import androidx.work.WorkerParameters
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.MedicationLogRepository
+import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.ui.util.NotificationHelper
 import dagger.assisted.Assisted
@@ -60,7 +61,7 @@ class MedicationReminderWorker @AssistedInject constructor(
 
         Timber.d(
             "MedicationReminderWorker started: id=$medicationId, " +
-                "name=$medicationName, timing=$timing, attempt=$followUpAttempt"
+                "timing=$timing, attempt=$followUpAttempt"
         )
 
         if (medicationId == INVALID_MEDICATION_ID) {

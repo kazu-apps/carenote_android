@@ -3,7 +3,7 @@ package com.carenote.app.ui.screens.auth
 import com.carenote.app.R
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.repository.AuthRepository
-import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.ui.util.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +74,7 @@ class RegisterFormHandler(
                 .onSuccess {
                     Timber.d("User signed up successfully")
                     syncWorkScheduler.schedulePeriodicSync()
+                    syncWorkScheduler.triggerImmediateSync()
                     snackbarController.showMessage(R.string.auth_register_success)
                     authSuccessChannel.send(true)
                 }

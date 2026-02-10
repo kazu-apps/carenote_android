@@ -206,6 +206,16 @@ class LoginFormHandlerTest {
     }
 
     @Test
+    fun `signIn success triggers immediate sync`() = runTest(testDispatcher) {
+        handler.updateEmail("test@example.com")
+        handler.updatePassword("password123")
+        handler.signIn()
+        advanceUntilIdle()
+
+        assertEquals(1, syncWorkScheduler.triggerImmediateSyncCallCount)
+    }
+
+    @Test
     fun `resetState clears form`() = runTest(testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")

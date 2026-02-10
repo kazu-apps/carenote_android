@@ -216,7 +216,10 @@ class MedicationLogSyncer @Inject constructor(
         syncTime: LocalDateTime
     ): SyncResult {
         val path = collectionPath(careRecipientId, medicationRemoteId)
-        val query = firestore.get().collection(path).whereEqualTo("deletedAt", null)
+        var query = firestore.get().collection(path).whereEqualTo("deletedAt", null)
+        if (lastSyncTime != null) {
+            query = query.whereGreaterThan("recordedAt", lastSyncTime.toString())
+        }
         val querySnapshot = query.get().await()
 
         var downloadedCount = 0

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Contacts
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.carenote.app.R
@@ -94,12 +95,35 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.Description
     )
 
+    data object CareRecipientProfile : Screen(
+        route = "care_recipient_profile",
+        titleResId = R.string.care_recipient_profile,
+        selectedIcon = Icons.Filled.Person,
+        unselectedIcon = Icons.Outlined.Person
+    )
+
+    data object Timeline : Screen(
+        route = "timeline",
+        titleResId = R.string.timeline_title,
+        selectedIcon = Icons.Filled.History,
+        unselectedIcon = Icons.Outlined.History
+    )
+
     data object AddMedication : Screen(
         route = "add_medication",
         titleResId = R.string.medication_add,
         selectedIcon = Icons.Filled.Add,
         unselectedIcon = Icons.Outlined.Add
     )
+
+    data object EditMedication : Screen(
+        route = "edit_medication/{medicationId}",
+        titleResId = R.string.medication_edit,
+        selectedIcon = Icons.Filled.Medication,
+        unselectedIcon = Icons.Outlined.Medication
+    ) {
+        fun createRoute(medicationId: Long): String = "edit_medication/$medicationId"
+    }
 
     data object MedicationDetail : Screen(
         route = "medication_detail/{medicationId}",
@@ -156,6 +180,29 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.CalendarMonth
     ) {
         fun createRoute(eventId: Long): String = "edit_calendar_event/$eventId"
+    }
+
+    data object EmergencyContacts : Screen(
+        route = "emergency_contacts",
+        titleResId = R.string.emergency_contact_title,
+        selectedIcon = Icons.Filled.Contacts,
+        unselectedIcon = Icons.Outlined.Contacts
+    )
+
+    data object AddEmergencyContact : Screen(
+        route = "add_emergency_contact",
+        titleResId = R.string.emergency_contact_add,
+        selectedIcon = Icons.Filled.Add,
+        unselectedIcon = Icons.Outlined.Add
+    )
+
+    data object EditEmergencyContact : Screen(
+        route = "edit_emergency_contact/{contactId}",
+        titleResId = R.string.emergency_contact_edit,
+        selectedIcon = Icons.Filled.Contacts,
+        unselectedIcon = Icons.Outlined.Contacts
+    ) {
+        fun createRoute(contactId: Long): String = "edit_emergency_contact/$contactId"
     }
 
     data object AddTask : Screen(

@@ -11,9 +11,13 @@ interface MedicationRepository {
 
     fun getMedicationById(id: Long): Flow<Medication?>
 
+    fun searchMedications(query: String): Flow<List<Medication>>
+
     suspend fun insertMedication(medication: Medication): Result<Long, DomainError>
 
     suspend fun updateMedication(medication: Medication): Result<Unit, DomainError>
 
     suspend fun deleteMedication(id: Long): Result<Unit, DomainError>
+
+    suspend fun decrementStock(medicationId: Long, amount: Int = 1): Result<Unit, DomainError>
 }

@@ -22,7 +22,7 @@ import androidx.navigation.navDeepLink
 import com.carenote.app.ui.screens.calendar.AddEditCalendarEventScreen
 import com.carenote.app.ui.screens.calendar.CalendarScreen
 import com.carenote.app.ui.screens.healthrecords.HealthRecordsScreen
-import com.carenote.app.ui.screens.medication.AddMedicationScreen
+import com.carenote.app.ui.screens.medication.AddEditMedicationScreen
 import com.carenote.app.ui.screens.medication.MedicationDetailScreen
 import com.carenote.app.ui.screens.medication.MedicationScreen
 import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordScreen
@@ -31,10 +31,14 @@ import com.carenote.app.ui.screens.notes.NotesScreen
 import com.carenote.app.ui.screens.auth.ForgotPasswordScreen
 import com.carenote.app.ui.screens.auth.LoginScreen
 import com.carenote.app.ui.screens.auth.RegisterScreen
+import com.carenote.app.ui.screens.carerecipient.CareRecipientScreen
+import com.carenote.app.ui.screens.emergencycontact.AddEditEmergencyContactScreen
+import com.carenote.app.ui.screens.emergencycontact.EmergencyContactListScreen
 import com.carenote.app.ui.screens.settings.LegalDocumentScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
 import com.carenote.app.ui.screens.tasks.AddEditTaskScreen
 import com.carenote.app.ui.screens.tasks.TasksScreen
+import com.carenote.app.ui.screens.timeline.TimelineScreen
 
 @Composable
 fun CareNoteNavHost(
@@ -65,7 +69,16 @@ fun CareNoteNavHost(
                 },
                 onNavigateToEditEvent = { eventId ->
                     navController.navigate(Screen.EditCalendarEvent.createRoute(eventId))
+                },
+                onNavigateToTimeline = {
+                    navController.navigate(Screen.Timeline.route)
                 }
+            )
+        }
+
+        composable(Screen.Timeline.route) {
+            TimelineScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -109,7 +122,48 @@ fun CareNoteNavHost(
                 },
                 onNavigateToTermsOfService = {
                     navController.navigate(Screen.TermsOfService.route)
+                },
+                onNavigateToCareRecipient = {
+                    navController.navigate(Screen.CareRecipientProfile.route)
+                },
+                onNavigateToEmergencyContacts = {
+                    navController.navigate(Screen.EmergencyContacts.route)
                 }
+            )
+        }
+
+        composable(Screen.CareRecipientProfile.route) {
+            CareRecipientScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.EmergencyContacts.route) {
+            EmergencyContactListScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAdd = {
+                    navController.navigate(Screen.AddEmergencyContact.route)
+                },
+                onNavigateToEdit = { contactId ->
+                    navController.navigate(Screen.EditEmergencyContact.createRoute(contactId))
+                }
+            )
+        }
+
+        composable(Screen.AddEmergencyContact.route) {
+            AddEditEmergencyContactScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EditEmergencyContact.route,
+            arguments = listOf(
+                navArgument("contactId") { type = NavType.LongType }
+            )
+        ) {
+            AddEditEmergencyContactScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -146,7 +200,18 @@ fun CareNoteNavHost(
         }
 
         composable(Screen.AddMedication.route) {
-            AddMedicationScreen(
+            AddEditMedicationScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EditMedication.route,
+            arguments = listOf(
+                navArgument("medicationId") { type = NavType.LongType }
+            )
+        ) {
+            AddEditMedicationScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -163,7 +228,10 @@ fun CareNoteNavHost(
             )
         ) {
             MedicationDetailScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEdit = { medicationId ->
+                    navController.navigate(Screen.EditMedication.createRoute(medicationId))
+                }
             )
         }
 

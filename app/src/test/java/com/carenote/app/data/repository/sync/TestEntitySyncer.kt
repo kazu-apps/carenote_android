@@ -81,6 +81,9 @@ class TestEntitySyncer(
     var downloadCount = 0
         private set
 
+    /** getModifiedSince の結果をオーバーライド可能（null = 未実装、emptyList() = 空結果） */
+    var overrideGetModifiedSince: List<TestEntity>? = null
+
     /** 全状態をリセット */
     fun clear() {
         localStorage.clear()
@@ -92,6 +95,7 @@ class TestEntitySyncer(
         simulatePushWithoutFirestore = false
         uploadCount = 0
         downloadCount = 0
+        overrideGetModifiedSince = null
     }
 
     /** ローカルエンティティを追加 */
@@ -184,6 +188,9 @@ class TestEntitySyncer(
 
     override fun getUpdatedAt(entity: TestEntity): LocalDateTime = entity.updatedAt
 
+    override suspend fun getModifiedSince(lastSyncTime: LocalDateTime): List<TestEntity>? =
+        overrideGetModifiedSince
+
     // ========== オーバーライド可能なテスト用メソッド ==========
 
     override suspend fun pushLocalChanges(
@@ -209,7 +216,11 @@ class TestEntitySyncer(
         lastSyncTime: LocalDateTime?,
         syncTime: LocalDateTime
     ): SyncResult {
-        val localEntities = getAllLocal()
+        val localEntities = if (lastSyncTime != null) {
+            getModifiedSince(lastSyncTime) ?: getAllLocal()
+        } else {
+            getAllLocal()
+        }
         val mappings = syncMappingDao.getAllByTypeIncludingDeleted(entityType)
         val mappingsByLocalId = mappings.associateBy { it.localId }
 

@@ -1,5 +1,6 @@
 package com.carenote.app.domain.model
 
+import androidx.compose.runtime.Immutable
 import java.time.LocalDateTime
 
 /**
@@ -27,6 +28,7 @@ enum class ExcretionType {
 /**
  * 健康記録モデル
  */
+@Immutable
 data class HealthRecord(
     val id: Long = 0,
     val temperature: Double? = null,

@@ -24,7 +24,9 @@ class MedicationMapper @Inject constructor() : Mapper<MedicationEntity, Medicati
             times = parseTimes(entity.times),
             reminderEnabled = entity.reminderEnabled,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
-            updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
+            updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter),
+            currentStock = entity.currentStock,
+            lowStockThreshold = entity.lowStockThreshold
         )
     }
 
@@ -37,7 +39,9 @@ class MedicationMapper @Inject constructor() : Mapper<MedicationEntity, Medicati
             times = serializeTimes(domain.times),
             reminderEnabled = domain.reminderEnabled,
             createdAt = domain.createdAt.format(dateTimeFormatter),
-            updatedAt = domain.updatedAt.format(dateTimeFormatter)
+            updatedAt = domain.updatedAt.format(dateTimeFormatter),
+            currentStock = domain.currentStock,
+            lowStockThreshold = domain.lowStockThreshold
         )
     }
 

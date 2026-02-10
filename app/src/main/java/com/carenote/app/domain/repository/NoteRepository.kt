@@ -6,12 +6,15 @@ import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 interface NoteRepository {
 
     fun getAllNotes(): Flow<List<Note>>
 
     fun getNoteById(id: Long): Flow<Note?>
+
+    fun getNotesByDate(date: LocalDate): Flow<List<Note>>
 
     fun searchNotes(query: String, tag: NoteTag?): Flow<List<Note>>
 

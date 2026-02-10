@@ -2,11 +2,15 @@ package com.carenote.app.ui.screens.healthrecords
 
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.domain.repository.HealthRecordCsvExporterInterface
+import com.carenote.app.domain.repository.HealthRecordPdfExporterInterface
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -27,12 +31,17 @@ class HealthRecordsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeHealthRecordRepository
+    private lateinit var csvExporter: HealthRecordCsvExporterInterface
+    private lateinit var pdfExporter: HealthRecordPdfExporterInterface
     private lateinit var viewModel: HealthRecordsViewModel
+    private val fakeUri = mockk<android.net.Uri>()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeHealthRecordRepository()
+        csvExporter = mockk()
+        pdfExporter = mockk()
     }
 
     @After
@@ -41,7 +50,7 @@ class HealthRecordsViewModelTest {
     }
 
     private fun createViewModel(): HealthRecordsViewModel {
-        return HealthRecordsViewModel(repository)
+        return HealthRecordsViewModel(repository, csvExporter, pdfExporter)
     }
 
     private fun createRecord(
@@ -232,6 +241,49 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
+    fun `searchQuery is empty initially`() {
+        viewModel = createViewModel()
+
+        assertEquals("", viewModel.searchQuery.value)
+    }
+
+    @Test
+    fun `updateSearchQuery updates searchQuery`() {
+        viewModel = createViewModel()
+
+        viewModel.updateSearchQuery("頭痛")
+
+        assertEquals("頭痛", viewModel.searchQuery.value)
+    }
+
+    @Test
+    fun `search filters records by conditionNote`() = runTest(testDispatcher) {
+        val records = listOf(
+            createRecord(id = 1L, conditionNote = "頭痛あり"),
+            createRecord(id = 2L, conditionNote = "食欲良好"),
+            createRecord(id = 3L, conditionNote = "頭痛と吐き気")
+        )
+        repository.setRecords(records)
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            val initial = expectMostRecentItem()
+            assertTrue(initial is UiState.Success)
+            assertEquals(3, (initial as UiState.Success).data.size)
+
+            viewModel.updateSearchQuery("頭痛")
+            advanceUntilIdle()
+
+            val filtered = expectMostRecentItem()
+            assertTrue(filtered is UiState.Success)
+            val data = (filtered as UiState.Success).data
+            assertEquals(2, data.size)
+            assertTrue(data.all { it.conditionNote.contains("頭痛") })
+        }
+    }
+
+    @Test
     fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
         repository.setRecords(listOf(createRecord(id = 1L)))
         viewModel = createViewModel()
@@ -247,5 +299,172 @@ class HealthRecordsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
         assertFalse(viewModel.isRefreshing.value)
+    }
+
+    @Test
+    fun `exportState is Idle initially`() {
+        viewModel = createViewModel()
+
+        assertTrue(viewModel.exportState.value is ExportState.Idle)
+    }
+
+    @Test
+    fun `exportCsv calls csvExporter and sets Success`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L))
+        repository.setRecords(records)
+        coEvery { csvExporter.export(any()) } returns fakeUri
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        val state = viewModel.exportState.value
+        assertTrue(state is ExportState.Success)
+        assertEquals("text/csv", (state as ExportState.Success).mimeType)
+    }
+
+    @Test
+    fun `exportPdf calls pdfExporter and sets Success`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L))
+        repository.setRecords(records)
+        coEvery { pdfExporter.export(any()) } returns fakeUri
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.exportPdf()
+        advanceUntilIdle()
+
+        val state = viewModel.exportState.value
+        assertTrue(state is ExportState.Success)
+        assertEquals("application/pdf", (state as ExportState.Success).mimeType)
+    }
+
+    @Test
+    fun `exportCsv with empty records shows snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.snackbarController.events.test {
+            viewModel.exportCsv()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.health_records_export_empty,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `exportPdf with empty records shows snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.snackbarController.events.test {
+            viewModel.exportPdf()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.health_records_export_empty,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `exportCsv failure sets Error state`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L))
+        repository.setRecords(records)
+        coEvery { csvExporter.export(any()) } throws RuntimeException("Export failed")
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        val state = viewModel.exportState.value
+        assertTrue(state is ExportState.Error)
+    }
+
+    @Test
+    fun `exportPdf failure sets Error state`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L))
+        repository.setRecords(records)
+        coEvery { pdfExporter.export(any()) } throws RuntimeException("Export failed")
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.exportPdf()
+        advanceUntilIdle()
+
+        val state = viewModel.exportState.value
+        assertTrue(state is ExportState.Error)
+    }
+
+    @Test
+    fun `exportState resets to Idle after Error`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L))
+        repository.setRecords(records)
+        coEvery { csvExporter.export(any()) } throws RuntimeException("Export failed")
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+        assertTrue(viewModel.exportState.value is ExportState.Error)
+
+        viewModel.resetExportState()
+        assertTrue(viewModel.exportState.value is ExportState.Idle)
+    }
+
+    @Test
+    fun `resetExportState sets Idle`() = runTest(testDispatcher) {
+        val records = listOf(createRecord(id = 1L))
+        repository.setRecords(records)
+        coEvery { csvExporter.export(any()) } returns fakeUri
+        viewModel = createViewModel()
+
+        viewModel.records.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+        }
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+
+        viewModel.resetExportState()
+        assertTrue(viewModel.exportState.value is ExportState.Idle)
     }
 }

@@ -221,6 +221,26 @@ class TaskRepositoryImplTest {
         assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
     }
 
+    @Test
+    fun `getIncompleteTaskCount returns flow of count`() = runTest {
+        every { dao.getIncompleteTaskCount() } returns flowOf(3)
+
+        repository.getIncompleteTaskCount().test {
+            assertEquals(3, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getIncompleteTaskCount returns zero when no tasks`() = runTest {
+        every { dao.getIncompleteTaskCount() } returns flowOf(0)
+
+        repository.getIncompleteTaskCount().test {
+            assertEquals(0, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     private fun assertFalse(value: Boolean) {
         org.junit.Assert.assertFalse(value)
     }

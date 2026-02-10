@@ -127,7 +127,10 @@ fun HealthRecordsScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { showExportMenu = true }) {
+                    IconButton(
+                        onClick = { showExportMenu = true },
+                        modifier = Modifier.testTag(TestTags.EXPORT_BUTTON)
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.FileDownload,
                             contentDescription = stringResource(R.string.health_records_export)
@@ -142,14 +145,16 @@ fun HealthRecordsScreen(
                             onClick = {
                                 showExportMenu = false
                                 viewModel.exportCsv()
-                            }
+                            },
+                            modifier = Modifier.testTag(TestTags.EXPORT_CSV_ITEM)
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.health_records_export_pdf)) },
                             onClick = {
                                 showExportMenu = false
                                 viewModel.exportPdf()
-                            }
+                            },
+                            modifier = Modifier.testTag(TestTags.EXPORT_PDF_ITEM)
                         )
                     }
                 },

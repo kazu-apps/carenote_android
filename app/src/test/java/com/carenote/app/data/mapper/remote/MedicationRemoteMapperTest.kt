@@ -159,9 +159,60 @@ class MedicationRemoteMapperTest {
         assertTrue(result.timings.isEmpty())
     }
 
+    @Test
+    fun `toDomain maps stock fields correctly`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "name" to "テスト薬",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp,
+            "currentStock" to 20L,
+            "lowStockThreshold" to 5L
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(20, result.currentStock)
+        assertEquals(5, result.lowStockThreshold)
+    }
+
+    @Test
+    fun `toDomain maps null stock fields correctly`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "name" to "テスト薬",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertNull(result.currentStock)
+        assertNull(result.lowStockThreshold)
+    }
+
     // endregion
 
     // region toRemote
+
+    @Test
+    fun `toRemote maps stock fields correctly`() {
+        val medication = Medication(
+            id = 1L,
+            name = "テスト薬",
+            createdAt = testDateTime,
+            updatedAt = testDateTime,
+            currentStock = 10,
+            lowStockThreshold = 3
+        )
+
+        val result = mapper.toRemote(medication, null)
+
+        assertEquals(10, result["currentStock"])
+        assertEquals(3, result["lowStockThreshold"])
+    }
 
     @Test
     fun `toRemote maps all fields correctly`() {

@@ -178,6 +178,10 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.storage)
 
+    // Glance Widget
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // Image Loading
     implementation(libs.coil.compose)
 
@@ -288,6 +292,7 @@ tasks.register<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
         "**/service/*",
         "**/service/**",
         "**/worker/*",
+        "**/ui/widget/*",
         "**/ui/util/AssetReader*",
         "**/ui/util/CrashlyticsTree*",
         "**/ui/util/LocaleManager*",

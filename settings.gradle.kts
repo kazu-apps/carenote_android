@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "CareNote"
 include(":app")
+include(":baselineprofile")
+include(":benchmark")

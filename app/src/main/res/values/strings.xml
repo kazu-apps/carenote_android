@@ -64,6 +64,10 @@
     <string name="settings_biometric_enabled">生体認証でロック</string>
     <string name="settings_biometric_summary">アプリ起動時・復帰時に認証を要求</string>
     <string name="settings_biometric_not_available">このデバイスでは生体認証を利用できません</string>
+    <string name="security_root_detected_title">Root 検出</string>
+    <string name="security_root_detected_summary">このデバイスは Root 化されている可能性があります。データの安全性が低下する恐れがあります。</string>
+    <string name="security_root_warning_dialog_title">セキュリティ警告</string>
+    <string name="security_root_warning_dialog_message">このデバイスは Root 化されている可能性があります。Root 化されたデバイスでは、アプリのデータが第三者にアクセスされるリスクがあります。個人情報の取り扱いにご注意ください。</string>
 
     <!-- Account Settings -->
     <string name="settings_account">アカウント</string>
@@ -167,6 +171,16 @@
     <string name="medication_no_history">服薬記録はありません</string>
     <string name="medication_edit">薬を編集</string>
     <string name="medication_updated">薬を更新しました</string>
+    <string name="medication_stock_section">在庫管理</string>
+    <string name="medication_current_stock">在庫: %d個</string>
+    <string name="medication_current_stock_label">現在の在庫数</string>
+    <string name="medication_current_stock_hint">空欄で在庫追跡なし</string>
+    <string name="medication_low_stock_threshold">残数少アラート: %d個以下</string>
+    <string name="medication_low_stock_threshold_label">残数少アラートしきい値</string>
+    <string name="medication_low_stock_threshold_hint">デフォルト: 5</string>
+    <string name="medication_low_stock_warning">在庫が少なくなっています</string>
+    <string name="medication_stock_info">在庫: %d個</string>
+    <string name="medication_stock_validation_range">在庫数は0〜9999の範囲で入力してください</string>
 
     <!-- Calendar -->
     <string name="calendar_title">カレンダー</string>
@@ -367,7 +381,6 @@
     <string name="common_close">閉じる</string>
     <string name="common_add">追加</string>
     <string name="common_memo">メモ</string>
-    <string name="common_photo_add">写真を追加</string>
     <string name="common_notification">通知</string>
     <string name="common_reminder">リマインダー</string>
     <string name="common_search">検索…</string>
@@ -411,6 +424,10 @@
     <string name="a11y_day_cell_selected">%1$d日、選択中</string>
     <string name="a11y_day_cell_has_events">%1$d日、予定あり</string>
     <string name="a11y_long_press_for_options">長押しで操作メニューを表示</string>
+    <string name="a11y_graph_temperature_summary">体温の推移グラフ、%1$d件のデータ、%2$.1f℃から%3$.1f℃、異常値%4$d件</string>
+    <string name="a11y_graph_temperature_summary_no_abnormal">体温の推移グラフ、%1$d件のデータ、%2$.1f℃から%3$.1f℃</string>
+    <string name="a11y_graph_bp_summary">血圧の推移グラフ、%1$d件のデータ、上%2$d〜%3$dmmHg、下%4$d〜%5$dmmHg、異常値%6$d件</string>
+    <string name="a11y_graph_bp_summary_no_abnormal">血圧の推移グラフ、%1$d件のデータ、上%2$d〜%3$dmmHg、下%4$d〜%5$dmmHg</string>
 
     <!-- Auth -->
     <string name="auth_login_title">ログイン</string>
@@ -451,9 +468,6 @@
     <string name="legal_terms_of_service_title">利用規約</string>
     <string name="legal_last_updated">最終更新日: %s</string>
 
-    <!-- Placeholder -->
-    <string name="placeholder_coming_soon">この機能は近日公開予定です</string>
-
     <!-- Notification Channels -->
     <string name="notification_channel_medication_name">服薬リマインダー</string>
     <string name="notification_channel_medication_description">服薬時間をお知らせします</string>
@@ -471,4 +485,65 @@
     <string name="notification_channel_task_description">タスクの期限をお知らせします</string>
     <string name="notification_task_reminder_title">タスクのリマインダー</string>
     <string name="notification_task_reminder_text">%1$s</string>
+
+    <!-- Navigation Badge -->
+    <string name="nav_tasks_badge">未完了タスク %d 件</string>
+
+    <!-- Timeline -->
+    <string name="timeline_title">タイムライン</string>
+    <string name="timeline_empty">この日の記録はありません</string>
+    <string name="timeline_medication_log">服薬記録</string>
+    <string name="timeline_calendar_event">予定</string>
+    <string name="timeline_task">タスク</string>
+    <string name="timeline_health_record">健康記録</string>
+    <string name="timeline_note">メモ</string>
+    <string name="timeline_unknown_medication">不明な薬</string>
+    <string name="timeline_medication_taken">服用済み</string>
+    <string name="timeline_medication_skipped">スキップ</string>
+    <string name="timeline_medication_postponed">延期</string>
+    <string name="a11y_timeline_previous_day">前日</string>
+    <string name="a11y_timeline_next_day">翌日</string>
+    <string name="a11y_timeline_icon">タイムラインを表示</string>
+
+    <!-- Widget -->
+    <string name="widget_name">ケアのて サマリー</string>
+    <string name="widget_description">今日の服薬状況とタスクを表示</string>
+    <string name="widget_medication_title">服薬</string>
+    <string name="widget_tasks_title">タスク</string>
+    <string name="widget_no_medications">登録されている薬はありません</string>
+    <string name="widget_no_tasks">今日のタスクはありません</string>
+    <string name="widget_open_app">アプリを開く</string>
+    <string name="widget_status_taken">済</string>
+    <string name="widget_status_skipped">不可</string>
+    <string name="widget_status_pending">未</string>
+
+    <!-- Emergency Contact -->
+    <string name="emergency_contact_title">緊急連絡先</string>
+    <string name="emergency_contact_section_title">緊急連絡先</string>
+    <string name="emergency_contact_section_summary">家族や医療関係者の連絡先を管理</string>
+    <string name="emergency_contact_add">連絡先を追加</string>
+    <string name="emergency_contact_edit">連絡先を編集</string>
+    <string name="emergency_contact_empty">緊急連絡先はまだありません</string>
+    <string name="emergency_contact_empty_action">連絡先を追加する</string>
+    <string name="emergency_contact_name_label">名前</string>
+    <string name="emergency_contact_name_placeholder">連絡先の名前を入力</string>
+    <string name="emergency_contact_phone_label">電話番号</string>
+    <string name="emergency_contact_phone_placeholder">電話番号を入力</string>
+    <string name="emergency_contact_relationship_label">続柄</string>
+    <string name="emergency_contact_memo_label">メモ</string>
+    <string name="emergency_contact_memo_placeholder">メモを入力（任意）</string>
+    <string name="emergency_contact_name_required">名前を入力してください</string>
+    <string name="emergency_contact_phone_required">電話番号を入力してください</string>
+    <string name="emergency_contact_saved">連絡先を保存しました</string>
+    <string name="emergency_contact_deleted">連絡先を削除しました</string>
+    <string name="emergency_contact_delete_confirm">この連絡先を削除しますか？</string>
+    <string name="emergency_contact_delete_failed">削除に失敗しました</string>
+    <string name="emergency_contact_save_failed">保存に失敗しました</string>
+    <string name="emergency_contact_call">電話をかける</string>
+    <string name="emergency_contact_rel_family">家族</string>
+    <string name="emergency_contact_rel_friend">友人</string>
+    <string name="emergency_contact_rel_doctor">医師</string>
+    <string name="emergency_contact_rel_hospital">病院</string>
+    <string name="emergency_contact_rel_emergency">緊急</string>
+    <string name="emergency_contact_rel_other">その他</string>
 </resources>

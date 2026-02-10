@@ -3,7 +3,7 @@ package com.carenote.app.fakes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.work.WorkInfo
-import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 
 /**
  * SyncWorkScheduler のテスト用 Fake

@@ -5,17 +5,23 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.carenote.app.data.local.converter.DateTimeConverters
 import com.carenote.app.data.local.dao.CalendarEventDao
+import com.carenote.app.data.local.dao.EmergencyContactDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteDao
+import com.carenote.app.data.local.dao.CareRecipientDao
+import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.SyncMappingDao
 import com.carenote.app.data.local.dao.TaskDao
+import com.carenote.app.data.local.entity.CareRecipientEntity
 import com.carenote.app.data.local.entity.CalendarEventEntity
+import com.carenote.app.data.local.entity.EmergencyContactEntity
 import com.carenote.app.data.local.entity.HealthRecordEntity
 import com.carenote.app.data.local.entity.MedicationEntity
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.data.local.entity.NoteEntity
+import com.carenote.app.data.local.entity.PhotoEntity
 import com.carenote.app.data.local.entity.SyncMappingEntity
 import com.carenote.app.data.local.entity.TaskEntity
 
@@ -27,9 +33,12 @@ import com.carenote.app.data.local.entity.TaskEntity
         HealthRecordEntity::class,
         CalendarEventEntity::class,
         TaskEntity::class,
-        SyncMappingEntity::class
+        SyncMappingEntity::class,
+        CareRecipientEntity::class,
+        PhotoEntity::class,
+        EmergencyContactEntity::class
     ],
-    version = 10,
+    version = 14,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)
@@ -42,6 +51,9 @@ abstract class CareNoteDatabase : RoomDatabase() {
     abstract fun calendarEventDao(): CalendarEventDao
     abstract fun taskDao(): TaskDao
     abstract fun syncMappingDao(): SyncMappingDao
+    abstract fun careRecipientDao(): CareRecipientDao
+    abstract fun photoDao(): PhotoDao
+    abstract fun emergencyContactDao(): EmergencyContactDao
 
     companion object {
         const val DATABASE_NAME = "carenote_database"

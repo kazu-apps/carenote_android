@@ -69,6 +69,9 @@ abstract class EntitySyncer<Entity, Domain>(
     /** Entity から updatedAt を取得 */
     abstract fun getUpdatedAt(entity: Entity): LocalDateTime
 
+    /** lastSyncTime 以降に変更されたエンティティのみ取得（未実装なら null） */
+    open suspend fun getModifiedSince(lastSyncTime: LocalDateTime): List<Entity>? = null
+
     /**
      * 双方向同期を実行
      *
@@ -97,7 +100,11 @@ abstract class EntitySyncer<Entity, Domain>(
         lastSyncTime: LocalDateTime?,
         syncTime: LocalDateTime
     ): SyncResult {
-        val localEntities = getAllLocal()
+        val localEntities = if (lastSyncTime != null) {
+            getModifiedSince(lastSyncTime) ?: getAllLocal()
+        } else {
+            getAllLocal()
+        }
         val mappings = syncMappingDao.getAllByTypeIncludingDeleted(entityType)
         val mappingsByLocalId = mappings.associateBy { it.localId }
 
@@ -145,7 +152,10 @@ abstract class EntitySyncer<Entity, Domain>(
         syncTime: LocalDateTime
     ): SyncResult {
         val collectionRef = firestore.get().collection(collectionPath(careRecipientId))
-        val query = collectionRef.whereEqualTo("deletedAt", null)
+        var query = collectionRef.whereEqualTo("deletedAt", null)
+        if (lastSyncTime != null) {
+            query = query.whereGreaterThan("updatedAt", lastSyncTime.toString())
+        }
 
         val querySnapshot = query.get().await()
         val remoteDocs = querySnapshot.documents

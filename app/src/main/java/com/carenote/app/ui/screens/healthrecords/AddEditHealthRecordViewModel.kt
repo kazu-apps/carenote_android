@@ -1,15 +1,19 @@
 package com.carenote.app.ui.screens.healthrecords
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
+import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.repository.HealthRecordRepository
+import com.carenote.app.domain.repository.PhotoRepository
 import com.carenote.app.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -47,7 +51,9 @@ data class AddEditHealthRecordFormState(
 @HiltViewModel
 class AddEditHealthRecordViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val healthRecordRepository: HealthRecordRepository
+    private val healthRecordRepository: HealthRecordRepository,
+    private val photoRepository: PhotoRepository,
+    private val imageCompressor: ImageCompressorInterface
 ) : ViewModel() {
 
     private val recordId: Long? = savedStateHandle.get<Long>("recordId")
@@ -64,6 +70,11 @@ class AddEditHealthRecordViewModel @Inject constructor(
 
     private var originalRecord: HealthRecord? = null
     private var _initialFormState: AddEditHealthRecordFormState? = null
+
+    private val _photos = MutableStateFlow<List<Photo>>(emptyList())
+    val photos: StateFlow<List<Photo>> = _photos.asStateFlow()
+
+    private var _initialPhotoCount = 0
 
     val isDirty: Boolean
         get() {
@@ -88,7 +99,8 @@ class AddEditHealthRecordViewModel @Inject constructor(
                 isSaving = false,
                 isEditMode = false
             )
-            return current != baseline
+            if (current != baseline) return true
+            return _photos.value.size != _initialPhotoCount
         }
 
     init {
@@ -116,7 +128,54 @@ class AddEditHealthRecordViewModel @Inject constructor(
                     recordedAt = record.recordedAt
                 )
                 _initialFormState = _formState.value
+                val existingPhotos = photoRepository.getPhotosForParent("health_record", id).firstOrNull().orEmpty()
+                _photos.value = existingPhotos
+                _initialPhotoCount = existingPhotos.size
             }
+        }
+    }
+
+    fun addPhotos(uris: List<Uri>) {
+        val remaining = AppConfig.Photo.MAX_PHOTOS_PER_PARENT - _photos.value.size
+        if (remaining <= 0) return
+        val toAdd = uris.take(remaining)
+        viewModelScope.launch {
+            for (uri in toAdd) {
+                try {
+                    val compressed = imageCompressor.compress(uri)
+                    val now = LocalDateTime.now()
+                    val photo = Photo(
+                        parentType = "health_record",
+                        parentId = recordId ?: 0L,
+                        localUri = compressed.toString(),
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                    photoRepository.addPhoto(photo)
+                        .onSuccess { id ->
+                            _photos.value = _photos.value + photo.copy(id = id)
+                        }
+                        .onFailure { error ->
+                            Timber.w("Failed to add photo: $error")
+                            snackbarController.showMessage(R.string.photo_compress_failed)
+                        }
+                } catch (e: Exception) {
+                    Timber.w("Failed to compress photo: $e")
+                    snackbarController.showMessage(R.string.photo_compress_failed)
+                }
+            }
+        }
+    }
+
+    fun removePhoto(photo: Photo) {
+        viewModelScope.launch {
+            photoRepository.deletePhoto(photo.id)
+                .onSuccess {
+                    _photos.value = _photos.value.filter { it.id != photo.id }
+                }
+                .onFailure { error ->
+                    Timber.w("Failed to remove photo: $error")
+                }
         }
     }
 
@@ -262,6 +321,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
             healthRecordRepository.insertRecord(newRecord)
                 .onSuccess { id ->
                     Timber.d("Health record saved: id=$id")
+                    updatePhotosParentId(id)
                     _savedEvent.send(true)
                 }
                 .onFailure { error ->
@@ -269,6 +329,15 @@ class AddEditHealthRecordViewModel @Inject constructor(
                     _formState.value = _formState.value.copy(isSaving = false)
                     snackbarController.showMessage(R.string.health_records_save_failed)
                 }
+        }
+    }
+
+    private suspend fun updatePhotosParentId(newParentId: Long) {
+        val photoIds = _photos.value
+            .filter { it.parentId == 0L }
+            .map { it.id }
+        if (photoIds.isNotEmpty()) {
+            photoRepository.updatePhotosParentId(photoIds, newParentId)
         }
     }
 

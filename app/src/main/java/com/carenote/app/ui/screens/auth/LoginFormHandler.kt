@@ -3,7 +3,7 @@ package com.carenote.app.ui.screens.auth
 import com.carenote.app.R
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.repository.AuthRepository
-import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.ui.util.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +64,7 @@ class LoginFormHandler(
                         snackbarController.showMessage(R.string.auth_email_not_verified)
                     }
                     syncWorkScheduler.schedulePeriodicSync()
+                    syncWorkScheduler.triggerImmediateSync()
                     authSuccessChannel.send(true)
                 }
                 .onFailure { error ->

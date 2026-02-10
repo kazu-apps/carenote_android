@@ -13,6 +13,10 @@ sealed class SettingsDialogState {
     data object NoonTime : SettingsDialogState()
     data object EveningTime : SettingsDialogState()
     data object ResetConfirm : SettingsDialogState()
+    data object ChangePassword : SettingsDialogState()
+    data object DeleteAccountConfirm : SettingsDialogState()
+    data object ReauthenticateForDelete : SettingsDialogState()
+    data object SignOutConfirm : SettingsDialogState()
 }
 
 val SettingsDialogState.isTimePicker: Boolean
@@ -30,4 +34,6 @@ val SettingsDialogState.isNumberInput: Boolean
             this is SettingsDialogState.PulseLow
 
 val SettingsDialogState.isConfirm: Boolean
-    get() = this is SettingsDialogState.ResetConfirm
+    get() = this is SettingsDialogState.ResetConfirm ||
+            this is SettingsDialogState.DeleteAccountConfirm ||
+            this is SettingsDialogState.SignOutConfirm

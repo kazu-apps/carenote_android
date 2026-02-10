@@ -650,6 +650,128 @@ class MedicationViewModelTest {
     }
 
     @Test
+    fun `searchQuery is empty initially`() {
+        viewModel = createViewModel()
+
+        assertEquals("", viewModel.searchQuery.value)
+    }
+
+    @Test
+    fun `updateSearchQuery updates searchQuery`() {
+        viewModel = createViewModel()
+
+        viewModel.updateSearchQuery("ロキソニン")
+
+        assertEquals("ロキソニン", viewModel.searchQuery.value)
+    }
+
+    @Test
+    fun `search filters medications by name`() = runTest(testDispatcher) {
+        val medications = listOf(
+            createMedication(id = 1L, name = "ロキソニン", dosage = "1錠"),
+            createMedication(id = 2L, name = "アスピリン", dosage = "2錠"),
+            createMedication(id = 3L, name = "ロキソプロフェン", dosage = "1錠")
+        )
+        medicationRepository.setMedications(medications)
+        viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            val initial = expectMostRecentItem()
+            assertTrue(initial is UiState.Success)
+            assertEquals(3, (initial as UiState.Success).data.size)
+
+            viewModel.updateSearchQuery("ロキソ")
+            advanceUntilIdle()
+
+            val filtered = expectMostRecentItem()
+            assertTrue(filtered is UiState.Success)
+            val data = (filtered as UiState.Success).data
+            assertEquals(2, data.size)
+            assertTrue(data.all { it.name.contains("ロキソ") })
+        }
+    }
+
+    @Test
+    fun `search filters medications by dosage`() = runTest(testDispatcher) {
+        val medications = listOf(
+            createMedication(id = 1L, name = "薬A", dosage = "1錠"),
+            createMedication(id = 2L, name = "薬B", dosage = "2カプセル")
+        )
+        medicationRepository.setMedications(medications)
+        viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            viewModel.updateSearchQuery("カプセル")
+            advanceUntilIdle()
+
+            val filtered = expectMostRecentItem()
+            assertTrue(filtered is UiState.Success)
+            val data = (filtered as UiState.Success).data
+            assertEquals(1, data.size)
+            assertEquals("薬B", data[0].name)
+        }
+    }
+
+    @Test
+    fun `recordMedication TAKEN decrements stock when stock is tracked`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L).copy(currentStock = 10, lowStockThreshold = 5)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN, MedicationTiming.MORNING)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem() as UiState.Success
+            assertEquals(9, state.data[0].currentStock)
+        }
+    }
+
+    @Test
+    fun `recordMedication TAKEN shows low stock warning when threshold reached`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L).copy(currentStock = 5, lowStockThreshold = 5)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            viewModel.recordMedication(1L, MedicationLogStatus.TAKEN, MedicationTiming.MORNING)
+            advanceUntilIdle()
+            // First event is "log recorded"
+            val event1 = awaitItem()
+            assertTrue(event1 is SnackbarEvent.WithResId)
+            assertEquals(R.string.medication_log_recorded, (event1 as SnackbarEvent.WithResId).messageResId)
+            // Second event is "low stock warning"
+            val event2 = awaitItem()
+            assertTrue(event2 is SnackbarEvent.WithResId)
+            assertEquals(R.string.medication_low_stock_warning, (event2 as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `recordMedication TAKEN with null stock does not decrement`() = runTest(testDispatcher) {
+        val medication = createMedication(id = 1L)
+        medicationRepository.setMedications(listOf(medication))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.recordMedication(1L, MedicationLogStatus.TAKEN, MedicationTiming.MORNING)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem() as UiState.Success
+            assertNull(state.data[0].currentStock)
+        }
+    }
+
+    @Test
     fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
         medicationRepository.setMedications(listOf(createMedication(id = 1L)))
         viewModel = createViewModel()

@@ -64,6 +64,10 @@
     <string name="settings_biometric_enabled">Lock with biometrics</string>
     <string name="settings_biometric_summary">Require authentication on app launch and resume</string>
     <string name="settings_biometric_not_available">Biometric authentication is not available on this device</string>
+    <string name="security_root_detected_title">Root Detected</string>
+    <string name="security_root_detected_summary">This device may be rooted. Data security could be compromised.</string>
+    <string name="security_root_warning_dialog_title">Security Warning</string>
+    <string name="security_root_warning_dialog_message">This device appears to be rooted. On a rooted device, your app data may be accessible to third parties. Please be cautious with personal information.</string>
 
     <!-- Account Settings -->
     <string name="settings_account">Account</string>
@@ -167,6 +171,16 @@
     <string name="medication_no_history">No medication records</string>
     <string name="medication_edit">Edit Medication</string>
     <string name="medication_updated">Medication updated</string>
+    <string name="medication_stock_section">Stock Management</string>
+    <string name="medication_current_stock">Stock: %d units</string>
+    <string name="medication_current_stock_label">Current Stock</string>
+    <string name="medication_current_stock_hint">Leave blank to disable tracking</string>
+    <string name="medication_low_stock_threshold">Low stock alert: %d units or less</string>
+    <string name="medication_low_stock_threshold_label">Low Stock Alert Threshold</string>
+    <string name="medication_low_stock_threshold_hint">Default: 5</string>
+    <string name="medication_low_stock_warning">Stock is running low</string>
+    <string name="medication_stock_info">Stock: %d units</string>
+    <string name="medication_stock_validation_range">Stock must be between 0 and 9999</string>
 
     <!-- Calendar -->
     <string name="calendar_title">Calendar</string>
@@ -367,7 +381,6 @@
     <string name="common_close">Close</string>
     <string name="common_add">Add</string>
     <string name="common_memo">Memo</string>
-    <string name="common_photo_add">Add Photo</string>
     <string name="common_notification">Notification</string>
     <string name="common_reminder">Reminder</string>
     <string name="common_search">Search…</string>
@@ -411,6 +424,10 @@
     <string name="a11y_day_cell_selected">Day %1$d, selected</string>
     <string name="a11y_day_cell_has_events">Day %1$d, has events</string>
     <string name="a11y_long_press_for_options">Long press for options</string>
+    <string name="a11y_graph_temperature_summary">Temperature trend graph, %1$d data points, %2$.1f to %3$.1f\u2103, %4$d abnormal</string>
+    <string name="a11y_graph_temperature_summary_no_abnormal">Temperature trend graph, %1$d data points, %2$.1f to %3$.1f\u2103</string>
+    <string name="a11y_graph_bp_summary">Blood pressure trend graph, %1$d data points, systolic %2$d to %3$d mmHg, diastolic %4$d to %5$d mmHg, %6$d abnormal</string>
+    <string name="a11y_graph_bp_summary_no_abnormal">Blood pressure trend graph, %1$d data points, systolic %2$d to %3$d mmHg, diastolic %4$d to %5$d mmHg</string>
 
     <!-- Auth -->
     <string name="auth_login_title">Login</string>
@@ -451,9 +468,6 @@
     <string name="legal_terms_of_service_title">Terms of Service</string>
     <string name="legal_last_updated">Last updated: %s</string>
 
-    <!-- Placeholder -->
-    <string name="placeholder_coming_soon">This feature is coming soon</string>
-
     <!-- Notification Channels -->
     <string name="notification_channel_medication_name">Medication Reminder</string>
     <string name="notification_channel_medication_description">Reminds you to take your medication</string>
@@ -471,4 +485,65 @@
     <string name="notification_channel_task_description">Reminds you about task deadlines</string>
     <string name="notification_task_reminder_title">Task Reminder</string>
     <string name="notification_task_reminder_text">%1$s</string>
+
+    <!-- Navigation Badge -->
+    <string name="nav_tasks_badge">%d incomplete tasks</string>
+
+    <!-- Timeline -->
+    <string name="timeline_title">Timeline</string>
+    <string name="timeline_empty">No records for this day</string>
+    <string name="timeline_medication_log">Medication Log</string>
+    <string name="timeline_calendar_event">Calendar Event</string>
+    <string name="timeline_task">Task</string>
+    <string name="timeline_health_record">Health Record</string>
+    <string name="timeline_note">Note</string>
+    <string name="timeline_unknown_medication">Unknown medication</string>
+    <string name="timeline_medication_taken">Taken</string>
+    <string name="timeline_medication_skipped">Skipped</string>
+    <string name="timeline_medication_postponed">Postponed</string>
+    <string name="a11y_timeline_previous_day">Previous day</string>
+    <string name="a11y_timeline_next_day">Next day</string>
+    <string name="a11y_timeline_icon">Show timeline</string>
+
+    <!-- Widget -->
+    <string name="widget_name">CareNote Summary</string>
+    <string name="widget_description">Shows today\'s medications and tasks</string>
+    <string name="widget_medication_title">Medication</string>
+    <string name="widget_tasks_title">Tasks</string>
+    <string name="widget_no_medications">No medications registered</string>
+    <string name="widget_no_tasks">No tasks for today</string>
+    <string name="widget_open_app">Open App</string>
+    <string name="widget_status_taken">Done</string>
+    <string name="widget_status_skipped">Skip</string>
+    <string name="widget_status_pending">Todo</string>
+
+    <!-- Emergency Contact -->
+    <string name="emergency_contact_title">Emergency Contacts</string>
+    <string name="emergency_contact_section_title">Emergency Contacts</string>
+    <string name="emergency_contact_section_summary">Manage contacts for family and medical staff</string>
+    <string name="emergency_contact_add">Add Contact</string>
+    <string name="emergency_contact_edit">Edit Contact</string>
+    <string name="emergency_contact_empty">No emergency contacts yet</string>
+    <string name="emergency_contact_empty_action">Add a contact</string>
+    <string name="emergency_contact_name_label">Name</string>
+    <string name="emergency_contact_name_placeholder">Enter contact name</string>
+    <string name="emergency_contact_phone_label">Phone Number</string>
+    <string name="emergency_contact_phone_placeholder">Enter phone number</string>
+    <string name="emergency_contact_relationship_label">Relationship</string>
+    <string name="emergency_contact_memo_label">Memo</string>
+    <string name="emergency_contact_memo_placeholder">Enter memo (optional)</string>
+    <string name="emergency_contact_name_required">Please enter a name</string>
+    <string name="emergency_contact_phone_required">Please enter a phone number</string>
+    <string name="emergency_contact_saved">Contact saved</string>
+    <string name="emergency_contact_deleted">Contact deleted</string>
+    <string name="emergency_contact_delete_confirm">Delete this contact?</string>
+    <string name="emergency_contact_delete_failed">Failed to delete</string>
+    <string name="emergency_contact_save_failed">Failed to save</string>
+    <string name="emergency_contact_call">Make a call</string>
+    <string name="emergency_contact_rel_family">Family</string>
+    <string name="emergency_contact_rel_friend">Friend</string>
+    <string name="emergency_contact_rel_doctor">Doctor</string>
+    <string name="emergency_contact_rel_hospital">Hospital</string>
+    <string name="emergency_contact_rel_emergency">Emergency</string>
+    <string name="emergency_contact_rel_other">Other</string>
 </resources>

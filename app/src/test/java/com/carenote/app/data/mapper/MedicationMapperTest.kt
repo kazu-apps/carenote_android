@@ -160,6 +160,44 @@ class MedicationMapperTest {
     }
 
     @Test
+    fun `toDomain maps stock fields correctly`() {
+        val entity = MedicationEntity(
+            id = 1L,
+            name = "テスト薬",
+            timings = "MORNING",
+            times = "MORNING=08:00",
+            createdAt = "2025-03-15T10:00:00",
+            updatedAt = "2025-03-15T10:00:00",
+            currentStock = 20,
+            lowStockThreshold = 5
+        )
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(20, result.currentStock)
+        assertEquals(5, result.lowStockThreshold)
+    }
+
+    @Test
+    fun `toEntity maps stock fields correctly`() {
+        val domain = Medication(
+            id = 1L,
+            name = "テスト薬",
+            timings = listOf(MedicationTiming.MORNING),
+            times = mapOf(MedicationTiming.MORNING to LocalTime.of(8, 0)),
+            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+            currentStock = 15,
+            lowStockThreshold = 3
+        )
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals(15, result.currentStock)
+        assertEquals(3, result.lowStockThreshold)
+    }
+
+    @Test
     fun `toDomain handles invalid time format gracefully`() {
         val entity = MedicationEntity(
             id = 1L,

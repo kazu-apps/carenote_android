@@ -32,9 +32,11 @@ import com.carenote.app.ui.screens.settings.sections.MedicationTimeSection
 import com.carenote.app.ui.screens.settings.sections.NotificationSection
 import com.carenote.app.ui.screens.settings.sections.AccountSection
 import com.carenote.app.ui.screens.settings.sections.CareRecipientSection
+import com.carenote.app.ui.screens.settings.sections.EmergencyContactSection
 import com.carenote.app.ui.screens.settings.sections.SecuritySection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
 import com.carenote.app.ui.util.BiometricHelper
+import com.carenote.app.ui.util.RootDetector
 import com.carenote.app.ui.screens.settings.sections.ThemeSection
 import com.carenote.app.ui.util.SnackbarEvent
 import java.time.format.DateTimeFormatter
@@ -46,6 +48,7 @@ fun SettingsScreen(
     onNavigateToPrivacyPolicy: () -> Unit = {},
     onNavigateToTermsOfService: () -> Unit = {},
     onNavigateToCareRecipient: () -> Unit = {},
+    onNavigateToEmergencyContacts: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -92,6 +95,11 @@ fun SettingsScreen(
                 )
             }
             item {
+                EmergencyContactSection(
+                    onEmergencyContactClick = onNavigateToEmergencyContacts
+                )
+            }
+            item {
                 val isDynamicColorAvailable = remember {
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 }
@@ -110,8 +118,11 @@ fun SettingsScreen(
                 )
             }
             item {
+                val dateTimeFormatter = remember {
+                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                }
                 val lastSyncText = settings.lastSyncTime?.let { time ->
-                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).format(time)
+                    dateTimeFormatter.format(time)
                 } ?: stringResource(R.string.settings_last_sync_never)
                 SyncSection(
                     syncEnabled = settings.syncEnabled,
@@ -126,10 +137,14 @@ fun SettingsScreen(
                 val isBiometricAvailable = remember {
                     BiometricHelper().canAuthenticate(context)
                 }
+                val isDeviceRooted = remember {
+                    RootDetector().isDeviceRooted()
+                }
                 SecuritySection(
                     biometricEnabled = settings.biometricEnabled,
                     onBiometricEnabledChange = { viewModel.toggleBiometricEnabled(it) },
-                    isBiometricAvailable = isBiometricAvailable
+                    isBiometricAvailable = isBiometricAvailable,
+                    isDeviceRooted = isDeviceRooted
                 )
             }
             item {

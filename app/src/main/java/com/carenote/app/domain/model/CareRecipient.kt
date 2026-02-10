@@ -3,15 +3,19 @@ package com.carenote.app.domain.model
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+enum class Gender {
+    MALE,
+    FEMALE,
+    OTHER,
+    UNSPECIFIED
+}
+
 data class CareRecipient(
-    val id: String,
+    val id: Long = 0,
     val name: String,
-    val nickname: String = "",
     val birthDate: LocalDate? = null,
-    val gender: String = "",
-    val careLevel: String = "",
-    val medicalHistory: String = "",
-    val allergies: String = "",
-    val createdBy: String = "",
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val gender: Gender = Gender.UNSPECIFIED,
+    val memo: String = "",
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val updatedAt: LocalDateTime = LocalDateTime.now()
 )

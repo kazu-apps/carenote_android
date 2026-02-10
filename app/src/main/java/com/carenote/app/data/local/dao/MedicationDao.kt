@@ -25,4 +25,23 @@ interface MedicationDao {
 
     @Query("DELETE FROM medications WHERE id = :id")
     suspend fun deleteMedication(id: Long)
+
+    @Query("SELECT * FROM medications WHERE name LIKE '%' || :query || '%' OR dosage LIKE '%' || :query || '%' ORDER BY name ASC")
+    fun searchMedications(query: String): Flow<List<MedicationEntity>>
+
+    @Query("SELECT * FROM medications WHERE updated_at > :lastSyncTime")
+    suspend fun getModifiedSince(lastSyncTime: String): List<MedicationEntity>
+
+    @Query(
+        """
+        UPDATE medications
+        SET current_stock = CASE
+            WHEN current_stock >= :amount THEN current_stock - :amount
+            ELSE 0
+        END,
+        updated_at = :updatedAt
+        WHERE id = :id AND current_stock IS NOT NULL
+        """
+    )
+    suspend fun decrementStock(id: Long, amount: Int, updatedAt: String)
 }

@@ -32,5 +32,11 @@ data class MedicationEntity(
     val createdAt: String,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: String
+    val updatedAt: String,
+
+    @ColumnInfo(name = "current_stock")
+    val currentStock: Int? = null,
+
+    @ColumnInfo(name = "low_stock_threshold")
+    val lowStockThreshold: Int? = null
 )

@@ -9,6 +9,7 @@ import com.carenote.app.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 
 class FakeNoteRepository : NoteRepository {
 
@@ -39,6 +40,12 @@ class FakeNoteRepository : NoteRepository {
     }
 
     override fun getAllNotes(): Flow<List<Note>> = notes
+
+    override fun getNotesByDate(date: LocalDate): Flow<List<Note>> {
+        return notes.map { list ->
+            list.filter { it.createdAt.toLocalDate() == date }
+        }
+    }
 
     override fun getNoteById(id: Long): Flow<Note?> {
         return notes.map { list -> list.find { it.id == id } }

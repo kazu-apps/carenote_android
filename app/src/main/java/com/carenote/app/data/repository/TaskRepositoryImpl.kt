@@ -1,5 +1,10 @@
 package com.carenote.app.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
+import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.dao.TaskDao
 import com.carenote.app.data.mapper.TaskMapper
 import com.carenote.app.domain.common.DomainError
@@ -20,6 +25,7 @@ class TaskRepositoryImpl @Inject constructor(
 ) : TaskRepository {
 
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val pagingConfig = PagingConfig(pageSize = AppConfig.Paging.PAGE_SIZE)
 
     override fun getAllTasks(): Flow<List<Task>> {
         return taskDao.getAllTasks().map { entities ->
@@ -45,6 +51,25 @@ class TaskRepositoryImpl @Inject constructor(
         ).map { entities ->
             mapper.toDomainList(entities)
         }
+    }
+
+    override fun getPagedAllTasks(query: String): Flow<PagingData<Task>> {
+        return Pager(pagingConfig) { taskDao.getPagedAllTasks(query) }
+            .flow.map { pagingData -> pagingData.map { mapper.toDomain(it) } }
+    }
+
+    override fun getPagedIncompleteTasks(query: String): Flow<PagingData<Task>> {
+        return Pager(pagingConfig) { taskDao.getPagedIncompleteTasks(query) }
+            .flow.map { pagingData -> pagingData.map { mapper.toDomain(it) } }
+    }
+
+    override fun getPagedCompletedTasks(query: String): Flow<PagingData<Task>> {
+        return Pager(pagingConfig) { taskDao.getPagedCompletedTasks(query) }
+            .flow.map { pagingData -> pagingData.map { mapper.toDomain(it) } }
+    }
+
+    override fun getIncompleteTaskCount(): Flow<Int> {
+        return taskDao.getIncompleteTaskCount()
     }
 
     override suspend fun insertTask(task: Task): Result<Long, DomainError> {

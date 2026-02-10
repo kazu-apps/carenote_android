@@ -2,8 +2,11 @@ package com.carenote.app.di
 
 import android.content.Context
 import androidx.work.WorkManager
-import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.repository.AuthRepository
+import com.carenote.app.domain.repository.StorageRepository
 import com.carenote.app.domain.repository.SyncRepository
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeSyncRepository
@@ -65,6 +68,24 @@ object TestFirebaseModule {
     @Singleton
     fun provideSyncWorkSchedulerInterface(fake: FakeSyncWorkScheduler): SyncWorkSchedulerInterface {
         return fake
+    }
+
+    @Provides
+    @Singleton
+    fun provideMedicationReminderScheduler(): MedicationReminderSchedulerInterface {
+        return mockk(relaxed = true)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskReminderScheduler(): TaskReminderSchedulerInterface {
+        return mockk(relaxed = true)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStorageRepository(): StorageRepository {
+        return mockk(relaxed = true)
     }
 
     /**

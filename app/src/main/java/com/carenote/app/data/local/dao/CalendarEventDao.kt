@@ -38,4 +38,7 @@ interface CalendarEventDao {
 
     @Query("DELETE FROM calendar_events WHERE id = :id")
     suspend fun deleteEvent(id: Long)
+
+    @Query("SELECT * FROM calendar_events WHERE updated_at > :lastSyncTime")
+    suspend fun getModifiedSince(lastSyncTime: String): List<CalendarEventEntity>
 }

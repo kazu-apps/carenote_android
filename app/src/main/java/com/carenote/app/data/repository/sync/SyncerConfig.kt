@@ -40,5 +40,7 @@ data class SyncerConfig<Entity, Domain>(
     /** Entity から localId を取得 */
     val getLocalId: (entity: Entity) -> Long,
     /** Entity から updatedAt を取得 */
-    val getUpdatedAt: (entity: Entity) -> LocalDateTime
+    val getUpdatedAt: (entity: Entity) -> LocalDateTime,
+    /** lastSyncTime 以降に変更されたエンティティのみ取得（null の場合は getAllLocal にフォールバック） */
+    val getModifiedSince: (suspend (lastSyncTime: LocalDateTime) -> List<Entity>)? = null
 )

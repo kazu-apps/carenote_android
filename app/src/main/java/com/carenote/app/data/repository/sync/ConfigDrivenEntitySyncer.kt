@@ -60,4 +60,7 @@ class ConfigDrivenEntitySyncer<Entity, Domain>(
 
     override fun getUpdatedAt(entity: Entity): LocalDateTime =
         config.getUpdatedAt(entity)
+
+    override suspend fun getModifiedSince(lastSyncTime: LocalDateTime): List<Entity>? =
+        config.getModifiedSince?.invoke(lastSyncTime)
 }

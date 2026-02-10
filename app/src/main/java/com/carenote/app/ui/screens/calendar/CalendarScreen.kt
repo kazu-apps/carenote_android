@@ -47,6 +47,7 @@ import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.components.SwipeToDismissItem
+import androidx.compose.material.icons.filled.History
 import com.carenote.app.ui.screens.calendar.components.CalendarEventCard
 import com.carenote.app.ui.screens.calendar.components.MonthCalendarGrid
 import com.carenote.app.ui.preview.LightDarkPreview
@@ -64,6 +65,7 @@ import java.time.YearMonth
 fun CalendarScreen(
     onNavigateToAddEvent: () -> Unit = {},
     onNavigateToEditEvent: (Long) -> Unit = {},
+    onNavigateToTimeline: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val currentMonth by viewModel.currentMonth.collectAsStateWithLifecycle()
@@ -103,6 +105,14 @@ fun CalendarScreen(
                             viewModel.selectDate(today)
                         }
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToTimeline) {
+                        Icon(
+                            imageVector = Icons.Filled.History,
+                            contentDescription = stringResource(R.string.a11y_timeline_icon)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

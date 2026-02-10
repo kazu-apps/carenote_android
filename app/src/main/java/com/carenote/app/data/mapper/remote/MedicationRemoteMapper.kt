@@ -33,7 +33,9 @@ class MedicationRemoteMapper @Inject constructor(
             times = parseTimes(data["times"]),
             reminderEnabled = data["reminderEnabled"] as? Boolean ?: true,
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
-            updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt)
+            updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt),
+            currentStock = (data["currentStock"] as? Number)?.toInt(),
+            lowStockThreshold = (data["lowStockThreshold"] as? Number)?.toInt()
         )
     }
 
@@ -46,7 +48,9 @@ class MedicationRemoteMapper @Inject constructor(
             "times" to serializeTimes(domain.times),
             "reminderEnabled" to domain.reminderEnabled,
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
-            "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt)
+            "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt),
+            "currentStock" to domain.currentStock,
+            "lowStockThreshold" to domain.lowStockThreshold
         )
 
         syncMetadata?.let { metadata ->

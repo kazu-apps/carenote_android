@@ -3,10 +3,13 @@ package com.carenote.app.ui.screens.notes
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.fakes.FakeNoteRepository
+import com.carenote.app.fakes.FakePhotoRepository
 import com.carenote.app.ui.common.UiText
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -29,12 +32,15 @@ class AddEditNoteViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var noteRepository: FakeNoteRepository
+    private lateinit var photoRepository: FakePhotoRepository
+    private val imageCompressor: ImageCompressorInterface = mockk()
     private lateinit var viewModel: AddEditNoteViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         noteRepository = FakeNoteRepository()
+        photoRepository = FakePhotoRepository()
     }
 
     @After
@@ -43,13 +49,20 @@ class AddEditNoteViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditNoteViewModel {
-        return AddEditNoteViewModel(SavedStateHandle(), noteRepository)
+        return AddEditNoteViewModel(
+            SavedStateHandle(),
+            noteRepository,
+            photoRepository,
+            imageCompressor
+        )
     }
 
     private fun createEditViewModel(noteId: Long): AddEditNoteViewModel {
         return AddEditNoteViewModel(
             SavedStateHandle(mapOf("noteId" to noteId)),
-            noteRepository
+            noteRepository,
+            photoRepository,
+            imageCompressor
         )
     }
 

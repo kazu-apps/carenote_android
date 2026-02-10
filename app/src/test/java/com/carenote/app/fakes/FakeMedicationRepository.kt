@@ -30,6 +30,15 @@ class FakeMedicationRepository : MedicationRepository {
         return medications.map { list -> list.find { it.id == id } }
     }
 
+    override fun searchMedications(query: String): Flow<List<Medication>> {
+        return medications.map { list ->
+            list.filter { med ->
+                med.name.contains(query, ignoreCase = true) ||
+                    med.dosage.contains(query, ignoreCase = true)
+            }
+        }
+    }
+
     override suspend fun insertMedication(medication: Medication): Result<Long, DomainError> {
         if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake insert error"))
         val id = nextId++
@@ -49,6 +58,19 @@ class FakeMedicationRepository : MedicationRepository {
     override suspend fun deleteMedication(id: Long): Result<Unit, DomainError> {
         if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake delete error"))
         medications.value = medications.value.filter { it.id != id }
+        return Result.Success(Unit)
+    }
+
+    override suspend fun decrementStock(medicationId: Long, amount: Int): Result<Unit, DomainError> {
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake decrement error"))
+        medications.value = medications.value.map { med ->
+            if (med.id == medicationId && med.currentStock != null) {
+                val newStock = (med.currentStock - amount).coerceAtLeast(0)
+                med.copy(currentStock = newStock)
+            } else {
+                med
+            }
+        }
         return Result.Success(Unit)
     }
 }

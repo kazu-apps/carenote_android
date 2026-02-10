@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
-import com.carenote.app.data.worker.TaskReminderSchedulerInterface
+import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.util.SnackbarController

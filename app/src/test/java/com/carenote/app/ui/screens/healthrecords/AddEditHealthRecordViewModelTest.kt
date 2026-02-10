@@ -4,10 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.fakes.FakeHealthRecordRepository
+import com.carenote.app.fakes.FakePhotoRepository
+import io.mockk.mockk
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -32,12 +35,15 @@ class AddEditHealthRecordViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeHealthRecordRepository
+    private lateinit var photoRepository: FakePhotoRepository
+    private val imageCompressor: ImageCompressorInterface = mockk(relaxed = true)
     private lateinit var viewModel: AddEditHealthRecordViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeHealthRecordRepository()
+        photoRepository = FakePhotoRepository()
     }
 
     @After
@@ -46,13 +52,15 @@ class AddEditHealthRecordViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditHealthRecordViewModel {
-        return AddEditHealthRecordViewModel(SavedStateHandle(), repository)
+        return AddEditHealthRecordViewModel(SavedStateHandle(), repository, photoRepository, imageCompressor)
     }
 
     private fun createEditViewModel(recordId: Long): AddEditHealthRecordViewModel {
         return AddEditHealthRecordViewModel(
             SavedStateHandle(mapOf("recordId" to recordId)),
-            repository
+            repository,
+            photoRepository,
+            imageCompressor
         )
     }
 

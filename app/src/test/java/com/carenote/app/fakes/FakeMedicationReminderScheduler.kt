@@ -1,6 +1,6 @@
 package com.carenote.app.fakes
 
-import com.carenote.app.data.worker.MedicationReminderSchedulerInterface
+import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.MedicationTiming
 import java.time.LocalTime
 

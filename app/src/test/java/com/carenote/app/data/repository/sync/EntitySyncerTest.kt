@@ -446,4 +446,73 @@ class EntitySyncerTest {
         // Then
         assertEquals(expectedPath, actualPath)
     }
+
+    // ========== getModifiedSince() テスト ==========
+
+    @Test
+    fun `pushLocalChanges uses getModifiedSince when lastSyncTime is not null`() = runTest {
+        // Given: 3 エンティティ、getModifiedSince は 1 件のみ返す
+        val lastSync = LocalDateTime.of(2025, 1, 15, 10, 0)
+        val oldUpdatedAt = LocalDateTime.of(2025, 1, 10, 10, 0)
+        val newUpdatedAt = LocalDateTime.of(2025, 1, 20, 10, 0)
+
+        syncer.addLocalEntity(TestEntity(id = 1, name = "Old1", updatedAt = oldUpdatedAt))
+        syncer.addLocalEntity(TestEntity(id = 2, name = "Old2", updatedAt = oldUpdatedAt))
+        syncer.addLocalEntity(TestEntity(id = 3, name = "New1", updatedAt = newUpdatedAt))
+
+        // getModifiedSince は変更された 1 件のみ返す
+        syncer.overrideGetModifiedSince = listOf(
+            TestEntity(id = 3, name = "New1", updatedAt = newUpdatedAt)
+        )
+
+        syncer.simulatePushWithoutFirestore = true
+        syncer.overridePullResult = SyncResult.Success(0, 0)
+
+        // When
+        val result = syncer.sync(careRecipientId, lastSync)
+
+        // Then: getModifiedSince が使われ、1 件のみアップロード
+        assertEquals(1, syncer.uploadCount)
+    }
+
+    @Test
+    fun `pushLocalChanges falls back to getAllLocal when getModifiedSince returns null`() = runTest {
+        // Given: getModifiedSince = null（デフォルト）
+        val lastSync = LocalDateTime.of(2025, 1, 15, 10, 0)
+        val newUpdatedAt = LocalDateTime.of(2025, 1, 20, 10, 0)
+
+        syncer.addLocalEntity(TestEntity(id = 1, name = "E1", updatedAt = newUpdatedAt))
+        syncer.addLocalEntity(TestEntity(id = 2, name = "E2", updatedAt = newUpdatedAt))
+
+        // overrideGetModifiedSince = null (default) → getAllLocal にフォールバック
+        syncer.simulatePushWithoutFirestore = true
+        syncer.overridePullResult = SyncResult.Success(0, 0)
+
+        // When
+        val result = syncer.sync(careRecipientId, lastSync)
+
+        // Then: getAllLocal が使われ、全エンティティが処理される（新しいのでアップロード）
+        assertEquals(2, syncer.uploadCount)
+    }
+
+    @Test
+    fun `pushLocalChanges uses getAllLocal when lastSyncTime is null`() = runTest {
+        // Given: 初回同期、getModifiedSince は設定されているが使われない
+        val now = LocalDateTime.now()
+
+        syncer.addLocalEntity(TestEntity(id = 1, name = "E1", updatedAt = now))
+        syncer.addLocalEntity(TestEntity(id = 2, name = "E2", updatedAt = now))
+
+        // getModifiedSince を設定しても、lastSyncTime=null なら使われない
+        syncer.overrideGetModifiedSince = emptyList()
+
+        syncer.simulatePushWithoutFirestore = true
+        syncer.overridePullResult = SyncResult.Success(0, 0)
+
+        // When: lastSyncTime = null で同期
+        val result = syncer.sync(careRecipientId, null)
+
+        // Then: getAllLocal が使われ、全 2 件がアップロード
+        assertEquals(2, syncer.uploadCount)
+    }
 }

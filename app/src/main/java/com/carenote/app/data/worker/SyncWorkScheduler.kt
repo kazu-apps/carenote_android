@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 

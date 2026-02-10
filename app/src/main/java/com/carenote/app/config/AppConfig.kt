@@ -7,6 +7,14 @@ package com.carenote.app.config
 object AppConfig {
 
     /**
+     * ページング関連の設定値
+     */
+    object Paging {
+        /** 1ページあたりの件数 */
+        const val PAGE_SIZE = 20
+    }
+
+    /**
      * 服薬関連の設定値
      */
     object Medication {
@@ -27,6 +35,12 @@ object AppConfig {
         /** デフォルトの夕食後時刻 */
         const val DEFAULT_EVENING_HOUR = 18
         const val DEFAULT_EVENING_MINUTE = 0
+
+        /** デフォルトの在庫少アラートしきい値 */
+        const val DEFAULT_LOW_STOCK_THRESHOLD = 5
+
+        /** 在庫数の最大値 */
+        const val MAX_STOCK = 9999
     }
 
     /**
@@ -263,6 +277,14 @@ object AppConfig {
     }
 
     /**
+     * タイムライン関連の設定値
+     */
+    object Timeline {
+        /** コンテンツプレビューの最大行数 */
+        const val PREVIEW_MAX_LINES = 2
+    }
+
+    /**
      * 法的文書関連の設定値
      */
     object Legal {
@@ -371,6 +393,9 @@ object AppConfig {
 
         /** カードの elevation（dp） */
         const val CARD_ELEVATION_DP = 1
+
+        /** バッジの最大表示数（これを超えると "99+" 表示） */
+        const val BADGE_MAX_COUNT = 99
     }
 
     /**
@@ -405,6 +430,77 @@ object AppConfig {
     object Biometric {
         /** バックグラウンドタイムアウト（ミリ秒）— この時間を超えて復帰したら再認証を要求 */
         const val BACKGROUND_TIMEOUT_MS = 30_000L
+    }
+
+    /**
+     * 写真添付関連の設定値
+     */
+    object Photo {
+        /** 1 つの親エンティティに添付可能な最大写真数 */
+        const val MAX_PHOTOS_PER_PARENT = 5
+
+        /** 画像ファイルの最大サイズ（バイト）— 5MB */
+        const val MAX_IMAGE_SIZE_BYTES = 5_242_880L
+
+        /** JPEG 圧縮品質 (0–100) */
+        const val COMPRESSION_QUALITY = 80
+
+        /** リサイズ後の最大辺（px） */
+        const val MAX_DIMENSION = 1920
+
+        /** Firebase Storage のパスプレフィックス */
+        const val STORAGE_PATH_PREFIX = "photos"
+
+        /** キャッシュディレクトリの最大サイズ（バイト）— 100MB */
+        const val CACHE_MAX_SIZE_BYTES = 104_857_600L
+
+        /** キャッシュファイルの最大保持期間（ミリ秒）— 7日 */
+        const val CACHE_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000
+
+        /** キャッシュディレクトリ名 */
+        const val CACHE_DIR_NAME = "photos"
+    }
+
+    /**
+     * エクスポート関連の設定値
+     */
+    object Export {
+        const val CSV_FILE_PREFIX = "health_records_"
+        const val PDF_FILE_PREFIX = "health_records_"
+        const val PDF_PAGE_WIDTH = 595
+        const val PDF_PAGE_HEIGHT = 842
+        const val PDF_MARGIN = 40
+        const val PDF_FONT_SIZE_TITLE = 18f
+        const val PDF_FONT_SIZE_HEADER = 10f
+        const val PDF_FONT_SIZE_BODY = 9f
+        const val PDF_LINE_HEIGHT = 16f
+        const val PDF_HEADER_LINE_HEIGHT = 20f
+        const val CACHE_DIR_NAME = "exports"
+    }
+
+    /**
+     * 緊急連絡先関連の設定値
+     */
+    object EmergencyContact {
+        /** 名前の最大文字数 */
+        const val NAME_MAX_LENGTH = 100
+
+        /** 電話番号の最大文字数 */
+        const val PHONE_MAX_LENGTH = 20
+
+        /** メモの最大文字数 */
+        const val MEMO_MAX_LENGTH = 500
+    }
+
+    /**
+     * ウィジェット関連の設定値
+     */
+    object Widget {
+        /** 服薬セクションの最大表示件数 */
+        const val MAX_MEDICATION_ITEMS = 5
+
+        /** タスクセクションの最大表示件数 */
+        const val MAX_TASK_ITEMS = 5
     }
 
     /**

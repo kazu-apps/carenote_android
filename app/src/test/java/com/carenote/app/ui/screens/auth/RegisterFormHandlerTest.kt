@@ -230,6 +230,17 @@ class RegisterFormHandlerTest {
     }
 
     @Test
+    fun `signUp success triggers immediate sync`() = runTest(testDispatcher) {
+        handler.updateEmail("test@example.com")
+        handler.updatePassword("password123")
+        handler.updateDisplayName("John Doe")
+        handler.signUp()
+        advanceUntilIdle()
+
+        assertEquals(1, syncWorkScheduler.triggerImmediateSyncCallCount)
+    }
+
+    @Test
     fun `resetState clears form`() = runTest(testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")

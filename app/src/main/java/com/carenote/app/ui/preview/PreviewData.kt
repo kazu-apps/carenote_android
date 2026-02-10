@@ -17,7 +17,7 @@ import com.carenote.app.ui.screens.auth.LoginFormState
 import com.carenote.app.ui.screens.auth.RegisterFormState
 import com.carenote.app.ui.screens.calendar.AddEditCalendarEventFormState
 import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordFormState
-import com.carenote.app.ui.screens.medication.AddMedicationFormState
+import com.carenote.app.ui.screens.medication.AddEditMedicationFormState
 import com.carenote.app.ui.screens.notes.AddEditNoteFormState
 import com.carenote.app.ui.screens.tasks.AddEditTaskFormState
 import java.time.LocalDate
@@ -40,7 +40,9 @@ object PreviewData {
         times = mapOf(MedicationTiming.MORNING to LocalTime.of(8, 0)),
         reminderEnabled = true,
         createdAt = fixedDateTime,
-        updatedAt = fixedDateTime
+        updatedAt = fixedDateTime,
+        currentStock = 28,
+        lowStockThreshold = 5
     )
 
     val medication2 = Medication(
@@ -54,7 +56,9 @@ object PreviewData {
         ),
         reminderEnabled = true,
         createdAt = fixedDateTime,
-        updatedAt = fixedDateTime
+        updatedAt = fixedDateTime,
+        currentStock = 3,
+        lowStockThreshold = 5
     )
 
     val medication3 = Medication(
@@ -219,7 +223,7 @@ object PreviewData {
         email = "caregiver@example.com"
     )
 
-    val addMedicationFormState = AddMedicationFormState(
+    val addEditMedicationFormState = AddEditMedicationFormState(
         name = "アムロジピン",
         dosage = "5mg",
         timings = listOf(MedicationTiming.MORNING, MedicationTiming.EVENING),

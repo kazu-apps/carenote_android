@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -62,6 +65,7 @@ fun MedicationScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val todayLogs by viewModel.todayLogs.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteMedication by remember { mutableStateOf<Medication?>(null) }
@@ -135,11 +139,16 @@ fun MedicationScreen(
                             onAction = onNavigateToAddMedication
                         )
                     } else {
+                        val todayLogsMap = remember(todayLogs) {
+                            todayLogs.associate {
+                                (it.medicationId to it.timing?.name) to it.status
+                            }
+                        }
                         MedicationList(
                             medications = state.data,
-                            todayLogs = todayLogs.associate {
-                                (it.medicationId to it.timing?.name) to it.status
-                            },
+                            todayLogs = todayLogsMap,
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = viewModel::updateSearchQuery,
                             onTaken = { id, timing ->
                                 viewModel.recordMedication(id, MedicationLogStatus.TAKEN, timing)
                             },
@@ -177,6 +186,8 @@ fun MedicationScreen(
 private fun MedicationList(
     medications: List<Medication>,
     todayLogs: Map<Pair<Long, String?>, MedicationLogStatus>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     onTaken: (Long, MedicationTiming?) -> Unit,
     onSkipped: (Long, MedicationTiming?) -> Unit,
     onPostponed: (Long, MedicationTiming?) -> Unit,
@@ -184,7 +195,15 @@ private fun MedicationList(
     onDelete: (Medication) -> Unit,
     contentPadding: PaddingValues
 ) {
-    val timingOrder = listOf(MedicationTiming.MORNING, MedicationTiming.NOON, MedicationTiming.EVENING)
+    val timingOrder = remember { listOf(MedicationTiming.MORNING, MedicationTiming.NOON, MedicationTiming.EVENING) }
+    val groupedMedications = remember(medications) {
+        timingOrder.associateWith { timing ->
+            medications.filter { it.timings.contains(timing) }
+        }
+    }
+    val noTimingMeds = remember(medications) {
+        medications.filter { it.timings.isEmpty() }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -196,15 +215,33 @@ private fun MedicationList(
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item(key = "search_bar") {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(text = stringResource(R.string.common_search))
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = null
+                    )
+                },
+                singleLine = true
+            )
+        }
         timingOrder.forEach { timing ->
-            val medsForTiming = medications.filter { it.timings.contains(timing) }
+            val medsForTiming = groupedMedications[timing] ?: emptyList()
             if (medsForTiming.isNotEmpty()) {
                 item(key = "header_${timing.name}") {
                     TimingHeader(timing = timing)
                 }
                 items(
                     items = medsForTiming,
-                    key = { "${timing.name}_${it.id}" }
+                    key = { "${timing.name}_${it.id}" },
+                    contentType = { "MedicationCard" }
                 ) { medication ->
                     SwipeToDismissItem(
                         item = medication,
@@ -226,11 +263,11 @@ private fun MedicationList(
             }
         }
 
-        val noTimingMeds = medications.filter { it.timings.isEmpty() }
         if (noTimingMeds.isNotEmpty()) {
             items(
                 items = noTimingMeds,
-                key = { "other_${it.id}" }
+                key = { "other_${it.id}" },
+                contentType = { "MedicationCard" }
             ) { medication ->
                 SwipeToDismissItem(
                     item = medication,
@@ -272,6 +309,8 @@ private fun MedicationListPreview() {
         MedicationList(
             medications = PreviewData.medications,
             todayLogs = PreviewData.todayLogs,
+            searchQuery = "",
+            onSearchQueryChange = {},
             onTaken = { _, _ -> },
             onSkipped = { _, _ -> },
             onPostponed = { _, _ -> },

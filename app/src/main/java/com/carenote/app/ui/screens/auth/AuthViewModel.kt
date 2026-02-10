@@ -1,7 +1,7 @@
 package com.carenote.app.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
-import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.domain.repository.AuthRepository
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.ui.common.UiText

@@ -10,11 +10,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.util.Consumer
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -22,16 +30,20 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.domain.repository.TaskRepository
+import kotlinx.coroutines.flow.flowOf
 import com.carenote.app.ui.navigation.AdaptiveNavigationScaffold
 import com.carenote.app.ui.navigation.CareNoteNavHost
 import com.carenote.app.ui.navigation.Screen
 import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.BiometricHelper
+import com.carenote.app.ui.util.RootDetector
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -43,6 +55,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
+
+    @Inject
+    lateinit var taskRepository: TaskRepository
 
     private val biometricHelper = BiometricHelper()
     private val isAuthenticated = mutableStateOf(false)
@@ -100,6 +115,38 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                var showRootWarning by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    if (RootDetector().isDeviceRooted()) {
+                        showRootWarning = true
+                    }
+                }
+
+                if (showRootWarning) {
+                    AlertDialog(
+                        onDismissRequest = { showRootWarning = false },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        title = {
+                            Text(text = stringResource(R.string.security_root_warning_dialog_title))
+                        },
+                        text = {
+                            Text(text = stringResource(R.string.security_root_warning_dialog_message))
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showRootWarning = false }) {
+                                Text(text = stringResource(R.string.common_ok))
+                            }
+                        }
+                    )
+                }
+
                 if (!isLoggedIn || !settings.biometricEnabled || authenticated) {
                     val navController = rememberNavController()
 
@@ -136,8 +183,16 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    val incompleteTaskCount by (
+                        if (isLoggedIn) taskRepository.getIncompleteTaskCount()
+                        else flowOf(0)
+                    ).collectAsStateWithLifecycle(initialValue = 0)
+
                     if (showBottomBar) {
-                        AdaptiveNavigationScaffold(navController = navController) {
+                        AdaptiveNavigationScaffold(
+                            navController = navController,
+                            incompleteTaskCount = incompleteTaskCount
+                        ) {
                             CareNoteNavHost(
                                 navController = navController,
                                 startDestination = startDestination

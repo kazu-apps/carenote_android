@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -52,10 +54,31 @@ fun TemperatureChart(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
+            val abnormalCount = remember(points) {
+                points.count { it.value >= threshold }
+            }
+            val graphDescription = if (abnormalCount > 0) {
+                stringResource(
+                    R.string.a11y_graph_temperature_summary,
+                    points.size,
+                    points.minOf { it.value },
+                    points.maxOf { it.value },
+                    abnormalCount
+                )
+            } else {
+                stringResource(
+                    R.string.a11y_graph_temperature_summary_no_abnormal,
+                    points.size,
+                    points.minOf { it.value },
+                    points.maxOf { it.value }
+                )
+            }
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(chartHeight.dp)
+                    .semantics { contentDescription = graphDescription }
             ) {
                 val chartLeft = yAxisWidth.dp.toPx()
                 val chartRight = size.width - 8.dp.toPx()

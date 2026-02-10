@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
-import com.carenote.app.data.worker.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.AppLanguage

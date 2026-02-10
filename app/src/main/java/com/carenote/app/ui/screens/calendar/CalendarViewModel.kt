@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -51,6 +52,7 @@ class CalendarViewModel @Inject constructor(
                 calendarEventRepository.getEventsByDate(date)
             }
             .map { events ->
+                // Required: stateIn needs explicit UiState<List<T>> type
                 @Suppress("USELESS_CAST")
                 UiState.Success(events) as UiState<List<CalendarEvent>>
             }
@@ -81,6 +83,7 @@ class CalendarViewModel @Inject constructor(
             .map { events ->
                 events.groupBy { it.date }
             }
+            .distinctUntilChanged()
             .catch { e ->
                 Timber.w("Failed to observe events for month: $e")
                 emit(emptyMap())

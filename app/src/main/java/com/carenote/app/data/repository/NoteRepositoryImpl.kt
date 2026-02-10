@@ -16,6 +16,8 @@ import com.carenote.app.domain.repository.PhotoRepository
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,9 +29,18 @@ class NoteRepositoryImpl @Inject constructor(
 ) : NoteRepository {
 
     private val pagingConfig = PagingConfig(pageSize = AppConfig.Paging.PAGE_SIZE)
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     override fun getAllNotes(): Flow<List<Note>> {
         return noteDao.getAllNotes().map { entities ->
+            mapper.toDomainList(entities)
+        }
+    }
+
+    override fun getNotesByDate(date: LocalDate): Flow<List<Note>> {
+        val startOfDay = date.atStartOfDay().format(dateTimeFormatter)
+        val startOfNextDay = date.plusDays(1).atStartOfDay().format(dateTimeFormatter)
+        return noteDao.getNotesByDateRange(startOfDay, startOfNextDay).map { entities ->
             mapper.toDomainList(entities)
         }
     }

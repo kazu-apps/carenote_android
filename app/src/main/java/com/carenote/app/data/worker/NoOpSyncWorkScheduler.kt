@@ -3,6 +3,7 @@ package com.carenote.app.data.worker
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.work.WorkInfo
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import timber.log.Timber
 
 class NoOpSyncWorkScheduler : SyncWorkSchedulerInterface {

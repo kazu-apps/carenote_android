@@ -48,6 +48,11 @@
 -dontwarn org.ietf.jgss.**
 -dontwarn org.jetbrains.annotations.**
 
+# ========== Glance Widget ==========
+
+# Glance Widget Receiver
+-keep class com.carenote.app.ui.widget.CareNoteWidgetReceiver { *; }
+
 # ========== Firebase ==========
 
 # Crashlytics — preserve line numbers and source file names for readable stack traces

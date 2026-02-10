@@ -7,7 +7,11 @@ import androidx.work.WorkerParameters
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.SyncResult
+import com.carenote.app.domain.model.PhotoUploadStatus
 import com.carenote.app.domain.repository.AuthRepository
+import com.carenote.app.domain.repository.ImageCompressorInterface
+import com.carenote.app.domain.repository.PhotoRepository
+import com.carenote.app.domain.repository.StorageRepository
 import com.carenote.app.domain.repository.SyncRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.assisted.Assisted
@@ -41,7 +45,10 @@ class SyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val syncRepository: SyncRepository,
     private val authRepository: AuthRepository,
-    private val firestore: dagger.Lazy<FirebaseFirestore>
+    private val firestore: dagger.Lazy<FirebaseFirestore>,
+    private val photoRepository: PhotoRepository,
+    private val storageRepository: StorageRepository,
+    private val imageCompressor: ImageCompressorInterface
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -61,13 +68,53 @@ class SyncWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        // 3. Execute sync
-        return try {
+        // 3. Upload pending photos first
+        uploadPendingPhotos(careRecipientId)
+
+        // 4. Execute sync
+        val result = try {
             val syncResult = syncRepository.syncAll(careRecipientId)
             mapSyncResultToWorkerResult(syncResult)
         } catch (e: Exception) {
             Timber.e("SyncWorker: Unexpected error: $e")
             handleRetryOrFailure()
+        }
+
+        // 5. Cleanup photo cache (best-effort)
+        cleanupCacheQuietly()
+
+        return result
+    }
+
+    private suspend fun cleanupCacheQuietly() {
+        try {
+            imageCompressor.cleanupCache()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w("SyncWorker: Cache cleanup failed: $e")
+        }
+    }
+
+    /**
+     * PENDING 状態の写真を Firebase Storage にアップロード
+     */
+    private suspend fun uploadPendingPhotos(careRecipientId: String) {
+        val pendingResult = photoRepository.getPendingPhotos()
+        val pendingPhotos = pendingResult.getOrNull() ?: return
+
+        for (photo in pendingPhotos) {
+            val remotePath = "${AppConfig.Photo.STORAGE_PATH_PREFIX}/$careRecipientId/${photo.parentType}/${photo.parentId}/${photo.id}.jpg"
+            photoRepository.updateUploadStatus(photo.id, PhotoUploadStatus.UPLOADING)
+            storageRepository.uploadPhoto(photo.localUri, remotePath)
+                .onSuccess { downloadUrl ->
+                    photoRepository.updateUploadStatus(photo.id, PhotoUploadStatus.UPLOADED, downloadUrl)
+                    Timber.d("Photo uploaded: id=${photo.id}")
+                }
+                .onFailure { error ->
+                    photoRepository.updateUploadStatus(photo.id, PhotoUploadStatus.FAILED)
+                    Timber.w("Photo upload failed: id=${photo.id}, error=$error")
+                }
         }
     }
 

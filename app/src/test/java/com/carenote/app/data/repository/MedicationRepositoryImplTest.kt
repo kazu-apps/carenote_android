@@ -190,6 +190,26 @@ class MedicationRepositoryImplTest {
     }
 
     @Test
+    fun `decrementStock returns Success`() = runTest {
+        coEvery { dao.decrementStock(1L, 1, any()) } returns Unit
+
+        val result = repository.decrementStock(1L)
+
+        assertTrue(result is Result.Success)
+        coVerify { dao.decrementStock(1L, 1, any()) }
+    }
+
+    @Test
+    fun `decrementStock returns Failure on db error`() = runTest {
+        coEvery { dao.decrementStock(any(), any(), any()) } throws RuntimeException("DB error")
+
+        val result = repository.decrementStock(1L)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    @Test
     fun `getAllMedications maps timings correctly`() = runTest {
         val entity = MedicationEntity(
             id = 1L,

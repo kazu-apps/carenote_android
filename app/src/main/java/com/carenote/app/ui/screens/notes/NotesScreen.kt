@@ -182,7 +182,8 @@ fun NotesScreen(
                         } else {
                             items(
                                 count = lazyPagingItems.itemCount,
-                                key = { index -> lazyPagingItems.peek(index)?.id ?: index }
+                                key = { index -> lazyPagingItems.peek(index)?.id ?: index },
+                                contentType = { "NoteCard" }
                             ) { index ->
                                 lazyPagingItems[index]?.let { note ->
                                     SwipeToDismissItem(
@@ -222,6 +223,7 @@ private fun TagFilterRow(
     selectedTag: NoteTag?,
     onTagSelect: (NoteTag?) -> Unit
 ) {
+    val noteTags = remember { NoteTag.entries.toList() }
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -231,7 +233,7 @@ private fun TagFilterRow(
                 onClick = { onTagSelect(null) }
             )
         }
-        items(NoteTag.entries.toList()) { tag ->
+        items(items = noteTags, key = { it.name }) { tag ->
             NoteTagChip(
                 tag = tag,
                 selected = selectedTag == tag,

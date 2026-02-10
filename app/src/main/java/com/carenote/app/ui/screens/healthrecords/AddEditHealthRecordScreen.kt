@@ -43,8 +43,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.config.AppConfig.Photo
+import com.carenote.app.domain.model.Photo as PhotoModel
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.components.PhotoPickerSection
 import com.carenote.app.ui.screens.healthrecords.components.SelectionFormSection
 import com.carenote.app.ui.screens.healthrecords.components.VitalSignsFormSection
 import com.carenote.app.ui.preview.LightDarkPreview
@@ -60,6 +63,7 @@ fun AddEditHealthRecordScreen(
     viewModel: AddEditHealthRecordViewModel = hiltViewModel()
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
+    val photos by viewModel.photos.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -102,6 +106,7 @@ fun AddEditHealthRecordScreen(
     ) { innerPadding ->
         AddEditHealthRecordContent(
             formState = formState,
+            photos = photos,
             viewModel = viewModel,
             onNavigateBack = handleBack,
             modifier = Modifier.padding(innerPadding)
@@ -154,6 +159,7 @@ private fun AddEditHealthRecordTopBar(
 @Composable
 private fun AddEditHealthRecordContent(
     formState: AddEditHealthRecordFormState,
+    photos: List<PhotoModel>,
     viewModel: AddEditHealthRecordViewModel,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -179,6 +185,13 @@ private fun AddEditHealthRecordContent(
             value = formState.conditionNote,
             onValueChange = viewModel::updateConditionNote,
             errorMessage = formState.conditionNoteError
+        )
+
+        PhotoPickerSection(
+            photos = photos,
+            onAddPhotos = viewModel::addPhotos,
+            onRemovePhoto = viewModel::removePhoto,
+            maxPhotos = Photo.MAX_PHOTOS_PER_PARENT
         )
 
         FormActionButtons(

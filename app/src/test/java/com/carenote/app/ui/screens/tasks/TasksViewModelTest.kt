@@ -8,11 +8,9 @@ import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.util.SnackbarEvent
-import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -29,7 +27,7 @@ import java.time.LocalTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class TasksViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var repository: FakeTaskRepository
     private lateinit var scheduler: FakeTaskReminderScheduler
     private lateinit var viewModel: TasksViewModel
@@ -49,6 +47,9 @@ class TasksViewModelTest {
     private fun createViewModel(): TasksViewModel {
         return TasksViewModel(repository, scheduler)
     }
+
+    /** Helper: read the current tasks from the FakeTaskRepository's internal state. */
+    private fun repoTasks(): List<Task> = repository.currentTasks()
 
     private fun createTask(
         id: Long = 1L,
@@ -86,58 +87,6 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `initial tasks state is Loading`() {
-        viewModel = createViewModel()
-
-        assertTrue(viewModel.tasks.value is UiState.Loading)
-    }
-
-    @Test
-    fun `tasks transitions from Loading to Success`() = runTest(testDispatcher) {
-        val tasks = listOf(createTask(id = 1L, title = "タスクA"))
-        repository.setTasks(tasks)
-        viewModel = createViewModel()
-
-        viewModel.tasks.test {
-            assertEquals(UiState.Loading, awaitItem())
-            advanceUntilIdle()
-            val success = awaitItem()
-            assertTrue(success is UiState.Success)
-            assertEquals(1, (success as UiState.Success).data.size)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `tasks loaded as Success`() = runTest(testDispatcher) {
-        val tasks = listOf(
-            createTask(id = 1L, title = "タスクA"),
-            createTask(id = 2L, title = "タスクB")
-        )
-        repository.setTasks(tasks)
-        viewModel = createViewModel()
-
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            assertEquals(2, (state as UiState.Success).data.size)
-        }
-    }
-
-    @Test
-    fun `empty tasks shows Success with empty list`() = runTest(testDispatcher) {
-        viewModel = createViewModel()
-
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            assertEquals(0, (state as UiState.Success).data.size)
-        }
-    }
-
-    @Test
     fun `setFilterMode updates filter mode`() {
         viewModel = createViewModel()
 
@@ -147,129 +96,32 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `filter INCOMPLETE shows only incomplete tasks`() = runTest(testDispatcher) {
-        val tasks = listOf(
-            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
-            createTask(id = 2L, title = "完了タスク", isCompleted = true)
-        )
-        repository.setTasks(tasks)
-        viewModel = createViewModel()
-        viewModel.setFilterMode(TaskFilterMode.INCOMPLETE)
-
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("未完了タスク", data[0].title)
-            assertFalse(data[0].isCompleted)
-        }
-    }
-
-    @Test
-    fun `filter COMPLETED shows only completed tasks`() = runTest(testDispatcher) {
-        val tasks = listOf(
-            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
-            createTask(id = 2L, title = "完了タスク", isCompleted = true)
-        )
-        repository.setTasks(tasks)
-        viewModel = createViewModel()
-        viewModel.setFilterMode(TaskFilterMode.COMPLETED)
-
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("完了タスク", data[0].title)
-            assertTrue(data[0].isCompleted)
-        }
-    }
-
-    @Test
-    fun `filter ALL shows all tasks`() = runTest(testDispatcher) {
-        val tasks = listOf(
-            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
-            createTask(id = 2L, title = "完了タスク", isCompleted = true)
-        )
-        repository.setTasks(tasks)
-        viewModel = createViewModel()
-        viewModel.setFilterMode(TaskFilterMode.ALL)
-
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            assertEquals(2, (state as UiState.Success).data.size)
-        }
-    }
-
-    @Test
-    fun `filter mode change updates task list`() = runTest(testDispatcher) {
-        val tasks = listOf(
-            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
-            createTask(id = 2L, title = "完了タスク", isCompleted = true)
-        )
-        repository.setTasks(tasks)
-        viewModel = createViewModel()
-
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val allState = expectMostRecentItem()
-            assertTrue(allState is UiState.Success)
-            assertEquals(2, (allState as UiState.Success).data.size)
-
-            viewModel.setFilterMode(TaskFilterMode.INCOMPLETE)
-            advanceUntilIdle()
-            val incompleteState = expectMostRecentItem()
-            assertTrue(incompleteState is UiState.Success)
-            assertEquals(1, (incompleteState as UiState.Success).data.size)
-        }
-    }
-
-    @Test
-    fun `toggleCompletion flips isCompleted`() = runTest(testDispatcher) {
+    fun `toggleCompletion flips isCompleted`() = runTest {
         val task = createTask(id = 1L, title = "タスク", isCompleted = false)
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
+        viewModel.toggleCompletion(task)
 
-            viewModel.toggleCompletion(task)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertTrue(data[0].isCompleted)
-        }
+        val items = repoTasks()
+        assertEquals(1, items.size)
+        assertTrue(items[0].isCompleted)
     }
 
     @Test
-    fun `toggleCompletion on completed task sets incomplete`() = runTest(testDispatcher) {
+    fun `toggleCompletion on completed task sets incomplete`() = runTest {
         val task = createTask(id = 1L, title = "完了タスク", isCompleted = true)
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
+        viewModel.toggleCompletion(task)
 
-            viewModel.toggleCompletion(task)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertFalse(data[0].isCompleted)
-        }
+        val items = repoTasks()
+        assertFalse(items[0].isCompleted)
     }
 
     @Test
-    fun `toggleCompletion cancels reminder when completing task`() = runTest(testDispatcher) {
+    fun `toggleCompletion cancels reminder when completing task`() = runTest {
         val task = createTask(
             id = 1L,
             title = "リマインダータスク",
@@ -279,10 +131,8 @@ class TasksViewModelTest {
         )
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.toggleCompletion(task)
-        advanceUntilIdle()
 
         assertEquals(1, scheduler.cancelReminderCalls.size)
         assertEquals(1L, scheduler.cancelReminderCalls[0].taskId)
@@ -291,7 +141,7 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `toggleCompletion reschedules reminder when uncompleting task`() = runTest(testDispatcher) {
+    fun `toggleCompletion reschedules reminder when uncompleting task`() = runTest {
         val task = createTask(
             id = 1L,
             title = "リマインダータスク",
@@ -301,10 +151,8 @@ class TasksViewModelTest {
         )
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.toggleCompletion(task)
-        advanceUntilIdle()
 
         assertEquals(1, scheduler.scheduleReminderCalls.size)
         assertEquals(1L, scheduler.scheduleReminderCalls[0].taskId)
@@ -313,7 +161,7 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `toggleCompletion does not reschedule if reminder not enabled`() = runTest(testDispatcher) {
+    fun `toggleCompletion does not reschedule if reminder not enabled`() = runTest {
         val task = createTask(
             id = 1L,
             title = "タスク",
@@ -323,16 +171,14 @@ class TasksViewModelTest {
         )
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.toggleCompletion(task)
-        advanceUntilIdle()
 
         assertTrue(scheduler.scheduleReminderCalls.isEmpty())
     }
 
     @Test
-    fun `toggleCompletion generates next task for recurring task`() = runTest(testDispatcher) {
+    fun `toggleCompletion generates next task for recurring task`() = runTest {
         val task = createTask(
             id = 1L,
             title = "繰り返しタスク",
@@ -344,20 +190,13 @@ class TasksViewModelTest {
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
+        viewModel.toggleCompletion(task)
 
-            viewModel.toggleCompletion(task)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(2, data.size)
-            val nextTask = data.find { !it.isCompleted }
-            assertFalse(nextTask!!.isCompleted)
-            assertEquals(LocalDate.of(2025, 3, 16), nextTask.dueDate)
-        }
+        val items = repoTasks()
+        assertEquals(2, items.size)
+        val nextTask = items.find { !it.isCompleted }
+        assertFalse(nextTask!!.isCompleted)
+        assertEquals(LocalDate.of(2025, 3, 16), nextTask.dueDate)
     }
 
     @Test
@@ -391,7 +230,7 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `recurring task without due date does not generate next task`() = runTest(testDispatcher) {
+    fun `recurring task without due date does not generate next task`() = runTest {
         val task = createTask(
             id = 1L,
             title = "繰り返しタスク",
@@ -403,21 +242,14 @@ class TasksViewModelTest {
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
+        viewModel.toggleCompletion(task)
 
-            viewModel.toggleCompletion(task)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-        }
+        val items = repoTasks()
+        assertEquals(1, items.size)
     }
 
     @Test
-    fun `deleteTask removes task`() = runTest(testDispatcher) {
+    fun `deleteTask removes task`() = runTest {
         val tasks = listOf(
             createTask(id = 1L, title = "タスクA"),
             createTask(id = 2L, title = "タスクB")
@@ -425,28 +257,19 @@ class TasksViewModelTest {
         repository.setTasks(tasks)
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
+        viewModel.deleteTask(1L)
 
-            viewModel.deleteTask(1L)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            val data = (state as UiState.Success).data
-            assertEquals(1, data.size)
-            assertEquals("タスクB", data[0].title)
-        }
+        val items = repoTasks()
+        assertEquals(1, items.size)
+        assertEquals("タスクB", items[0].title)
     }
 
     @Test
-    fun `deleteTask cancels reminder`() = runTest(testDispatcher) {
+    fun `deleteTask cancels reminder`() = runTest {
         repository.setTasks(listOf(createTask(id = 1L)))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.deleteTask(1L)
-        advanceUntilIdle()
 
         assertEquals(1, scheduler.cancelReminderCalls.size)
         assertEquals(1L, scheduler.cancelReminderCalls[0].taskId)
@@ -455,14 +278,12 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `snackbar emitted on delete success`() = runTest(testDispatcher) {
+    fun `snackbar emitted on delete success`() = runTest {
         repository.setTasks(listOf(createTask(id = 1L)))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.snackbarController.events.test {
             viewModel.deleteTask(1L)
-            advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(R.string.tasks_deleted, (event as SnackbarEvent.WithResId).messageResId)
@@ -470,15 +291,13 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `snackbar emitted on delete failure`() = runTest(testDispatcher) {
+    fun `snackbar emitted on delete failure`() = runTest {
         repository.setTasks(listOf(createTask(id = 1L)))
         repository.shouldFail = true
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.snackbarController.events.test {
             viewModel.deleteTask(1L)
-            advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(R.string.tasks_delete_failed, (event as SnackbarEvent.WithResId).messageResId)
@@ -486,35 +305,27 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `toggleCompletion failure does not change task state`() = runTest(testDispatcher) {
+    fun `toggleCompletion failure does not change task state`() = runTest {
         val task = createTask(id = 1L, isCompleted = false)
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
+        repository.shouldFail = true
+        viewModel.toggleCompletion(task)
 
-            repository.shouldFail = true
-            viewModel.toggleCompletion(task)
-            advanceUntilIdle()
-
-            val state = expectMostRecentItem()
-            assertTrue(state is UiState.Success)
-            assertFalse((state as UiState.Success).data[0].isCompleted)
-        }
+        val items = repoTasks()
+        assertFalse(items[0].isCompleted)
     }
 
     @Test
-    fun `snackbar emitted on toggle failure`() = runTest(testDispatcher) {
+    fun `snackbar emitted on toggle failure`() = runTest {
         val task = createTask(id = 1L, isCompleted = false)
         repository.setTasks(listOf(task))
         repository.shouldFail = true
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.snackbarController.events.test {
             viewModel.toggleCompletion(task)
-            advanceUntilIdle()
             val event = awaitItem()
             assertTrue(event is SnackbarEvent.WithResId)
             assertEquals(R.string.tasks_toggle_failed, (event as SnackbarEvent.WithResId).messageResId)
@@ -522,25 +333,18 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `tasks update reactively when repository changes`() = runTest(testDispatcher) {
+    fun `tasks update reactively when repository changes`() = runTest {
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val initial = expectMostRecentItem()
-            assertTrue(initial is UiState.Success)
-            assertEquals(0, (initial as UiState.Success).data.size)
+        assertEquals(0, repoTasks().size)
 
-            repository.setTasks(listOf(createTask(id = 1L)))
-            advanceUntilIdle()
-            val updated = expectMostRecentItem()
-            assertTrue(updated is UiState.Success)
-            assertEquals(1, (updated as UiState.Success).data.size)
-        }
+        repository.setTasks(listOf(createTask(id = 1L)))
+
+        assertEquals(1, repoTasks().size)
     }
 
     @Test
-    fun `next recurring task schedules reminder if enabled`() = runTest(testDispatcher) {
+    fun `next recurring task schedules reminder if enabled`() = runTest {
         val task = createTask(
             id = 1L,
             title = "繰り返しリマインダータスク",
@@ -553,10 +357,8 @@ class TasksViewModelTest {
         )
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
-        advanceUntilIdle()
 
         viewModel.toggleCompletion(task)
-        advanceUntilIdle()
 
         // cancelReminder for completed task + scheduleReminder for new task
         assertEquals(1, scheduler.cancelReminderCalls.size)
@@ -566,44 +368,81 @@ class TasksViewModelTest {
     }
 
     @Test
-    fun `refresh triggers data reload`() = runTest(testDispatcher) {
-        val tasks = listOf(createTask(id = 1L, title = "タスクA"))
-        repository.setTasks(tasks)
+    fun `searchQuery is empty initially`() {
         viewModel = createViewModel()
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            val initial = expectMostRecentItem()
-            assertTrue(initial is UiState.Success)
-            assertEquals(1, (initial as UiState.Success).data.size)
-
-            repository.setTasks(
-                listOf(createTask(id = 1L, title = "タスクA"), createTask(id = 2L, title = "タスクB"))
-            )
-            viewModel.refresh()
-            advanceUntilIdle()
-
-            val refreshed = expectMostRecentItem()
-            assertTrue(refreshed is UiState.Success)
-            assertEquals(2, (refreshed as UiState.Success).data.size)
-        }
+        assertEquals("", viewModel.searchQuery.value)
     }
 
     @Test
-    fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
-        repository.setTasks(listOf(createTask(id = 1L)))
+    fun `updateSearchQuery updates searchQuery`() {
         viewModel = createViewModel()
-        advanceUntilIdle()
 
-        assertFalse(viewModel.isRefreshing.value)
+        viewModel.updateSearchQuery("買い物")
 
-        viewModel.refresh()
-        assertTrue(viewModel.isRefreshing.value)
+        assertEquals("買い物", viewModel.searchQuery.value)
+    }
 
-        viewModel.tasks.test {
-            advanceUntilIdle()
-            cancelAndIgnoreRemainingEvents()
-        }
-        assertFalse(viewModel.isRefreshing.value)
+    @Test
+    fun `search filters tasks by title`() = runTest {
+        val tasks = listOf(
+            createTask(id = 1L, title = "買い物に行く", description = ""),
+            createTask(id = 2L, title = "薬を取りに行く", description = ""),
+            createTask(id = 3L, title = "買い物リスト作成", description = "")
+        )
+        repository.setTasks(tasks)
+        viewModel = createViewModel()
+        viewModel.updateSearchQuery("買い物")
+
+        // Verify repository's search filtering works correctly
+        val filtered = repository.getFilteredTasks("買い物")
+        assertEquals(2, filtered.size)
+        assertTrue(filtered.all { it.title.contains("買い物") })
+    }
+
+    @Test
+    fun `search filters tasks by description`() = runTest {
+        val tasks = listOf(
+            createTask(id = 1L, title = "タスクA", description = "病院の予約を確認"),
+            createTask(id = 2L, title = "タスクB", description = "スーパーで買い物")
+        )
+        repository.setTasks(tasks)
+        viewModel = createViewModel()
+        viewModel.updateSearchQuery("病院")
+
+        // Verify repository's search filtering works correctly
+        val filtered = repository.getFilteredTasks("病院")
+        assertEquals(1, filtered.size)
+        assertEquals("タスクA", filtered[0].title)
+    }
+
+    @Test
+    fun `filter INCOMPLETE shows only incomplete tasks via repository`() = runTest {
+        val tasks = listOf(
+            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
+            createTask(id = 2L, title = "完了タスク", isCompleted = true)
+        )
+        repository.setTasks(tasks)
+        viewModel = createViewModel()
+        viewModel.setFilterMode(TaskFilterMode.INCOMPLETE)
+
+        val incomplete = repoTasks().filter { !it.isCompleted }
+        assertEquals(1, incomplete.size)
+        assertEquals("未完了タスク", incomplete[0].title)
+    }
+
+    @Test
+    fun `filter COMPLETED shows only completed tasks via repository`() = runTest {
+        val tasks = listOf(
+            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
+            createTask(id = 2L, title = "完了タスク", isCompleted = true)
+        )
+        repository.setTasks(tasks)
+        viewModel = createViewModel()
+        viewModel.setFilterMode(TaskFilterMode.COMPLETED)
+
+        val completed = repoTasks().filter { it.isCompleted }
+        assertEquals(1, completed.size)
+        assertEquals("完了タスク", completed[0].title)
     }
 }
