@@ -2,15 +2,15 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v4.0 Phase 24 Glance ウィジェット - DONE
+## 現在のタスク: v4.0 Phase 25 CLAUDE.md 包括的更新 - DONE
 
-Glance 1.1.1 でホーム画面ウィジェットを実装。今日の服薬状況（薬名 + タイミング絵文字 + TAKEN/SKIPPED/PENDING ステータス）と今日の未完了タスク（最大各5件）を1ウィジェットに表示。Hilt EntryPoint 経由で既存 Repository にアクセス。タップでアプリ起動。ビルド成功、全テスト PASS。
+CLAUDE.md をコードベースの実態に合わせて包括的に更新。全13セクションを更新: 技術スタック（Kotlin 2.3.0, BOM 2026.01.01, Hilt 2.59.1, Firebase BOM 34.8.0 等）、DIモジュール（10テーブル、7モジュール）、ナビゲーション（25画面、6タブ、Adaptive Navigation）、パッケージ構成（17ドメインモデル、19リポジトリインターフェース）、Firebase統合（Storage + グレースフルデグラデーション）、Worker（TaskReminderWorker追加）、テーマ（Dynamic Color）、テスト（Roborazzi, Macrobenchmark, Baseline Profile, 20 Fake）、AppConfig（8カテゴリ追加）、よくある落とし穴（5項目追加、計17項目）、今後の追加予定（Storage実装済み削除）。ビルド成功、全テスト PASS。
 
 ## 次のアクション
 
-1. `/task-driver` で v4.0 Phase 25（依存関係アップグレード + CLAUDE.md 更新）を実行
-2. 各フェーズ完了後にビルド・テスト確認
-3. リリース前に実機テスト + APK 検証
+1. v4.0 全フェーズ（Phase 1-25）完了。リリース準備可能
+2. リリース前に実機テスト + APK 検証
+3. v5.0 のスコープ検討（Billing, FCM リモート通知, Wear OS）
 
 ## 既知の問題
 
@@ -454,10 +454,10 @@ Glance 1.1.1 でホーム画面ウィジェット。今日の服薬状況（薬�
 - 変更: `libs.versions.toml`(Glance 1.1.1), `build.gradle.kts`(依存+JaCoCo除外), `AppConfig.kt`(Widget定数), `AndroidManifest.xml`(Receiver登録), `proguard-rules.pro`(keep), `strings.xml` JP/EN(10文字列追加)
 - ビルド成功、全テスト PASS
 
-### Phase 25: 依存関係アップグレード + CLAUDE.md 更新 - PENDING
-v4.0 完了時点の依存関係アップグレード（Kotlin 等）。CLAUDE.md に v4.0 の新規パターン・規約を反映。
-- 対象: 3-5 files
-- 依存: Phase 24（全フェーズ完了後）
+### Phase 25: CLAUDE.md 包括的更新 - DONE
+CLAUDE.md をコードベースの実態に合わせて包括的に更新。依存関係は v3.0 Phase 25 で最新化済みのため libs.versions.toml 変更不要。全13セクション（技術スタック、DI、ナビゲーション、パッケージ構成、Firebase、Worker、テーマ、テスト、AppConfig、落とし穴、今後の追加予定）を更新。クイックリファレンスに Roborazzi コマンド追加。
+- 変更: `CLAUDE.md`
+- ビルド成功、全テスト PASS
 
 ---
 

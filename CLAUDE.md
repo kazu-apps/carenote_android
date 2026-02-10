@@ -65,6 +65,12 @@
 # カバレッジ（80% LINE 閾値）
 ./gradlew.bat jacocoTestReport jacocoTestCoverageVerification
 
+# スクリーンショットテスト（golden image 記録）
+./gradlew.bat recordRoborazziDebug
+
+# スクリーンショット回帰テスト（CI 用）
+./gradlew.bat verifyRoborazziDebug
+
 # 静的解析（CLI ツール。Gradle プラグインではない）
 detekt --config detekt.yml --input app/src/main/java
 ```
@@ -73,17 +79,22 @@ detekt --config detekt.yml --input app/src/main/java
 
 | カテゴリ | 技術 |
 |---------|------|
-| 言語 | Kotlin 2.0.21 / JVM 17 |
-| UI | Jetpack Compose + Material 3 (BOM 2024.12.01) |
-| DI | Hilt 2.53.1 (KSP) |
-| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v12 baseline) |
-| ナビゲーション | Navigation Compose 2.8.5 |
-| 非同期 | Coroutines 1.9.0 + StateFlow |
+| 言語 | Kotlin 2.3.0 / JVM 17 |
+| UI | Jetpack Compose + Material 3 (BOM 2026.01.01) |
+| DI | Hilt 2.59.1 (KSP 2.3.5) |
+| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v14 baseline) |
+| ナビゲーション | Navigation Compose 2.9.7 |
+| 非同期 | Coroutines 1.10.2 + StateFlow |
 | ログ | Timber 5.0.1 |
-| Firebase | BOM 33.7.0 (Auth, Firestore, Messaging, Crashlytics) |
-| WorkManager | 2.10.0 (HiltWorker) |
-| テスト | JUnit 4 + MockK 1.13.9 + Turbine 1.0.0 + Robolectric 4.14.1 |
-| SDK | compileSdk 35, minSdk 26, targetSdk 35 |
+| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage) |
+| WorkManager | 2.10.1 (HiltWorker) |
+| Paging | Paging 3.3.6 (Runtime + Compose) |
+| 画像 | Coil 3.1.0 |
+| Widget | Glance 1.1.1 |
+| セキュリティ | Biometric 1.1.0 |
+| Adaptive | Material3 Adaptive Navigation Suite |
+| テスト | JUnit 4 + MockK 1.14.3 + Turbine 1.0.0 + Robolectric 4.16 + Roborazzi 1.58.0 |
+| SDK | compileSdk 36, minSdk 26, targetSdk 36 |
 
 ## アーキテクチャ
 
@@ -97,19 +108,22 @@ detekt --config detekt.yml --input app/src/main/java
 
 | モジュール | 責務 |
 |-----------|------|
-| `di/AppModule.kt` | Repository バインディング + Gson |
-| `di/DatabaseModule.kt` | Room DB + DAO (8 テーブル) |
-| `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging + AuthRepository |
+| `di/AppModule.kt` | 11 Repository + Exporter/Compressor バインディング |
+| `di/DatabaseModule.kt` | Room DB + DAO (10 テーブル) + PassphraseManager + RecoveryHelper |
+| `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging, Storage + AuthRepository + No-Op フォールバック |
 | `di/SyncModule.kt` | SyncRepository + EntitySyncer 群 |
-| `di/WorkerModule.kt` | WorkManager + SyncWorkScheduler |
+| `di/WorkerModule.kt` | WorkManager + 3 Scheduler (Sync, MedicationReminder, TaskReminder) |
+| `di/WidgetEntryPoint.kt` | Glance Widget DI (EntryPointAccessors) |
+| `di/FirebaseAvailability.kt` | Firebase 利用可否チェック |
 
 ### ナビゲーション
 
 `ui/navigation/Screen.kt` の sealed class でルート定義:
 - **Auth**: Login, Register, ForgotPassword
-- **BottomNav**: Medication, Calendar, Tasks, HealthRecords, Notes
-- **Secondary**: Settings, AddMedication
+- **BottomNav**: Medication, Calendar, Tasks, HealthRecords, Notes, Settings（6タブ）
+- **Secondary**: AddEditMedication, MedicationDetail, EditMedication, AddEditNote, AddEditHealthRecord, AddEditCalendarEvent, AddEditTask, CareRecipientProfile, Timeline, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, PrivacyPolicy, TermsOfService
 - `ui/navigation/CareNoteNavHost.kt` でルーティング管理
+- `ui/navigation/AdaptiveNavigationScaffold.kt` — ウィンドウサイズに応じて Compact=Bottom, Medium=Rail, Expanded=Drawer を自動選択
 
 ### エラーハンドリング
 
@@ -127,28 +141,39 @@ detekt --config detekt.yml --input app/src/main/java
 
 ```
 app/src/main/java/com/carenote/app/
-├── config/          AppConfig（全設定値の一元管理。マジックナンバー禁止）
+├── config/              AppConfig（全設定値の一元管理。マジックナンバー禁止）
 ├── data/
-│   ├── local/       Room (DB, DAO, Entity, Converter, Migration)
-│   ├── mapper/      Entity ↔ Domain マッパー
-│   │   └── remote/  Firestore ↔ Domain マッパー (RemoteMapper)
+│   ├── export/          HealthRecordCsvExporter, HealthRecordPdfExporter
+│   ├── local/           Room (DB, DAO, Entity, Converter, Migration) + ImageCompressor, DatabasePassphraseManager, DatabaseRecoveryHelper
+│   ├── mapper/          Entity ↔ Domain マッパー
+│   │   └── remote/      Firestore ↔ Domain マッパー (RemoteMapper)
 │   ├── remote/
-│   │   └── model/   SyncMetadata（同期メタデータ）
-│   ├── repository/  Repository 実装
-│   │   └── sync/    EntitySyncer + 各エンティティ Syncer
-│   ├── service/     CareNoteMessagingService (FCM)
-│   └── worker/      SyncWorker, MedicationReminderWorker
-├── di/              Hilt モジュール (App, Database, Firebase, Sync, Worker)
+│   │   └── model/       SyncMetadata（同期メタデータ）
+│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, FirebaseStorage, NoOpStorage)
+│   │   └── sync/        EntitySyncer + ConfigDrivenEntitySyncer + MedicationLogSyncer
+│   ├── service/         CareNoteMessagingService (FCM)
+│   └── worker/          SyncWorker, MedicationReminderWorker, TaskReminderWorker
+├── di/                  Hilt モジュール (App, Database, Firebase, Sync, Worker) + WidgetEntryPoint, FirebaseAvailability
 ├── domain/
-│   ├── common/      Result<T,E>, DomainError, SyncResult, SyncState
-│   ├── model/       ドメインモデル (data class, immutable)
-│   └── repository/  Repository インターフェース
+│   ├── common/          Result<T,E>, DomainError, SyncResult, SyncState
+│   ├── model/           ドメインモデル (17 data class: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage)
+│   └── repository/      Repository インターフェース (19: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline + Scheduler/Exporter/Compressor interfaces)
 └── ui/
-    ├── navigation/  Screen sealed class + CareNoteNavHost
-    ├── screens/     各画面 (Screen.kt)
-    │   └── auth/    LoginScreen, RegisterScreen, ForgotPasswordScreen
-    ├── theme/       Material3 テーマ（Color, Type, Theme）
-    └── util/        NotificationHelper, CrashlyticsTree
+    ├── common/          共通 UI ユーティリティ
+    ├── components/      再利用可能コンポーネント (CareNoteCard, CareNoteTextField, CareNoteDatePickerDialog, CareNoteTimePickerDialog, ConfirmDialog, EmptyState, ErrorDisplay, LoadingIndicator, PhotoPickerSection, SwipeToDismissItem)
+    ├── navigation/      Screen sealed class + CareNoteNavHost + AdaptiveNavigationScaffold
+    ├── preview/         PreviewAnnotations, PreviewData
+    ├── screens/         各画面 (Screen.kt)
+    │   ├── auth/        LoginScreen, RegisterScreen, ForgotPasswordScreen
+    │   ├── carerecipient/  CareRecipientProfileScreen
+    │   ├── emergencycontact/  EmergencyContactsScreen, AddEmergencyContactScreen, EditEmergencyContactScreen
+    │   ├── settings/    SettingsScreen + dialogs/, sections/ サブディレクトリ
+    │   └── timeline/    TimelineScreen
+    ├── testing/         TestTags
+    ├── theme/           Material3 テーマ（Color, Type, Theme）
+    ├── util/            NotificationHelper, CrashlyticsTree, BiometricHelper, RootDetector, LocaleManager, SnackbarController
+    ├── viewmodel/       ViewModel 群
+    └── widget/          CareNoteWidget, CareNoteWidgetReceiver (Glance)
 ```
 
 ## Firebase 統合
@@ -207,6 +232,20 @@ interface RemoteMapper<Domain> {
 - WARN 以上のログを Crashlytics に送信
 - 例外は `recordException()` で自動記録
 
+### Firebase Storage（写真保存）
+
+- `StorageRepository` — ストレージインターフェース (upload, download, delete)
+- `FirebaseStorageRepositoryImpl` — Firebase Storage 実装
+- `NoOpStorageRepository` — Firebase 未初期化時のフォールバック（グレースフルデグラデーション）
+
+### Firebase グレースフルデグラデーション
+
+`google-services.json` 未配置時や Firebase 未初期化時でもアプリがクラッシュしない仕組み。
+
+- `FirebaseAvailability.check()` — Firebase 利用可否チェック。`Exception`（`IllegalStateException` だけでなく `RuntimeException` も含む）をキャッチ
+- **No-Op 実装**: `NoOpAuthRepository`, `NoOpSyncRepository`, `NoOpSyncWorkScheduler`, `NoOpStorageRepository`
+- `dagger.Lazy<T>` で Firebase 依存の遅延初期化。`FirebaseAvailability` の結果に応じて本番 or No-Op を DI で注入
+
 ## Worker パターン
 
 ### SyncWorker（定期同期）
@@ -230,6 +269,13 @@ class SyncWorker : CoroutineWorker {
 - 指定時刻に通知を発行
 - おやすみ時間（quietHours）チェック
 - ユーザー設定で通知オン/オフ
+- 服薬済みチェック（TAKEN ログあればスキップ）+ フォローアップ再通知
+
+### TaskReminderWorker（タスクリマインダー）
+
+- 指定時刻にタスクリマインダー通知を発行
+- おやすみ時間（quietHours）チェック
+- ユーザー設定で通知オン/オフ
 
 ## テーマ
 
@@ -237,6 +283,7 @@ class SyncWorker : CoroutineWorker {
 - **プライマリカラー**: グリーン系（信頼感 #2E7D32）
 - **フォントサイズ**: bodyLarge 18sp（高齢者向け大きめ）
 - **最小タッチターゲット**: 48dp
+- **Dynamic Color (Material You)**: Android 12+ で `dynamicLightColorScheme()`/`dynamicDarkColorScheme()` を条件分岐。Settings で切替可能。CareNoteColors は Dynamic Color 時も独自ブランドカラー維持
 
 ## テスト
 
@@ -246,6 +293,9 @@ class SyncWorker : CoroutineWorker {
 |------|-------------|------|
 | Unit | JUnit 4 + MockK + Turbine + Coroutines Test | `app/src/test/` |
 | UI/E2E | Hilt + Espresso + UIAutomator + Compose UI Test | `app/src/androidTest/` |
+| Screenshot | Roborazzi 1.58.0 + ComposablePreviewScanner 0.8.1 | `app/src/test/snapshots/` |
+| Benchmark | Macrobenchmark 1.4.1 | `benchmark/` |
+| Baseline Profile | baselineprofile 1.5.0-alpha02 | `baselineprofile/` |
 | Runner | `com.carenote.app.HiltTestRunner` | build.gradle.kts |
 | カバレッジ | JaCoCo 0.8.12（LINE 80% 閾値） | `jacocoTestCoverageVerification` |
 
@@ -257,6 +307,13 @@ Firebase 関連:
 - `FakeAuthRepository` — 認証状態のテスト制御
 - `FakeSyncRepository` — 同期状態のテスト制御
 - `FakeSyncWorkScheduler` — WorkManager 依存排除
+- `FakeStorageRepository` — Firebase Storage 依存排除
+
+データ関連:
+- `FakeMedicationRepository`, `FakeMedicationLogRepository`, `FakeNoteRepository`, `FakeHealthRecordRepository`, `FakeCalendarEventRepository`, `FakeTaskRepository`
+- `FakeCareRecipientRepository`, `FakeEmergencyContactRepository`, `FakePhotoRepository`, `FakeSettingsRepository`, `FakeTimelineRepository`
+- `FakeMedicationReminderScheduler`, `FakeTaskReminderScheduler`
+- `FakeNotificationHelper`, `FakeRootDetector`, `FakeSyncMappingDao`
 
 ### E2E テスト
 
@@ -291,6 +348,11 @@ Timber.d("User signed in successfully")
 - `AppConfig.Auth` — 認証関連（パスワード長、メール長）
 - `AppConfig.Sync` — 同期関連（タイムアウト、リトライ回数）
 - `AppConfig.Notification` — 通知チャンネル ID
+- `AppConfig.Biometric` — 生体認証（バックグラウンドタイムアウト）
+- `AppConfig.Widget` — ウィジェット表示件数
+- `AppConfig.Export` — エクスポート設定（CSV/PDF ファイルプレフィックス、PDF 寸法）
+- `AppConfig.Photo` — 画像キャッシュ TTL/サイズ上限、圧縮品質
+- `AppConfig.UI` — デバウンス時間、アニメーション、Badge 最大値等
 
 ### Detekt ルール（maxIssues=0）
 
@@ -305,7 +367,7 @@ Timber.d("User signed in successfully")
 ## よくある落とし穴
 
 1. **Detekt は CLI ツール** — Gradle プラグインとして追加しないこと（MockK インストルメンテーションと競合）
-2. **Room Entity 変更時** — Migration ファイル作成 + `DatabaseModule.kt` への登録が必須（v12 を baseline として squash 済み。v1-v11 の migration は削除済み。新規 migration は v12 以降から作成する。未リリースのため `fallbackToDestructiveMigration()` を使用中）
+2. **Room Entity 変更時** — Migration ファイル作成 + `DatabaseModule.kt` への登録が必須（v14 を baseline として squash 済み。v1-v13 の migration は削除済み。新規 migration は v14 以降から作成する。未リリースのため `fallbackToDestructiveMigration()` を使用中）
 3. **strings.xml は JP/EN ペア更新** — 片方だけ更新すると実行時に英語/日本語が混在
 4. **DomainError は Throwable ではない** — `Timber.w(error, msg)` は使えない。`Timber.w("msg: $error")` と書く
 5. **Result は独自実装** — `domain/common/Result.kt` の `Result<T, E>`。kotlin.Result ではない
@@ -316,8 +378,14 @@ Timber.d("User signed in successfully")
 10. **PII ログ禁止** — UID, email, 個人名をログに含めない（L-2 セキュリティ要件）
 11. **WorkManager 最小間隔** — 定期実行は最短 15分。それ未満は設定しても 15分になる
 12. **Firebase 例外処理** — FirebaseAuthException は DomainError にマッピングして返す
+13. **Firebase グレースフルデグラデーション** — `google-services.json` 未配置時は No-Op 実装を使用。`FirebaseAvailability.check()` は `Exception`（`IllegalStateException` だけでなく `RuntimeException` も含む）をキャッチ
+14. **Screen sealed class の companion object** — `val bottomNavItems get() = listOf(...)` (computed property) を使う。`val bottomNavItems = listOf(...)` は JVM data object 初期化順序で NPE
+15. **Paging 3 テスト** — `cachedIn(viewModelScope)` は `UncompletedCoroutinesError` を発生させるため、ViewModel テストでは Repository 直接検証パターンを採用
+16. **Glance Widget DI** — 標準 `@Inject` 不可。`WidgetEntryPoint` + `EntryPointAccessors.fromApplication()` を使用
+17. **Adaptive Navigation** — `AdaptiveNavigationScaffold` がウィンドウサイズに応じて Bottom/Rail/Drawer を自動選択。BottomBar をハードコードしない
 
 ## 今後の追加予定
 
-- Firebase Cloud Storage（写真保存）
 - Google Play Billing（プレミアムサブスクリプション）
+- Wear OS 対応
+- FCM リモート通知（Cloud Functions バックエンド必要）
