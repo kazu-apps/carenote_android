@@ -5,6 +5,7 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.Gender
 import com.carenote.app.fakes.FakeCareRecipientRepository
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +28,7 @@ import java.time.LocalDateTime
 class CareRecipientViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val fakeClock = FakeClock()
     private lateinit var repository: FakeCareRecipientRepository
 
     @Before
@@ -41,7 +43,7 @@ class CareRecipientViewModelTest {
     }
 
     private fun createViewModel(): CareRecipientViewModel {
-        return CareRecipientViewModel(repository)
+        return CareRecipientViewModel(repository, fakeClock)
     }
 
     @Test

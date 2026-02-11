@@ -5,6 +5,7 @@ import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.model.TimelineItem
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeTimelineRepository
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ import java.time.LocalTime
 class TimelineViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
+    private val fakeClock = FakeClock()
     private lateinit var repository: FakeTimelineRepository
     private lateinit var viewModel: TimelineViewModel
 
@@ -42,7 +44,7 @@ class TimelineViewModelTest {
     }
 
     private fun createViewModel(): TimelineViewModel {
-        return TimelineViewModel(repository)
+        return TimelineViewModel(repository, fakeClock)
     }
 
     @Test
@@ -60,7 +62,7 @@ class TimelineViewModelTest {
     @Test
     fun `selectedDate defaults to today`() = runTest {
         viewModel = createViewModel()
-        assertEquals(LocalDate.now(), viewModel.selectedDate.value)
+        assertEquals(LocalDate.of(2026, 1, 15), viewModel.selectedDate.value)
     }
 
     @Test
@@ -91,7 +93,7 @@ class TimelineViewModelTest {
     @Test
     fun `goToPreviousDay decrements date by 1`() = runTest {
         viewModel = createViewModel()
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         viewModel.goToPreviousDay()
         assertEquals(today.minusDays(1), viewModel.selectedDate.value)
     }
@@ -99,7 +101,7 @@ class TimelineViewModelTest {
     @Test
     fun `goToNextDay increments date by 1`() = runTest {
         viewModel = createViewModel()
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         viewModel.goToNextDay()
         assertEquals(today.plusDays(1), viewModel.selectedDate.value)
     }
@@ -111,7 +113,7 @@ class TimelineViewModelTest {
         assertEquals(testDate, viewModel.selectedDate.value)
 
         viewModel.goToToday()
-        assertEquals(LocalDate.now(), viewModel.selectedDate.value)
+        assertEquals(LocalDate.of(2026, 1, 15), viewModel.selectedDate.value)
     }
 
     @Test
@@ -124,8 +126,8 @@ class TimelineViewModelTest {
                 title = "Added after",
                 content = "Content",
                 tag = NoteTag.OTHER,
-                createdAt = LocalDate.now().atTime(12, 0),
-                updatedAt = LocalDate.now().atTime(12, 0)
+                createdAt = LocalDate.of(2026, 1, 15).atTime(12, 0),
+                updatedAt = LocalDate.of(2026, 1, 15).atTime(12, 0)
             )
         )
 

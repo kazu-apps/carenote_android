@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.ui.common.UiText
@@ -27,7 +28,7 @@ import javax.inject.Inject
 data class AddEditCalendarEventFormState(
     val title: String = "",
     val description: String = "",
-    val date: LocalDate = LocalDate.now(),
+    val date: LocalDate,
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
     val isAllDay: Boolean = true,
@@ -40,13 +41,14 @@ data class AddEditCalendarEventFormState(
 @HiltViewModel
 class AddEditCalendarEventViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val calendarEventRepository: CalendarEventRepository
+    private val calendarEventRepository: CalendarEventRepository,
+    private val clock: Clock
 ) : ViewModel() {
 
     private val eventId: Long? = savedStateHandle.get<Long>("eventId")
 
     private val _formState = MutableStateFlow(
-        AddEditCalendarEventFormState(isEditMode = eventId != null)
+        AddEditCalendarEventFormState(date = clock.today(), isEditMode = eventId != null)
     )
     val formState: StateFlow<AddEditCalendarEventFormState> = _formState.asStateFlow()
 
@@ -169,7 +171,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
         _formState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val original = originalEvent
             if (eventId != null && original != null) {
                 val updatedEvent = original.copy(

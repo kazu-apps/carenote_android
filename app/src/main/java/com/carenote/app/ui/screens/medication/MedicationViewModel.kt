@@ -12,6 +12,7 @@ import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,7 +40,8 @@ import javax.inject.Inject
 class MedicationViewModel @Inject constructor(
     private val medicationRepository: MedicationRepository,
     private val medicationLogRepository: MedicationLogRepository,
-    private val reminderScheduler: MedicationReminderSchedulerInterface
+    private val reminderScheduler: MedicationReminderSchedulerInterface,
+    private val clock: Clock
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -85,7 +87,7 @@ class MedicationViewModel @Inject constructor(
         _refreshTrigger.value = System.nanoTime()
     }
 
-    private val _currentDate = MutableStateFlow(LocalDate.now())
+    private val _currentDate = MutableStateFlow(clock.today())
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val todayLogs: StateFlow<List<MedicationLog>> =
@@ -101,7 +103,7 @@ class MedicationViewModel @Inject constructor(
         )
 
     fun refreshDateIfNeeded() {
-        val today = LocalDate.now()
+        val today = clock.today()
         if (_currentDate.value != today) {
             _currentDate.value = today
         }
@@ -113,7 +115,7 @@ class MedicationViewModel @Inject constructor(
         timing: MedicationTiming? = null
     ) {
         viewModelScope.launch {
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val log = MedicationLog(
                 medicationId = medicationId,
                 status = status,

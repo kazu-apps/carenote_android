@@ -10,6 +10,7 @@ import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.repository.TaskRepository
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,7 +31,8 @@ import javax.inject.Inject
 @HiltViewModel
 class TasksViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
-    private val taskReminderScheduler: TaskReminderSchedulerInterface
+    private val taskReminderScheduler: TaskReminderSchedulerInterface,
+    private val clock: Clock
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -69,7 +71,7 @@ class TasksViewModel @Inject constructor(
             val completing = !task.isCompleted
             val updatedTask = task.copy(
                 isCompleted = completing,
-                updatedAt = LocalDateTime.now()
+                updatedAt = clock.now()
             )
             taskRepository.updateTask(updatedTask)
                 .onSuccess {
@@ -120,7 +122,7 @@ class TasksViewModel @Inject constructor(
             task.recurrenceFrequency,
             task.recurrenceInterval
         )
-        val now = LocalDateTime.now()
+        val now = clock.now()
         val nextTask = task.copy(
             id = 0,
             isCompleted = false,

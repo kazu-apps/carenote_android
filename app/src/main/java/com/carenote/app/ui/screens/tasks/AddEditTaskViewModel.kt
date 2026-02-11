@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.util.SnackbarController
@@ -47,7 +48,8 @@ data class AddEditTaskFormState(
 class AddEditTaskViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val taskRepository: TaskRepository,
-    private val taskReminderScheduler: TaskReminderSchedulerInterface
+    private val taskReminderScheduler: TaskReminderSchedulerInterface,
+    private val clock: Clock
 ) : ViewModel() {
 
     private val taskId: Long? = savedStateHandle.get<Long>("taskId")
@@ -204,7 +206,7 @@ class AddEditTaskViewModel @Inject constructor(
         _formState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val original = originalTask
             if (taskId != null && original != null) {
                 val updatedTask = original.copy(

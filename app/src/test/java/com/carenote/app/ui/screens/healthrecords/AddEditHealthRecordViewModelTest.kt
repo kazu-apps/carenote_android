@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.ImageCompressorInterface
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
@@ -37,6 +38,7 @@ class AddEditHealthRecordViewModelTest {
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var photoRepository: FakePhotoRepository
     private val imageCompressor: ImageCompressorInterface = mockk(relaxed = true)
+    private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditHealthRecordViewModel
 
     @Before
@@ -52,7 +54,7 @@ class AddEditHealthRecordViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditHealthRecordViewModel {
-        return AddEditHealthRecordViewModel(SavedStateHandle(), repository, photoRepository, imageCompressor)
+        return AddEditHealthRecordViewModel(SavedStateHandle(), repository, photoRepository, imageCompressor, clock = fakeClock)
     }
 
     private fun createEditViewModel(recordId: Long): AddEditHealthRecordViewModel {
@@ -60,7 +62,8 @@ class AddEditHealthRecordViewModelTest {
             SavedStateHandle(mapOf("recordId" to recordId)),
             repository,
             photoRepository,
-            imageCompressor
+            imageCompressor,
+            clock = fakeClock
         )
     }
 

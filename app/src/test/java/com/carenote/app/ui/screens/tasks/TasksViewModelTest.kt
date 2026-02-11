@@ -5,6 +5,7 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.util.SnackbarEvent
@@ -28,6 +29,7 @@ import java.time.LocalTime
 class TasksViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
+    private val fakeClock = FakeClock()
     private lateinit var repository: FakeTaskRepository
     private lateinit var scheduler: FakeTaskReminderScheduler
     private lateinit var viewModel: TasksViewModel
@@ -45,7 +47,7 @@ class TasksViewModelTest {
     }
 
     private fun createViewModel(): TasksViewModel {
-        return TasksViewModel(repository, scheduler)
+        return TasksViewModel(repository, scheduler, fakeClock)
     }
 
     /** Helper: read the current tasks from the FakeTaskRepository's internal state. */

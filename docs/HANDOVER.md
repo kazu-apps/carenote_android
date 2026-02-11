@@ -2,15 +2,19 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v4.0 Phase 25 CLAUDE.md 包括的更新 - DONE
+## 現在のタスク: v5.0 Phase 2 God Class 分解 - DONE
 
-CLAUDE.md をコードベースの実態に合わせて包括的に更新。全13セクションを更新: 技術スタック（Kotlin 2.3.0, BOM 2026.01.01, Hilt 2.59.1, Firebase BOM 34.8.0 等）、DIモジュール（10テーブル、7モジュール）、ナビゲーション（25画面、6タブ、Adaptive Navigation）、パッケージ構成（17ドメインモデル、19リポジトリインターフェース）、Firebase統合（Storage + グレースフルデグラデーション）、Worker（TaskReminderWorker追加）、テーマ（Dynamic Color）、テスト（Roborazzi, Macrobenchmark, Baseline Profile, 20 Fake）、AppConfig（8カテゴリ追加）、よくある落とし穴（5項目追加、計17項目）、今後の追加予定（Storage実装済み削除）。ビルド成功、全テスト PASS。
+Phase 2 の 2a（HealthMetricsParser 抽出）を実施。2b/2c は reviewer 評価で不要と判断しスキップ。
+
+- **2a**: `AddEditHealthRecordViewModel`（463→346行, -117行）から解析・バリデーションロジックを `HealthMetricsParser` object に抽出
+- **2b SKIP**: `FirestoreSyncRepositoryImpl` は proper facade パターンで分解不要（YAGNI）
+- **2c SKIP**: `EntitySyncer` の ConflictResolver は4行、FirestoreClient 抽出は循環依存を生む
 
 ## 次のアクション
 
-1. v4.0 全フェーズ（Phase 1-25）完了。リリース準備可能
+1. v5.0 TDD リファクタリングロードマップの Phase 3（CareNoteScaffold 抽出）から実装開始
 2. リリース前に実機テスト + APK 検証
-3. v5.0 のスコープ検討（Billing, FCM リモート通知, Wear OS）
+3. v6.0 のスコープ検討（Billing, FCM リモート通知, Wear OS）
 
 ## 既知の問題
 
@@ -527,6 +531,110 @@ CLAUDE.md をコードベースの実態に合わせて包括的に更新。依�
 | v3.0 リサーチ 2026-02-06 | Agent Teams 3並列調査: 依存関係=大幅に古い（Kotlin 2.0→2.3, AGP 8.7→9.0, Firebase BOM 33→34）、機能ギャップ=~~EditMedication未実装~~(Phase 26)/~~検索4画面未展開~~(Phase 27)/~~アカウント管理画面なし~~(Phase 28)/~~ケア対象者プロフィールなし~~(Phase 29)、セキュリティ=堅実（Firestore Rules要確認）、パフォーマンス=良好（将来Paging+BaselineProfile） |
 | コードベース監査 2026-02-08 | Agent Teams 3並列調査: デッドコード=4件（BottomNavigationBar, firebase-analytics, strings 2件）、バグ=写真parentId非トランザクション(HIGH)/cascading delete未チェック(HIGH)、誤検知=MedicationLogSyncer UnsupportedOp(仕様通り)/SyncWorker null(仕様通り)/isDirty性能(許容)/isSaving未リセット(VM破棄で無害)/CareRecipientVM mutableVar(Main単一スレッド) |
 | v4.0 リサーチ 2026-02-08 | Agent Teams 3並列調査: コード規模=221実装/98テスト/1,239テスト数、品質=TODO 0/最大484行/PII残存2箇所(LOW-MEDIUM)、アーキテクチャ負債=Layer boundary違反13箇所/Migration squash推奨(versionCode=1)、未テスト6モジュール、firebase-analyticsカタログ残存、ImageCompressor cache eviction なし |
+
+---
+
+## v5.0 TDD リファクタリングロードマップ
+
+### リサーチサマリー (2026-02-11)
+
+3 ステップパイプライン（researcher → architect → critic）の統合結果:
+
+**researcher**: 実装ファイル 52 件が 200 行超（全体の 30%）。重複パターン: AddEdit ViewModel 6 件（Medication/Note/Task/Calendar/EmergencyContact/HealthRecord）が save/validate/load フローを共有（~600-750 行の共通ボイラープレート）。Repository 実装 14 件が `Result.catchingSuspend` ラップの CRUD パターンを共有（52 箇所）。写真管理が Note/HealthRecord の 2 VM で重複（~60-80 行×2）。Scaffold/TopAppBar パターンが 20 画面で重複。テスト未カバー: AssetReader, CrashlyticsTree, LocaleManager, SnackbarController, UI コンポーネント 10 件。God class: AddEditHealthRecordViewModel 461 行, EntitySyncer 369 行, FirestoreSyncRepositoryImpl 325 行。
+
+**architect**: 7 フェーズ設計 — BaseCrudRepository（Template Method）、FormValidator（inline + 拡張関数）、BaseAddEditViewModel（Generic Abstract）、PhotoManager（Composition Delegate）、CareNoteScaffold（Higher-Order Composable）、God Class 分解（Strategy + Delegate）、Test Coverage 完了（Clock 抽象化含む）。
+
+**critic**: 主要修正事項 — (1) `Result.catchingSuspend` 数は 52 箇所（architect の 92 は過大）、(2) ViewModel 行数削減見積は 30-40% 過大（-950 → -600-750 が現実的）、(3) Template Method は Kotlin では非推奨 → Composition/Delegation パターンに変更、(4) CareNoteScaffold は汎用 1 種ではなく 2-3 バリアント（Auth/List/AddEdit）が必要（実際に汎用化可能な画面は 8-12 のみ）、(5) フェーズ順序を修正: テスト→God class→Scaffold→Repository→ViewModel（リスク低減優先）、(6) DI モジュール更新が各フェーズに +15-25 ファイルの追加影響。最終判定: **条件付き承認**。
+
+### フェーズ一覧（critic 推奨順序）
+
+| Phase | タスク | TDD アプローチ | 見積削減 | ファイル数 |
+|-------|--------|---------------|---------|-----------|
+| 1 | テストカバレッジ補強 + Clock 抽象化 | テスト追加 → リファクタ可能に | +30 テスト | ~50 |
+| 2 | God Class 分解（3 クラス） | 新クラステスト → Extract → 既存テスト維持 | -100 行 | ~6 |
+| 3 | CareNoteScaffold 抽出（2-3 バリアント） | Compose UI テスト → 実装 → 画面移行 | -150~200 行 | ~15 |
+| 4 | BaseCrudRepository 抽出（Composition） | Base テスト → 実装 → Repo 移行 | -300 行 | ~16 |
+| 5 | FormValidator + BaseAddEditViewModel | Validator テスト → Base VM テスト → 移行 | -500~600 行 | ~14 |
+| 6 | PhotoManager 抽出（Delegation） | Manager テスト → 実装 → 2 VM 移行 | -60 行 | ~3 |
+
+### Phase 1: テストカバレッジ補強 + Clock 抽象化 - DONE
+`Clock` interface（`now()`, `today()`）+ `SystemClock` + `FakeClock` を作成。12 ViewModel の `LocalDateTime.now()` / `LocalDate.now()` を `clock.now()` / `clock.today()` に置換。4 Util テスト追加（SnackbarController, CrashlyticsTree, AssetReader, LocaleManager）。FormState デフォルト値（`AddEditHealthRecordFormState.recordedAt`, `AddEditCalendarEventFormState.date`）を Clock 注入に変更。
+- 新規: `Clock.kt`, `SystemClock`, `FakeClock.kt`, 4 テストファイル（計 7 ファイル）
+- 変更: `AppModule.kt` + 12 ViewModel + 12 テスト + `PreviewData.kt`（計 26 ファイル）
+- ビルド成功、全テスト PASS
+- `SwipeToDismissItem` / `CareNoteDatePickerDialog` / `CareNoteTimePickerDialog`
+
+目標: カバレッジ 65% → 85%+
+
+### Phase 2: God Class 分解 - DONE
+
+**2a. HealthMetricsParser 抽出 - DONE**:
+- `AddEditHealthRecordViewModel`（463→346行, -117行）から `HealthMetricsParser` object を抽出
+- `parseFormFields()`, `validateFields()`, `validateRange()`, `ParsedFields`, `ValidationErrors` を移動
+- 新規テスト `HealthMetricsParserTest`（28テスト）追加
+- 既存テスト `AddEditHealthRecordViewModelTest`（39テスト）変更なしで全 PASS
+- 新規: `HealthMetricsParser.kt`, `HealthMetricsParserTest.kt`
+- 変更: `AddEditHealthRecordViewModel.kt`
+
+**2b. FirestoreSyncRepositoryImpl — SKIP（reviewer 評価: proper facade, YAGNI 違反）**
+
+**2c. EntitySyncer — SKIP（reviewer 評価: ConflictResolver 4行, FirestoreClient 抽出は循環依存, Template Method 破壊）**
+
+### Phase 3: CareNoteScaffold 抽出 - PENDING
+
+画面の Scaffold/TopAppBar 重複を 2-3 バリアントで解消。
+
+- `CareNoteListScaffold`: リスト画面用（title, FAB, searchBar, snackbar）
+- `CareNoteAddEditScaffold`: AddEdit 画面用（title, backNav, saveAction, snackbar）
+- `CareNoteAuthScaffold`（必要に応じて）: 認証画面用（title のみ）
+- 適用可能画面のみ移行（8-12 画面）、カスタム TopAppBar の画面はそのまま
+
+### Phase 4: BaseCrudRepository 抽出 - PENDING
+
+14 Repository の CRUD ボイラープレートを Composition パターンで共通化。
+
+- `RepositoryDelegate<Entity, Domain>` composition クラス（Template Method ではなく委譲）
+- `Mapper<Entity, Domain>` interface
+- 各 Repository は delegate を保持し、共通 CRUD を委譲
+- ドメイン固有メソッドは各 Repository に残存
+- Hilt DI モジュール変更なし（Repository interface は変更なし）
+
+### Phase 5: FormValidator + BaseAddEditViewModel - PENDING
+
+**5a. FormValidator**:
+- `ui/validation/FormValidator.kt` — inline 関数 + 拡張関数
+- `validateRequired()`, `validateMaxLength()`, `combineValidations()`
+- 複雑なバリデーションを持つ VM のみ適用（Medication, HealthRecord, Task）
+
+**5b. BaseAddEditViewModel**（Composition パターン）:
+- `SaveLoadManager<FormState, Domain>` delegate クラス（abstract base class ではなく委譲）
+- 共通フロー: load → populate → validate → save/update + Result handling
+- savedEvent Channel, snackbarController, isDirty を共通化
+- 各 VM は delegate を保持し、ドメイン固有ロジックを実装
+
+### Phase 6: PhotoManager 抽出 - PENDING
+
+写真管理ロジックを Composition Delegate として抽出。
+
+- `PhotoManager` クラス（photoRepository, imageCompressor, scope を受け取る）
+- photos StateFlow, hasChanges, loadPhotos(), addPhotos(), removePhoto()
+- AddEditNoteViewModel + AddEditHealthRecordViewModel で delegate 使用
+- Hilt 注入なし（VM 内でインスタンス化）
+
+### 設計原則
+
+- **Composition over Inheritance**: Kotlin では abstract base class よりも delegation/composition を優先
+- **TDD 厳守**: 各フェーズで「既存テスト追加 → 新クラステスト RED → 実装 GREEN → リファクタ」
+- **段階的移行**: 1 ファイルずつ移行し、各ステップで全テスト GREEN を確認
+- **Detekt 0 tolerance**: maxIssues=0 を常に維持
+- **独立デプロイ**: 各フェーズは独立してマージ可能
+
+### リスク軽減策
+
+- Phase 1（テスト）が全フェーズの安全網 → 最優先
+- 各フェーズ完了後に `./gradlew.bat testDebugUnitTest` + Detekt 全パス確認
+- DI モジュール変更は 1 ワーカーに集約（ファイル競合回避）
+- ROI 評価: Phase 4 完了後に残フェーズの費用対効果を再評価
 
 ## スコープ外 / 将来
 

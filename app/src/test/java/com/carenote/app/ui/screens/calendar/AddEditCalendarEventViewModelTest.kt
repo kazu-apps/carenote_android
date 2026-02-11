@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +31,7 @@ class AddEditCalendarEventViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeCalendarEventRepository
+    private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditCalendarEventViewModel
 
     @Before
@@ -44,13 +46,14 @@ class AddEditCalendarEventViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditCalendarEventViewModel {
-        return AddEditCalendarEventViewModel(SavedStateHandle(), repository)
+        return AddEditCalendarEventViewModel(SavedStateHandle(), repository, clock = fakeClock)
     }
 
     private fun createEditViewModel(eventId: Long): AddEditCalendarEventViewModel {
         return AddEditCalendarEventViewModel(
             SavedStateHandle(mapOf("eventId" to eventId)),
-            repository
+            repository,
+            clock = fakeClock
         )
     }
 

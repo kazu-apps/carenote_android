@@ -7,6 +7,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.repository.CalendarEventRepository
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,15 +31,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val calendarEventRepository: CalendarEventRepository
+    private val calendarEventRepository: CalendarEventRepository,
+    private val clock: Clock
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
 
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    private val _selectedDate = MutableStateFlow(clock.today())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    private val _currentMonth = MutableStateFlow(YearMonth.now())
+    private val _currentMonth = MutableStateFlow(YearMonth.from(clock.today()))
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
 
     private val _refreshTrigger = MutableStateFlow(0L)

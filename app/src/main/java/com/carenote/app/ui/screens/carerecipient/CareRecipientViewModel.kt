@@ -6,6 +6,7 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.Gender
 import com.carenote.app.domain.repository.CareRecipientRepository
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +28,8 @@ data class CareRecipientUiState(
 
 @HiltViewModel
 class CareRecipientViewModel @Inject constructor(
-    private val repository: CareRecipientRepository
+    private val repository: CareRecipientRepository,
+    private val clock: Clock
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -36,7 +38,7 @@ class CareRecipientViewModel @Inject constructor(
     val uiState: StateFlow<CareRecipientUiState> = _uiState.asStateFlow()
 
     private var existingId: Long = 0
-    private var existingCreatedAt: LocalDateTime = LocalDateTime.now()
+    private var existingCreatedAt: LocalDateTime = clock.now()
 
     init {
         viewModelScope.launch {
@@ -79,7 +81,7 @@ class CareRecipientViewModel @Inject constructor(
         _uiState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val careRecipient = CareRecipient(
                 id = existingId,
                 name = current.name.trim(),

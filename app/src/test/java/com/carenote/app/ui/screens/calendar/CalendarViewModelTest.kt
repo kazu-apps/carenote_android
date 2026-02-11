@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ import java.time.YearMonth
 class CalendarViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val fakeClock = FakeClock()
     private lateinit var repository: FakeCalendarEventRepository
     private lateinit var viewModel: CalendarViewModel
 
@@ -43,7 +45,7 @@ class CalendarViewModelTest {
     }
 
     private fun createViewModel(): CalendarViewModel {
-        return CalendarViewModel(repository)
+        return CalendarViewModel(repository, fakeClock)
     }
 
     private fun createEvent(
@@ -72,14 +74,14 @@ class CalendarViewModelTest {
     fun `initial selected date is today`() {
         viewModel = createViewModel()
 
-        assertEquals(LocalDate.now(), viewModel.selectedDate.value)
+        assertEquals(LocalDate.of(2026, 1, 15), viewModel.selectedDate.value)
     }
 
     @Test
     fun `initial current month is this month`() {
         viewModel = createViewModel()
 
-        assertEquals(YearMonth.now(), viewModel.currentMonth.value)
+        assertEquals(YearMonth.of(2026, 1), viewModel.currentMonth.value)
     }
 
     @Test
@@ -91,7 +93,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `eventsForSelectedDate transitions from Loading to Success`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         val events = listOf(createEvent(id = 1L, title = "予定A", date = today))
         repository.setEvents(events)
         viewModel = createViewModel()
@@ -108,7 +110,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `events loaded as Success for selected date`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         val events = listOf(
             createEvent(id = 1L, title = "予定A", date = today),
             createEvent(id = 2L, title = "予定B", date = today)
@@ -228,7 +230,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `deleteEvent removes event`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         val events = listOf(
             createEvent(id = 1L, title = "予定A", date = today),
             createEvent(id = 2L, title = "予定B", date = today)
@@ -252,7 +254,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `snackbar emitted on delete success`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         repository.setEvents(listOf(createEvent(id = 1L, date = today)))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -268,7 +270,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `snackbar emitted on delete failure`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         repository.setEvents(listOf(createEvent(id = 1L, date = today)))
         repository.shouldFail = true
         viewModel = createViewModel()
@@ -285,7 +287,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `events update reactively when repository changes`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         viewModel = createViewModel()
 
         viewModel.eventsForSelectedDate.test {
@@ -304,7 +306,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `refresh triggers data reload`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         val events = listOf(createEvent(id = 1L, title = "予定A", date = today))
         repository.setEvents(events)
         viewModel = createViewModel()
@@ -332,7 +334,7 @@ class CalendarViewModelTest {
 
     @Test
     fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         repository.setEvents(listOf(createEvent(id = 1L, date = today)))
         viewModel = createViewModel()
         advanceUntilIdle()

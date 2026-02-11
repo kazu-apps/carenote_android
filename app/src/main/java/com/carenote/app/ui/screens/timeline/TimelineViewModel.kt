@@ -6,6 +6,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.TimelineItem
 import com.carenote.app.domain.repository.TimelineRepository
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,10 +26,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TimelineViewModel @Inject constructor(
-    private val timelineRepository: TimelineRepository
+    private val timelineRepository: TimelineRepository,
+    private val clock: Clock
 ) : ViewModel() {
 
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    private val _selectedDate = MutableStateFlow(clock.today())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
     private val _refreshTrigger = MutableStateFlow(0L)
@@ -69,7 +71,7 @@ class TimelineViewModel @Inject constructor(
     }
 
     fun goToToday() {
-        _selectedDate.value = LocalDate.now()
+        _selectedDate.value = clock.today()
     }
 
     fun refresh() {

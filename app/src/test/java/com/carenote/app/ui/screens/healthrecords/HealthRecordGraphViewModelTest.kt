@@ -2,6 +2,7 @@ package com.carenote.app.ui.screens.healthrecords
 
 import app.cash.turbine.test
 import com.carenote.app.domain.model.HealthRecord
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,6 +24,7 @@ import java.time.LocalDateTime
 class HealthRecordGraphViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val fakeClock = FakeClock()
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var viewModel: HealthRecordGraphViewModel
 
@@ -38,7 +40,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     private fun createViewModel(): HealthRecordGraphViewModel {
-        return HealthRecordGraphViewModel(repository)
+        return HealthRecordGraphViewModel(repository, fakeClock)
     }
 
     private fun createRecord(
@@ -69,7 +71,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `temperature data points extracted from records`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, temperature = 36.5, recordedAt = now.minusDays(1)),
             createRecord(id = 2L, temperature = 37.2, recordedAt = now)
@@ -89,7 +91,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `blood pressure data points extracted from records`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(
                 id = 1L,
@@ -121,7 +123,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `null temperature values are filtered out`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, temperature = 36.5, recordedAt = now.minusDays(2)),
             createRecord(id = 2L, temperature = null, recordedAt = now.minusDays(1)),
@@ -139,7 +141,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `null blood pressure values are filtered out`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(
                 id = 1L,
@@ -167,7 +169,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `date range switch triggers data reload`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, recordedAt = now.minusDays(20)),
             createRecord(id = 2L, recordedAt = now.minusDays(3)),
@@ -192,7 +194,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `hasTemperatureData is true when temperature points exist`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(createRecord(id = 1L, temperature = 36.5, recordedAt = now))
         )
@@ -207,7 +209,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `hasTemperatureData is false when no temperature points`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(
                 createRecord(
@@ -230,7 +232,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `hasBloodPressureData is true when bp points exist`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(
                 createRecord(
@@ -252,7 +254,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `hasBloodPressureData is false when no bp points`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(
                 createRecord(
@@ -275,7 +277,7 @@ class HealthRecordGraphViewModelTest {
 
     @Test
     fun `data points are sorted by date ascending`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, temperature = 36.0, recordedAt = now),
             createRecord(id = 2L, temperature = 37.0, recordedAt = now.minusDays(2)),

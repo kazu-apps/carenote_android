@@ -7,6 +7,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarController
@@ -37,7 +38,8 @@ data class EmergencyContactFormState(
 @HiltViewModel
 class AddEditEmergencyContactViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val repository: EmergencyContactRepository
+    private val repository: EmergencyContactRepository,
+    private val clock: Clock
 ) : ViewModel() {
 
     private val contactId: Long? = savedStateHandle.get<Long>("contactId")
@@ -154,7 +156,7 @@ class AddEditEmergencyContactViewModel @Inject constructor(
         _formState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val original = originalContact
             if (contactId != null && original != null) {
                 val updatedContact = original.copy(

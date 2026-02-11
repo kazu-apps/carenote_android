@@ -260,7 +260,8 @@ object PreviewData {
         weight = "58.5",
         meal = MealAmount.MOSTLY,
         excretion = ExcretionType.NORMAL,
-        conditionNote = "朝の体調は良好"
+        conditionNote = "朝の体調は良好",
+        recordedAt = fixedDateTime
     )
 
     val addEditNoteFormState = AddEditNoteFormState(

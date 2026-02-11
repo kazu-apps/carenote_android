@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.repository.HealthRecordRepository
+import com.carenote.app.domain.util.Clock
 import dagger.hilt.android.lifecycle.HiltViewModel
 import timber.log.Timber
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,14 +44,15 @@ data class HealthRecordGraphState(
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HealthRecordGraphViewModel @Inject constructor(
-    private val healthRecordRepository: HealthRecordRepository
+    private val healthRecordRepository: HealthRecordRepository,
+    private val clock: Clock
 ) : ViewModel() {
 
     private val _dateRange = MutableStateFlow(GraphDateRange.SEVEN_DAYS)
 
     val graphState: StateFlow<HealthRecordGraphState> =
         _dateRange.flatMapLatest { range ->
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val start = now.minusDays(range.days).with(LocalTime.MIN)
             healthRecordRepository.getRecordsByDateRange(start, now)
                 .map { records -> mapToGraphState(records, range) }

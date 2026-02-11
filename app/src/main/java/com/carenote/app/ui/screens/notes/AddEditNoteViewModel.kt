@@ -8,6 +8,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.model.Note
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.NoteTag
@@ -42,7 +43,8 @@ class AddEditNoteViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val noteRepository: NoteRepository,
     private val photoRepository: PhotoRepository,
-    private val imageCompressor: ImageCompressorInterface
+    private val imageCompressor: ImageCompressorInterface,
+    private val clock: Clock
 ) : ViewModel() {
 
     private val noteId: Long? = savedStateHandle.get<Long>("noteId")
@@ -118,7 +120,7 @@ class AddEditNoteViewModel @Inject constructor(
             for (uri in toAdd) {
                 try {
                     val compressed = imageCompressor.compress(uri)
-                    val now = LocalDateTime.now()
+                    val now = clock.now()
                     val photo = Photo(
                         parentType = "note",
                         parentId = noteId ?: 0L,
@@ -207,7 +209,7 @@ class AddEditNoteViewModel @Inject constructor(
         _formState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
-            val now = LocalDateTime.now()
+            val now = clock.now()
             val original = originalNote
             if (noteId != null && original != null) {
                 val updatedNote = original.copy(

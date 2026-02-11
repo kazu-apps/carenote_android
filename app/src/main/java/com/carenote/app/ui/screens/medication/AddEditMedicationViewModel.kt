@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
@@ -46,7 +47,8 @@ data class AddEditMedicationFormState(
 class AddEditMedicationViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val medicationRepository: MedicationRepository,
-    private val reminderScheduler: MedicationReminderSchedulerInterface
+    private val reminderScheduler: MedicationReminderSchedulerInterface,
+    private val clock: Clock
 ) : ViewModel() {
 
     private val medicationId: Long? = savedStateHandle.get<Long>("medicationId")
@@ -216,7 +218,7 @@ class AddEditMedicationViewModel @Inject constructor(
         viewModelScope.launch {
             val original = originalMedication
             if (medicationId != null && original != null) {
-                val now = LocalDateTime.now()
+                val now = clock.now()
                 val updatedMedication = original.copy(
                     name = current.name.trim(),
                     dosage = current.dosage.trim(),

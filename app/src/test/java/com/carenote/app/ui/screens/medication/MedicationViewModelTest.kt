@@ -6,6 +6,7 @@ import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
@@ -34,6 +35,7 @@ import java.time.LocalTime
 class MedicationViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val fakeClock = FakeClock()
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
     private lateinit var reminderScheduler: FakeMedicationReminderScheduler
@@ -56,7 +58,8 @@ class MedicationViewModelTest {
         return MedicationViewModel(
             medicationRepository,
             medicationLogRepository,
-            reminderScheduler
+            reminderScheduler,
+            fakeClock
         )
     }
 
@@ -130,7 +133,7 @@ class MedicationViewModelTest {
 
     @Test
     fun `todayLogs emits today logs`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val log = MedicationLog(
             id = 1L,
             medicationId = 1L,
@@ -232,7 +235,7 @@ class MedicationViewModelTest {
 
     @Test
     fun `getLogStatusForMedication returns status from today logs`() = runTest(testDispatcher) {
-        val now = LocalDateTime.now()
+        val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val log = MedicationLog(
             id = 1L,
             medicationId = 1L,
@@ -598,7 +601,7 @@ class MedicationViewModelTest {
 
     @Test
     fun `todayLogs filters by current date`() = runTest(testDispatcher) {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2026, 1, 15)
         val yesterday = today.minusDays(1)
         val todayLog = MedicationLog(
             id = 1L,

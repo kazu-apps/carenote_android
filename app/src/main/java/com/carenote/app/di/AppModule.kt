@@ -36,6 +36,8 @@ import com.carenote.app.data.repository.TimelineRepositoryImpl
 import com.carenote.app.domain.repository.HealthRecordCsvExporterInterface
 import com.carenote.app.domain.repository.HealthRecordPdfExporterInterface
 import com.carenote.app.domain.repository.ImageCompressorInterface
+import com.carenote.app.domain.util.Clock
+import com.carenote.app.domain.util.SystemClock
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
@@ -179,4 +181,8 @@ object AppModule {
     ): HealthRecordPdfExporterInterface {
         return pdfExporter
     }
+
+    @Provides
+    @Singleton
+    fun provideClock(): Clock = SystemClock()
 }
