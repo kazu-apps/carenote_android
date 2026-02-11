@@ -1,6 +1,5 @@
 package com.carenote.app.ui.screens.emergencycontact
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -11,27 +10,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -42,10 +31,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.RelationshipType
-import com.carenote.app.ui.components.ConfirmDialog
+import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.util.SnackbarEvent
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddEditEmergencyContactScreen(
     onNavigateBack: () -> Unit = {},
@@ -53,7 +42,6 @@ fun AddEditEmergencyContactScreen(
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showDiscardDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -72,42 +60,16 @@ fun AddEditEmergencyContactScreen(
         }
     }
 
-    val handleBack: () -> Unit = {
-        if (viewModel.isDirty) {
-            showDiscardDialog = true
-        } else {
-            onNavigateBack()
-        }
-    }
+    val title = stringResource(
+        if (formState.isEditMode) R.string.emergency_contact_edit
+        else R.string.emergency_contact_add
+    )
 
-    BackHandler(onBack = handleBack)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(
-                            if (formState.isEditMode) R.string.emergency_contact_edit
-                            else R.string.emergency_contact_add
-                        ),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+    CareNoteAddEditScaffold(
+        title = title,
+        onNavigateBack = onNavigateBack,
+        isDirty = viewModel.isDirty,
+        snackbarHostState = snackbarHostState
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -180,20 +142,6 @@ fun AddEditEmergencyContactScreen(
                 Text(stringResource(R.string.common_save))
             }
         }
-    }
-
-    if (showDiscardDialog) {
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_discard_title),
-            message = stringResource(R.string.ui_confirm_discard_message),
-            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
-            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
-            onConfirm = {
-                showDiscardDialog = false
-                onNavigateBack()
-            },
-            onDismiss = { showDiscardDialog = false }
-        )
     }
 }
 

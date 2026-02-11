@@ -1,6 +1,5 @@
 package com.carenote.app.ui.screens.calendar
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,23 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,10 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.components.CareNoteDatePickerDialog
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.CareNoteTimePickerDialog
-import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.preview.LightDarkPreview
 import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
@@ -67,17 +58,8 @@ fun AddEditCalendarEventScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
-    var showDiscardDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-
-    val handleBack: () -> Unit = {
-        if (viewModel.isDirty) showDiscardDialog = true else onNavigateBack()
-    }
-
-    BackHandler(enabled = viewModel.isDirty) {
-        showDiscardDialog = true
-    }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
@@ -103,29 +85,11 @@ fun AddEditCalendarEventScreen(
         stringResource(R.string.calendar_add_event)
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
+    CareNoteAddEditScaffold(
+        title = title,
+        onNavigateBack = onNavigateBack,
+        isDirty = viewModel.isDirty,
+        snackbarHostState = snackbarHostState
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -187,7 +151,7 @@ fun AddEditCalendarEventScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = handleBack,
+                    onClick = onNavigateBack,
                     modifier = Modifier.weight(1f),
                     shape = ButtonShape
                 ) {
@@ -215,21 +179,6 @@ fun AddEditCalendarEventScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-
-    if (showDiscardDialog) {
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_discard_title),
-            message = stringResource(R.string.ui_confirm_discard_message),
-            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
-            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
-            onConfirm = {
-                showDiscardDialog = false
-                onNavigateBack()
-            },
-            onDismiss = { showDiscardDialog = false },
-            isDestructive = true
-        )
     }
 
     if (showDatePicker) {

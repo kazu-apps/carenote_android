@@ -18,6 +18,7 @@ import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.FormValidator.combineValidations
 import com.carenote.app.ui.util.FormValidator.validateMaxLength
 import com.carenote.app.ui.util.FormValidator.validateRequired
+import com.carenote.app.ui.viewmodel.PhotoManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +29,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 data class AddEditNoteFormState(
@@ -65,10 +65,17 @@ class AddEditNoteViewModel @Inject constructor(
     private var originalNote: Note? = null
     private var _initialFormState: AddEditNoteFormState? = null
 
-    private val _photos = MutableStateFlow<List<Photo>>(emptyList())
-    val photos: StateFlow<List<Photo>> = _photos.asStateFlow()
+    val photoManager = PhotoManager(
+        parentType = "note",
+        parentId = noteId ?: 0L,
+        photoRepository = photoRepository,
+        imageCompressor = imageCompressor,
+        scope = viewModelScope,
+        snackbarController = snackbarController,
+        clock = clock
+    )
 
-    private var _initialPhotoCount = 0
+    val photos: StateFlow<List<Photo>> get() = photoManager.photos
 
     val isDirty: Boolean
         get() {
@@ -86,7 +93,7 @@ class AddEditNoteViewModel @Inject constructor(
                 isEditMode = false
             )
             if (current != baseline) return true
-            return _photos.value.size != _initialPhotoCount
+            return photoManager.hasChanges
         }
 
     init {
@@ -108,56 +115,14 @@ class AddEditNoteViewModel @Inject constructor(
                     tag = note.tag
                 )
                 _initialFormState = _formState.value
-                val existingPhotos = photoRepository.getPhotosForParent("note", id).firstOrNull().orEmpty()
-                _photos.value = existingPhotos
-                _initialPhotoCount = existingPhotos.size
+                photoManager.loadPhotos()
             }
         }
     }
 
-    fun addPhotos(uris: List<Uri>) {
-        val remaining = AppConfig.Photo.MAX_PHOTOS_PER_PARENT - _photos.value.size
-        if (remaining <= 0) return
-        val toAdd = uris.take(remaining)
-        viewModelScope.launch {
-            for (uri in toAdd) {
-                try {
-                    val compressed = imageCompressor.compress(uri)
-                    val now = clock.now()
-                    val photo = Photo(
-                        parentType = "note",
-                        parentId = noteId ?: 0L,
-                        localUri = compressed.toString(),
-                        createdAt = now,
-                        updatedAt = now
-                    )
-                    photoRepository.addPhoto(photo)
-                        .onSuccess { id ->
-                            _photos.value = _photos.value + photo.copy(id = id)
-                        }
-                        .onFailure { error ->
-                            Timber.w("Failed to add photo: $error")
-                            snackbarController.showMessage(R.string.photo_compress_failed)
-                        }
-                } catch (e: Exception) {
-                    Timber.w("Failed to compress photo: $e")
-                    snackbarController.showMessage(R.string.photo_compress_failed)
-                }
-            }
-        }
-    }
+    fun addPhotos(uris: List<Uri>) = photoManager.addPhotos(uris)
 
-    fun removePhoto(photo: Photo) {
-        viewModelScope.launch {
-            photoRepository.deletePhoto(photo.id)
-                .onSuccess {
-                    _photos.value = _photos.value.filter { it.id != photo.id }
-                }
-                .onFailure { error ->
-                    Timber.w("Failed to remove photo: $error")
-                }
-        }
-    }
+    fun removePhoto(photo: Photo) = photoManager.removePhoto(photo)
 
     fun updateTitle(title: String) {
         _formState.value = _formState.value.copy(
@@ -230,7 +195,7 @@ class AddEditNoteViewModel @Inject constructor(
                 noteRepository.insertNote(newNote)
                     .onSuccess { id ->
                         Timber.d("Note saved: id=$id")
-                        updatePhotosParentId(id)
+                        photoManager.updateParentId(id)
                         _savedEvent.send(true)
                     }
                     .onFailure { error ->
@@ -242,12 +207,4 @@ class AddEditNoteViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updatePhotosParentId(newParentId: Long) {
-        val photoIds = _photos.value
-            .filter { it.parentId == 0L }
-            .map { it.id }
-        if (photoIds.isNotEmpty()) {
-            photoRepository.updatePhotosParentId(photoIds, newParentId)
-        }
-    }
 }

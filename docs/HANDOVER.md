@@ -2,14 +2,13 @@
 
 ## セッションステータス: 完了
 
-## 完了タスク: v5.0 Phase 5a FormValidator 抽出
+## 完了タスク: v5.0 Phase 6 PhotoManager 抽出
 
-`FormValidator` object（3 inline 関数: `validateRequired`, `validateMaxLength`, `combineValidations`）を新規作成し、5 AddEdit ViewModel のバリデーションロジックを統一。FormValidatorTest（15テスト）追加。全テスト PASS、ビルド成功。
+`PhotoManager` Composition Delegate を新規作成し、AddEditNoteViewModel と AddEditHealthRecordViewModel の重複写真管理ロジック（約60行 x 2）を集約（約70行）。PhotoManagerTest（15テスト）追加。全テスト PASS、ビルド成功。
 
 ## 次のアクション
 
-1. v5.0 Phase 6: PhotoManager 抽出
-2. リリース前に実機テスト + APK 検証
+1. リリース前に実機テスト + APK 検証
 
 ## 既知の問題
 
@@ -610,14 +609,11 @@ CLAUDE.md をコードベースの実態に合わせて包括的に更新。依�
 - Composition パターンが Kotlin ViewModel に不適合
 - Phase 6 PhotoManager への影響なし
 
-### Phase 6: PhotoManager 抽出 - PENDING
+### Phase 6: PhotoManager 抽出 - DONE
 
-写真管理ロジックを Composition Delegate として抽出。
-
-- `PhotoManager` クラス（photoRepository, imageCompressor, scope を受け取る）
-- photos StateFlow, hasChanges, loadPhotos(), addPhotos(), removePhoto()
-- AddEditNoteViewModel + AddEditHealthRecordViewModel で delegate 使用
-- Hilt 注入なし（VM 内でインスタンス化）
+`PhotoManager` Composition Delegate を新規作成。photos StateFlow, hasChanges, loadPhotos(), addPhotos(), removePhoto(), updateParentId() を集約。
+- 新規: `ui/viewmodel/PhotoManager.kt` (~70行), `PhotoManagerTest.kt` (15テスト)
+- 変更: `AddEditNoteViewModel.kt`, `AddEditHealthRecordViewModel.kt` — inline 写真ロジックを PhotoManager delegate に置換
 
 ### 設計原則
 

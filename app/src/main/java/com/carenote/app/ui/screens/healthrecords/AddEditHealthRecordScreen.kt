@@ -1,6 +1,5 @@
 package com.carenote.app.ui.screens.healthrecords
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,29 +11,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -45,8 +33,8 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.config.AppConfig.Photo
 import com.carenote.app.domain.model.Photo as PhotoModel
+import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.components.CareNoteTextField
-import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.PhotoPickerSection
 import com.carenote.app.ui.screens.healthrecords.components.SelectionFormSection
 import com.carenote.app.ui.screens.healthrecords.components.VitalSignsFormSection
@@ -56,7 +44,6 @@ import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditHealthRecordScreen(
     onNavigateBack: () -> Unit = {},
@@ -66,15 +53,6 @@ fun AddEditHealthRecordScreen(
     val photos by viewModel.photos.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-    var showDiscardDialog by remember { mutableStateOf(false) }
-
-    val handleBack: () -> Unit = {
-        if (viewModel.isDirty) showDiscardDialog = true else onNavigateBack()
-    }
-
-    BackHandler(enabled = viewModel.isDirty) {
-        showDiscardDialog = true
-    }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
@@ -100,60 +78,20 @@ fun AddEditHealthRecordScreen(
         stringResource(R.string.health_records_add)
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { AddEditHealthRecordTopBar(title = title, onNavigateBack = handleBack) }
+    CareNoteAddEditScaffold(
+        title = title,
+        onNavigateBack = onNavigateBack,
+        isDirty = viewModel.isDirty,
+        snackbarHostState = snackbarHostState
     ) { innerPadding ->
         AddEditHealthRecordContent(
             formState = formState,
             photos = photos,
             viewModel = viewModel,
-            onNavigateBack = handleBack,
+            onNavigateBack = onNavigateBack,
             modifier = Modifier.padding(innerPadding)
         )
     }
-
-    if (showDiscardDialog) {
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_discard_title),
-            message = stringResource(R.string.ui_confirm_discard_message),
-            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
-            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
-            onConfirm = {
-                showDiscardDialog = false
-                onNavigateBack()
-            },
-            onDismiss = { showDiscardDialog = false },
-            isDestructive = true
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AddEditHealthRecordTopBar(
-    title: String,
-    onNavigateBack: () -> Unit
-) {
-    TopAppBar(
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.common_close)
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
-        )
-    )
 }
 
 @Composable

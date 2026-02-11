@@ -1,6 +1,5 @@
 package com.carenote.app.ui.screens.medication
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,32 +11,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,8 +37,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.components.CareNoteTextField
-import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.preview.LightDarkPreview
 import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
@@ -57,7 +46,6 @@ import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.DateTimeFormatters
 import com.carenote.app.ui.util.SnackbarEvent
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditMedicationScreen(
     onNavigateBack: () -> Unit = {},
@@ -66,15 +54,6 @@ fun AddEditMedicationScreen(
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-    var showDiscardDialog by remember { mutableStateOf(false) }
-
-    val handleBack: () -> Unit = {
-        if (viewModel.isDirty) showDiscardDialog = true else onNavigateBack()
-    }
-
-    BackHandler(enabled = viewModel.isDirty) {
-        showDiscardDialog = true
-    }
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
@@ -100,29 +79,11 @@ fun AddEditMedicationScreen(
         stringResource(R.string.medication_add)
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
+    CareNoteAddEditScaffold(
+        title = title,
+        onNavigateBack = onNavigateBack,
+        isDirty = viewModel.isDirty,
+        snackbarHostState = snackbarHostState
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -209,7 +170,7 @@ fun AddEditMedicationScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = handleBack,
+                    onClick = onNavigateBack,
                     modifier = Modifier.weight(1f),
                     shape = ButtonShape
                 ) {
@@ -237,21 +198,6 @@ fun AddEditMedicationScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-
-    if (showDiscardDialog) {
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_discard_title),
-            message = stringResource(R.string.ui_confirm_discard_message),
-            confirmLabel = stringResource(R.string.ui_confirm_discard_yes),
-            dismissLabel = stringResource(R.string.ui_confirm_discard_no),
-            onConfirm = {
-                showDiscardDialog = false
-                onNavigateBack()
-            },
-            onDismiss = { showDiscardDialog = false },
-            isDestructive = true
-        )
     }
 }
 
