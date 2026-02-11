@@ -12,6 +12,9 @@ import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.FormValidator.combineValidations
+import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validateRequired
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -166,29 +169,11 @@ class AddEditMedicationViewModel @Inject constructor(
     fun saveMedication() {
         val current = _formState.value
 
-        if (current.name.isBlank()) {
-            _formState.value = current.copy(
-                nameError = UiText.Resource(R.string.medication_name_required)
-            )
-            return
-        }
-
-        val nameError = if (current.name.length > AppConfig.Medication.NAME_MAX_LENGTH) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Medication.NAME_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
-        val dosageError = if (current.dosage.length > AppConfig.Medication.DOSAGE_MAX_LENGTH) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Medication.DOSAGE_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
+        val nameError = combineValidations(
+            validateRequired(current.name, R.string.medication_name_required),
+            validateMaxLength(current.name, AppConfig.Medication.NAME_MAX_LENGTH)
+        )
+        val dosageError = validateMaxLength(current.dosage, AppConfig.Medication.DOSAGE_MAX_LENGTH)
 
         if (nameError != null || dosageError != null) {
             _formState.value = current.copy(

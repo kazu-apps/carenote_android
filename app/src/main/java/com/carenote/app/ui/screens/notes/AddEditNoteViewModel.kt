@@ -15,6 +15,9 @@ import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.PhotoRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.FormValidator.combineValidations
+import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validateRequired
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -177,26 +180,14 @@ class AddEditNoteViewModel @Inject constructor(
     fun saveNote() {
         val current = _formState.value
 
-        val titleError = if (current.title.isBlank()) {
-            UiText.Resource(R.string.notes_title_required)
-        } else if (current.title.length > AppConfig.Note.TITLE_MAX_LENGTH) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Note.TITLE_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
-        val contentError = if (current.content.isBlank()) {
-            UiText.Resource(R.string.notes_content_required)
-        } else if (current.content.length > AppConfig.Note.CONTENT_MAX_LENGTH) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Note.CONTENT_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
+        val titleError = combineValidations(
+            validateRequired(current.title, R.string.notes_title_required),
+            validateMaxLength(current.title, AppConfig.Note.TITLE_MAX_LENGTH)
+        )
+        val contentError = combineValidations(
+            validateRequired(current.content, R.string.notes_content_required),
+            validateMaxLength(current.content, AppConfig.Note.CONTENT_MAX_LENGTH)
+        )
 
         if (titleError != null || contentError != null) {
             _formState.value = current.copy(

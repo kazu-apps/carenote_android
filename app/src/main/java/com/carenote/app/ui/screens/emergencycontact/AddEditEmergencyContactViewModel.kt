@@ -10,6 +10,9 @@ import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.FormValidator.combineValidations
+import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validateRequired
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -124,26 +127,14 @@ class AddEditEmergencyContactViewModel @Inject constructor(
     fun save() {
         val current = _formState.value
 
-        val nameError = when {
-            current.name.isBlank() -> UiText.Resource(R.string.emergency_contact_name_required)
-            current.name.length > AppConfig.EmergencyContact.NAME_MAX_LENGTH ->
-                UiText.ResourceWithArgs(
-                    R.string.ui_validation_too_long,
-                    listOf(AppConfig.EmergencyContact.NAME_MAX_LENGTH)
-                )
-            else -> null
-        }
-
-        val phoneNumberError = when {
-            current.phoneNumber.isBlank() ->
-                UiText.Resource(R.string.emergency_contact_phone_required)
-            current.phoneNumber.length > AppConfig.EmergencyContact.PHONE_MAX_LENGTH ->
-                UiText.ResourceWithArgs(
-                    R.string.ui_validation_too_long,
-                    listOf(AppConfig.EmergencyContact.PHONE_MAX_LENGTH)
-                )
-            else -> null
-        }
+        val nameError = combineValidations(
+            validateRequired(current.name, R.string.emergency_contact_name_required),
+            validateMaxLength(current.name, AppConfig.EmergencyContact.NAME_MAX_LENGTH)
+        )
+        val phoneNumberError = combineValidations(
+            validateRequired(current.phoneNumber, R.string.emergency_contact_phone_required),
+            validateMaxLength(current.phoneNumber, AppConfig.EmergencyContact.PHONE_MAX_LENGTH)
+        )
 
         if (nameError != null || phoneNumberError != null) {
             _formState.value = current.copy(

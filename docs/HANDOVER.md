@@ -2,19 +2,14 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v5.0 Phase 2 God Class 分解 - DONE
+## 完了タスク: v5.0 Phase 5a FormValidator 抽出
 
-Phase 2 の 2a（HealthMetricsParser 抽出）を実施。2b/2c は reviewer 評価で不要と判断しスキップ。
-
-- **2a**: `AddEditHealthRecordViewModel`（463→346行, -117行）から解析・バリデーションロジックを `HealthMetricsParser` object に抽出
-- **2b SKIP**: `FirestoreSyncRepositoryImpl` は proper facade パターンで分解不要（YAGNI）
-- **2c SKIP**: `EntitySyncer` の ConflictResolver は4行、FirestoreClient 抽出は循環依存を生む
+`FormValidator` object（3 inline 関数: `validateRequired`, `validateMaxLength`, `combineValidations`）を新規作成し、5 AddEdit ViewModel のバリデーションロジックを統一。FormValidatorTest（15テスト）追加。全テスト PASS、ビルド成功。
 
 ## 次のアクション
 
-1. v5.0 TDD リファクタリングロードマップの Phase 3（CareNoteScaffold 抽出）から実装開始
+1. v5.0 Phase 6: PhotoManager 抽出
 2. リリース前に実機テスト + APK 検証
-3. v6.0 のスコープ検討（Billing, FCM リモート通知, Wear OS）
 
 ## 既知の問題
 
@@ -580,37 +575,40 @@ CLAUDE.md をコードベースの実態に合わせて包括的に更新。依�
 
 **2c. EntitySyncer — SKIP（reviewer 評価: ConflictResolver 4行, FirestoreClient 抽出は循環依存, Template Method 破壊）**
 
-### Phase 3: CareNoteScaffold 抽出 - PENDING
+### Phase 3: CareNoteAddEditScaffold 抽出 - DONE
+6つの AddEdit 画面から `CareNoteAddEditScaffold` を抽出（Scaffold+TopAppBar+BackHandler+ConfirmDialog 共通化）。CareNoteListScaffold は Phase 3b に延期、AuthScaffold は SKIP（YAGNI）。
+- 新規: `CareNoteAddEditScaffold.kt`
+- 変更: 6 Screen（Medication, Note, Task, Calendar, HealthRecord, EmergencyContact）
 
-画面の Scaffold/TopAppBar 重複を 2-3 バリアントで解消。
+### Phase 3b: CareNoteListScaffold 抽出 - SKIP
 
-- `CareNoteListScaffold`: リスト画面用（title, FAB, searchBar, snackbar）
-- `CareNoteAddEditScaffold`: AddEdit 画面用（title, backNav, saveAction, snackbar）
-- `CareNoteAuthScaffold`（必要に応じて）: 認証画面用（title のみ）
-- 適用可能画面のみ移行（8-12 画面）、カスタム TopAppBar の画面はそのまま
+3ステップパイプライン（implementer → tester → reviewer）全員一致で SKIP 判定。
+- **理由**: 5 List 画面の構造多様性が高く（Calendar=MonthNavigationBar, HealthRecords=dual-mode, Paging3 vs UiState混在）、統一 Scaffold は 12-15+ パラメータ必要
+- **ROI**: 200-250行削減 vs 200-310行の新規 Scaffold = 純減ゼロ〜マイナス
+- **原則**: "Duplication is far cheaper than the wrong abstraction" (Sandi Metz)
+- **既存共通コンポーネント**（CareNoteCard, EmptyState, SwipeToDismissItem 等）で十分な再利用を実現済み
 
-### Phase 4: BaseCrudRepository 抽出 - PENDING
+### Phase 4: BaseCrudRepository 抽出 - SKIP
 
-14 Repository の CRUD ボイラープレートを Composition パターンで共通化。
+3ステップパイプライン（implementer → tester → reviewer）全員一致で SKIP 判定。
+- **理由**: ROI テスト込み -3.0%（純増 92行）。`Result.catchingSuspend()` で既にエラーハンドリング共通化達成済み
+- **技術的問題**: Composition パターンがメソッド名重複で委譲ボイラープレート大量発生（Base `getAll()` vs Interface `getAllMedications()`）
+- **特殊ケース**: Photo/CareRecipient は非標準メソッド名、Note/HealthRecord はカスケード削除で共通化不可
+- **原則**: "Duplication is far cheaper than the wrong abstraction" (Sandi Metz)
+- **Phase 5/6 への影響**: 依存なし、実施可能
 
-- `RepositoryDelegate<Entity, Domain>` composition クラス（Template Method ではなく委譲）
-- `Mapper<Entity, Domain>` interface
-- 各 Repository は delegate を保持し、共通 CRUD を委譲
-- ドメイン固有メソッドは各 Repository に残存
-- Hilt DI モジュール変更なし（Repository interface は変更なし）
+### Phase 5: FormValidator + BaseAddEditViewModel（分割実施）- DONE
 
-### Phase 5: FormValidator + BaseAddEditViewModel - PENDING
+**5a. FormValidator — DONE**:
+- 新規: `ui/util/FormValidator.kt`（3 inline 関数、22行）
+- 新規: `FormValidatorTest.kt`（15テスト）
+- 変更: 5 AddEdit ViewModel（Medication, Note, Task, Calendar, EmergencyContact）のバリデーションを `combineValidations` で統一
+- HealthRecord は HealthMetricsParser が既にバリデーション抽出済みのため対象外
 
-**5a. FormValidator**:
-- `ui/validation/FormValidator.kt` — inline 関数 + 拡張関数
-- `validateRequired()`, `validateMaxLength()`, `combineValidations()`
-- 複雑なバリデーションを持つ VM のみ適用（Medication, HealthRecord, Task）
-
-**5b. BaseAddEditViewModel**（Composition パターン）:
-- `SaveLoadManager<FormState, Domain>` delegate クラス（abstract base class ではなく委譲）
-- 共通フロー: load → populate → validate → save/update + Result handling
-- savedEvent Channel, snackbarController, isDirty を共通化
-- 各 VM は delegate を保持し、ドメイン固有ロジックを実装
+**5b. SaveLoadManager — SKIP**:
+- Phase 4 と同じ問題が再発（メソッド名重複、FormState↔Domain マッピングボイラープレート、Hilt DI 複雑化、viewModelScope 共有問題）
+- Composition パターンが Kotlin ViewModel に不適合
+- Phase 6 PhotoManager への影響なし
 
 ### Phase 6: PhotoManager 抽出 - PENDING
 

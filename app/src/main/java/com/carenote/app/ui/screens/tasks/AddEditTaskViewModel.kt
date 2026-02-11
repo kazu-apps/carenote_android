@@ -13,6 +13,9 @@ import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.FormValidator.combineValidations
+import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validateRequired
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -164,26 +167,13 @@ class AddEditTaskViewModel @Inject constructor(
     fun saveTask() {
         val current = _formState.value
 
-        val titleError = if (current.title.isBlank()) {
-            UiText.Resource(R.string.tasks_task_title_required)
-        } else if (current.title.length > AppConfig.Task.TITLE_MAX_LENGTH) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Task.TITLE_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
-        val descriptionError = if (
-            current.description.length > AppConfig.Task.DESCRIPTION_MAX_LENGTH
-        ) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Task.DESCRIPTION_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
+        val titleError = combineValidations(
+            validateRequired(current.title, R.string.tasks_task_title_required),
+            validateMaxLength(current.title, AppConfig.Task.TITLE_MAX_LENGTH)
+        )
+        val descriptionError = validateMaxLength(
+            current.description, AppConfig.Task.DESCRIPTION_MAX_LENGTH
+        )
         val recurrenceIntervalError = if (
             current.recurrenceFrequency != RecurrenceFrequency.NONE &&
             (current.recurrenceInterval < 1 ||

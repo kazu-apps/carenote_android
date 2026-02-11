@@ -10,6 +10,9 @@ import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.FormValidator.combineValidations
+import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validateRequired
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -139,26 +142,13 @@ class AddEditCalendarEventViewModel @Inject constructor(
     fun saveEvent() {
         val current = _formState.value
 
-        val titleError = if (current.title.isBlank()) {
-            UiText.Resource(R.string.calendar_event_title_required)
-        } else if (current.title.length > AppConfig.Calendar.TITLE_MAX_LENGTH) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Calendar.TITLE_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
-        val descriptionError = if (
-            current.description.length > AppConfig.Calendar.DESCRIPTION_MAX_LENGTH
-        ) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.Calendar.DESCRIPTION_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
+        val titleError = combineValidations(
+            validateRequired(current.title, R.string.calendar_event_title_required),
+            validateMaxLength(current.title, AppConfig.Calendar.TITLE_MAX_LENGTH)
+        )
+        val descriptionError = validateMaxLength(
+            current.description, AppConfig.Calendar.DESCRIPTION_MAX_LENGTH
+        )
 
         if (titleError != null || descriptionError != null) {
             _formState.value = current.copy(
