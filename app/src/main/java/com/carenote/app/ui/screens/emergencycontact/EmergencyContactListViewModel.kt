@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.EmergencyContact
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EmergencyContactListViewModel @Inject constructor(
-    private val repository: EmergencyContactRepository
+    private val repository: EmergencyContactRepository,
+    private val analyticsRepository: AnalyticsRepository
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -35,6 +37,7 @@ class EmergencyContactListViewModel @Inject constructor(
             repository.deleteContact(id)
                 .onSuccess {
                     Timber.d("Emergency contact deleted: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_DELETED)
                     snackbarController.showMessage(R.string.emergency_contact_deleted)
                 }
                 .onFailure { error ->

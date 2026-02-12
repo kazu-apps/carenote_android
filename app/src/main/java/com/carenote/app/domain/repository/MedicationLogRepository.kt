@@ -23,4 +23,6 @@ interface MedicationLogRepository {
         medicationId: Long,
         timing: MedicationTiming? = null
     ): Boolean
+
+    fun getAllLogs(): Flow<List<MedicationLog>>
 }

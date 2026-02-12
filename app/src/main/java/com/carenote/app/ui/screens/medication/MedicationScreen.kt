@@ -47,6 +47,7 @@ import com.carenote.app.ui.components.ConfirmDialog
 import com.carenote.app.ui.components.EmptyState
 import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
+import androidx.compose.material3.IconButton
 import com.carenote.app.ui.components.SwipeToDismissItem
 import com.carenote.app.ui.screens.medication.components.MedicationCard
 import com.carenote.app.ui.preview.LightDarkPreview
@@ -61,6 +62,7 @@ import com.carenote.app.ui.viewmodel.UiState
 fun MedicationScreen(
     onNavigateToAddMedication: () -> Unit = {},
     onNavigateToDetail: (Long) -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     viewModel: MedicationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -94,6 +96,14 @@ fun MedicationScreen(
                         text = stringResource(R.string.medication_title),
                         style = MaterialTheme.typography.titleLarge
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

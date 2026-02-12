@@ -6,21 +6,55 @@
 ## エージェントチーム構成
 
 すべての開発タスクは4人のエージェントチームで実行する。
-リーダー1人 + ワーカー3人の構成で、リーダーはコードに直接触れない。
+リーダー1人 + ワーカー3人の構成。
 
-### リーダーの役割
-- タスクを分析し、ワーカー3人の役割を動的に決定する
-- 下記のテンプレートから最適な組み合わせを選ぶ
-- デリゲートモード（Shift+Tab）で運用し、自分ではコードを書かない
-- ワーカーの進捗を監視し、成果物を統合レビューする
-- ファイル競合が起きないようワーカーの担当範囲を明確に指示する
-- 最終的な品質確認と完了判定を行う
+### リーダーの絶対ルール（違反厳禁）
+
+**リーダーは以下のツールを絶対に使わない:**
+- `Write` — ファイル作成禁止
+- `Edit` — ファイル編集禁止
+- `Bash`（git commit 等の破壊的コマンド）— ワーカーに委託する
+
+**リーダーが使えるツール:**
+- `Read`, `Glob`, `Grep` — コードベース調査
+- `TeamCreate` — チーム作成
+- `Task`（`team_name` + `name` 必須）— ワーカー生成
+- `TaskCreate`, `TaskUpdate`, `TaskList` — タスク管理
+- `SendMessage` — ワーカーへの指示・軌道修正
+- `TaskOutput` — ワーカー進捗確認
+
+### ワーカー生成の正しい方法
+
+**必須パラメータ**: `team_name` と `name` を必ず指定する。
+
+```
+// 正しい: チームメンバーとして生成
+Task(
+  team_name: "my-team",
+  name: "worker-a",
+  subagent_type: "general-purpose",
+  prompt: "..."
+)
+
+// 禁止: team_name なしのバックグラウンドエージェント
+Task(
+  subagent_type: "general-purpose",
+  run_in_background: true,  // ← これだとチームメンバーにならない
+  prompt: "..."
+)
+```
+
+**禁止パターン（過去の失敗）:**
+- リーダーが「Worker A は簡単だから自分でやる」→ 禁止。全作業はワーカーに委託
+- `Task` に `team_name` を渡さずバックグラウンド起動 → チーム連携不可。禁止
+- ワーカー間で `SendMessage` を使わず独立実行 → 禁止。依存情報は必ず共有
 
 ### ワーカーへの指示ルール
 - 各ワーカーには担当ファイル/ディレクトリを明示的に指定する
 - 同じファイルを複数ワーカーが同時編集しない
 - 共有リソース（build.gradle.kts、libs.versions.toml等）は1人だけが担当する
-- ワーカー同士はSendMessageで発見や依存情報を共有する
+- ワーカー同士は `SendMessage` で発見や依存情報を共有する
+- 依存関係があるワーカーは、先行ワーカーの完了メッセージを待ってから開始する
 
 ### テンプレート集：タスクに応じた3ワーカーの役割
 
@@ -40,10 +74,14 @@
 ### リーダーの進行フロー
 1. ユーザーの依頼を分析し、上記テンプレートから最適なものを選ぶ
 2. 3ワーカーの役割、担当ファイル、タスク依存関係を決定する
-3. TeamCreateで3ワーカーを生成し、十分なコンテキストを渡す
-4. 進捗をCtrl+Tで確認、必要に応じてSendMessageで軌道修正
-5. 全ワーカー完了後、成果物を統合レビューし、問題があれば修正指示
-6. 最終確認してユーザーに結果を報告する
+3. `TeamCreate` でチーム作成
+4. `TaskCreate` でタスク作成（依存関係は `addBlockedBy` で設定）
+5. `Task`（`team_name` + `name` 必須）で3ワーカーを生成し、十分なコンテキストを渡す
+6. ワーカーからの `SendMessage` 通知で進捗を把握、必要に応じて `SendMessage` で軌道修正
+7. 全ワーカー完了後、`Read` で成果物を統合レビューし、問題があれば `SendMessage` で修正指示
+8. `SendMessage`（type: shutdown_request）で全ワーカーを終了
+9. `TeamDelete` でチームリソースをクリーンアップ
+10. 最終確認してユーザーに結果を報告する
 
 ---
 
@@ -86,7 +124,7 @@ detekt --config detekt.yml --input app/src/main/java
 | ナビゲーション | Navigation Compose 2.9.7 |
 | 非同期 | Coroutines 1.10.2 + StateFlow |
 | ログ | Timber 5.0.1 |
-| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage) |
+| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) |
 | WorkManager | 2.10.1 (HiltWorker) |
 | Paging | Paging 3.3.6 (Runtime + Compose) |
 | 画像 | Coil 3.1.0 |
@@ -108,9 +146,9 @@ detekt --config detekt.yml --input app/src/main/java
 
 | モジュール | 責務 |
 |-----------|------|
-| `di/AppModule.kt` | 11 Repository + Exporter/Compressor バインディング |
+| `di/AppModule.kt` | 12 Repository + 8 Exporter + Clock/Compressor バインディング |
 | `di/DatabaseModule.kt` | Room DB + DAO (10 テーブル) + PassphraseManager + RecoveryHelper |
-| `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging, Storage + AuthRepository + No-Op フォールバック |
+| `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging, Storage, Analytics + AuthRepository + AnalyticsRepository + No-Op フォールバック |
 | `di/SyncModule.kt` | SyncRepository + EntitySyncer 群 |
 | `di/WorkerModule.kt` | WorkManager + 3 Scheduler (Sync, MedicationReminder, TaskReminder) |
 | `di/WidgetEntryPoint.kt` | Glance Widget DI (EntryPointAccessors) |
@@ -121,7 +159,7 @@ detekt --config detekt.yml --input app/src/main/java
 `ui/navigation/Screen.kt` の sealed class でルート定義:
 - **Auth**: Login, Register, ForgotPassword
 - **BottomNav**: Medication, Calendar, Tasks, HealthRecords, Notes, Settings（6タブ）
-- **Secondary**: AddEditMedication, MedicationDetail, EditMedication, AddEditNote, AddEditHealthRecord, AddEditCalendarEvent, AddEditTask, CareRecipientProfile, Timeline, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, PrivacyPolicy, TermsOfService
+- **Secondary**: AddMedication, EditMedication, MedicationDetail, AddNote, EditNote, AddHealthRecord, EditHealthRecord, AddCalendarEvent, EditCalendarEvent, AddTask, EditTask, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, CareRecipientProfile, Timeline, PrivacyPolicy, TermsOfService, Search
 - `ui/navigation/CareNoteNavHost.kt` でルーティング管理
 - `ui/navigation/AdaptiveNavigationScaffold.kt` — ウィンドウサイズに応じて Compact=Bottom, Medium=Rail, Expanded=Drawer を自動選択
 
@@ -143,36 +181,39 @@ detekt --config detekt.yml --input app/src/main/java
 app/src/main/java/com/carenote/app/
 ├── config/              AppConfig（全設定値の一元管理。マジックナンバー禁止）
 ├── data/
-│   ├── export/          HealthRecordCsvExporter, HealthRecordPdfExporter
+│   ├── export/          HealthRecord/MedicationLog/Task/Note の CsvExporter + PdfExporter（計 8 ファイル）
 │   ├── local/           Room (DB, DAO, Entity, Converter, Migration) + ImageCompressor, DatabasePassphraseManager, DatabaseRecoveryHelper
 │   ├── mapper/          Entity ↔ Domain マッパー
 │   │   └── remote/      Firestore ↔ Domain マッパー (RemoteMapper)
 │   ├── remote/
 │   │   └── model/       SyncMetadata（同期メタデータ）
-│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, FirebaseStorage, NoOpStorage)
+│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, Search, FirebaseStorage, NoOpStorage, FirebaseAnalytics, NoOpAnalytics)
 │   │   └── sync/        EntitySyncer + ConfigDrivenEntitySyncer + MedicationLogSyncer
 │   ├── service/         CareNoteMessagingService (FCM)
 │   └── worker/          SyncWorker, MedicationReminderWorker, TaskReminderWorker
 ├── di/                  Hilt モジュール (App, Database, Firebase, Sync, Worker) + WidgetEntryPoint, FirebaseAvailability
 ├── domain/
 │   ├── common/          Result<T,E>, DomainError, SyncResult, SyncState
-│   ├── model/           ドメインモデル (17 data class: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage)
-│   └── repository/      Repository インターフェース (19: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline + Scheduler/Exporter/Compressor interfaces)
+│   ├── model/           ドメインモデル (18 model: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage, SearchResult)
+│   ├── repository/      Repository インターフェース (24: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline, Analytics, Search + Scheduler/Exporter/Compressor interfaces)
+│   └── util/            Clock interface + SystemClock（テスト用時刻制御）
 └── ui/
     ├── common/          共通 UI ユーティリティ
-    ├── components/      再利用可能コンポーネント (CareNoteCard, CareNoteTextField, CareNoteDatePickerDialog, CareNoteTimePickerDialog, ConfirmDialog, EmptyState, ErrorDisplay, LoadingIndicator, PhotoPickerSection, SwipeToDismissItem)
+    ├── components/      再利用可能コンポーネント (CareNoteCard, CareNoteTextField, CareNoteDatePickerDialog, CareNoteTimePickerDialog, ConfirmDialog, EmptyState, ErrorDisplay, LoadingIndicator, PhotoPickerSection, SwipeToDismissItem, CareNoteAddEditScaffold)
     ├── navigation/      Screen sealed class + CareNoteNavHost + AdaptiveNavigationScaffold
     ├── preview/         PreviewAnnotations, PreviewData
     ├── screens/         各画面 (Screen.kt)
     │   ├── auth/        LoginScreen, RegisterScreen, ForgotPasswordScreen
     │   ├── carerecipient/  CareRecipientProfileScreen
     │   ├── emergencycontact/  EmergencyContactsScreen, AddEmergencyContactScreen, EditEmergencyContactScreen
-    │   ├── settings/    SettingsScreen + dialogs/, sections/ サブディレクトリ
+    │   ├── healthrecords/ HealthRecordsScreen + AddEditHealthRecordScreen + HealthMetricsParser
+    │   ├── search/      SearchScreen + SearchViewModel
+    │   ├── settings/    SettingsScreen + dialogs/ (SettingsDialogs, DataExportDialog), sections/ (各セクション + DataExportSection)
     │   └── timeline/    TimelineScreen
     ├── testing/         TestTags
     ├── theme/           Material3 テーマ（Color, Type, Theme）
-    ├── util/            NotificationHelper, CrashlyticsTree, BiometricHelper, RootDetector, LocaleManager, SnackbarController
-    ├── viewmodel/       ViewModel 群
+    ├── util/            NotificationHelper, CrashlyticsTree, BiometricHelper, RootDetector, LocaleManager, SnackbarController, FormValidator, DateTimeFormatters, AssetReader
+    ├── viewmodel/       ViewModel 群 + PhotoManager（写真状態管理）+ ExportState
     └── widget/          CareNoteWidget, CareNoteWidgetReceiver (Glance)
 ```
 
@@ -238,12 +279,20 @@ interface RemoteMapper<Domain> {
 - `FirebaseStorageRepositoryImpl` — Firebase Storage 実装
 - `NoOpStorageRepository` — Firebase 未初期化時のフォールバック（グレースフルデグラデーション）
 
+### Firebase Analytics（使用状況分析）
+
+- `AnalyticsRepository` — Analytics インターフェース (logScreenView, logEvent)
+- `FirebaseAnalyticsRepositoryImpl` — Firebase Analytics 実装
+- `NoOpAnalyticsRepository` — Firebase 未初期化時のフォールバック
+- **自動画面トラッキング**: MainActivity の `NavController.OnDestinationChangedListener` で全画面遷移を自動記録
+- **イベント定数**: `AppConfig.Analytics` に 40+ イベント定数（Auth, Medication, Calendar, Task, HealthRecord, Note, EmergencyContact, CareRecipient, Sync）
+
 ### Firebase グレースフルデグラデーション
 
 `google-services.json` 未配置時や Firebase 未初期化時でもアプリがクラッシュしない仕組み。
 
 - `FirebaseAvailability.check()` — Firebase 利用可否チェック。`Exception`（`IllegalStateException` だけでなく `RuntimeException` も含む）をキャッチ
-- **No-Op 実装**: `NoOpAuthRepository`, `NoOpSyncRepository`, `NoOpSyncWorkScheduler`, `NoOpStorageRepository`
+- **No-Op 実装**: `NoOpAuthRepository`, `NoOpSyncRepository`, `NoOpSyncWorkScheduler`, `NoOpStorageRepository`, `NoOpAnalyticsRepository`
 - `dagger.Lazy<T>` で Firebase 依存の遅延初期化。`FirebaseAvailability` の結果に応じて本番 or No-Op を DI で注入
 
 ## Worker パターン
@@ -308,16 +357,23 @@ Firebase 関連:
 - `FakeSyncRepository` — 同期状態のテスト制御
 - `FakeSyncWorkScheduler` — WorkManager 依存排除
 - `FakeStorageRepository` — Firebase Storage 依存排除
+- `FakeAnalyticsRepository` — Analytics イベント記録のテスト検証
 
 データ関連:
 - `FakeMedicationRepository`, `FakeMedicationLogRepository`, `FakeNoteRepository`, `FakeHealthRecordRepository`, `FakeCalendarEventRepository`, `FakeTaskRepository`
-- `FakeCareRecipientRepository`, `FakeEmergencyContactRepository`, `FakePhotoRepository`, `FakeSettingsRepository`, `FakeTimelineRepository`
+- `FakeCareRecipientRepository`, `FakeEmergencyContactRepository`, `FakePhotoRepository`, `FakeSettingsRepository`, `FakeTimelineRepository`, `FakeSearchRepository`
 - `FakeMedicationReminderScheduler`, `FakeTaskReminderScheduler`
-- `FakeNotificationHelper`, `FakeRootDetector`, `FakeSyncMappingDao`
+- `FakeMedicationLogCsvExporter`, `FakeMedicationLogPdfExporter`, `FakeNoteCsvExporter`, `FakeNotePdfExporter`, `FakeTaskCsvExporter`, `FakeTaskPdfExporter`
+- `FakeNotificationHelper`, `FakeRootDetector`, `FakeSyncMappingDao`, `FakeClock`
 
 ### E2E テスト
 
 `androidTest/.../di/TestFirebaseModule.kt` で本番モジュールを Fake に置換。
+
+16 テストファイル（`androidTest/.../e2e/`）:
+- **基盤**: `E2eTestBase`, `E2eTestUtils`
+- **画面別**: `AuthFlowTest`, `MedicationFlowTest`, `CalendarFlowTest`, `TasksFlowTest`, `HealthRecordsFlowTest`, `NotesFlowTest`, `NavigationFlowTest`
+- **横断**: `CriticalPathFlowTest`, `EditFlowTest`, `DeleteFlowTest`, `ValidationFlowTest`, `ExportFlowTest`, `PhotoSectionFlowTest`, `SyncFlowTest`
 
 ## コード規約
 
@@ -352,7 +408,9 @@ Timber.d("User signed in successfully")
 - `AppConfig.Widget` — ウィジェット表示件数
 - `AppConfig.Export` — エクスポート設定（CSV/PDF ファイルプレフィックス、PDF 寸法）
 - `AppConfig.Photo` — 画像キャッシュ TTL/サイズ上限、圧縮品質
-- `AppConfig.UI` — デバウンス時間、アニメーション、Badge 最大値等
+- `AppConfig.UI` — デバウンス時間、アニメーション、Badge 最大値、検索デバウンス等
+- `AppConfig.Support` — 問い合わせメールアドレス
+- `AppConfig.Analytics` — 画面名定数 + イベント定数（40+ 種）
 
 ### Detekt ルール（maxIssues=0）
 
@@ -383,6 +441,9 @@ Timber.d("User signed in successfully")
 15. **Paging 3 テスト** — `cachedIn(viewModelScope)` は `UncompletedCoroutinesError` を発生させるため、ViewModel テストでは Repository 直接検証パターンを採用
 16. **Glance Widget DI** — 標準 `@Inject` 不可。`WidgetEntryPoint` + `EntryPointAccessors.fromApplication()` を使用
 17. **Adaptive Navigation** — `AdaptiveNavigationScaffold` がウィンドウサイズに応じて Bottom/Rail/Drawer を自動選択。BottomBar をハードコードしない
+18. **Root 検出ダイアログ** — MainActivity で `RootDetector` がルート検出時に「続ける/終了」AlertDialog を表示。テストでは `FakeRootDetector` で制御
+19. **リリース前チェックリスト** — `docs/RELEASE_CHECKLIST.md` を確認。署名、ProGuard、Firebase 設定、ストア掲載情報等の最終確認事項
+20. **エクスポート PII 注意** — CSV/PDF エクスポートに患者情報を含む。キャッシュクリア、ログ PII 禁止ルール遵守
 
 ## 今後の追加予定
 

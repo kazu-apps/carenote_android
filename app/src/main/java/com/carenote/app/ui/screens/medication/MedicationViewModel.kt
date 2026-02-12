@@ -10,10 +10,14 @@ import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.domain.repository.AnalyticsRepository
+import com.carenote.app.domain.repository.MedicationLogCsvExporterInterface
+import com.carenote.app.domain.repository.MedicationLogPdfExporterInterface
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
+import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,6 +32,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -41,7 +46,10 @@ class MedicationViewModel @Inject constructor(
     private val medicationRepository: MedicationRepository,
     private val medicationLogRepository: MedicationLogRepository,
     private val reminderScheduler: MedicationReminderSchedulerInterface,
-    private val clock: Clock
+    private val analyticsRepository: AnalyticsRepository,
+    private val clock: Clock,
+    private val csvExporter: MedicationLogCsvExporterInterface,
+    private val pdfExporter: MedicationLogPdfExporterInterface
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -126,6 +134,10 @@ class MedicationViewModel @Inject constructor(
             medicationLogRepository.insertLog(log)
                 .onSuccess {
                     Timber.d("Medication log recorded: medicationId=$medicationId, status=$status")
+                    analyticsRepository.logEvent(
+                        AppConfig.Analytics.EVENT_MEDICATION_LOG_RECORDED,
+                        mapOf(AppConfig.Analytics.PARAM_STATUS to status.name)
+                    )
                     if (status == MedicationLogStatus.TAKEN) {
                         reminderScheduler.cancelFollowUp(medicationId, timing)
                     }
@@ -155,11 +167,68 @@ class MedicationViewModel @Inject constructor(
         }
     }
 
+    private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
+    val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
+
+    fun exportCsv() {
+        viewModelScope.launch {
+            _exportState.value = ExportState.Exporting
+            try {
+                val logs = medicationLogRepository.getAllLogs().first()
+                if (logs.isEmpty()) {
+                    _exportState.value = ExportState.Idle
+                    snackbarController.showMessage(R.string.medication_log_export_empty)
+                    return@launch
+                }
+                val medicationNames = buildMedicationNameMap()
+                val uri = csvExporter.export(logs, medicationNames)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_LOG_EXPORT_CSV)
+                _exportState.value = ExportState.Success(uri, "text/csv")
+            } catch (e: Exception) {
+                Timber.w("Medication log CSV export failed: $e")
+                _exportState.value = ExportState.Error(e.message ?: "Unknown error")
+                snackbarController.showMessage(R.string.medication_log_export_failed)
+            }
+        }
+    }
+
+    fun exportPdf() {
+        viewModelScope.launch {
+            _exportState.value = ExportState.Exporting
+            try {
+                val logs = medicationLogRepository.getAllLogs().first()
+                if (logs.isEmpty()) {
+                    _exportState.value = ExportState.Idle
+                    snackbarController.showMessage(R.string.medication_log_export_empty)
+                    return@launch
+                }
+                val medicationNames = buildMedicationNameMap()
+                val uri = pdfExporter.export(logs, medicationNames)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_LOG_EXPORT_PDF)
+                _exportState.value = ExportState.Success(uri, "application/pdf")
+            } catch (e: Exception) {
+                Timber.w("Medication log PDF export failed: $e")
+                _exportState.value = ExportState.Error(e.message ?: "Unknown error")
+                snackbarController.showMessage(R.string.medication_log_export_failed)
+            }
+        }
+    }
+
+    fun resetExportState() {
+        _exportState.value = ExportState.Idle
+    }
+
+    private suspend fun buildMedicationNameMap(): Map<Long, String> {
+        val medications = medicationRepository.getAllMedications().first()
+        return medications.associate { it.id to it.name }
+    }
+
     fun deleteMedication(id: Long) {
         viewModelScope.launch {
             medicationRepository.deleteMedication(id)
                 .onSuccess {
                     Timber.d("Medication deleted: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_DELETED)
                     reminderScheduler.cancelReminders(id)
                     snackbarController.showMessage(R.string.medication_deleted)
                 }

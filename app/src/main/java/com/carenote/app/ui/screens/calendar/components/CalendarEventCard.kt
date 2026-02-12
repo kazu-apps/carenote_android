@@ -5,17 +5,29 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.ui.components.CareNoteCard
 import com.carenote.app.ui.util.DateTimeFormatters
 
@@ -23,6 +35,7 @@ import com.carenote.app.ui.util.DateTimeFormatters
 fun CalendarEventCard(
     event: CalendarEvent,
     onClick: () -> Unit,
+    onToggleCompleted: (CalendarEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     CareNoteCard(
@@ -34,24 +47,53 @@ fun CalendarEventCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = event.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = AppConfig.Calendar.TITLE_MAX_LINES,
-                overflow = TextOverflow.Ellipsis,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
-            )
-
-            val timeText = if (event.isAllDay) {
-                stringResource(R.string.calendar_all_day_label)
-            } else {
-                event.startTime?.let { DateTimeFormatters.formatTime(it) } ?: ""
+            ) {
+                Icon(
+                    imageVector = event.type.icon(),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (event.completed) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = event.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        textDecoration = if (event.completed) TextDecoration.LineThrough else TextDecoration.None
+                    ),
+                    color = if (event.completed) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    maxLines = AppConfig.Calendar.TITLE_MAX_LINES,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
             }
-            Text(
-                text = timeText,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val timeText = if (event.isAllDay) {
+                    stringResource(R.string.calendar_all_day_label)
+                } else {
+                    event.startTime?.let { DateTimeFormatters.formatTime(it) } ?: ""
+                }
+                Text(
+                    text = timeText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Checkbox(
+                    checked = event.completed,
+                    onCheckedChange = { onToggleCompleted(event) }
+                )
+            }
         }
 
         if (event.description.isNotBlank()) {
@@ -65,5 +107,14 @@ fun CalendarEventCard(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+private fun CalendarEventType.icon(): ImageVector {
+    return when (this) {
+        CalendarEventType.HOSPITAL -> Icons.Filled.LocalHospital
+        CalendarEventType.VISIT -> Icons.Filled.DirectionsCar
+        CalendarEventType.DAYSERVICE -> Icons.Filled.Home
+        CalendarEventType.OTHER -> Icons.Filled.Event
     }
 }

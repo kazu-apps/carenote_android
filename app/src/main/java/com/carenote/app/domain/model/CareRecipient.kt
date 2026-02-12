@@ -15,6 +15,10 @@ data class CareRecipient(
     val name: String,
     val birthDate: LocalDate? = null,
     val gender: Gender = Gender.UNSPECIFIED,
+    val nickname: String = "",
+    val careLevel: String = "",
+    val medicalHistory: String = "",
+    val allergies: String = "",
     val memo: String = "",
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()

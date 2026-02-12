@@ -1,4 +1,4 @@
-package com.carenote.app.ui.screens.healthrecords
+package com.carenote.app.ui.viewmodel
 
 import android.net.Uri
 

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.domain.model.CareRecipient
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Gender
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
@@ -21,6 +23,10 @@ data class CareRecipientUiState(
     val name: String = "",
     val birthDate: LocalDate? = null,
     val gender: Gender = Gender.UNSPECIFIED,
+    val nickname: String = "",
+    val careLevel: String = "",
+    val medicalHistory: String = "",
+    val allergies: String = "",
     val memo: String = "",
     val isLoading: Boolean = true,
     val isSaving: Boolean = false
@@ -29,6 +35,7 @@ data class CareRecipientUiState(
 @HiltViewModel
 class CareRecipientViewModel @Inject constructor(
     private val repository: CareRecipientRepository,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -50,6 +57,10 @@ class CareRecipientViewModel @Inject constructor(
                         name = careRecipient.name,
                         birthDate = careRecipient.birthDate,
                         gender = careRecipient.gender,
+                        nickname = careRecipient.nickname,
+                        careLevel = careRecipient.careLevel,
+                        medicalHistory = careRecipient.medicalHistory,
+                        allergies = careRecipient.allergies,
                         memo = careRecipient.memo,
                         isLoading = false
                     )
@@ -72,6 +83,22 @@ class CareRecipientViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(gender = gender)
     }
 
+    fun updateNickname(nickname: String) {
+        _uiState.value = _uiState.value.copy(nickname = nickname)
+    }
+
+    fun updateCareLevel(careLevel: String) {
+        _uiState.value = _uiState.value.copy(careLevel = careLevel)
+    }
+
+    fun updateMedicalHistory(medicalHistory: String) {
+        _uiState.value = _uiState.value.copy(medicalHistory = medicalHistory)
+    }
+
+    fun updateAllergies(allergies: String) {
+        _uiState.value = _uiState.value.copy(allergies = allergies)
+    }
+
     fun updateMemo(memo: String) {
         _uiState.value = _uiState.value.copy(memo = memo)
     }
@@ -87,6 +114,10 @@ class CareRecipientViewModel @Inject constructor(
                 name = current.name.trim(),
                 birthDate = current.birthDate,
                 gender = current.gender,
+                nickname = current.nickname.trim(),
+                careLevel = current.careLevel.trim(),
+                medicalHistory = current.medicalHistory.trim(),
+                allergies = current.allergies.trim(),
                 memo = current.memo.trim(),
                 createdAt = if (existingId == 0L) now else existingCreatedAt,
                 updatedAt = now
@@ -94,6 +125,7 @@ class CareRecipientViewModel @Inject constructor(
 
             repository.saveCareRecipient(careRecipient)
                 .onSuccess {
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CARE_RECIPIENT_SAVED)
                     snackbarController.showMessage(R.string.care_recipient_save_success)
                 }
                 .onFailure {

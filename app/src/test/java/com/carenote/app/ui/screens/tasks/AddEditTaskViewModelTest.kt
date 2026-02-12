@@ -8,6 +8,7 @@ import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.common.UiText
@@ -36,6 +37,7 @@ class AddEditTaskViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeTaskRepository
     private lateinit var scheduler: FakeTaskReminderScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditTaskViewModel
 
@@ -44,6 +46,7 @@ class AddEditTaskViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = FakeTaskRepository()
         scheduler = FakeTaskReminderScheduler()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -52,7 +55,7 @@ class AddEditTaskViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditTaskViewModel {
-        return AddEditTaskViewModel(SavedStateHandle(), repository, scheduler, clock = fakeClock)
+        return AddEditTaskViewModel(SavedStateHandle(), repository, scheduler, analyticsRepository, clock = fakeClock)
     }
 
     private fun createEditViewModel(taskId: Long): AddEditTaskViewModel {
@@ -60,6 +63,7 @@ class AddEditTaskViewModelTest {
             SavedStateHandle(mapOf("taskId" to taskId)),
             repository,
             scheduler,
+            analyticsRepository,
             clock = fakeClock
         )
     }

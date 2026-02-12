@@ -1,6 +1,7 @@
 package com.carenote.app.ui.preview
 
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
@@ -10,6 +11,7 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.SearchResult
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.screens.auth.ForgotPasswordFormState
@@ -190,6 +192,7 @@ object PreviewData {
         startTime = LocalTime.of(10, 0),
         endTime = LocalTime.of(11, 30),
         isAllDay = false,
+        type = CalendarEventType.HOSPITAL,
         createdAt = fixedDateTime,
         updatedAt = fixedDateTime
     )
@@ -200,11 +203,21 @@ object PreviewData {
         description = "",
         date = fixedDate.plusDays(1),
         isAllDay = true,
+        type = CalendarEventType.DAYSERVICE,
+        completed = true,
         createdAt = fixedDateTime,
         updatedAt = fixedDateTime
     )
 
     val calendarEvents = listOf(calendarEvent1, calendarEvent2)
+
+    // --- Search Results ---
+
+    val searchResults = listOf(
+        SearchResult.MedicationResult(medication1),
+        SearchResult.NoteResult(note1),
+        SearchResult.TaskResult(task1)
+    )
 
     // --- Form States (populated) ---
 
@@ -249,7 +262,8 @@ object PreviewData {
         date = fixedDate,
         startTime = LocalTime.of(10, 0),
         endTime = LocalTime.of(11, 30),
-        isAllDay = false
+        isAllDay = false,
+        type = CalendarEventType.HOSPITAL
     )
 
     val addEditHealthRecordFormState = AddEditHealthRecordFormState(

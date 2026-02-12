@@ -5,6 +5,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
@@ -35,6 +36,7 @@ class AuthViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: AuthViewModel
 
     @Before
@@ -42,7 +44,8 @@ class AuthViewModelTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
-        viewModel = AuthViewModel(authRepository, syncWorkScheduler)
+        analyticsRepository = FakeAnalyticsRepository()
+        viewModel = AuthViewModel(authRepository, syncWorkScheduler, analyticsRepository)
     }
 
     @After

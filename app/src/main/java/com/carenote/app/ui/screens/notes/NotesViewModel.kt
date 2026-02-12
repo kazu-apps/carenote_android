@@ -8,6 +8,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +27,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
+    private val analyticsRepository: AnalyticsRepository
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -61,6 +63,7 @@ class NotesViewModel @Inject constructor(
             noteRepository.deleteNote(id)
                 .onSuccess {
                     Timber.d("Note deleted: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_DELETED)
                     snackbarController.showMessage(R.string.notes_deleted)
                 }
                 .onFailure { error ->

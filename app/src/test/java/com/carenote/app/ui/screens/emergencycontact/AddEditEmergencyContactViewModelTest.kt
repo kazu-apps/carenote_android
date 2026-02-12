@@ -6,6 +6,7 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeEmergencyContactRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -30,11 +31,13 @@ class AddEditEmergencyContactViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeEmergencyContactRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeEmergencyContactRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -50,7 +53,7 @@ class AddEditEmergencyContactViewModelTest {
                 set("contactId", contactId)
             }
         }
-        return AddEditEmergencyContactViewModel(savedStateHandle, repository, clock = fakeClock)
+        return AddEditEmergencyContactViewModel(savedStateHandle, repository, analyticsRepository, clock = fakeClock)
     }
 
     private fun createContact(

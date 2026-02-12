@@ -2,6 +2,12 @@ package com.carenote.app.di
 
 import com.carenote.app.data.export.HealthRecordCsvExporter
 import com.carenote.app.data.export.HealthRecordPdfExporter
+import com.carenote.app.data.export.MedicationLogCsvExporter
+import com.carenote.app.data.export.MedicationLogPdfExporter
+import com.carenote.app.data.export.NoteCsvExporter
+import com.carenote.app.data.export.NotePdfExporter
+import com.carenote.app.data.export.TaskCsvExporter
+import com.carenote.app.data.export.TaskPdfExporter
 import com.carenote.app.data.local.ImageCompressor
 import com.carenote.app.data.local.SettingsDataSource
 import com.carenote.app.data.local.dao.CareRecipientDao
@@ -32,9 +38,16 @@ import com.carenote.app.data.repository.MedicationRepositoryImpl
 import com.carenote.app.data.repository.NoteRepositoryImpl
 import com.carenote.app.data.repository.PhotoRepositoryImpl
 import com.carenote.app.data.repository.TaskRepositoryImpl
+import com.carenote.app.data.repository.SearchRepositoryImpl
 import com.carenote.app.data.repository.TimelineRepositoryImpl
 import com.carenote.app.domain.repository.HealthRecordCsvExporterInterface
 import com.carenote.app.domain.repository.HealthRecordPdfExporterInterface
+import com.carenote.app.domain.repository.MedicationLogCsvExporterInterface
+import com.carenote.app.domain.repository.MedicationLogPdfExporterInterface
+import com.carenote.app.domain.repository.NoteCsvExporterInterface
+import com.carenote.app.domain.repository.NotePdfExporterInterface
+import com.carenote.app.domain.repository.TaskCsvExporterInterface
+import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.util.SystemClock
@@ -46,6 +59,7 @@ import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.repository.NoteRepository
+import com.carenote.app.domain.repository.SearchRepository
 import com.carenote.app.domain.repository.PhotoRepository
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.domain.repository.TimelineRepository
@@ -180,6 +194,62 @@ object AppModule {
         pdfExporter: HealthRecordPdfExporter
     ): HealthRecordPdfExporterInterface {
         return pdfExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideMedicationLogCsvExporter(
+        csvExporter: MedicationLogCsvExporter
+    ): MedicationLogCsvExporterInterface {
+        return csvExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideMedicationLogPdfExporter(
+        pdfExporter: MedicationLogPdfExporter
+    ): MedicationLogPdfExporterInterface {
+        return pdfExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskCsvExporter(
+        csvExporter: TaskCsvExporter
+    ): TaskCsvExporterInterface {
+        return csvExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskPdfExporter(
+        pdfExporter: TaskPdfExporter
+    ): TaskPdfExporterInterface {
+        return pdfExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideNoteCsvExporter(
+        csvExporter: NoteCsvExporter
+    ): NoteCsvExporterInterface {
+        return csvExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotePdfExporter(
+        pdfExporter: NotePdfExporter
+    ): NotePdfExporterInterface {
+        return pdfExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideSearchRepository(
+        searchRepositoryImpl: SearchRepositoryImpl
+    ): SearchRepository {
+        return searchRepositoryImpl
     }
 
     @Provides

@@ -17,6 +17,8 @@ data class CalendarEvent(
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
     val isAllDay: Boolean = true,
+    val type: CalendarEventType = CalendarEventType.OTHER,
+    val completed: Boolean = false,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()
 )

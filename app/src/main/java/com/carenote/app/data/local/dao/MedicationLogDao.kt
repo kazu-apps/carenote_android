@@ -45,4 +45,7 @@ interface MedicationLogDao {
         endOfDay: String,
         timing: String?
     ): Boolean
+
+    @Query("SELECT * FROM medication_logs ORDER BY scheduled_at DESC")
+    fun getAllLogs(): Flow<List<MedicationLogEntity>>
 }

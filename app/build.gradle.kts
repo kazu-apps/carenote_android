@@ -177,6 +177,7 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.analytics)
 
     // Glance Widget
     implementation(libs.androidx.glance.appwidget)

@@ -32,25 +32,54 @@ import com.carenote.app.ui.screens.auth.ForgotPasswordScreen
 import com.carenote.app.ui.screens.auth.LoginScreen
 import com.carenote.app.ui.screens.auth.RegisterScreen
 import com.carenote.app.ui.screens.carerecipient.CareRecipientScreen
+import com.carenote.app.ui.screens.home.HomeScreen
 import com.carenote.app.ui.screens.emergencycontact.AddEditEmergencyContactScreen
 import com.carenote.app.ui.screens.emergencycontact.EmergencyContactListScreen
+import com.carenote.app.ui.screens.search.SearchScreen
 import com.carenote.app.ui.screens.settings.LegalDocumentScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
 import com.carenote.app.ui.screens.tasks.AddEditTaskScreen
 import com.carenote.app.ui.screens.tasks.TasksScreen
 import com.carenote.app.ui.screens.timeline.TimelineScreen
+import com.carenote.app.domain.model.SearchResult
 
 @Composable
 fun CareNoteNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Medication.route
+    startDestination: String = Screen.Home.route
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToMedication = {
+                    navController.navigate(Screen.Medication.route)
+                },
+                onNavigateToCalendar = {
+                    navController.navigate(Screen.Calendar.route)
+                },
+                onNavigateToTasks = {
+                    navController.navigate(Screen.Tasks.route)
+                },
+                onNavigateToHealthRecords = {
+                    navController.navigate(Screen.HealthRecords.route)
+                },
+                onNavigateToNotes = {
+                    navController.navigate(Screen.Notes.route)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
+                }
+            )
+        }
+
         composable(Screen.Medication.route) {
             MedicationScreen(
                 onNavigateToAddMedication = {
@@ -58,6 +87,9 @@ fun CareNoteNavHost(
                 },
                 onNavigateToDetail = { medicationId ->
                     navController.navigate(Screen.MedicationDetail.createRoute(medicationId))
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
                 }
             )
         }
@@ -72,6 +104,9 @@ fun CareNoteNavHost(
                 },
                 onNavigateToTimeline = {
                     navController.navigate(Screen.Timeline.route)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
                 }
             )
         }
@@ -89,6 +124,9 @@ fun CareNoteNavHost(
                 },
                 onNavigateToEditTask = { taskId ->
                     navController.navigate(Screen.EditTask.createRoute(taskId))
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
                 }
             )
         }
@@ -100,6 +138,9 @@ fun CareNoteNavHost(
                 },
                 onNavigateToEditRecord = { recordId ->
                     navController.navigate(Screen.EditHealthRecord.createRoute(recordId))
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
                 }
             )
         }
@@ -111,6 +152,9 @@ fun CareNoteNavHost(
                 },
                 onNavigateToEditNote = { noteId ->
                     navController.navigate(Screen.EditNote.createRoute(noteId))
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
                 }
             )
         }
@@ -128,6 +172,28 @@ fun CareNoteNavHost(
                 },
                 onNavigateToEmergencyContacts = {
                     navController.navigate(Screen.EmergencyContacts.route)
+                }
+            )
+        }
+
+        composable(Screen.Search.route) {
+            SearchScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onResultClick = { result ->
+                    when (result) {
+                        is SearchResult.MedicationResult ->
+                            navController.navigate(Screen.MedicationDetail.createRoute(result.id))
+                        is SearchResult.NoteResult ->
+                            navController.navigate(Screen.EditNote.createRoute(result.id))
+                        is SearchResult.TaskResult ->
+                            navController.navigate(Screen.EditTask.createRoute(result.id))
+                        is SearchResult.HealthRecordResult ->
+                            navController.navigate(Screen.EditHealthRecord.createRoute(result.id))
+                        is SearchResult.CalendarEventResult ->
+                            navController.navigate(Screen.EditCalendarEvent.createRoute(result.id))
+                        is SearchResult.EmergencyContactResult ->
+                            navController.navigate(Screen.EditEmergencyContact.createRoute(result.id))
+                    }
                 }
             )
         }
@@ -317,7 +383,7 @@ fun CareNoteNavHost(
                     navController.navigate(Screen.ForgotPassword.route)
                 },
                 onLoginSuccess = {
-                    navController.navigate(Screen.Medication.route) {
+                    navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
@@ -333,7 +399,7 @@ fun CareNoteNavHost(
                     }
                 },
                 onRegisterSuccess = {
-                    navController.navigate(Screen.Medication.route) {
+                    navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }

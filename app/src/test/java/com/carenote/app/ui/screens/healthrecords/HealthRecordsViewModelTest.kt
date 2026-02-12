@@ -6,8 +6,10 @@ import com.carenote.app.domain.repository.HealthRecordCsvExporterInterface
 import com.carenote.app.domain.repository.HealthRecordPdfExporterInterface
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.ui.util.SnackbarEvent
+import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -33,6 +35,7 @@ class HealthRecordsViewModelTest {
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var csvExporter: HealthRecordCsvExporterInterface
     private lateinit var pdfExporter: HealthRecordPdfExporterInterface
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: HealthRecordsViewModel
     private val fakeUri = mockk<android.net.Uri>()
 
@@ -42,6 +45,7 @@ class HealthRecordsViewModelTest {
         repository = FakeHealthRecordRepository()
         csvExporter = mockk()
         pdfExporter = mockk()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -50,7 +54,7 @@ class HealthRecordsViewModelTest {
     }
 
     private fun createViewModel(): HealthRecordsViewModel {
-        return HealthRecordsViewModel(repository, csvExporter, pdfExporter)
+        return HealthRecordsViewModel(repository, csvExporter, pdfExporter, analyticsRepository)
     }
 
     private fun createRecord(

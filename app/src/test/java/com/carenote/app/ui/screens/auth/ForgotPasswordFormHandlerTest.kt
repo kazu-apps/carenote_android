@@ -3,6 +3,7 @@ package com.carenote.app.ui.screens.auth
 import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
@@ -34,13 +35,15 @@ class ForgotPasswordFormHandlerTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private lateinit var authRepository: FakeAuthRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var handler: ForgotPasswordFormHandler
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
-        handler = ForgotPasswordFormHandler(authRepository, scope = testScope)
+        analyticsRepository = FakeAnalyticsRepository()
+        handler = ForgotPasswordFormHandler(authRepository, analyticsRepository, scope = testScope)
     }
 
     @After

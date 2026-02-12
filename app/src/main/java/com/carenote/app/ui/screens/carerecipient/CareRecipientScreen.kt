@@ -107,6 +107,15 @@ fun CareRecipientScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            OutlinedTextField(
+                value = uiState.nickname,
+                onValueChange = { viewModel.updateNickname(it) },
+                label = { Text(stringResource(R.string.care_recipient_nickname)) },
+                placeholder = { Text(stringResource(R.string.care_recipient_nickname_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             val birthDateText = uiState.birthDate?.let {
                 DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(it)
             } ?: stringResource(R.string.care_recipient_birth_date_not_set)
@@ -146,6 +155,35 @@ fun CareRecipientScreen(
                     )
                 }
             }
+
+            OutlinedTextField(
+                value = uiState.careLevel,
+                onValueChange = { viewModel.updateCareLevel(it) },
+                label = { Text(stringResource(R.string.care_recipient_care_level)) },
+                placeholder = { Text(stringResource(R.string.care_recipient_care_level_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = uiState.medicalHistory,
+                onValueChange = { viewModel.updateMedicalHistory(it) },
+                label = { Text(stringResource(R.string.care_recipient_medical_history)) },
+                placeholder = { Text(stringResource(R.string.care_recipient_medical_history_hint)) },
+                minLines = 3,
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = uiState.allergies,
+                onValueChange = { viewModel.updateAllergies(it) },
+                label = { Text(stringResource(R.string.care_recipient_allergies)) },
+                placeholder = { Text(stringResource(R.string.care_recipient_allergies_hint)) },
+                minLines = 3,
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             OutlinedTextField(
                 value = uiState.memo,

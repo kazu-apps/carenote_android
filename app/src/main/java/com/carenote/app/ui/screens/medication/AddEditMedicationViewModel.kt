@@ -10,6 +10,7 @@ import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.FormValidator.combineValidations
@@ -51,6 +52,7 @@ class AddEditMedicationViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val medicationRepository: MedicationRepository,
     private val reminderScheduler: MedicationReminderSchedulerInterface,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -217,6 +219,7 @@ class AddEditMedicationViewModel @Inject constructor(
                 medicationRepository.updateMedication(updatedMedication)
                     .onSuccess {
                         Timber.d("Medication updated: id=$medicationId")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_UPDATED)
                         reminderScheduler.cancelReminders(medicationId)
                         if (current.reminderEnabled && current.times.isNotEmpty()) {
                             reminderScheduler.scheduleAllReminders(
@@ -245,6 +248,7 @@ class AddEditMedicationViewModel @Inject constructor(
                 medicationRepository.insertMedication(medication)
                     .onSuccess { id ->
                         Timber.d("Medication saved: id=$id")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_CREATED)
                         if (current.reminderEnabled && current.times.isNotEmpty()) {
                             reminderScheduler.scheduleAllReminders(
                                 medicationId = id,

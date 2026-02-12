@@ -7,8 +7,15 @@ import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.User
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeCareRecipientRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
+import com.carenote.app.fakes.FakeNoteCsvExporter
+import com.carenote.app.fakes.FakeNotePdfExporter
+import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
+import com.carenote.app.fakes.FakeTaskCsvExporter
+import com.carenote.app.fakes.FakeTaskPdfExporter
+import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,6 +46,13 @@ class SettingsViewModelUpdateTest {
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var careRecipientRepository: FakeCareRecipientRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
+    private lateinit var taskRepository: FakeTaskRepository
+    private lateinit var noteRepository: FakeNoteRepository
+    private lateinit var taskCsvExporter: FakeTaskCsvExporter
+    private lateinit var taskPdfExporter: FakeTaskPdfExporter
+    private lateinit var noteCsvExporter: FakeNoteCsvExporter
+    private lateinit var notePdfExporter: FakeNotePdfExporter
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -48,6 +62,13 @@ class SettingsViewModelUpdateTest {
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
         careRecipientRepository = FakeCareRecipientRepository()
+        analyticsRepository = FakeAnalyticsRepository()
+        taskRepository = FakeTaskRepository()
+        noteRepository = FakeNoteRepository()
+        taskCsvExporter = FakeTaskCsvExporter()
+        taskPdfExporter = FakeTaskPdfExporter()
+        noteCsvExporter = FakeNoteCsvExporter()
+        notePdfExporter = FakeNotePdfExporter()
     }
 
     @After
@@ -56,7 +77,13 @@ class SettingsViewModelUpdateTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler, careRecipientRepository)
+        return SettingsViewModel(
+            settingsRepository, authRepository, syncWorkScheduler,
+            analyticsRepository, careRecipientRepository,
+            taskRepository, noteRepository,
+            taskCsvExporter, taskPdfExporter,
+            noteCsvExporter, notePdfExporter
+        )
     }
 
     // --- 汎用パターン: 成功時 Snackbar ---

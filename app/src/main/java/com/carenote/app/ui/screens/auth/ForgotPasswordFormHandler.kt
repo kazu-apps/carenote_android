@@ -1,7 +1,9 @@
 package com.carenote.app.ui.screens.auth
 
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.ui.util.SnackbarController
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +17,7 @@ import timber.log.Timber
 
 class ForgotPasswordFormHandler(
     private val authRepository: AuthRepository,
+    private val analyticsRepository: AnalyticsRepository,
     val snackbarController: SnackbarController = SnackbarController(),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 ) {
@@ -44,6 +47,7 @@ class ForgotPasswordFormHandler(
             authRepository.sendPasswordResetEmail(current.email.trim())
                 .onSuccess {
                     Timber.d("Password reset email sent")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_PASSWORD_RESET_SENT)
                     _formState.value = _formState.value.copy(
                         isLoading = false,
                         emailSent = true

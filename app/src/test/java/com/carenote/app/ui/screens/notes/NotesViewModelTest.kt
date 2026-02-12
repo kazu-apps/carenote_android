@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -25,12 +26,14 @@ class NotesViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var noteRepository: FakeNoteRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: NotesViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         noteRepository = FakeNoteRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -39,7 +42,7 @@ class NotesViewModelTest {
     }
 
     private fun createViewModel(): NotesViewModel {
-        return NotesViewModel(noteRepository)
+        return NotesViewModel(noteRepository, analyticsRepository)
     }
 
     private fun createNote(

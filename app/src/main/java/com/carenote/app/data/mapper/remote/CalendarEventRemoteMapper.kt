@@ -2,6 +2,7 @@ package com.carenote.app.data.mapper.remote
 
 import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,6 +38,10 @@ class CalendarEventRemoteMapper @Inject constructor(
                 timestampConverter.toLocalTime(it)
             },
             isAllDay = data["isAllDay"] as? Boolean ?: true,
+            type = (data["type"] as? String)?.let {
+                try { CalendarEventType.valueOf(it) } catch (_: IllegalArgumentException) { CalendarEventType.OTHER }
+            } ?: CalendarEventType.OTHER,
+            completed = data["completed"] as? Boolean ?: false,
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
             updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt)
         )
@@ -51,6 +56,8 @@ class CalendarEventRemoteMapper @Inject constructor(
             "startTime" to domain.startTime?.let { timestampConverter.toTimeString(it) },
             "endTime" to domain.endTime?.let { timestampConverter.toTimeString(it) },
             "isAllDay" to domain.isAllDay,
+            "type" to domain.type.name,
+            "completed" to domain.completed,
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
             "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt)
         )

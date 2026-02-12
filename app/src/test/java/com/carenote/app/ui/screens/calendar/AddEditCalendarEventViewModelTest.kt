@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.ui.common.UiText
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +33,7 @@ class AddEditCalendarEventViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FakeCalendarEventRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditCalendarEventViewModel
 
@@ -38,6 +41,7 @@ class AddEditCalendarEventViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeCalendarEventRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -46,13 +50,14 @@ class AddEditCalendarEventViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditCalendarEventViewModel {
-        return AddEditCalendarEventViewModel(SavedStateHandle(), repository, clock = fakeClock)
+        return AddEditCalendarEventViewModel(SavedStateHandle(), repository, analyticsRepository, clock = fakeClock)
     }
 
     private fun createEditViewModel(eventId: Long): AddEditCalendarEventViewModel {
         return AddEditCalendarEventViewModel(
             SavedStateHandle(mapOf("eventId" to eventId)),
             repository,
+            analyticsRepository,
             clock = fakeClock
         )
     }
@@ -433,5 +438,95 @@ class AddEditCalendarEventViewModelTest {
 
         viewModel.updateTitle("既存予定")
         assertFalse(viewModel.isDirty)
+    }
+
+    // --- Type Tests ---
+
+    @Test
+    fun `default type is OTHER`() {
+        viewModel = createAddViewModel()
+
+        assertEquals(CalendarEventType.OTHER, viewModel.formState.value.type)
+    }
+
+    @Test
+    fun `updateType updates form state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateType(CalendarEventType.HOSPITAL)
+
+        assertEquals(CalendarEventType.HOSPITAL, viewModel.formState.value.type)
+    }
+
+    @Test
+    fun `saveEvent includes type in new event`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("通院予定")
+        viewModel.updateType(CalendarEventType.HOSPITAL)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(1, events.size)
+            assertEquals(CalendarEventType.HOSPITAL, events[0].type)
+        }
+    }
+
+    @Test
+    fun `saveEvent includes type in updated event`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "旧タイトル",
+                    date = LocalDate.of(2025, 3, 15),
+                    type = CalendarEventType.OTHER,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateType(CalendarEventType.VISIT)
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(CalendarEventType.VISIT, events[0].type)
+        }
+    }
+
+    @Test
+    fun `edit mode loads type from existing event`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "通院",
+                    date = LocalDate.of(2025, 3, 15),
+                    type = CalendarEventType.HOSPITAL,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertEquals(CalendarEventType.HOSPITAL, viewModel.formState.value.type)
+    }
+
+    @Test
+    fun `isDirty detects type change`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateType(CalendarEventType.DAYSERVICE)
+
+        assertTrue(viewModel.isDirty)
     }
 }

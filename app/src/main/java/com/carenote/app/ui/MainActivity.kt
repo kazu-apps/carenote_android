@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
+import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -34,6 +35,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.TaskRepository
@@ -58,6 +60,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var taskRepository: TaskRepository
+
+    @Inject
+    lateinit var analyticsRepository: AnalyticsRepository
 
     private val biometricHelper = BiometricHelper()
     private val isAuthenticated = mutableStateOf(false)
@@ -91,7 +96,7 @@ class MainActivity : AppCompatActivity() {
 
             val isLoggedIn = currentUser != null
             val startDestination = remember {
-                if (authRepository.getCurrentUser() != null) Screen.Medication.route
+                if (authRepository.getCurrentUser() != null) Screen.Home.route
                 else Screen.Login.route
             }
 
@@ -125,7 +130,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (showRootWarning) {
                     AlertDialog(
-                        onDismissRequest = { showRootWarning = false },
+                        onDismissRequest = {},
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Warning,
@@ -141,7 +146,12 @@ class MainActivity : AppCompatActivity() {
                         },
                         confirmButton = {
                             TextButton(onClick = { showRootWarning = false }) {
-                                Text(text = stringResource(R.string.common_ok))
+                                Text(text = stringResource(R.string.common_continue))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { finish() }) {
+                                Text(text = stringResource(R.string.common_exit))
                             }
                         }
                     )
@@ -161,6 +171,18 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    // 画面遷移の自動トラッキング
+                    DisposableEffect(navController) {
+                        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                            val screenName = destination.route ?: return@OnDestinationChangedListener
+                            analyticsRepository.logScreenView(screenName)
+                        }
+                        navController.addOnDestinationChangedListener(listener)
+                        onDispose {
+                            navController.removeOnDestinationChangedListener(listener)
+                        }
+                    }
+
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -172,7 +194,7 @@ class MainActivity : AppCompatActivity() {
                         val currentDestination = navController.currentDestination?.route ?: return@LaunchedEffect
                         if (isLoggedIn && currentDestination in Screen.authScreens.map { it.route }) {
                             // ログイン成功: メイン画面へ遷移
-                            navController.navigate(Screen.Medication.route) {
+                            navController.navigate(Screen.Home.route) {
                                 popUpTo(0) { inclusive = true }
                             }
                         } else if (!isLoggedIn && currentDestination !in Screen.authScreens.map { it.route }) {

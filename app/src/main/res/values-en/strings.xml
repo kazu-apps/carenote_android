@@ -40,8 +40,27 @@
     <string name="settings_pulse_low_format">%1$d bpm or below</string>
     <string name="settings_medication_times">Default Medication Times</string>
     <string name="settings_time_format">%1$02d:%2$02d</string>
+    <!-- Data Export Settings -->
+    <string name="settings_data_export">Data Export</string>
+    <string name="settings_data_export_tasks">Export Tasks</string>
+    <string name="settings_data_export_tasks_summary">Export task data as CSV/PDF</string>
+    <string name="settings_data_export_notes">Export Notes</string>
+    <string name="settings_data_export_notes_summary">Export notes data as CSV/PDF</string>
+    <string name="data_export_dialog_title">Export Settings</string>
+    <string name="data_export_format_csv">CSV</string>
+    <string name="data_export_format_pdf">PDF</string>
+    <string name="data_export_period_all">All time</string>
+    <string name="data_export_period_30_days">Last 30 days</string>
+    <string name="data_export_period_90_days">Last 90 days</string>
+    <string name="data_export_period_1_year">Last 1 year</string>
+    <string name="data_export_button">Export</string>
+    <string name="data_export_format_label">Format</string>
+    <string name="data_export_period_label">Period</string>
+
     <string name="settings_app_info">App Info</string>
     <string name="settings_version">Version</string>
+    <string name="settings_contact_title">Contact Us</string>
+    <string name="settings_contact_summary">Questions and feedback</string>
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_privacy_policy_summary">How we handle your information</string>
     <string name="settings_terms_of_service">Terms of Service</string>
@@ -135,6 +154,8 @@
     <string name="settings_input_value">Enter value</string>
     <string name="settings_select_time">Select time</string>
     <string name="common_ok">OK</string>
+    <string name="common_continue">Continue</string>
+    <string name="common_exit">Exit</string>
 
     <!-- Medication -->
     <string name="medication_title">Medication</string>
@@ -213,6 +234,14 @@
     <string name="calendar_weekday_fri">Fri</string>
     <string name="calendar_weekday_sat">Sat</string>
     <string name="calendar_all_day_label">All Day</string>
+    <string name="calendar_event_type">Type</string>
+    <string name="calendar_event_type_hospital">Hospital</string>
+    <string name="calendar_event_type_visit">Home Visit</string>
+    <string name="calendar_event_type_dayservice">Day Service</string>
+    <string name="calendar_event_type_other">Other</string>
+    <string name="calendar_event_completed">Completed</string>
+    <string name="calendar_event_mark_complete">Mark Complete</string>
+    <string name="calendar_event_mark_incomplete">Mark Incomplete</string>
 
     <!-- Tasks -->
     <string name="tasks_title">Tasks</string>
@@ -334,6 +363,40 @@
     <string name="export_header_meal">Meal</string>
     <string name="export_header_excretion">Excretion</string>
     <string name="export_header_condition_note">Condition Note</string>
+
+    <!-- Medication Log Export -->
+    <string name="medication_log_export_header_recorded_at">Recorded At</string>
+    <string name="medication_log_export_header_scheduled_at">Scheduled At</string>
+    <string name="medication_log_export_header_medication_name">Medication Name</string>
+    <string name="medication_log_export_header_status">Status</string>
+    <string name="medication_log_export_header_timing">Timing</string>
+    <string name="medication_log_export_header_memo">Memo</string>
+    <string name="medication_log_export_title">Medication Logs</string>
+    <string name="medication_log_export_empty">No medication logs to export</string>
+    <string name="medication_log_export_failed">Failed to export medication logs</string>
+
+    <!-- Task Export -->
+    <string name="task_export_title">Tasks</string>
+    <string name="task_export_empty">No tasks to export</string>
+    <string name="task_export_header_title">Title</string>
+    <string name="task_export_header_description">Description</string>
+    <string name="task_export_header_due_date">Due Date</string>
+    <string name="task_export_header_priority">Priority</string>
+    <string name="task_export_header_status">Status</string>
+    <string name="task_export_header_recurrence">Recurrence</string>
+    <string name="task_export_header_created_at">Created At</string>
+
+    <!-- Note Export -->
+    <string name="note_export_title">Notes</string>
+    <string name="note_export_empty">No notes to export</string>
+    <string name="note_export_header_title">Title</string>
+    <string name="note_export_header_content">Content</string>
+    <string name="note_export_header_tag">Tag</string>
+    <string name="note_export_header_created_at">Created At</string>
+    <string name="note_export_header_updated_at">Updated At</string>
+
+    <!-- Common Export -->
+    <string name="export_failed">Export failed</string>
 
     <!-- Export Enum Localization -->
     <string name="meal_full">Full</string>
@@ -546,4 +609,43 @@
     <string name="emergency_contact_rel_hospital">Hospital</string>
     <string name="emergency_contact_rel_emergency">Emergency</string>
     <string name="emergency_contact_rel_other">Other</string>
+
+    <!-- Search -->
+    <string name="search_title">Search</string>
+    <string name="search_placeholder">Search medications, notes, tasks, events…</string>
+    <string name="search_empty">No results found</string>
+    <string name="search_empty_hint">Enter a keyword to search</string>
+    <string name="search_result_medication">Medication</string>
+    <string name="search_result_note">Note</string>
+    <string name="search_result_task">Task</string>
+    <string name="search_result_health_record">Health Record</string>
+    <string name="search_result_calendar_event">Calendar Event</string>
+    <string name="search_result_emergency_contact">Emergency Contact</string>
+    <string name="search_navigate">Search All</string>
+    <string name="a11y_navigate_to_search">Open cross-module search</string>
+
+    <!-- Home -->
+    <string name="nav_home">Home</string>
+    <string name="home_title">Home</string>
+    <string name="home_section_medication">Today\'s Medications</string>
+    <string name="home_section_tasks">Upcoming Tasks</string>
+    <string name="home_section_health_record">Latest Health Record</string>
+    <string name="home_section_notes">Latest Notes</string>
+    <string name="home_section_calendar">Next Event</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_empty_medication">No medications scheduled for today</string>
+    <string name="home_empty_tasks">No upcoming tasks</string>
+    <string name="home_empty_health_record">No health records</string>
+    <string name="home_empty_notes">No notes</string>
+    <string name="home_empty_calendar">No upcoming events</string>
+
+    <!-- CareRecipient Extension -->
+    <string name="care_recipient_nickname">Nickname</string>
+    <string name="care_recipient_nickname_hint">Common name</string>
+    <string name="care_recipient_care_level">Care Level</string>
+    <string name="care_recipient_care_level_hint">e.g. Care Level 2</string>
+    <string name="care_recipient_medical_history">Medical History</string>
+    <string name="care_recipient_medical_history_hint">Past illnesses, surgeries, etc.</string>
+    <string name="care_recipient_allergies">Allergies</string>
+    <string name="care_recipient_allergies_hint">Drug or food allergies, etc.</string>
 </resources>

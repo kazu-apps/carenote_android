@@ -9,10 +9,20 @@ import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeCareRecipientRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
+import com.carenote.app.fakes.FakeNoteCsvExporter
+import com.carenote.app.fakes.FakeNotePdfExporter
+import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
+import com.carenote.app.fakes.FakeTaskCsvExporter
+import com.carenote.app.fakes.FakeTaskPdfExporter
+import com.carenote.app.fakes.FakeTaskRepository
+import com.carenote.app.domain.model.Note
+import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.SnackbarEvent
+import com.carenote.app.ui.viewmodel.ExportState
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
@@ -40,6 +50,13 @@ class SettingsViewModelTest {
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var careRecipientRepository: FakeCareRecipientRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
+    private lateinit var taskRepository: FakeTaskRepository
+    private lateinit var noteRepository: FakeNoteRepository
+    private lateinit var taskCsvExporter: FakeTaskCsvExporter
+    private lateinit var taskPdfExporter: FakeTaskPdfExporter
+    private lateinit var noteCsvExporter: FakeNoteCsvExporter
+    private lateinit var notePdfExporter: FakeNotePdfExporter
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -49,6 +66,13 @@ class SettingsViewModelTest {
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
         careRecipientRepository = FakeCareRecipientRepository()
+        analyticsRepository = FakeAnalyticsRepository()
+        taskRepository = FakeTaskRepository()
+        noteRepository = FakeNoteRepository()
+        taskCsvExporter = FakeTaskCsvExporter()
+        taskPdfExporter = FakeTaskPdfExporter()
+        noteCsvExporter = FakeNoteCsvExporter()
+        notePdfExporter = FakeNotePdfExporter()
     }
 
     @After
@@ -57,7 +81,13 @@ class SettingsViewModelTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsRepository, authRepository, syncWorkScheduler, careRecipientRepository)
+        return SettingsViewModel(
+            settingsRepository, authRepository, syncWorkScheduler,
+            analyticsRepository, careRecipientRepository,
+            taskRepository, noteRepository,
+            taskCsvExporter, taskPdfExporter,
+            noteCsvExporter, notePdfExporter
+        )
     }
 
     @Test
@@ -754,5 +784,205 @@ class SettingsViewModelTest {
             val currentUser = expectMostRecentItem()
             assertNull(currentUser)
         }
+    }
+
+    // --- Task Export Tests ---
+
+    @Test
+    fun `exportTasksCsv with empty list shows snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.task_export_empty, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertEquals(ExportState.Idle, viewModel.exportState.value)
+    }
+
+    @Test
+    fun `exportTasksCsv success updates exportState`() = runTest(testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, taskCsvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportTasksPdf success updates exportState`() = runTest(testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksPdf()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, taskPdfExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportTasksCsv failure shows error snackbar`() = runTest(testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        taskCsvExporter.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.export_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertTrue(viewModel.exportState.value is ExportState.Error)
+    }
+
+    @Test
+    fun `exportTasksCsv logs analytics event`() = runTest(testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+
+        assertTrue(
+            analyticsRepository.loggedEvents.any { it.first == AppConfig.Analytics.EVENT_TASK_EXPORT_CSV }
+        )
+    }
+
+    @Test
+    fun `exportTasksPdf logs analytics event`() = runTest(testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksPdf()
+        advanceUntilIdle()
+
+        assertTrue(
+            analyticsRepository.loggedEvents.any { it.first == AppConfig.Analytics.EVENT_TASK_EXPORT_PDF }
+        )
+    }
+
+    // --- Note Export Tests ---
+
+    @Test
+    fun `exportNotesCsv with empty list shows snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.note_export_empty, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertEquals(ExportState.Idle, viewModel.exportState.value)
+    }
+
+    @Test
+    fun `exportNotesCsv success updates exportState`() = runTest(testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesCsv()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, noteCsvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportNotesPdf success updates exportState`() = runTest(testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesPdf()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, notePdfExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportNotesCsv failure shows error snackbar`() = runTest(testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        noteCsvExporter.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.export_failed, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertTrue(viewModel.exportState.value is ExportState.Error)
+    }
+
+    @Test
+    fun `exportNotesCsv logs analytics event`() = runTest(testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesCsv()
+        advanceUntilIdle()
+
+        assertTrue(
+            analyticsRepository.loggedEvents.any { it.first == AppConfig.Analytics.EVENT_NOTE_EXPORT_CSV }
+        )
+    }
+
+    @Test
+    fun `exportNotesPdf logs analytics event`() = runTest(testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesPdf()
+        advanceUntilIdle()
+
+        assertTrue(
+            analyticsRepository.loggedEvents.any { it.first == AppConfig.Analytics.EVENT_NOTE_EXPORT_PDF }
+        )
+    }
+
+    // --- Export State Tests ---
+
+    @Test
+    fun `resetExportState sets state to Idle`() = runTest(testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+
+        viewModel.resetExportState()
+        assertEquals(ExportState.Idle, viewModel.exportState.value)
     }
 }

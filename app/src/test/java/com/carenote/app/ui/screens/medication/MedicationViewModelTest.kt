@@ -6,11 +6,15 @@ import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.fakes.FakeMedicationLogCsvExporter
+import com.carenote.app.fakes.FakeMedicationLogPdfExporter
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.ui.util.SnackbarEvent
+import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,6 +43,9 @@ class MedicationViewModelTest {
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
     private lateinit var reminderScheduler: FakeMedicationReminderScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
+    private lateinit var csvExporter: FakeMedicationLogCsvExporter
+    private lateinit var pdfExporter: FakeMedicationLogPdfExporter
     private lateinit var viewModel: MedicationViewModel
 
     @Before
@@ -47,6 +54,9 @@ class MedicationViewModelTest {
         medicationRepository = FakeMedicationRepository()
         medicationLogRepository = FakeMedicationLogRepository()
         reminderScheduler = FakeMedicationReminderScheduler()
+        analyticsRepository = FakeAnalyticsRepository()
+        csvExporter = FakeMedicationLogCsvExporter()
+        pdfExporter = FakeMedicationLogPdfExporter()
     }
 
     @After
@@ -59,7 +69,10 @@ class MedicationViewModelTest {
             medicationRepository,
             medicationLogRepository,
             reminderScheduler,
-            fakeClock
+            analyticsRepository,
+            fakeClock,
+            csvExporter,
+            pdfExporter
         )
     }
 
@@ -792,5 +805,234 @@ class MedicationViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
         assertFalse(viewModel.isRefreshing.value)
+    }
+
+    // === Export Tests ===
+
+    @Test
+    fun `exportState is initially Idle`() {
+        viewModel = createViewModel()
+        assertTrue(viewModel.exportState.value is ExportState.Idle)
+    }
+
+    @Test
+    fun `exportCsv with empty logs shows empty snackbar`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            viewModel.exportCsv()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.medication_log_export_empty,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `exportCsv with empty logs resets export state to Idle`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Idle)
+    }
+
+    @Test
+    fun `exportCsv with logs sets Success state`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        medicationRepository.setMedications(listOf(createMedication(id = 1L, name = "テスト薬")))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        val state = viewModel.exportState.value
+        assertTrue(state is ExportState.Success)
+        assertEquals("text/csv", (state as ExportState.Success).mimeType)
+        assertEquals(1, csvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportPdf with logs sets Success state`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        medicationRepository.setMedications(listOf(createMedication(id = 1L, name = "テスト薬")))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportPdf()
+        advanceUntilIdle()
+
+        val state = viewModel.exportState.value
+        assertTrue(state is ExportState.Success)
+        assertEquals("application/pdf", (state as ExportState.Success).mimeType)
+        assertEquals(1, pdfExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportCsv failure sets Error state`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        csvExporter.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Error)
+    }
+
+    @Test
+    fun `exportPdf failure sets Error state`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        pdfExporter.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportPdf()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Error)
+    }
+
+    @Test
+    fun `exportCsv failure shows error snackbar`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        csvExporter.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            viewModel.exportCsv()
+            advanceUntilIdle()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.medication_log_export_failed,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+        }
+    }
+
+    @Test
+    fun `resetExportState resets to Idle`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+
+        viewModel.resetExportState()
+        assertTrue(viewModel.exportState.value is ExportState.Idle)
+    }
+
+    @Test
+    fun `exportCsv passes correct medication names to exporter`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        medicationRepository.setMedications(listOf(createMedication(id = 1L, name = "ロキソニン")))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        val names = csvExporter.lastMedicationNames
+        assertEquals(1, names?.size)
+        assertEquals("ロキソニン", names?.get(1L))
+    }
+
+    @Test
+    fun `exportCsv logs analytics event`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        assertTrue(analyticsRepository.loggedEvents.any { it.first == "medication_log_export_csv" })
+    }
+
+    @Test
+    fun `exportPdf logs analytics event`() = runTest(testDispatcher) {
+        val log = MedicationLog(
+            id = 1L,
+            medicationId = 1L,
+            status = MedicationLogStatus.TAKEN,
+            scheduledAt = LocalDateTime.of(2026, 1, 15, 8, 0),
+            recordedAt = LocalDateTime.of(2026, 1, 15, 8, 5)
+        )
+        medicationLogRepository.setLogs(listOf(log))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportPdf()
+        advanceUntilIdle()
+
+        assertTrue(analyticsRepository.loggedEvents.any { it.first == "medication_log_export_pdf" })
     }
 }

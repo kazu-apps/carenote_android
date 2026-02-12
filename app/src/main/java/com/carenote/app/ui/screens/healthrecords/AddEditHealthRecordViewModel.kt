@@ -5,12 +5,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.PhotoRepository
@@ -55,6 +57,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
     private val healthRecordRepository: HealthRecordRepository,
     private val photoRepository: PhotoRepository,
     private val imageCompressor: ImageCompressorInterface,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -264,6 +267,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
             healthRecordRepository.updateRecord(updatedRecord)
                 .onSuccess {
                     Timber.d("Health record updated: id=$recordId")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_UPDATED)
                     _savedEvent.send(true)
                 }
                 .onFailure { error ->
@@ -288,6 +292,7 @@ class AddEditHealthRecordViewModel @Inject constructor(
             healthRecordRepository.insertRecord(newRecord)
                 .onSuccess { id ->
                     Timber.d("Health record saved: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_CREATED)
                     photoManager.updateParentId(id)
                     _savedEvent.send(true)
                 }

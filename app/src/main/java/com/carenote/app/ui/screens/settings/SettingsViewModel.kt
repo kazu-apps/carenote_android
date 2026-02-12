@@ -15,19 +15,31 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.model.UserSettings
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.CareRecipientRepository
+import com.carenote.app.domain.repository.NoteRepository
+import com.carenote.app.domain.repository.NoteCsvExporterInterface
+import com.carenote.app.domain.repository.NotePdfExporterInterface
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.domain.repository.TaskRepository
+import com.carenote.app.domain.repository.TaskCsvExporterInterface
+import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.SnackbarController
+import com.carenote.app.ui.viewmodel.ExportState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -36,7 +48,14 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val authRepository: AuthRepository,
     private val syncWorkScheduler: SyncWorkSchedulerInterface,
-    private val careRecipientRepository: CareRecipientRepository
+    private val analyticsRepository: AnalyticsRepository,
+    private val careRecipientRepository: CareRecipientRepository,
+    private val taskRepository: TaskRepository,
+    private val noteRepository: NoteRepository,
+    private val taskCsvExporter: TaskCsvExporterInterface,
+    private val taskPdfExporter: TaskPdfExporterInterface,
+    private val noteCsvExporter: NoteCsvExporterInterface,
+    private val notePdfExporter: NotePdfExporterInterface
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -104,6 +123,9 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
             initialValue = null
         )
+
+    private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
+    val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
 
     private fun updateSetting(
         logTag: String,
@@ -193,10 +215,113 @@ class SettingsViewModel @Inject constructor(
             Timber.w("Cannot trigger sync: not logged in")
             return
         }
+        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MANUAL_SYNC)
         syncWorkScheduler.triggerImmediateSync()
         viewModelScope.launch {
             snackbarController.showMessage(R.string.settings_sync_started)
         }
+    }
+
+    fun exportTasksCsv(periodDays: Long? = null) {
+        viewModelScope.launch {
+            _exportState.value = ExportState.Exporting
+            try {
+                val tasks = taskRepository.getAllTasks().first()
+                val filtered = filterByPeriod(tasks, periodDays) { it.createdAt }
+                if (filtered.isEmpty()) {
+                    snackbarController.showMessage(R.string.task_export_empty)
+                    _exportState.value = ExportState.Idle
+                    return@launch
+                }
+                val uri = taskCsvExporter.export(filtered)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_EXPORT_CSV)
+                _exportState.value = ExportState.Success(uri, "text/csv")
+            } catch (e: Exception) {
+                Timber.w("Task CSV export failed: $e")
+                snackbarController.showMessage(R.string.export_failed)
+                _exportState.value = ExportState.Error(e.message ?: "")
+            }
+        }
+    }
+
+    fun exportTasksPdf(periodDays: Long? = null) {
+        viewModelScope.launch {
+            _exportState.value = ExportState.Exporting
+            try {
+                val tasks = taskRepository.getAllTasks().first()
+                val filtered = filterByPeriod(tasks, periodDays) { it.createdAt }
+                if (filtered.isEmpty()) {
+                    snackbarController.showMessage(R.string.task_export_empty)
+                    _exportState.value = ExportState.Idle
+                    return@launch
+                }
+                val uri = taskPdfExporter.export(filtered)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_EXPORT_PDF)
+                _exportState.value = ExportState.Success(uri, "application/pdf")
+            } catch (e: Exception) {
+                Timber.w("Task PDF export failed: $e")
+                snackbarController.showMessage(R.string.export_failed)
+                _exportState.value = ExportState.Error(e.message ?: "")
+            }
+        }
+    }
+
+    fun exportNotesCsv(periodDays: Long? = null) {
+        viewModelScope.launch {
+            _exportState.value = ExportState.Exporting
+            try {
+                val notes = noteRepository.getAllNotes().first()
+                val filtered = filterByPeriod(notes, periodDays) { it.createdAt }
+                if (filtered.isEmpty()) {
+                    snackbarController.showMessage(R.string.note_export_empty)
+                    _exportState.value = ExportState.Idle
+                    return@launch
+                }
+                val uri = noteCsvExporter.export(filtered)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_EXPORT_CSV)
+                _exportState.value = ExportState.Success(uri, "text/csv")
+            } catch (e: Exception) {
+                Timber.w("Note CSV export failed: $e")
+                snackbarController.showMessage(R.string.export_failed)
+                _exportState.value = ExportState.Error(e.message ?: "")
+            }
+        }
+    }
+
+    fun exportNotesPdf(periodDays: Long? = null) {
+        viewModelScope.launch {
+            _exportState.value = ExportState.Exporting
+            try {
+                val notes = noteRepository.getAllNotes().first()
+                val filtered = filterByPeriod(notes, periodDays) { it.createdAt }
+                if (filtered.isEmpty()) {
+                    snackbarController.showMessage(R.string.note_export_empty)
+                    _exportState.value = ExportState.Idle
+                    return@launch
+                }
+                val uri = notePdfExporter.export(filtered)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_EXPORT_PDF)
+                _exportState.value = ExportState.Success(uri, "application/pdf")
+            } catch (e: Exception) {
+                Timber.w("Note PDF export failed: $e")
+                snackbarController.showMessage(R.string.export_failed)
+                _exportState.value = ExportState.Error(e.message ?: "")
+            }
+        }
+    }
+
+    fun resetExportState() {
+        _exportState.value = ExportState.Idle
+    }
+
+    private fun <T> filterByPeriod(
+        items: List<T>,
+        periodDays: Long?,
+        getCreatedAt: (T) -> LocalDateTime
+    ): List<T> {
+        if (periodDays == null) return items
+        val cutoff = LocalDateTime.now().minusDays(periodDays)
+        return items.filter { getCreatedAt(it) >= cutoff }
     }
 
     fun signOut() {
@@ -204,6 +329,7 @@ class SettingsViewModel @Inject constructor(
             authRepository.signOut()
                 .onSuccess {
                     Timber.d("User signed out")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_SIGN_OUT)
                     snackbarController.showMessage(R.string.settings_signed_out)
                 }
                 .onFailure { error ->
@@ -220,6 +346,7 @@ class SettingsViewModel @Inject constructor(
                     authRepository.updatePassword(newPassword)
                         .onSuccess {
                             Timber.d("Password changed")
+                            analyticsRepository.logEvent(AppConfig.Analytics.EVENT_PASSWORD_CHANGED)
                             snackbarController.showMessage(R.string.settings_password_changed)
                         }
                         .onFailure { error ->
@@ -241,6 +368,7 @@ class SettingsViewModel @Inject constructor(
                     authRepository.deleteAccount()
                         .onSuccess {
                             Timber.d("Account deleted")
+                            analyticsRepository.logEvent(AppConfig.Analytics.EVENT_ACCOUNT_DELETED)
                             snackbarController.showMessage(R.string.settings_account_deleted)
                         }
                         .onFailure { error ->

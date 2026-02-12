@@ -8,6 +8,7 @@ import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
@@ -35,6 +36,7 @@ class MedicationDetailViewModelTest {
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
     private lateinit var reminderScheduler: FakeMedicationReminderScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
 
     @Before
     fun setUp() {
@@ -42,6 +44,7 @@ class MedicationDetailViewModelTest {
         medicationRepository = FakeMedicationRepository()
         medicationLogRepository = FakeMedicationLogRepository()
         reminderScheduler = FakeMedicationReminderScheduler()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -55,7 +58,8 @@ class MedicationDetailViewModelTest {
             savedStateHandle = savedStateHandle,
             medicationRepository = medicationRepository,
             medicationLogRepository = medicationLogRepository,
-            reminderScheduler = reminderScheduler
+            reminderScheduler = reminderScheduler,
+            analyticsRepository = analyticsRepository
         )
     }
 

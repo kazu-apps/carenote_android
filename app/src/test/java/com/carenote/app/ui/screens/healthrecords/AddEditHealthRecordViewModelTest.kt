@@ -9,6 +9,7 @@ import com.carenote.app.fakes.FakeClock
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.fakes.FakePhotoRepository
 import io.mockk.mockk
@@ -38,6 +39,7 @@ class AddEditHealthRecordViewModelTest {
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var photoRepository: FakePhotoRepository
     private val imageCompressor: ImageCompressorInterface = mockk(relaxed = true)
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditHealthRecordViewModel
 
@@ -46,6 +48,7 @@ class AddEditHealthRecordViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = FakeHealthRecordRepository()
         photoRepository = FakePhotoRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -54,7 +57,7 @@ class AddEditHealthRecordViewModelTest {
     }
 
     private fun createAddViewModel(): AddEditHealthRecordViewModel {
-        return AddEditHealthRecordViewModel(SavedStateHandle(), repository, photoRepository, imageCompressor, clock = fakeClock)
+        return AddEditHealthRecordViewModel(SavedStateHandle(), repository, photoRepository, imageCompressor, analyticsRepository, clock = fakeClock)
     }
 
     private fun createEditViewModel(recordId: Long): AddEditHealthRecordViewModel {
@@ -63,6 +66,7 @@ class AddEditHealthRecordViewModelTest {
             repository,
             photoRepository,
             imageCompressor,
+            analyticsRepository,
             clock = fakeClock
         )
     }

@@ -7,6 +7,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.ui.util.SnackbarEvent
@@ -34,6 +35,7 @@ class AddEditMedicationViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var reminderScheduler: FakeMedicationReminderScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditMedicationViewModel
 
@@ -42,6 +44,7 @@ class AddEditMedicationViewModelTest {
         Dispatchers.setMain(testDispatcher)
         medicationRepository = FakeMedicationRepository()
         reminderScheduler = FakeMedicationReminderScheduler()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -54,6 +57,7 @@ class AddEditMedicationViewModelTest {
             SavedStateHandle(),
             medicationRepository,
             reminderScheduler,
+            analyticsRepository,
             clock = fakeClock
         )
     }
@@ -63,6 +67,7 @@ class AddEditMedicationViewModelTest {
             SavedStateHandle(mapOf("medicationId" to medicationId)),
             medicationRepository,
             reminderScheduler,
+            analyticsRepository,
             clock = fakeClock
         )
     }

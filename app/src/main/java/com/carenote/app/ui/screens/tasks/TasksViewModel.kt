@@ -9,6 +9,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
@@ -32,6 +33,7 @@ import javax.inject.Inject
 class TasksViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
     private val taskReminderScheduler: TaskReminderSchedulerInterface,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -77,6 +79,11 @@ class TasksViewModel @Inject constructor(
                 .onSuccess {
                     Timber.d("Task completion toggled: id=${task.id}, completed=$completing")
                     if (completing) {
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_COMPLETED)
+                    } else {
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_UNCOMPLETED)
+                    }
+                    if (completing) {
                         taskReminderScheduler.cancelReminder(task.id)
                         taskReminderScheduler.cancelFollowUp(task.id)
                         generateNextRecurringTask(task)
@@ -104,6 +111,7 @@ class TasksViewModel @Inject constructor(
             taskRepository.deleteTask(id)
                 .onSuccess {
                     Timber.d("Task deleted: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_DELETED)
                     snackbarController.showMessage(R.string.tasks_deleted)
                 }
                 .onFailure { error ->

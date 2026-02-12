@@ -7,6 +7,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.ui.common.UiText
@@ -42,6 +43,7 @@ data class EmergencyContactFormState(
 class AddEditEmergencyContactViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: EmergencyContactRepository,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -160,6 +162,7 @@ class AddEditEmergencyContactViewModel @Inject constructor(
                 repository.updateContact(updatedContact)
                     .onSuccess {
                         Timber.d("Emergency contact updated: id=$contactId")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_UPDATED)
                         _savedEvent.send(true)
                     }
                     .onFailure { error ->
@@ -179,6 +182,7 @@ class AddEditEmergencyContactViewModel @Inject constructor(
                 repository.insertContact(newContact)
                     .onSuccess { id ->
                         Timber.d("Emergency contact saved: id=$id")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_CREATED)
                         _savedEvent.send(true)
                     }
                     .onFailure { error ->

@@ -18,6 +18,18 @@ data class CareRecipientEntity(
     @ColumnInfo(name = "gender")
     val gender: String,
 
+    @ColumnInfo(name = "nickname", defaultValue = "")
+    val nickname: String = "",
+
+    @ColumnInfo(name = "care_level", defaultValue = "")
+    val careLevel: String = "",
+
+    @ColumnInfo(name = "medical_history", defaultValue = "")
+    val medicalHistory: String = "",
+
+    @ColumnInfo(name = "allergies", defaultValue = "")
+    val allergies: String = "",
+
     @ColumnInfo(name = "memo")
     val memo: String,
 

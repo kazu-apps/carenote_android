@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.CalendarEventRepository
@@ -35,6 +37,7 @@ data class AddEditCalendarEventFormState(
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
     val isAllDay: Boolean = true,
+    val type: CalendarEventType = CalendarEventType.OTHER,
     val titleError: UiText? = null,
     val descriptionError: UiText? = null,
     val isSaving: Boolean = false,
@@ -45,6 +48,7 @@ data class AddEditCalendarEventFormState(
 class AddEditCalendarEventViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val calendarEventRepository: CalendarEventRepository,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -100,7 +104,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     date = event.date,
                     startTime = event.startTime,
                     endTime = event.endTime,
-                    isAllDay = event.isAllDay
+                    isAllDay = event.isAllDay,
+                    type = event.type
                 )
                 _initialFormState = _formState.value
             }
@@ -139,6 +144,10 @@ class AddEditCalendarEventViewModel @Inject constructor(
         )
     }
 
+    fun updateType(type: CalendarEventType) {
+        _formState.value = _formState.value.copy(type = type)
+    }
+
     fun saveEvent() {
         val current = _formState.value
 
@@ -171,11 +180,13 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     startTime = current.startTime,
                     endTime = current.endTime,
                     isAllDay = current.isAllDay,
+                    type = current.type,
                     updatedAt = now
                 )
                 calendarEventRepository.updateEvent(updatedEvent)
                     .onSuccess {
                         Timber.d("Calendar event updated: id=$eventId")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CALENDAR_EVENT_UPDATED)
                         _savedEvent.send(true)
                     }
                     .onFailure { error ->
@@ -191,12 +202,14 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     startTime = current.startTime,
                     endTime = current.endTime,
                     isAllDay = current.isAllDay,
+                    type = current.type,
                     createdAt = now,
                     updatedAt = now
                 )
                 calendarEventRepository.insertEvent(newEvent)
                     .onSuccess { id ->
                         Timber.d("Calendar event saved: id=$id")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CALENDAR_EVENT_CREATED)
                         _savedEvent.send(true)
                     }
                     .onFailure { error ->

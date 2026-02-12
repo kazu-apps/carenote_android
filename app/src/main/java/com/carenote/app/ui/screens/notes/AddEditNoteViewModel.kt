@@ -12,6 +12,7 @@ import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.PhotoRepository
 import com.carenote.app.ui.common.UiText
@@ -47,6 +48,7 @@ class AddEditNoteViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val photoRepository: PhotoRepository,
     private val imageCompressor: ImageCompressorInterface,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -177,6 +179,7 @@ class AddEditNoteViewModel @Inject constructor(
                 noteRepository.updateNote(updatedNote)
                     .onSuccess {
                         Timber.d("Note updated: id=$noteId")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_UPDATED)
                         _savedEvent.send(true)
                     }
                     .onFailure { error ->
@@ -195,6 +198,7 @@ class AddEditNoteViewModel @Inject constructor(
                 noteRepository.insertNote(newNote)
                     .onSuccess { id ->
                         Timber.d("Note saved: id=$id")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_CREATED)
                         photoManager.updateParentId(id)
                         _savedEvent.send(true)
                     }

@@ -1,6 +1,7 @@
 package com.carenote.app.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.domain.repository.AuthRepository
 import androidx.lifecycle.viewModelScope
@@ -41,7 +42,8 @@ data class ForgotPasswordFormState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     authRepository: AuthRepository,
-    syncWorkScheduler: SyncWorkSchedulerInterface
+    syncWorkScheduler: SyncWorkSchedulerInterface,
+    analyticsRepository: AnalyticsRepository
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -50,15 +52,15 @@ class AuthViewModel @Inject constructor(
     val authSuccessEvent: Flow<Boolean> = _authSuccessEvent.receiveAsFlow()
 
     private val loginHandler = LoginFormHandler(
-        authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent,
-        scope = viewModelScope
+        authRepository, syncWorkScheduler, analyticsRepository, snackbarController,
+        _authSuccessEvent, scope = viewModelScope
     )
     private val registerHandler = RegisterFormHandler(
-        authRepository, syncWorkScheduler, snackbarController, _authSuccessEvent,
-        scope = viewModelScope
+        authRepository, syncWorkScheduler, analyticsRepository, snackbarController,
+        _authSuccessEvent, scope = viewModelScope
     )
     private val forgotPasswordHandler = ForgotPasswordFormHandler(
-        authRepository, snackbarController,
+        authRepository, analyticsRepository, snackbarController,
         scope = viewModelScope
     )
 

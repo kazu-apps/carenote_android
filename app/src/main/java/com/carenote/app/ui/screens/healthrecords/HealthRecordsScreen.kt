@@ -61,6 +61,7 @@ import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.testing.TestTags
 import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
+import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
 
 private enum class ViewMode { LIST, GRAPH }
@@ -70,6 +71,7 @@ private enum class ViewMode { LIST, GRAPH }
 fun HealthRecordsScreen(
     onNavigateToAddRecord: () -> Unit = {},
     onNavigateToEditRecord: (Long) -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     viewModel: HealthRecordsViewModel = hiltViewModel()
 ) {
     val lazyPagingItems = viewModel.pagedRecords.collectAsLazyPagingItems()
@@ -127,6 +129,12 @@ fun HealthRecordsScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                        )
+                    }
                     IconButton(
                         onClick = { showExportMenu = true },
                         modifier = Modifier.testTag(TestTags.EXPORT_BUTTON)

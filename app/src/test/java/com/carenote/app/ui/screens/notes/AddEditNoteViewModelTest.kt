@@ -7,6 +7,7 @@ import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.model.Note
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.fakes.FakePhotoRepository
 import com.carenote.app.ui.common.UiText
@@ -35,6 +36,7 @@ class AddEditNoteViewModelTest {
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var photoRepository: FakePhotoRepository
     private val imageCompressor: ImageCompressorInterface = mockk()
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditNoteViewModel
 
@@ -43,6 +45,7 @@ class AddEditNoteViewModelTest {
         Dispatchers.setMain(testDispatcher)
         noteRepository = FakeNoteRepository()
         photoRepository = FakePhotoRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -56,6 +59,7 @@ class AddEditNoteViewModelTest {
             noteRepository,
             photoRepository,
             imageCompressor,
+            analyticsRepository,
             clock = fakeClock
         )
     }
@@ -66,6 +70,7 @@ class AddEditNoteViewModelTest {
             noteRepository,
             photoRepository,
             imageCompressor,
+            analyticsRepository,
             clock = fakeClock
         )
     }

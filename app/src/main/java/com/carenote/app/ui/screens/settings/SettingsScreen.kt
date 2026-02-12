@@ -1,5 +1,7 @@
 package com.carenote.app.ui.screens.settings
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carenote.app.BuildConfig
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.screens.settings.dialogs.SettingsDialogs
 import com.carenote.app.ui.screens.settings.sections.AppInfoSection
 import com.carenote.app.ui.screens.settings.sections.HealthThresholdSection
@@ -34,11 +37,13 @@ import com.carenote.app.ui.screens.settings.sections.AccountSection
 import com.carenote.app.ui.screens.settings.sections.CareRecipientSection
 import com.carenote.app.ui.screens.settings.sections.EmergencyContactSection
 import com.carenote.app.ui.screens.settings.sections.SecuritySection
+import com.carenote.app.ui.screens.settings.sections.DataExportSection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
 import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetector
 import com.carenote.app.ui.screens.settings.sections.ThemeSection
 import com.carenote.app.ui.util.SnackbarEvent
+import com.carenote.app.ui.viewmodel.ExportState
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -56,6 +61,7 @@ fun SettingsScreen(
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val careRecipientName by viewModel.careRecipientName.collectAsStateWithLifecycle()
+    val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var dialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
@@ -68,6 +74,19 @@ fun SettingsScreen(
                 is SnackbarEvent.WithString -> event.message
             }
             snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    LaunchedEffect(exportState) {
+        val state = exportState
+        if (state is ExportState.Success) {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = state.mimeType
+                putExtra(Intent.EXTRA_STREAM, state.uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, null))
+            viewModel.resetExportState()
         }
     }
 
@@ -88,18 +107,18 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
-            item {
+            item(key = "care_recipient") {
                 CareRecipientSection(
                     careRecipientName = careRecipientName,
                     onProfileClick = onNavigateToCareRecipient
                 )
             }
-            item {
+            item(key = "emergency_contact") {
                 EmergencyContactSection(
                     onEmergencyContactClick = onNavigateToEmergencyContacts
                 )
             }
-            item {
+            item(key = "theme") {
                 val isDynamicColorAvailable = remember {
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 }
@@ -111,13 +130,13 @@ fun SettingsScreen(
                     isDynamicColorAvailable = isDynamicColorAvailable
                 )
             }
-            item {
+            item(key = "language") {
                 LanguageSection(
                     appLanguage = settings.appLanguage,
                     onLanguageSelected = { viewModel.updateAppLanguage(it) }
                 )
             }
-            item {
+            item(key = "sync") {
                 val dateTimeFormatter = remember {
                     DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                 }
@@ -133,7 +152,7 @@ fun SettingsScreen(
                     onSyncNowClick = { viewModel.triggerManualSync() }
                 )
             }
-            item {
+            item(key = "security") {
                 val isBiometricAvailable = remember {
                     BiometricHelper().canAuthenticate(context)
                 }
@@ -147,7 +166,7 @@ fun SettingsScreen(
                     isDeviceRooted = isDeviceRooted
                 )
             }
-            item {
+            item(key = "account") {
                 AccountSection(
                     isLoggedIn = isLoggedIn,
                     currentUser = currentUser,
@@ -165,7 +184,7 @@ fun SettingsScreen(
                     }
                 )
             }
-            item {
+            item(key = "notification") {
                 NotificationSection(
                     notificationsEnabled = settings.notificationsEnabled,
                     onNotificationsEnabledChange = { viewModel.toggleNotifications(it) },
@@ -177,7 +196,7 @@ fun SettingsScreen(
                     onQuietHoursClick = { dialogState = SettingsDialogState.QuietHoursStart }
                 )
             }
-            item {
+            item(key = "health_threshold") {
                 HealthThresholdSection(
                     temperatureText = stringResource(
                         R.string.settings_temperature_format,
@@ -206,7 +225,7 @@ fun SettingsScreen(
                     onPulseLowClick = { dialogState = SettingsDialogState.PulseLow }
                 )
             }
-            item {
+            item(key = "medication_time") {
                 MedicationTimeSection(
                     morningTimeText = stringResource(
                         R.string.settings_time_format,
@@ -228,11 +247,23 @@ fun SettingsScreen(
                     onEveningClick = { dialogState = SettingsDialogState.EveningTime }
                 )
             }
-            item {
+            item(key = "data_export") {
+                DataExportSection(
+                    onExportTasksClick = { dialogState = SettingsDialogState.DataExportTasks },
+                    onExportNotesClick = { dialogState = SettingsDialogState.DataExportNotes }
+                )
+            }
+            item(key = "app_info") {
                 AppInfoSection(
                     versionName = BuildConfig.VERSION_NAME,
                     onPrivacyPolicyClick = onNavigateToPrivacyPolicy,
                     onTermsOfServiceClick = onNavigateToTermsOfService,
+                    onContactClick = {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:${AppConfig.Support.CONTACT_EMAIL}")
+                        }
+                        context.startActivity(intent)
+                    },
                     onResetClick = { dialogState = SettingsDialogState.ResetConfirm }
                 )
             }

@@ -2,8 +2,11 @@ package com.carenote.app.ui.screens.calendar
 
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
@@ -31,12 +34,14 @@ class CalendarViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeCalendarEventRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: CalendarViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeCalendarEventRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -45,7 +50,7 @@ class CalendarViewModelTest {
     }
 
     private fun createViewModel(): CalendarViewModel {
-        return CalendarViewModel(repository, fakeClock)
+        return CalendarViewModel(repository, analyticsRepository, fakeClock)
     }
 
     private fun createEvent(
@@ -349,5 +354,78 @@ class CalendarViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
         assertFalse(viewModel.isRefreshing.value)
+    }
+
+    @Test
+    fun `toggleCompleted updates event completion status`() = runTest(testDispatcher) {
+        val today = LocalDate.of(2026, 1, 15)
+        val event = createEvent(id = 1L, title = "予定A", date = today)
+        repository.setEvents(listOf(event))
+        viewModel = createViewModel()
+
+        viewModel.eventsForSelectedDate.test {
+            advanceUntilIdle()
+
+            viewModel.toggleCompleted(event)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertTrue(state is UiState.Success)
+            val data = (state as UiState.Success).data
+            assertEquals(1, data.size)
+            assertTrue(data[0].completed)
+        }
+    }
+
+    @Test
+    fun `toggleCompleted logs analytics event`() = runTest(testDispatcher) {
+        val today = LocalDate.of(2026, 1, 15)
+        val event = createEvent(id = 1L, date = today)
+        repository.setEvents(listOf(event))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleCompleted(event)
+        advanceUntilIdle()
+
+        assertTrue(analyticsRepository.loggedEvents.any { it.first == AppConfig.Analytics.EVENT_CALENDAR_EVENT_COMPLETED })
+    }
+
+    @Test
+    fun `toggleCompleted failure shows snackbar`() = runTest(testDispatcher) {
+        val today = LocalDate.of(2026, 1, 15)
+        val event = createEvent(id = 1L, date = today)
+        repository.setEvents(listOf(event))
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        repository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.toggleCompleted(event)
+            advanceUntilIdle()
+            val snackEvent = awaitItem()
+            assertTrue(snackEvent is SnackbarEvent.WithResId)
+            assertEquals(R.string.calendar_event_save_failed, (snackEvent as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `toggleCompleted reverses completed state`() = runTest(testDispatcher) {
+        val today = LocalDate.of(2026, 1, 15)
+        val event = createEvent(id = 1L, date = today).copy(completed = true)
+        repository.setEvents(listOf(event))
+        viewModel = createViewModel()
+
+        viewModel.eventsForSelectedDate.test {
+            advanceUntilIdle()
+
+            viewModel.toggleCompleted(event)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertTrue(state is UiState.Success)
+            assertFalse((state as UiState.Success).data[0].completed)
+        }
     }
 }

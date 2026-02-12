@@ -33,6 +33,12 @@ data class CalendarEventEntity(
     @ColumnInfo(name = "is_all_day")
     val isAllDay: Int = 1,
 
+    @ColumnInfo(name = "type")
+    val type: String = "OTHER",
+
+    @ColumnInfo(name = "completed")
+    val completed: Int = 0,
+
     @ColumnInfo(name = "created_at")
     val createdAt: String,
 

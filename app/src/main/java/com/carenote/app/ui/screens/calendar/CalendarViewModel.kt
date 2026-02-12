@@ -6,6 +6,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
@@ -32,6 +33,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val calendarEventRepository: CalendarEventRepository,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -104,11 +106,30 @@ class CalendarViewModel @Inject constructor(
         _currentMonth.value = yearMonth
     }
 
+    fun toggleCompleted(event: CalendarEvent) {
+        viewModelScope.launch {
+            val updatedEvent = event.copy(
+                completed = !event.completed,
+                updatedAt = clock.now()
+            )
+            calendarEventRepository.updateEvent(updatedEvent)
+                .onSuccess {
+                    Timber.d("Calendar event completion toggled: id=${event.id}")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CALENDAR_EVENT_COMPLETED)
+                }
+                .onFailure { error ->
+                    Timber.w("Failed to toggle calendar event completion: $error")
+                    snackbarController.showMessage(R.string.calendar_event_save_failed)
+                }
+        }
+    }
+
     fun deleteEvent(id: Long) {
         viewModelScope.launch {
             calendarEventRepository.deleteEvent(id)
                 .onSuccess {
                     Timber.d("Calendar event deleted: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CALENDAR_EVENT_DELETED)
                     snackbarController.showMessage(R.string.calendar_event_deleted)
                 }
                 .onFailure { error ->

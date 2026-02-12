@@ -7,6 +7,7 @@ import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeTaskReminderScheduler
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ class TasksViewModelTest {
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeTaskRepository
     private lateinit var scheduler: FakeTaskReminderScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: TasksViewModel
 
     @Before
@@ -39,6 +41,7 @@ class TasksViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = FakeTaskRepository()
         scheduler = FakeTaskReminderScheduler()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -47,7 +50,7 @@ class TasksViewModelTest {
     }
 
     private fun createViewModel(): TasksViewModel {
-        return TasksViewModel(repository, scheduler, fakeClock)
+        return TasksViewModel(repository, scheduler, analyticsRepository, fakeClock)
     }
 
     /** Helper: read the current tasks from the FakeTaskRepository's internal state. */

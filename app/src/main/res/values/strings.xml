@@ -40,8 +40,27 @@
     <string name="settings_pulse_low_format">%1$d 回/分 以下</string>
     <string name="settings_medication_times">服薬デフォルト時刻</string>
     <string name="settings_time_format">%1$02d:%2$02d</string>
+    <!-- Data Export Settings -->
+    <string name="settings_data_export">データエクスポート</string>
+    <string name="settings_data_export_tasks">タスクのエクスポート</string>
+    <string name="settings_data_export_tasks_summary">タスクデータをCSV/PDFで出力</string>
+    <string name="settings_data_export_notes">メモのエクスポート</string>
+    <string name="settings_data_export_notes_summary">メモ・申し送りデータをCSV/PDFで出力</string>
+    <string name="data_export_dialog_title">エクスポート設定</string>
+    <string name="data_export_format_csv">CSV</string>
+    <string name="data_export_format_pdf">PDF</string>
+    <string name="data_export_period_all">全期間</string>
+    <string name="data_export_period_30_days">過去30日</string>
+    <string name="data_export_period_90_days">過去90日</string>
+    <string name="data_export_period_1_year">過去1年</string>
+    <string name="data_export_button">エクスポート</string>
+    <string name="data_export_format_label">フォーマット</string>
+    <string name="data_export_period_label">期間</string>
+
     <string name="settings_app_info">アプリ情報</string>
     <string name="settings_version">バージョン</string>
+    <string name="settings_contact_title">お問い合わせ</string>
+    <string name="settings_contact_summary">ご質問・ご要望はこちら</string>
     <string name="settings_privacy_policy">プライバシーポリシー</string>
     <string name="settings_privacy_policy_summary">個人情報の取り扱いについて</string>
     <string name="settings_terms_of_service">利用規約</string>
@@ -135,6 +154,8 @@
     <string name="settings_input_value">値を入力</string>
     <string name="settings_select_time">時刻を選択</string>
     <string name="common_ok">OK</string>
+    <string name="common_continue">続ける</string>
+    <string name="common_exit">終了</string>
 
     <!-- Medication -->
     <string name="medication_title">服薬管理</string>
@@ -213,6 +234,14 @@
     <string name="calendar_weekday_fri">金</string>
     <string name="calendar_weekday_sat">土</string>
     <string name="calendar_all_day_label">終日</string>
+    <string name="calendar_event_type">種類</string>
+    <string name="calendar_event_type_hospital">通院</string>
+    <string name="calendar_event_type_visit">訪問</string>
+    <string name="calendar_event_type_dayservice">デイサービス</string>
+    <string name="calendar_event_type_other">その他</string>
+    <string name="calendar_event_completed">完了</string>
+    <string name="calendar_event_mark_complete">完了にする</string>
+    <string name="calendar_event_mark_incomplete">未完了に戻す</string>
 
     <!-- Tasks -->
     <string name="tasks_title">タスク</string>
@@ -334,6 +363,40 @@
     <string name="export_header_meal">食事量</string>
     <string name="export_header_excretion">排泄</string>
     <string name="export_header_condition_note">体調メモ</string>
+
+    <!-- Medication Log Export -->
+    <string name="medication_log_export_header_recorded_at">記録日時</string>
+    <string name="medication_log_export_header_scheduled_at">予定日時</string>
+    <string name="medication_log_export_header_medication_name">薬剤名</string>
+    <string name="medication_log_export_header_status">ステータス</string>
+    <string name="medication_log_export_header_timing">タイミング</string>
+    <string name="medication_log_export_header_memo">メモ</string>
+    <string name="medication_log_export_title">服薬記録</string>
+    <string name="medication_log_export_empty">エクスポートする服薬記録がありません</string>
+    <string name="medication_log_export_failed">服薬記録のエクスポートに失敗しました</string>
+
+    <!-- Task Export -->
+    <string name="task_export_title">タスク</string>
+    <string name="task_export_empty">エクスポートするタスクがありません</string>
+    <string name="task_export_header_title">タイトル</string>
+    <string name="task_export_header_description">説明</string>
+    <string name="task_export_header_due_date">期限</string>
+    <string name="task_export_header_priority">優先度</string>
+    <string name="task_export_header_status">ステータス</string>
+    <string name="task_export_header_recurrence">繰り返し</string>
+    <string name="task_export_header_created_at">作成日</string>
+
+    <!-- Note Export -->
+    <string name="note_export_title">メモ・申し送り</string>
+    <string name="note_export_empty">エクスポートするメモがありません</string>
+    <string name="note_export_header_title">タイトル</string>
+    <string name="note_export_header_content">内容</string>
+    <string name="note_export_header_tag">タグ</string>
+    <string name="note_export_header_created_at">作成日時</string>
+    <string name="note_export_header_updated_at">更新日時</string>
+
+    <!-- Common Export -->
+    <string name="export_failed">エクスポートに失敗しました</string>
 
     <!-- Export Enum Localization -->
     <string name="meal_full">全量</string>
@@ -546,4 +609,43 @@
     <string name="emergency_contact_rel_hospital">病院</string>
     <string name="emergency_contact_rel_emergency">緊急</string>
     <string name="emergency_contact_rel_other">その他</string>
+
+    <!-- Search -->
+    <string name="search_title">検索</string>
+    <string name="search_placeholder">薬・メモ・タスク・予定などを検索…</string>
+    <string name="search_empty">検索結果はありません</string>
+    <string name="search_empty_hint">キーワードを入力して検索してください</string>
+    <string name="search_result_medication">服薬</string>
+    <string name="search_result_note">メモ</string>
+    <string name="search_result_task">タスク</string>
+    <string name="search_result_health_record">健康記録</string>
+    <string name="search_result_calendar_event">予定</string>
+    <string name="search_result_emergency_contact">緊急連絡先</string>
+    <string name="search_navigate">横断検索</string>
+    <string name="a11y_navigate_to_search">横断検索を開く</string>
+
+    <!-- Home -->
+    <string name="nav_home">ホーム</string>
+    <string name="home_title">ホーム</string>
+    <string name="home_section_medication">今日の服薬予定</string>
+    <string name="home_section_tasks">直近のタスク</string>
+    <string name="home_section_health_record">最新の健康記録</string>
+    <string name="home_section_notes">最新のメモ</string>
+    <string name="home_section_calendar">次の予定</string>
+    <string name="home_see_all">すべて見る</string>
+    <string name="home_empty_medication">今日の服薬予定はありません</string>
+    <string name="home_empty_tasks">直近のタスクはありません</string>
+    <string name="home_empty_health_record">健康記録はありません</string>
+    <string name="home_empty_notes">メモはありません</string>
+    <string name="home_empty_calendar">予定はありません</string>
+
+    <!-- CareRecipient Extension -->
+    <string name="care_recipient_nickname">ニックネーム</string>
+    <string name="care_recipient_nickname_hint">普段の呼び名</string>
+    <string name="care_recipient_care_level">要介護度</string>
+    <string name="care_recipient_care_level_hint">例：要介護2</string>
+    <string name="care_recipient_medical_history">既往歴</string>
+    <string name="care_recipient_medical_history_hint">過去の病歴・手術歴など</string>
+    <string name="care_recipient_allergies">アレルギー</string>
+    <string name="care_recipient_allergies_hint">薬・食物アレルギーなど</string>
 </resources>

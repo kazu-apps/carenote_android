@@ -2,6 +2,8 @@ package com.carenote.app.ui.screens.auth
 
 import com.carenote.app.R
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.ui.util.SnackbarController
@@ -18,6 +20,7 @@ import timber.log.Timber
 class RegisterFormHandler(
     private val authRepository: AuthRepository,
     private val syncWorkScheduler: SyncWorkSchedulerInterface,
+    private val analyticsRepository: AnalyticsRepository,
     val snackbarController: SnackbarController = SnackbarController(),
     private val authSuccessChannel: Channel<Boolean> = Channel(Channel.BUFFERED),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -73,6 +76,7 @@ class RegisterFormHandler(
             )
                 .onSuccess {
                     Timber.d("User signed up successfully")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_SIGN_UP)
                     syncWorkScheduler.schedulePeriodicSync()
                     syncWorkScheduler.triggerImmediateSync()
                     snackbarController.showMessage(R.string.auth_register_success)

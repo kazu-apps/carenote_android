@@ -416,6 +416,7 @@ class SettingsSectionsTest {
                 versionName = "1.0.0",
                 onPrivacyPolicyClick = {},
                 onTermsOfServiceClick = {},
+                onContactClick = {},
                 onResetClick = {}
             )
         }
@@ -431,6 +432,7 @@ class SettingsSectionsTest {
                 versionName = "1.0.0",
                 onPrivacyPolicyClick = {},
                 onTermsOfServiceClick = {},
+                onContactClick = {},
                 onResetClick = {}
             )
         }
@@ -448,6 +450,7 @@ class SettingsSectionsTest {
                 versionName = "1.0.0",
                 onPrivacyPolicyClick = { clicked = true },
                 onTermsOfServiceClick = {},
+                onContactClick = {},
                 onResetClick = {}
             )
         }
@@ -467,11 +470,82 @@ class SettingsSectionsTest {
                 versionName = "1.0.0",
                 onPrivacyPolicyClick = {},
                 onTermsOfServiceClick = { clicked = true },
+                onContactClick = {},
                 onResetClick = {}
             )
         }
 
         composeTestRule.onNodeWithText("利用規約", substring = true)
+            .performClick()
+
+        assertTrue(clicked)
+    }
+
+    @Test
+    fun appInfoSection_contactClickCallsCallback() {
+        var clicked = false
+
+        composeTestRule.setContent {
+            AppInfoSection(
+                versionName = "1.0.0",
+                onPrivacyPolicyClick = {},
+                onTermsOfServiceClick = {},
+                onContactClick = { clicked = true },
+                onResetClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("お問い合わせ", substring = true)
+            .performClick()
+
+        assertTrue(clicked)
+    }
+
+    @Test
+    fun appInfoSection_displaysContactSummary() {
+        composeTestRule.setContent {
+            AppInfoSection(
+                versionName = "1.0.0",
+                onPrivacyPolicyClick = {},
+                onTermsOfServiceClick = {},
+                onContactClick = {},
+                onResetClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("ご質問・ご要望はこちら", substring = true)
+            .assertIsDisplayed()
+    }
+
+    // =========================================================================
+    // DataExportSection (2 tests)
+    // =========================================================================
+
+    @Test
+    fun dataExportSection_displaysTitle() {
+        composeTestRule.setContent {
+            DataExportSection(
+                onExportTasksClick = {},
+                onExportNotesClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("データエクスポート", substring = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun dataExportSection_clickTasksCallsCallback() {
+        var clicked = false
+
+        composeTestRule.setContent {
+            DataExportSection(
+                onExportTasksClick = { clicked = true },
+                onExportNotesClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("タスクのエクスポート", substring = true)
             .performClick()
 
         assertTrue(clicked)

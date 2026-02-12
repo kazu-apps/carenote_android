@@ -5,6 +5,7 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.Gender
 import com.carenote.app.fakes.FakeCareRecipientRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -15,8 +16,10 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -30,11 +33,13 @@ class CareRecipientViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeCareRecipientRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeCareRecipientRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -43,7 +48,7 @@ class CareRecipientViewModelTest {
     }
 
     private fun createViewModel(): CareRecipientViewModel {
-        return CareRecipientViewModel(repository, fakeClock)
+        return CareRecipientViewModel(repository, analyticsRepository, fakeClock)
     }
 
     @Test
@@ -163,5 +168,125 @@ class CareRecipientViewModelTest {
         }
 
         assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `loads existing care recipient with extended fields`() = runTest {
+        val existing = CareRecipient(
+            id = 1L,
+            name = "田中太郎",
+            birthDate = LocalDate.of(1940, 5, 15),
+            gender = Gender.MALE,
+            nickname = "たろさん",
+            careLevel = "要介護2",
+            medicalHistory = "高血圧、糖尿病",
+            allergies = "花粉症、ペニシリン",
+            memo = "メモ",
+            createdAt = LocalDateTime.of(2025, 1, 1, 0, 0),
+            updatedAt = LocalDateTime.of(2025, 6, 1, 0, 0)
+        )
+        repository.setCareRecipient(existing)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals("たろさん", state.nickname)
+        assertEquals("要介護2", state.careLevel)
+        assertEquals("高血圧、糖尿病", state.medicalHistory)
+        assertEquals("花粉症、ペニシリン", state.allergies)
+    }
+
+    @Test
+    fun `updateNickname changes nickname in state`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateNickname("たろさん")
+        assertEquals("たろさん", viewModel.uiState.value.nickname)
+    }
+
+    @Test
+    fun `updateCareLevel changes careLevel in state`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateCareLevel("要介護3")
+        assertEquals("要介護3", viewModel.uiState.value.careLevel)
+    }
+
+    @Test
+    fun `updateMedicalHistory changes medicalHistory in state`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateMedicalHistory("高血圧")
+        assertEquals("高血圧", viewModel.uiState.value.medicalHistory)
+    }
+
+    @Test
+    fun `updateAllergies changes allergies in state`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateAllergies("花粉症")
+        assertEquals("花粉症", viewModel.uiState.value.allergies)
+    }
+
+    @Test
+    fun `save includes extended fields`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("山田太郎")
+        viewModel.updateNickname("たろう")
+        viewModel.updateCareLevel("要介護1")
+        viewModel.updateMedicalHistory("なし")
+        viewModel.updateAllergies("卵アレルギー")
+
+        viewModel.snackbarController.events.test {
+            viewModel.save()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        val saved = repository.getCareRecipient().first()
+        assertNotNull(saved)
+        assertEquals("たろう", saved!!.nickname)
+        assertEquals("要介護1", saved.careLevel)
+        assertEquals("なし", saved.medicalHistory)
+        assertEquals("卵アレルギー", saved.allergies)
+    }
+
+    @Test
+    fun `initial state has empty extended fields`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals("", state.nickname)
+        assertEquals("", state.careLevel)
+        assertEquals("", state.medicalHistory)
+        assertEquals("", state.allergies)
+    }
+
+    @Test
+    fun `save trims extended fields`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("山田太郎")
+        viewModel.updateNickname("  たろう  ")
+        viewModel.updateCareLevel("  要介護2  ")
+
+        viewModel.snackbarController.events.test {
+            viewModel.save()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        val saved = repository.getCareRecipient().first()
+        assertEquals("たろう", saved!!.nickname)
+        assertEquals("要介護2", saved.careLevel)
     }
 }

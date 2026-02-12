@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.StorageRepository
 import com.carenote.app.domain.repository.SyncRepository
@@ -85,6 +86,12 @@ object TestFirebaseModule {
     @Provides
     @Singleton
     fun provideStorageRepository(): StorageRepository {
+        return mockk(relaxed = true)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAnalyticsRepository(): AnalyticsRepository {
         return mockk(relaxed = true)
     }
 

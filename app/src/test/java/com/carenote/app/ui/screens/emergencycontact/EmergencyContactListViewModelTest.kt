@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeEmergencyContactRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import kotlinx.coroutines.Dispatchers
@@ -24,12 +25,14 @@ class EmergencyContactListViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var repository: FakeEmergencyContactRepository
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: EmergencyContactListViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeEmergencyContactRepository()
+        analyticsRepository = FakeAnalyticsRepository()
     }
 
     @After
@@ -38,7 +41,7 @@ class EmergencyContactListViewModelTest {
     }
 
     private fun createViewModel(): EmergencyContactListViewModel {
-        return EmergencyContactListViewModel(repository)
+        return EmergencyContactListViewModel(repository, analyticsRepository)
     }
 
     private fun createContact(

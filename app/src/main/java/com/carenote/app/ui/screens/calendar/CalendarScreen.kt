@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -66,6 +67,7 @@ fun CalendarScreen(
     onNavigateToAddEvent: () -> Unit = {},
     onNavigateToEditEvent: (Long) -> Unit = {},
     onNavigateToTimeline: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val currentMonth by viewModel.currentMonth.collectAsStateWithLifecycle()
@@ -107,6 +109,12 @@ fun CalendarScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                        )
+                    }
                     IconButton(onClick = onNavigateToTimeline) {
                         Icon(
                             imageVector = Icons.Filled.History,
@@ -205,7 +213,8 @@ fun CalendarScreen(
                             ) {
                                 CalendarEventCard(
                                     event = event,
-                                    onClick = { onNavigateToEditEvent(event.id) }
+                                    onClick = { onNavigateToEditEvent(event.id) },
+                                    onToggleCompleted = { viewModel.toggleCompleted(it) }
                                 )
                             }
                         }

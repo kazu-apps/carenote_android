@@ -18,6 +18,13 @@ sealed class Screen(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
+    data object Home : Screen(
+        route = "home",
+        titleResId = R.string.nav_home,
+        selectedIcon = Icons.Filled.Home,
+        unselectedIcon = Icons.Outlined.Home
+    )
+
     data object Medication : Screen(
         route = "medication",
         titleResId = R.string.nav_medication,
@@ -221,8 +228,15 @@ sealed class Screen(
         fun createRoute(taskId: Long): String = "edit_task/$taskId"
     }
 
+    data object Search : Screen(
+        route = "search",
+        titleResId = R.string.search_title,
+        selectedIcon = Icons.Filled.Search,
+        unselectedIcon = Icons.Outlined.Search
+    )
+
     companion object {
-        val bottomNavItems get() = listOf(Medication, Calendar, Tasks, HealthRecords, Notes, Settings)
+        val bottomNavItems get() = listOf(Home, Medication, Calendar, Tasks, HealthRecords, Notes)
         val authScreens get() = listOf(Login, Register, ForgotPassword)
     }
 }

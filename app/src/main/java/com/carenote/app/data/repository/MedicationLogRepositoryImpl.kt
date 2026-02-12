@@ -75,4 +75,10 @@ class MedicationLogRepositoryImpl @Inject constructor(
             timing = timing?.name
         )
     }
+
+    override fun getAllLogs(): Flow<List<MedicationLog>> {
+        return medicationLogDao.getAllLogs().map { entities ->
+            mapper.toDomainList(entities)
+        }
+    }
 }

@@ -14,6 +14,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import com.carenote.app.domain.model.CalendarEventType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
@@ -48,7 +52,7 @@ import com.carenote.app.ui.util.SnackbarEvent
 import java.time.LocalDate
 import java.time.LocalTime
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditCalendarEventScreen(
     onNavigateBack: () -> Unit = {},
@@ -119,6 +123,25 @@ fun AddEditCalendarEventScreen(
                 singleLine = false,
                 maxLines = AppConfig.Calendar.DESCRIPTION_PREVIEW_MAX_LINES + 2
             )
+
+            // Event type selector
+            Text(
+                text = stringResource(R.string.calendar_event_type),
+                style = MaterialTheme.typography.titleMedium
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CalendarEventType.entries.forEach { type ->
+                    FilterChip(
+                        selected = formState.type == type,
+                        onClick = { viewModel.updateType(type) },
+                        label = {
+                            Text(text = stringResource(type.labelResId()))
+                        }
+                    )
+                }
+            }
 
             DateSelector(
                 date = formState.date,
@@ -286,6 +309,16 @@ private fun TimeSelector(
                 style = MaterialTheme.typography.bodyLarge
             )
         }
+    }
+}
+
+@Composable
+private fun CalendarEventType.labelResId(): Int {
+    return when (this) {
+        CalendarEventType.HOSPITAL -> R.string.calendar_event_type_hospital
+        CalendarEventType.VISIT -> R.string.calendar_event_type_visit
+        CalendarEventType.DAYSERVICE -> R.string.calendar_event_type_dayservice
+        CalendarEventType.OTHER -> R.string.calendar_event_type_other
     }
 }
 

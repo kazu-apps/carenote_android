@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
@@ -38,6 +39,7 @@ class LoginFormHandlerTest {
     private val testScope = TestScope(testDispatcher)
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
+    private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var authSuccessChannel: Channel<Boolean>
     private lateinit var handler: LoginFormHandler
 
@@ -46,9 +48,10 @@ class LoginFormHandlerTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
+        analyticsRepository = FakeAnalyticsRepository()
         authSuccessChannel = Channel(Channel.BUFFERED)
         handler = LoginFormHandler(
-            authRepository, syncWorkScheduler,
+            authRepository, syncWorkScheduler, analyticsRepository,
             authSuccessChannel = authSuccessChannel, scope = testScope
         )
     }

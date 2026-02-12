@@ -71,4 +71,8 @@ class FakeMedicationLogRepository : MedicationLogRepository {
                 (timing == null || log.timing == timing)
         }
     }
+
+    override fun getAllLogs(): Flow<List<MedicationLog>> {
+        return logs
+    }
 }

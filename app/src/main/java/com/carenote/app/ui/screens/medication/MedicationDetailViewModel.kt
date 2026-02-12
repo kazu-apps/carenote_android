@@ -9,6 +9,7 @@ import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.ui.util.SnackbarController
@@ -31,7 +32,8 @@ class MedicationDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val medicationRepository: MedicationRepository,
     private val medicationLogRepository: MedicationLogRepository,
-    private val reminderScheduler: MedicationReminderSchedulerInterface
+    private val reminderScheduler: MedicationReminderSchedulerInterface,
+    private val analyticsRepository: AnalyticsRepository
 ) : ViewModel() {
 
     private val medicationId: Long = checkNotNull(savedStateHandle["medicationId"])
@@ -81,6 +83,7 @@ class MedicationDetailViewModel @Inject constructor(
             medicationRepository.deleteMedication(medicationId)
                 .onSuccess {
                     Timber.d("Medication deleted: id=$medicationId")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_DELETED)
                     reminderScheduler.cancelReminders(medicationId)
                     _deletedEvent.send(true)
                 }

@@ -10,8 +10,10 @@ import com.carenote.app.domain.repository.HealthRecordCsvExporterInterface
 import com.carenote.app.domain.repository.HealthRecordPdfExporterInterface
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.HealthRecord
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.ui.util.SnackbarController
+import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,7 +38,8 @@ import javax.inject.Inject
 class HealthRecordsViewModel @Inject constructor(
     private val healthRecordRepository: HealthRecordRepository,
     private val csvExporter: HealthRecordCsvExporterInterface,
-    private val pdfExporter: HealthRecordPdfExporterInterface
+    private val pdfExporter: HealthRecordPdfExporterInterface,
+    private val analyticsRepository: AnalyticsRepository
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -112,6 +115,7 @@ class HealthRecordsViewModel @Inject constructor(
             _exportState.value = ExportState.Exporting
             try {
                 val uri = csvExporter.export(currentRecords)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_EXPORT_CSV)
                 _exportState.value = ExportState.Success(uri, "text/csv")
             } catch (e: Exception) {
                 Timber.w("CSV export failed: $e")
@@ -133,6 +137,7 @@ class HealthRecordsViewModel @Inject constructor(
             _exportState.value = ExportState.Exporting
             try {
                 val uri = pdfExporter.export(currentRecords)
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_EXPORT_PDF)
                 _exportState.value = ExportState.Success(uri, "application/pdf")
             } catch (e: Exception) {
                 Timber.w("PDF export failed: $e")
@@ -156,6 +161,7 @@ class HealthRecordsViewModel @Inject constructor(
             healthRecordRepository.deleteRecord(id)
                 .onSuccess {
                     Timber.d("Health record deleted: id=$id")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_DELETED)
                     snackbarController.showMessage(R.string.health_records_deleted)
                 }
                 .onFailure { error ->

@@ -201,6 +201,34 @@ fun SettingsDialogs(
             )
         }
 
+        SettingsDialogState.DataExportTasks -> {
+            DataExportDialog(
+                entityLabel = stringResource(R.string.settings_data_export_tasks),
+                onExport = { format, periodDays ->
+                    onDismiss()
+                    when (format) {
+                        ExportFormat.CSV -> viewModel.exportTasksCsv(periodDays)
+                        ExportFormat.PDF -> viewModel.exportTasksPdf(periodDays)
+                    }
+                },
+                onDismiss = onDismiss
+            )
+        }
+
+        SettingsDialogState.DataExportNotes -> {
+            DataExportDialog(
+                entityLabel = stringResource(R.string.settings_data_export_notes),
+                onExport = { format, periodDays ->
+                    onDismiss()
+                    when (format) {
+                        ExportFormat.CSV -> viewModel.exportNotesCsv(periodDays)
+                        ExportFormat.PDF -> viewModel.exportNotesPdf(periodDays)
+                    }
+                },
+                onDismiss = onDismiss
+            )
+        }
+
         SettingsDialogState.SignOutConfirm -> {
             ConfirmDialog(
                 title = stringResource(R.string.settings_sign_out_confirm_title),

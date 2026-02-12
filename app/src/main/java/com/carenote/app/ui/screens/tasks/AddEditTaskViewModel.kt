@@ -11,6 +11,7 @@ import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.FormValidator.combineValidations
@@ -52,6 +53,7 @@ class AddEditTaskViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val taskRepository: TaskRepository,
     private val taskReminderScheduler: TaskReminderSchedulerInterface,
+    private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -213,6 +215,7 @@ class AddEditTaskViewModel @Inject constructor(
                 taskRepository.updateTask(updatedTask)
                     .onSuccess {
                         Timber.d("Task updated: id=$taskId")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_UPDATED)
                         scheduleOrCancelReminder(
                             taskId,
                             current.title.trim(),
@@ -242,6 +245,7 @@ class AddEditTaskViewModel @Inject constructor(
                 taskRepository.insertTask(newTask)
                     .onSuccess { id ->
                         Timber.d("Task saved: id=$id")
+                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_CREATED)
                         scheduleOrCancelReminder(
                             id,
                             current.title.trim(),

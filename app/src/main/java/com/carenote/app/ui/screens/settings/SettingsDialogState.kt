@@ -17,6 +17,8 @@ sealed class SettingsDialogState {
     data object DeleteAccountConfirm : SettingsDialogState()
     data object ReauthenticateForDelete : SettingsDialogState()
     data object SignOutConfirm : SettingsDialogState()
+    data object DataExportTasks : SettingsDialogState()
+    data object DataExportNotes : SettingsDialogState()
 }
 
 val SettingsDialogState.isTimePicker: Boolean

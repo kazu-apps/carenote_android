@@ -21,6 +21,10 @@ class CareRecipientMapper @Inject constructor() : Mapper<CareRecipientEntity, Ca
             name = entity.name,
             birthDate = entity.birthDate?.let { LocalDate.parse(it, dateFormatter) },
             gender = parseGender(entity.gender),
+            nickname = entity.nickname,
+            careLevel = entity.careLevel,
+            medicalHistory = entity.medicalHistory,
+            allergies = entity.allergies,
             memo = entity.memo,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
             updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
@@ -33,6 +37,10 @@ class CareRecipientMapper @Inject constructor() : Mapper<CareRecipientEntity, Ca
             name = domain.name,
             birthDate = domain.birthDate?.format(dateFormatter),
             gender = domain.gender.name,
+            nickname = domain.nickname,
+            careLevel = domain.careLevel,
+            medicalHistory = domain.medicalHistory,
+            allergies = domain.allergies,
             memo = domain.memo,
             createdAt = domain.createdAt.format(dateTimeFormatter),
             updatedAt = domain.updatedAt.format(dateTimeFormatter)

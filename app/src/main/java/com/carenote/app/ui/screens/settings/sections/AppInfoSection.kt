@@ -13,6 +13,7 @@ fun AppInfoSection(
     versionName: String,
     onPrivacyPolicyClick: () -> Unit,
     onTermsOfServiceClick: () -> Unit,
+    onContactClick: () -> Unit,
     onResetClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -22,6 +23,11 @@ fun AppInfoSection(
             title = stringResource(R.string.settings_version),
             summary = versionName,
             onClick = {}
+        )
+        ClickablePreference(
+            title = stringResource(R.string.settings_contact_title),
+            summary = stringResource(R.string.settings_contact_summary),
+            onClick = onContactClick
         )
         ClickablePreference(
             title = stringResource(R.string.settings_privacy_policy),

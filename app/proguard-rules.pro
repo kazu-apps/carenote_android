@@ -68,3 +68,14 @@
 # Suppress warnings for Firebase internal classes
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
+
+# ========== Firebase Analytics ==========
+
+# Firebase Analytics event/parameter names (string-based reflection)
+-keep class com.google.firebase.analytics.** { *; }
+
+# ========== Coil 3.x ==========
+
+# Coil image loader (OkHttp integration, decoder reflection)
+-keep class coil3.** { *; }
+-dontwarn coil3.**
