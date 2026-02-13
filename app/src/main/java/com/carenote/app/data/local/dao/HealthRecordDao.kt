@@ -12,25 +12,25 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface HealthRecordDao {
 
-    @Query("SELECT * FROM health_records ORDER BY recorded_at DESC")
-    fun getAllRecords(): Flow<List<HealthRecordEntity>>
+    @Query("SELECT * FROM health_records WHERE care_recipient_id = :careRecipientId ORDER BY recorded_at DESC")
+    fun getAllRecords(careRecipientId: Long): Flow<List<HealthRecordEntity>>
 
     @Query("SELECT * FROM health_records WHERE id = :id")
     fun getRecordById(id: Long): Flow<HealthRecordEntity?>
 
     @Query(
         "SELECT * FROM health_records " +
-            "WHERE recorded_at >= :start AND recorded_at <= :end " +
+            "WHERE care_recipient_id = :careRecipientId AND recorded_at >= :start AND recorded_at <= :end " +
             "ORDER BY recorded_at DESC"
     )
-    fun getRecordsByDateRange(start: String, end: String): Flow<List<HealthRecordEntity>>
+    fun getRecordsByDateRange(start: String, end: String, careRecipientId: Long): Flow<List<HealthRecordEntity>>
 
     @Query(
         "SELECT * FROM health_records " +
-            "WHERE (:query = '' OR condition_note LIKE '%' || :query || '%') " +
+            "WHERE care_recipient_id = :careRecipientId AND (:query = '' OR condition_note LIKE '%' || :query || '%') " +
             "ORDER BY recorded_at DESC"
     )
-    fun getPagedRecords(query: String): PagingSource<Int, HealthRecordEntity>
+    fun getPagedRecords(query: String, careRecipientId: Long): PagingSource<Int, HealthRecordEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecord(record: HealthRecordEntity): Long

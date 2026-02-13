@@ -30,7 +30,8 @@ class HealthRecordMapperTest {
             weight = 65.0,
             meal = "FULL",
             excretion = "NORMAL",
-            conditionNote = "体調良好"
+            conditionNote = "体調良好",
+            createdBy = "user1"
         )
 
         val result = mapper.toDomain(entity)
@@ -44,6 +45,7 @@ class HealthRecordMapperTest {
         assertEquals(MealAmount.FULL, result.meal)
         assertEquals(ExcretionType.NORMAL, result.excretion)
         assertEquals("体調良好", result.conditionNote)
+        assertEquals("user1", result.createdBy)
         assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.recordedAt)
         assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
         assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.updatedAt)
@@ -149,7 +151,8 @@ class HealthRecordMapperTest {
             weight = 70.5,
             meal = MealAmount.HALF,
             excretion = ExcretionType.SOFT,
-            conditionNote = "少し熱っぽい"
+            conditionNote = "少し熱っぽい",
+            createdBy = "user1"
         )
 
         val result = mapper.toEntity(domain)
@@ -163,6 +166,7 @@ class HealthRecordMapperTest {
         assertEquals("HALF", result.meal)
         assertEquals("SOFT", result.excretion)
         assertEquals("少し熱っぽい", result.conditionNote)
+        assertEquals("user1", result.createdBy)
         assertEquals("2025-03-15T10:00:00", result.recordedAt)
         assertEquals("2025-03-15T10:00:00", result.createdAt)
         assertEquals("2025-03-15T10:00:00", result.updatedAt)
@@ -283,6 +287,29 @@ class HealthRecordMapperTest {
         assertEquals("記録B", result[1].conditionNote)
     }
 
+    @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val entity = HealthRecordEntity(
+            id = 1L,
+            temperature = 36.5,
+            bloodPressureHigh = 120,
+            bloodPressureLow = 80,
+            pulse = 72,
+            weight = 65.0,
+            meal = "FULL",
+            excretion = "NORMAL",
+            conditionNote = "体調良好",
+            recordedAt = "2025-03-15T10:00:00",
+            createdAt = "2025-03-15T10:00:00",
+            updatedAt = "2025-03-15T10:00:00",
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
     private fun createEntity(
         id: Long = 1L,
         temperature: Double? = null,
@@ -293,6 +320,7 @@ class HealthRecordMapperTest {
         meal: String? = null,
         excretion: String? = null,
         conditionNote: String = "",
+        createdBy: String = "",
         recordedAt: String = "2025-03-15T10:00:00",
         createdAt: String = "2025-03-15T10:00:00",
         updatedAt: String = "2025-03-15T10:00:00"
@@ -306,6 +334,7 @@ class HealthRecordMapperTest {
         meal = meal,
         excretion = excretion,
         conditionNote = conditionNote,
+        createdBy = createdBy,
         recordedAt = recordedAt,
         createdAt = createdAt,
         updatedAt = updatedAt
@@ -321,6 +350,7 @@ class HealthRecordMapperTest {
         meal: MealAmount? = null,
         excretion: ExcretionType? = null,
         conditionNote: String = "",
+        createdBy: String = "",
         recordedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
@@ -334,6 +364,7 @@ class HealthRecordMapperTest {
         meal = meal,
         excretion = excretion,
         conditionNote = conditionNote,
+        createdBy = createdBy,
         recordedAt = recordedAt,
         createdAt = createdAt,
         updatedAt = updatedAt

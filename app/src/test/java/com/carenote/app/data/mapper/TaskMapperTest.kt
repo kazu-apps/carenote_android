@@ -31,7 +31,8 @@ class TaskMapperTest {
             description = "処方箋を持参",
             dueDate = "2025-04-10",
             isCompleted = 0,
-            priority = "HIGH"
+            priority = "HIGH",
+            createdBy = "user1"
         )
 
         val result = mapper.toDomain(entity)
@@ -42,6 +43,7 @@ class TaskMapperTest {
         assertEquals(LocalDate.of(2025, 4, 10), result.dueDate)
         assertFalse(result.isCompleted)
         assertEquals(TaskPriority.HIGH, result.priority)
+        assertEquals("user1", result.createdBy)
         assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
         assertEquals(LocalDateTime.of(2025, 3, 15, 11, 0), result.updatedAt)
     }
@@ -165,7 +167,8 @@ class TaskMapperTest {
             description = "来月の予定確認",
             dueDate = LocalDate.of(2025, 4, 15),
             isCompleted = false,
-            priority = TaskPriority.MEDIUM
+            priority = TaskPriority.MEDIUM,
+            createdBy = "user1"
         )
 
         val result = mapper.toEntity(domain)
@@ -176,6 +179,7 @@ class TaskMapperTest {
         assertEquals("2025-04-15", result.dueDate)
         assertEquals(0, result.isCompleted)
         assertEquals("MEDIUM", result.priority)
+        assertEquals("user1", result.createdBy)
         assertEquals("2025-03-15T10:00:00", result.createdAt)
         assertEquals("2025-03-15T10:00:00", result.updatedAt)
     }
@@ -330,6 +334,25 @@ class TaskMapperTest {
         assertEquals("タスクB", result[1].title)
     }
 
+    @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val entity = TaskEntity(
+            id = 1L,
+            title = "テストタスク",
+            description = "テスト説明",
+            dueDate = "2025-04-10",
+            isCompleted = 0,
+            priority = "MEDIUM",
+            createdAt = "2025-03-15T10:00:00",
+            updatedAt = "2025-03-15T11:00:00",
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
     private fun createEntity(
         id: Long = 1L,
         title: String = "テストタスク",
@@ -341,6 +364,7 @@ class TaskMapperTest {
         recurrenceInterval: Int = 1,
         reminderEnabled: Int = 0,
         reminderTime: String? = null,
+        createdBy: String = "",
         createdAt: String = "2025-03-15T10:00:00",
         updatedAt: String = "2025-03-15T11:00:00"
     ): TaskEntity = TaskEntity(
@@ -354,6 +378,7 @@ class TaskMapperTest {
         recurrenceInterval = recurrenceInterval,
         reminderEnabled = reminderEnabled,
         reminderTime = reminderTime,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -369,6 +394,7 @@ class TaskMapperTest {
         recurrenceInterval: Int = 1,
         reminderEnabled: Boolean = false,
         reminderTime: LocalTime? = null,
+        createdBy: String = "",
         createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
     ): Task = Task(
@@ -382,6 +408,7 @@ class TaskMapperTest {
         recurrenceInterval = recurrenceInterval,
         reminderEnabled = reminderEnabled,
         reminderTime = reminderTime,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

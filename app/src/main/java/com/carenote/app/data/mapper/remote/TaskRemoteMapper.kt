@@ -39,6 +39,7 @@ class TaskRemoteMapper @Inject constructor(
             recurrenceInterval = (data["recurrenceInterval"] as? Number)?.toInt() ?: 1,
             reminderEnabled = data["reminderEnabled"] as? Boolean ?: false,
             reminderTime = (data["reminderTime"] as? String)?.let { LocalTime.parse(it) },
+            createdBy = data["createdBy"] as? String ?: "",
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
             updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt)
         )
@@ -56,6 +57,7 @@ class TaskRemoteMapper @Inject constructor(
             "recurrenceInterval" to domain.recurrenceInterval,
             "reminderEnabled" to domain.reminderEnabled,
             "reminderTime" to domain.reminderTime?.toString(),
+            "createdBy" to domain.createdBy,
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
             "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt)
         )

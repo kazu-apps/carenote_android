@@ -42,6 +42,7 @@ class TaskRemoteMapperTest {
             "dueDate" to "2025-03-20",
             "isCompleted" to false,
             "priority" to "HIGH",
+            "createdBy" to "user1",
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -54,6 +55,7 @@ class TaskRemoteMapperTest {
         assertEquals(dueDate, result.dueDate)
         assertEquals(false, result.isCompleted)
         assertEquals(TaskPriority.HIGH, result.priority)
+        assertEquals("user1", result.createdBy)
         assertEquals(testDateTime, result.createdAt)
         assertEquals(testDateTime, result.updatedAt)
     }
@@ -309,6 +311,7 @@ class TaskRemoteMapperTest {
             dueDate = dueDate,
             isCompleted = false,
             priority = TaskPriority.HIGH,
+            createdBy = "user1",
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
@@ -321,6 +324,7 @@ class TaskRemoteMapperTest {
         assertEquals("2025-03-20", result["dueDate"])
         assertEquals(false, result["isCompleted"])
         assertEquals("HIGH", result["priority"])
+        assertEquals("user1", result["createdBy"])
     }
 
     @Test

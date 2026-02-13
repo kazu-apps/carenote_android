@@ -16,6 +16,7 @@ import com.carenote.app.data.local.dao.EmergencyContactDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
+import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.TaskDao
@@ -25,6 +26,7 @@ import com.carenote.app.data.mapper.EmergencyContactMapper
 import com.carenote.app.data.mapper.HealthRecordMapper
 import com.carenote.app.data.mapper.MedicationLogMapper
 import com.carenote.app.data.mapper.MedicationMapper
+import com.carenote.app.data.mapper.NoteCommentMapper
 import com.carenote.app.data.mapper.NoteMapper
 import com.carenote.app.data.mapper.PhotoMapper
 import com.carenote.app.data.mapper.TaskMapper
@@ -35,11 +37,15 @@ import com.carenote.app.data.repository.EmergencyContactRepositoryImpl
 import com.carenote.app.data.repository.HealthRecordRepositoryImpl
 import com.carenote.app.data.repository.MedicationLogRepositoryImpl
 import com.carenote.app.data.repository.MedicationRepositoryImpl
+import com.carenote.app.data.repository.NoteCommentRepositoryImpl
 import com.carenote.app.data.repository.NoteRepositoryImpl
 import com.carenote.app.data.repository.PhotoRepositoryImpl
 import com.carenote.app.data.repository.TaskRepositoryImpl
+import com.carenote.app.data.repository.ActiveCareRecipientProviderImpl
 import com.carenote.app.data.repository.SearchRepositoryImpl
 import com.carenote.app.data.repository.TimelineRepositoryImpl
+import com.carenote.app.domain.repository.ActiveCareRecipientProvider
+import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.HealthRecordCsvExporterInterface
 import com.carenote.app.domain.repository.HealthRecordPdfExporterInterface
 import com.carenote.app.domain.repository.MedicationLogCsvExporterInterface
@@ -58,6 +64,7 @@ import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
+import com.carenote.app.domain.repository.NoteCommentRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.SearchRepository
 import com.carenote.app.domain.repository.PhotoRepository
@@ -75,20 +82,30 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideActiveCareRecipientProvider(
+        careRecipientRepository: CareRecipientRepository
+    ): ActiveCareRecipientProvider {
+        return ActiveCareRecipientProviderImpl(careRecipientRepository)
+    }
+
+    @Provides
+    @Singleton
     fun provideMedicationRepository(
         medicationDao: MedicationDao,
-        mapper: MedicationMapper
+        mapper: MedicationMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
     ): MedicationRepository {
-        return MedicationRepositoryImpl(medicationDao, mapper)
+        return MedicationRepositoryImpl(medicationDao, mapper, activeRecipientProvider)
     }
 
     @Provides
     @Singleton
     fun provideMedicationLogRepository(
         medicationLogDao: MedicationLogDao,
-        mapper: MedicationLogMapper
+        mapper: MedicationLogMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
     ): MedicationLogRepository {
-        return MedicationLogRepositoryImpl(medicationLogDao, mapper)
+        return MedicationLogRepositoryImpl(medicationLogDao, mapper, activeRecipientProvider)
     }
 
     @Provides
@@ -96,18 +113,32 @@ object AppModule {
     fun provideNoteRepository(
         noteDao: NoteDao,
         mapper: NoteMapper,
-        photoRepository: PhotoRepository
+        photoRepository: PhotoRepository,
+        activeRecipientProvider: ActiveCareRecipientProvider,
+        authRepository: AuthRepository
     ): NoteRepository {
-        return NoteRepositoryImpl(noteDao, mapper, photoRepository)
+        return NoteRepositoryImpl(noteDao, mapper, photoRepository, activeRecipientProvider, authRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNoteCommentRepository(
+        noteCommentDao: NoteCommentDao,
+        mapper: NoteCommentMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider,
+        authRepository: AuthRepository
+    ): NoteCommentRepository {
+        return NoteCommentRepositoryImpl(noteCommentDao, mapper, activeRecipientProvider, authRepository)
     }
 
     @Provides
     @Singleton
     fun providePhotoRepository(
         photoDao: PhotoDao,
-        mapper: PhotoMapper
+        mapper: PhotoMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
     ): PhotoRepository {
-        return PhotoRepositoryImpl(photoDao, mapper)
+        return PhotoRepositoryImpl(photoDao, mapper, activeRecipientProvider)
     }
 
     @Provides
@@ -115,27 +146,32 @@ object AppModule {
     fun provideHealthRecordRepository(
         healthRecordDao: HealthRecordDao,
         mapper: HealthRecordMapper,
-        photoRepository: PhotoRepository
+        photoRepository: PhotoRepository,
+        activeRecipientProvider: ActiveCareRecipientProvider,
+        authRepository: AuthRepository
     ): HealthRecordRepository {
-        return HealthRecordRepositoryImpl(healthRecordDao, mapper, photoRepository)
+        return HealthRecordRepositoryImpl(healthRecordDao, mapper, photoRepository, activeRecipientProvider, authRepository)
     }
 
     @Provides
     @Singleton
     fun provideCalendarEventRepository(
         calendarEventDao: CalendarEventDao,
-        mapper: CalendarEventMapper
+        mapper: CalendarEventMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
     ): CalendarEventRepository {
-        return CalendarEventRepositoryImpl(calendarEventDao, mapper)
+        return CalendarEventRepositoryImpl(calendarEventDao, mapper, activeRecipientProvider)
     }
 
     @Provides
     @Singleton
     fun provideTaskRepository(
         taskDao: TaskDao,
-        mapper: TaskMapper
+        mapper: TaskMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider,
+        authRepository: AuthRepository
     ): TaskRepository {
-        return TaskRepositoryImpl(taskDao, mapper)
+        return TaskRepositoryImpl(taskDao, mapper, activeRecipientProvider, authRepository)
     }
 
     @Provides
@@ -151,9 +187,10 @@ object AppModule {
     @Singleton
     fun provideEmergencyContactRepository(
         emergencyContactDao: EmergencyContactDao,
-        mapper: EmergencyContactMapper
+        mapper: EmergencyContactMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
     ): EmergencyContactRepository {
-        return EmergencyContactRepositoryImpl(emergencyContactDao, mapper)
+        return EmergencyContactRepositoryImpl(emergencyContactDao, mapper, activeRecipientProvider)
     }
 
     @Provides

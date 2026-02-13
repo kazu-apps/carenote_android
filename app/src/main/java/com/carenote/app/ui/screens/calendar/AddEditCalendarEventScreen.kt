@@ -14,12 +14,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.RecurrenceFrequency
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -35,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
@@ -166,6 +170,14 @@ fun AddEditCalendarEventScreen(
                     onClick = { showEndTimePicker = true }
                 )
             }
+
+            RecurrenceSection(
+                frequency = formState.recurrenceFrequency,
+                interval = formState.recurrenceInterval,
+                intervalError = formState.recurrenceIntervalError,
+                onFrequencySelected = viewModel::updateRecurrenceFrequency,
+                onIntervalChanged = viewModel::updateRecurrenceInterval
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -319,6 +331,67 @@ private fun CalendarEventType.labelResId(): Int {
         CalendarEventType.VISIT -> R.string.calendar_event_type_visit
         CalendarEventType.DAYSERVICE -> R.string.calendar_event_type_dayservice
         CalendarEventType.OTHER -> R.string.calendar_event_type_other
+    }
+}
+
+@Composable
+private fun RecurrenceSection(
+    frequency: RecurrenceFrequency,
+    interval: Int,
+    intervalError: com.carenote.app.ui.common.UiText?,
+    onFrequencySelected: (RecurrenceFrequency) -> Unit,
+    onIntervalChanged: (Int) -> Unit
+) {
+    Column {
+        Text(
+            text = stringResource(R.string.tasks_recurrence),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.NONE,
+                onClick = { onFrequencySelected(RecurrenceFrequency.NONE) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_none)) }
+            )
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.DAILY,
+                onClick = { onFrequencySelected(RecurrenceFrequency.DAILY) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_daily)) }
+            )
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.WEEKLY,
+                onClick = { onFrequencySelected(RecurrenceFrequency.WEEKLY) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_weekly)) }
+            )
+            FilterChip(
+                selected = frequency == RecurrenceFrequency.MONTHLY,
+                onClick = { onFrequencySelected(RecurrenceFrequency.MONTHLY) },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_monthly)) }
+            )
+        }
+        if (frequency != RecurrenceFrequency.NONE) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = interval.toString(),
+                onValueChange = { text ->
+                    val parsed = text.filter { it.isDigit() }.toIntOrNull()
+                    if (parsed != null) {
+                        onIntervalChanged(parsed)
+                    }
+                },
+                label = { Text(text = stringResource(R.string.tasks_recurrence_interval)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                isError = intervalError != null,
+                supportingText = intervalError?.let { error ->
+                    { Text(text = error.asString()) }
+                },
+                modifier = Modifier.width(120.dp)
+            )
+        }
     }
 }
 

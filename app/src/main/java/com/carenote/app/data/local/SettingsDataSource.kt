@@ -50,6 +50,7 @@ class SettingsDataSource @Inject constructor(
         const val LAST_SYNC_TIME = "last_sync_time"
         const val BIOMETRIC_ENABLED = "biometric_enabled"
         const val DYNAMIC_COLOR = "dynamic_color"
+        const val ONBOARDING_COMPLETED = "onboarding_completed"
     }
 
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -253,6 +254,14 @@ class SettingsDataSource @Inject constructor(
         prefs.edit()
             .putString(PreferencesKeys.LAST_SYNC_TIME, time.format(dateTimeFormatter))
             .apply()
+    }
+
+    fun isOnboardingCompleted(): Boolean {
+        return prefs.getBoolean(PreferencesKeys.ONBOARDING_COMPLETED, false)
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        prefs.edit().putBoolean(PreferencesKeys.ONBOARDING_COMPLETED, completed).apply()
     }
 
     private fun getOrRecreatePrefs(): SharedPreferences {

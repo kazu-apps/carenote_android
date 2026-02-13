@@ -15,6 +15,7 @@ class FakeSettingsRepository : SettingsRepository {
 
     private val settings = MutableStateFlow(UserSettings())
     var shouldFail = false
+    private var onboardingCompleted = false
 
     fun setSettings(userSettings: UserSettings) {
         settings.value = userSettings
@@ -23,6 +24,7 @@ class FakeSettingsRepository : SettingsRepository {
     fun clear() {
         settings.value = UserSettings()
         shouldFail = false
+        onboardingCompleted = false
     }
 
     override fun getSettings(): Flow<UserSettings> = settings
@@ -256,6 +258,18 @@ class FakeSettingsRepository : SettingsRepository {
             return Result.Failure(DomainError.DatabaseError("Fake error"))
         }
         settings.value = UserSettings()
+        return Result.Success(Unit)
+    }
+
+    override fun isOnboardingCompleted(): Boolean = onboardingCompleted
+
+    override suspend fun setOnboardingCompleted(
+        completed: Boolean
+    ): Result<Unit, DomainError> {
+        if (shouldFail) {
+            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        }
+        onboardingCompleted = completed
         return Result.Success(Unit)
     }
 }

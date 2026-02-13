@@ -7,6 +7,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
@@ -38,8 +39,11 @@ data class AddEditCalendarEventFormState(
     val endTime: LocalTime? = null,
     val isAllDay: Boolean = true,
     val type: CalendarEventType = CalendarEventType.OTHER,
+    val recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
+    val recurrenceInterval: Int = 1,
     val titleError: UiText? = null,
     val descriptionError: UiText? = null,
+    val recurrenceIntervalError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -73,12 +77,14 @@ class AddEditCalendarEventViewModel @Inject constructor(
             val current = _formState.value.copy(
                 titleError = null,
                 descriptionError = null,
+                recurrenceIntervalError = null,
                 isSaving = false,
                 isEditMode = false
             )
             val baseline = initial.copy(
                 titleError = null,
                 descriptionError = null,
+                recurrenceIntervalError = null,
                 isSaving = false,
                 isEditMode = false
             )
@@ -105,7 +111,9 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     startTime = event.startTime,
                     endTime = event.endTime,
                     isAllDay = event.isAllDay,
-                    type = event.type
+                    type = event.type,
+                    recurrenceFrequency = event.recurrenceFrequency,
+                    recurrenceInterval = event.recurrenceInterval
                 )
                 _initialFormState = _formState.value
             }
@@ -148,6 +156,20 @@ class AddEditCalendarEventViewModel @Inject constructor(
         _formState.value = _formState.value.copy(type = type)
     }
 
+    fun updateRecurrenceFrequency(frequency: RecurrenceFrequency) {
+        _formState.value = _formState.value.copy(
+            recurrenceFrequency = frequency,
+            recurrenceIntervalError = null
+        )
+    }
+
+    fun updateRecurrenceInterval(interval: Int) {
+        _formState.value = _formState.value.copy(
+            recurrenceInterval = interval,
+            recurrenceIntervalError = null
+        )
+    }
+
     fun saveEvent() {
         val current = _formState.value
 
@@ -158,11 +180,17 @@ class AddEditCalendarEventViewModel @Inject constructor(
         val descriptionError = validateMaxLength(
             current.description, AppConfig.Calendar.DESCRIPTION_MAX_LENGTH
         )
+        val recurrenceIntervalError = if (current.recurrenceFrequency != RecurrenceFrequency.NONE) {
+            if (current.recurrenceInterval < 1 || current.recurrenceInterval > AppConfig.Task.MAX_RECURRENCE_INTERVAL) {
+                UiText.Resource(R.string.tasks_recurrence_interval_error)
+            } else null
+        } else null
 
-        if (titleError != null || descriptionError != null) {
+        if (titleError != null || descriptionError != null || recurrenceIntervalError != null) {
             _formState.value = current.copy(
                 titleError = titleError,
-                descriptionError = descriptionError
+                descriptionError = descriptionError,
+                recurrenceIntervalError = recurrenceIntervalError
             )
             return
         }
@@ -181,6 +209,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     endTime = current.endTime,
                     isAllDay = current.isAllDay,
                     type = current.type,
+                    recurrenceFrequency = current.recurrenceFrequency,
+                    recurrenceInterval = current.recurrenceInterval,
                     updatedAt = now
                 )
                 calendarEventRepository.updateEvent(updatedEvent)
@@ -203,6 +233,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     endTime = current.endTime,
                     isAllDay = current.isAllDay,
                     type = current.type,
+                    recurrenceFrequency = current.recurrenceFrequency,
+                    recurrenceInterval = current.recurrenceInterval,
                     createdAt = now,
                     updatedAt = now
                 )

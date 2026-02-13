@@ -3,6 +3,7 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.RecurrenceFrequency
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -20,6 +21,7 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
     override fun toDomain(entity: CalendarEventEntity): CalendarEvent {
         return CalendarEvent(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             title = entity.title,
             description = entity.description,
             date = LocalDate.parse(entity.date, dateFormatter),
@@ -28,6 +30,8 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
             isAllDay = entity.isAllDay == 1,
             type = CalendarEventType.valueOf(entity.type),
             completed = entity.completed == 1,
+            recurrenceFrequency = parseRecurrenceFrequency(entity.recurrenceFrequency),
+            recurrenceInterval = entity.recurrenceInterval,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
             updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
         )
@@ -36,6 +40,7 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
     override fun toEntity(domain: CalendarEvent): CalendarEventEntity {
         return CalendarEventEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             title = domain.title,
             description = domain.description,
             date = domain.date.format(dateFormatter),
@@ -44,8 +49,18 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
             isAllDay = if (domain.isAllDay) 1 else 0,
             type = domain.type.name,
             completed = if (domain.completed) 1 else 0,
+            recurrenceFrequency = domain.recurrenceFrequency.name,
+            recurrenceInterval = domain.recurrenceInterval,
             createdAt = domain.createdAt.format(dateTimeFormatter),
             updatedAt = domain.updatedAt.format(dateTimeFormatter)
         )
+    }
+
+    private fun parseRecurrenceFrequency(value: String): RecurrenceFrequency {
+        return try {
+            RecurrenceFrequency.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            RecurrenceFrequency.NONE
+        }
     }
 }

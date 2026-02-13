@@ -198,6 +198,23 @@ class MedicationMapperTest {
     }
 
     @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val entity = MedicationEntity(
+            id = 1L,
+            name = "テスト薬",
+            timings = "MORNING",
+            times = "MORNING=08:00",
+            createdAt = "2025-03-15T10:00:00",
+            updatedAt = "2025-03-15T10:00:00",
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
+    @Test
     fun `toDomain handles invalid time format gracefully`() {
         val entity = MedicationEntity(
             id = 1L,

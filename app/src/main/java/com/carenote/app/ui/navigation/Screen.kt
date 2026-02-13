@@ -235,6 +235,13 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.Search
     )
 
+    data object OnboardingWelcome : Screen(
+        route = "onboarding_welcome",
+        titleResId = R.string.onboarding_welcome_title,
+        selectedIcon = Icons.Filled.EmojiPeople,
+        unselectedIcon = Icons.Outlined.EmojiPeople
+    )
+
     companion object {
         val bottomNavItems get() = listOf(Home, Medication, Calendar, Tasks, HealthRecords, Notes)
         val authScreens get() = listOf(Login, Register, ForgotPassword)

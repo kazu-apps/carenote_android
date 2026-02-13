@@ -8,12 +8,16 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "health_records",
     indices = [
-        Index(value = ["recorded_at"])
+        Index(value = ["recorded_at"]),
+        Index(value = ["care_recipient_id"])
     ]
 )
 data class HealthRecordEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "temperature")
     val temperature: Double? = null,
@@ -38,6 +42,9 @@ data class HealthRecordEntity(
 
     @ColumnInfo(name = "condition_note")
     val conditionNote: String = "",
+
+    @ColumnInfo(name = "created_by")
+    val createdBy: String = "",
 
     @ColumnInfo(name = "recorded_at")
     val recordedAt: String,

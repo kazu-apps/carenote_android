@@ -10,13 +10,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +40,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.config.AppConfig.Photo
+import com.carenote.app.domain.model.NoteComment
 import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.PhotoPickerSection
@@ -42,6 +50,7 @@ import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
 import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -51,6 +60,8 @@ fun AddEditNoteScreen(
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val photos by viewModel.photos.collectAsStateWithLifecycle()
+    val comments by viewModel.comments.collectAsStateWithLifecycle()
+    val commentText by viewModel.commentText.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -141,6 +152,17 @@ fun AddEditNoteScreen(
                 maxPhotos = Photo.MAX_PHOTOS_PER_PARENT
             )
 
+            if (formState.isEditMode) {
+                HorizontalDivider()
+                NoteCommentSection(
+                    comments = comments,
+                    commentText = commentText,
+                    onCommentTextChanged = viewModel::updateCommentText,
+                    onAddComment = viewModel::addComment,
+                    onDeleteComment = viewModel::deleteComment
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -175,6 +197,78 @@ fun AddEditNoteScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun NoteCommentSection(
+    comments: List<NoteComment>,
+    commentText: String,
+    onCommentTextChanged: (String) -> Unit,
+    onAddComment: () -> Unit,
+    onDeleteComment: (Long) -> Unit
+) {
+    val dateTimeFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm") }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.note_comment_section_title),
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        if (comments.isEmpty()) {
+            Text(
+                text = stringResource(R.string.note_comment_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            comments.forEach { comment ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = comment.content,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = comment.createdAt.format(dateTimeFormatter),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = { onDeleteComment(comment.id) }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = commentText,
+                onValueChange = onCommentTextChanged,
+                modifier = Modifier.weight(1f),
+                placeholder = { Text(stringResource(R.string.note_comment_placeholder)) },
+                singleLine = true
+            )
+            Button(
+                onClick = onAddComment,
+                enabled = commentText.isNotBlank(),
+                shape = ButtonShape
+            ) {
+                Text(stringResource(R.string.note_comment_add))
+            }
         }
     }
 }

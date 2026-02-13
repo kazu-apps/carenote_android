@@ -34,6 +34,7 @@ class MedicationLogMapper @Inject constructor() : Mapper<MedicationLogEntity, Me
         }
         return MedicationLog(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             medicationId = entity.medicationId,
             status = status,
             scheduledAt = LocalDateTime.parse(entity.scheduledAt, dateTimeFormatter),
@@ -46,6 +47,7 @@ class MedicationLogMapper @Inject constructor() : Mapper<MedicationLogEntity, Me
     override fun toEntity(domain: MedicationLog): MedicationLogEntity {
         return MedicationLogEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             medicationId = domain.medicationId,
             status = domain.status.name,
             scheduledAt = domain.scheduledAt.format(dateTimeFormatter),

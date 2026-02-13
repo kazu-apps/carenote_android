@@ -48,6 +48,9 @@ import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.components.LoadingIndicator
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
+import com.carenote.app.ui.theme.CareNoteTheme
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -95,78 +98,102 @@ fun HomeScreen(
             )
         }
     ) { innerPadding ->
-        if (uiState.isLoading) {
-            LoadingIndicator(modifier = Modifier.padding(innerPadding))
-            return@Scaffold
-        }
-
-        PullToRefreshBox(
+        HomeContent(
+            uiState = uiState,
             isRefreshing = isRefreshing,
             onRefresh = { viewModel.refresh() },
+            onNavigateToMedication = {
+                viewModel.logSeeAllClicked("medication")
+                onNavigateToMedication()
+            },
+            onNavigateToCalendar = {
+                viewModel.logSeeAllClicked("calendar")
+                onNavigateToCalendar()
+            },
+            onNavigateToTasks = {
+                viewModel.logSeeAllClicked("tasks")
+                onNavigateToTasks()
+            },
+            onNavigateToHealthRecords = {
+                viewModel.logSeeAllClicked("health_records")
+                onNavigateToHealthRecords()
+            },
+            onNavigateToNotes = {
+                viewModel.logSeeAllClicked("notes")
+                onNavigateToNotes()
+            },
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun HomeContent(
+    uiState: HomeUiState,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    onNavigateToMedication: () -> Unit,
+    onNavigateToCalendar: () -> Unit,
+    onNavigateToTasks: () -> Unit,
+    onNavigateToHealthRecords: () -> Unit,
+    onNavigateToNotes: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (uiState.isLoading) {
+        LoadingIndicator(modifier = modifier)
+        return
+    }
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = modifier.fillMaxSize()
+    ) {
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
+            verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-                verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
-            ) {
-                item { Spacer(modifier = Modifier.height(AppConfig.UI.SMALL_SPACING_DP.dp)) }
+            item { Spacer(modifier = Modifier.height(AppConfig.UI.SMALL_SPACING_DP.dp)) }
 
-                item {
-                    MedicationSection(
-                        medications = uiState.todayMedications,
-                        onSeeAll = {
-                            viewModel.logSeeAllClicked("medication")
-                            onNavigateToMedication()
-                        }
-                    )
-                }
-
-                item {
-                    TaskSection(
-                        tasks = uiState.upcomingTasks,
-                        onSeeAll = {
-                            viewModel.logSeeAllClicked("tasks")
-                            onNavigateToTasks()
-                        }
-                    )
-                }
-
-                item {
-                    HealthRecordSection(
-                        record = uiState.latestHealthRecord,
-                        onSeeAll = {
-                            viewModel.logSeeAllClicked("health_records")
-                            onNavigateToHealthRecords()
-                        }
-                    )
-                }
-
-                item {
-                    NoteSection(
-                        notes = uiState.recentNotes,
-                        onSeeAll = {
-                            viewModel.logSeeAllClicked("notes")
-                            onNavigateToNotes()
-                        }
-                    )
-                }
-
-                item {
-                    CalendarSection(
-                        events = uiState.todayEvents,
-                        onSeeAll = {
-                            viewModel.logSeeAllClicked("calendar")
-                            onNavigateToCalendar()
-                        }
-                    )
-                }
-
-                item { Spacer(modifier = Modifier.height(AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp)) }
+            item {
+                MedicationSection(
+                    medications = uiState.todayMedications,
+                    onSeeAll = onNavigateToMedication
+                )
             }
+
+            item {
+                TaskSection(
+                    tasks = uiState.upcomingTasks,
+                    onSeeAll = onNavigateToTasks
+                )
+            }
+
+            item {
+                HealthRecordSection(
+                    record = uiState.latestHealthRecord,
+                    onSeeAll = onNavigateToHealthRecords
+                )
+            }
+
+            item {
+                NoteSection(
+                    notes = uiState.recentNotes,
+                    onSeeAll = onNavigateToNotes
+                )
+            }
+
+            item {
+                CalendarSection(
+                    events = uiState.todayEvents,
+                    onSeeAll = onNavigateToCalendar
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp)) }
         }
     }
 }
@@ -443,7 +470,7 @@ private fun CalendarSection(
 }
 
 @Composable
-private fun CalendarEventItem(event: CalendarEvent) {
+internal fun CalendarEventItem(event: CalendarEvent) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -492,5 +519,30 @@ private fun CalendarEventType.toIcon(): ImageVector {
         CalendarEventType.VISIT -> Icons.Filled.DirectionsCar
         CalendarEventType.DAYSERVICE -> Icons.Filled.Home
         CalendarEventType.OTHER -> Icons.Filled.Event
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun HomeContentPreview() {
+    CareNoteTheme {
+        HomeContent(
+            uiState = PreviewData.homeUiState,
+            isRefreshing = false,
+            onRefresh = {},
+            onNavigateToMedication = {},
+            onNavigateToCalendar = {},
+            onNavigateToTasks = {},
+            onNavigateToHealthRecords = {},
+            onNavigateToNotes = {}
+        )
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun CalendarEventItemPreview() {
+    CareNoteTheme {
+        CalendarEventItem(event = PreviewData.calendarEvent1)
     }
 }

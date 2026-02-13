@@ -35,6 +35,7 @@ class HealthRecordRemoteMapper @Inject constructor(
             meal = parseMealAmount(data["meal"] as? String),
             excretion = parseExcretionType(data["excretion"] as? String),
             conditionNote = data["conditionNote"] as? String ?: "",
+            createdBy = data["createdBy"] as? String ?: "",
             recordedAt = timestampConverter.toLocalDateTimeFromAny(recordedAt),
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
             updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt)
@@ -52,6 +53,7 @@ class HealthRecordRemoteMapper @Inject constructor(
             "meal" to domain.meal?.name,
             "excretion" to domain.excretion?.name,
             "conditionNote" to domain.conditionNote,
+            "createdBy" to domain.createdBy,
             "recordedAt" to timestampConverter.toTimestamp(domain.recordedAt),
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
             "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt)

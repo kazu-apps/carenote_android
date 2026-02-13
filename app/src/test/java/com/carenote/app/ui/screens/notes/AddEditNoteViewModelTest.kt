@@ -5,9 +5,11 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.model.Note
+import com.carenote.app.domain.model.NoteComment
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.fakes.FakeAnalyticsRepository
+import com.carenote.app.fakes.FakeNoteCommentRepository
 import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.fakes.FakePhotoRepository
 import com.carenote.app.ui.common.UiText
@@ -38,6 +40,7 @@ class AddEditNoteViewModelTest {
     private val imageCompressor: ImageCompressorInterface = mockk()
     private lateinit var analyticsRepository: FakeAnalyticsRepository
     private val fakeClock = FakeClock()
+    private lateinit var noteCommentRepository: FakeNoteCommentRepository
     private lateinit var viewModel: AddEditNoteViewModel
 
     @Before
@@ -46,6 +49,7 @@ class AddEditNoteViewModelTest {
         noteRepository = FakeNoteRepository()
         photoRepository = FakePhotoRepository()
         analyticsRepository = FakeAnalyticsRepository()
+        noteCommentRepository = FakeNoteCommentRepository()
     }
 
     @After
@@ -60,7 +64,8 @@ class AddEditNoteViewModelTest {
             photoRepository,
             imageCompressor,
             analyticsRepository,
-            clock = fakeClock
+            clock = fakeClock,
+            noteCommentRepository = noteCommentRepository
         )
     }
 
@@ -71,7 +76,8 @@ class AddEditNoteViewModelTest {
             photoRepository,
             imageCompressor,
             analyticsRepository,
-            clock = fakeClock
+            clock = fakeClock,
+            noteCommentRepository = noteCommentRepository
         )
     }
 
@@ -453,5 +459,223 @@ class AddEditNoteViewModelTest {
 
         viewModel.updateTitle("既存メモ")
         assertFalse(viewModel.isDirty)
+    }
+
+    // --- Comment Tests ---
+
+    @Test
+    fun `comments is empty initially`() {
+        viewModel = createAddViewModel()
+
+        assertTrue(viewModel.comments.value.isEmpty())
+    }
+
+    @Test
+    fun `commentText is empty initially`() {
+        viewModel = createAddViewModel()
+
+        assertEquals("", viewModel.commentText.value)
+    }
+
+    @Test
+    fun `updateCommentText updates state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateCommentText("テストコメント")
+
+        assertEquals("テストコメント", viewModel.commentText.value)
+    }
+
+    @Test
+    fun `addComment with empty text does nothing`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "テスト",
+                    content = "内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateCommentText("")
+        viewModel.addComment()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.comments.value.isEmpty())
+    }
+
+    @Test
+    fun `addComment in add mode does nothing`() = runTest {
+        viewModel = createAddViewModel()
+
+        viewModel.updateCommentText("コメント")
+        viewModel.addComment()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.comments.value.isEmpty())
+    }
+
+    @Test
+    fun `addComment in edit mode inserts comment and clears text`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "テスト",
+                    content = "内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateCommentText("新しいコメント")
+        viewModel.addComment()
+        advanceUntilIdle()
+
+        assertEquals("", viewModel.commentText.value)
+        val comments = viewModel.comments.value
+        assertEquals(1, comments.size)
+        assertEquals("新しいコメント", comments[0].content)
+    }
+
+    @Test
+    fun `addComment on failure shows snackbar`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "テスト",
+                    content = "内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        noteCommentRepository.shouldFail = true
+        viewModel.updateCommentText("失敗コメント")
+        viewModel.addComment()
+        advanceUntilIdle()
+
+        // Comment should not be added on failure
+        assertTrue(viewModel.comments.value.isEmpty())
+    }
+
+    @Test
+    fun `deleteComment in edit mode removes comment`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "テスト",
+                    content = "内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        noteCommentRepository.setComments(
+            listOf(
+                NoteComment(
+                    id = 10L,
+                    noteId = 1L,
+                    content = "削除対象コメント",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.comments.value.size)
+
+        viewModel.deleteComment(10L)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.comments.value.isEmpty())
+    }
+
+    @Test
+    fun `deleteComment on failure shows snackbar`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "テスト",
+                    content = "内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        noteCommentRepository.setComments(
+            listOf(
+                NoteComment(
+                    id = 10L,
+                    noteId = 1L,
+                    content = "削除対象コメント",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        noteCommentRepository.shouldFail = true
+        viewModel.deleteComment(10L)
+        advanceUntilIdle()
+
+        // Comment should still exist on failure
+        assertEquals(1, viewModel.comments.value.size)
+    }
+
+    @Test
+    fun `loadComments populates comments in edit mode`() = runTest {
+        noteRepository.setNotes(
+            listOf(
+                Note(
+                    id = 1L,
+                    title = "テスト",
+                    content = "内容",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        noteCommentRepository.setComments(
+            listOf(
+                NoteComment(
+                    id = 1L,
+                    noteId = 1L,
+                    content = "コメント1",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                ),
+                NoteComment(
+                    id = 2L,
+                    noteId = 1L,
+                    content = "コメント2",
+                    createdAt = LocalDateTime.of(2025, 3, 15, 11, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 11, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        val comments = viewModel.comments.value
+        assertEquals(2, comments.size)
     }
 }

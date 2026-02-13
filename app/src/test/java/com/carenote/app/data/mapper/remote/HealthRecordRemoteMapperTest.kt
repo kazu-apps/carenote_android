@@ -42,6 +42,7 @@ class HealthRecordRemoteMapperTest {
             "meal" to "FULL",
             "excretion" to "NORMAL",
             "conditionNote" to "体調良好",
+            "createdBy" to "user1",
             "recordedAt" to toTimestamp(recordedAt),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
@@ -58,6 +59,7 @@ class HealthRecordRemoteMapperTest {
         assertEquals(MealAmount.FULL, result.meal)
         assertEquals(ExcretionType.NORMAL, result.excretion)
         assertEquals("体調良好", result.conditionNote)
+        assertEquals("user1", result.createdBy)
         assertEquals(recordedAt, result.recordedAt)
         assertEquals(testDateTime, result.createdAt)
         assertEquals(testDateTime, result.updatedAt)
@@ -219,6 +221,7 @@ class HealthRecordRemoteMapperTest {
             meal = MealAmount.FULL,
             excretion = ExcretionType.NORMAL,
             conditionNote = "体調良好",
+            createdBy = "user1",
             recordedAt = recordedAt,
             createdAt = testDateTime,
             updatedAt = testDateTime
@@ -235,6 +238,7 @@ class HealthRecordRemoteMapperTest {
         assertEquals("FULL", result["meal"])
         assertEquals("NORMAL", result["excretion"])
         assertEquals("体調良好", result["conditionNote"])
+        assertEquals("user1", result["createdBy"])
     }
 
     @Test

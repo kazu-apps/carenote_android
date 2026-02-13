@@ -251,6 +251,9 @@ object AppConfig {
 
         /** TimePicker デフォルト終了時刻（分） */
         const val DEFAULT_END_MINUTE = 0
+
+        /** 繰り返し展開の最大オカレンス数 */
+        const val MAX_EXPANDED_OCCURRENCES = 365
     }
 
     /**
@@ -424,7 +427,7 @@ object AppConfig {
         const val BATCH_SIZE = 100
 
         /** 同期エンティティタイプ数（進捗計算用） */
-        const val ENTITY_TYPE_COUNT = 6
+        const val ENTITY_TYPE_COUNT = 7
 
         /** 定期同期間隔（分） - WorkManager 最小値 15分 */
         const val SYNC_INTERVAL_MINUTES = 15L

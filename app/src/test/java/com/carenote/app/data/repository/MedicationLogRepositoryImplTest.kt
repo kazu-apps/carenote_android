@@ -8,6 +8,7 @@ import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import app.cash.turbine.test
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -25,13 +26,15 @@ class MedicationLogRepositoryImplTest {
 
     private lateinit var dao: MedicationLogDao
     private lateinit var mapper: MedicationLogMapper
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
     private lateinit var repository: MedicationLogRepositoryImpl
 
     @Before
     fun setUp() {
         dao = mockk()
         mapper = MedicationLogMapper()
-        repository = MedicationLogRepositoryImpl(dao, mapper)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        repository = MedicationLogRepositoryImpl(dao, mapper, activeRecipientProvider)
     }
 
     private fun createEntity(
@@ -78,7 +81,7 @@ class MedicationLogRepositoryImplTest {
     @Test
     fun `getLogsForDate queries with correct date range`() = runTest {
         val date = LocalDate.of(2025, 3, 15)
-        every { dao.getLogsForDateRange(any(), any()) } returns flowOf(emptyList())
+        every { dao.getLogsForDateRange(any(), any(), 1L) } returns flowOf(emptyList())
 
         repository.getLogsForDate(date).test {
             awaitItem()
@@ -88,7 +91,8 @@ class MedicationLogRepositoryImplTest {
         coVerify {
             dao.getLogsForDateRange(
                 match { it.startsWith("2025-03-15T") },
-                match { it.startsWith("2025-03-16T") }
+                match { it.startsWith("2025-03-16T") },
+                any()
             )
         }
     }
@@ -96,7 +100,7 @@ class MedicationLogRepositoryImplTest {
     @Test
     fun `getLogsForDate returns mapped logs`() = runTest {
         val entities = listOf(createEntity(1L, 10L, "TAKEN"))
-        every { dao.getLogsForDateRange(any(), any()) } returns flowOf(entities)
+        every { dao.getLogsForDateRange(any(), any(), 1L) } returns flowOf(entities)
 
         repository.getLogsForDate(LocalDate.of(2025, 3, 15)).test {
             val result = awaitItem()

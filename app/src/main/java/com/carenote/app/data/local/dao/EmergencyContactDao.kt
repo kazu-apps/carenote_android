@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface EmergencyContactDao {
 
-    @Query("SELECT * FROM emergency_contacts ORDER BY name ASC")
-    fun getAll(): Flow<List<EmergencyContactEntity>>
+    @Query("SELECT * FROM emergency_contacts WHERE care_recipient_id = :careRecipientId ORDER BY name ASC")
+    fun getAll(careRecipientId: Long): Flow<List<EmergencyContactEntity>>
 
     @Query("SELECT * FROM emergency_contacts WHERE id = :id")
     fun getById(id: Long): Flow<EmergencyContactEntity?>

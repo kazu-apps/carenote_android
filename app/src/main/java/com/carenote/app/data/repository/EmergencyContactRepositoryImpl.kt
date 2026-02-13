@@ -5,22 +5,27 @@ import com.carenote.app.data.mapper.EmergencyContactMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.EmergencyContact
+import com.carenote.app.domain.repository.ActiveCareRecipientProvider
 import com.carenote.app.domain.repository.EmergencyContactRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class EmergencyContactRepositoryImpl @Inject constructor(
     private val emergencyContactDao: EmergencyContactDao,
-    private val mapper: EmergencyContactMapper
+    private val mapper: EmergencyContactMapper,
+    private val activeRecipientProvider: ActiveCareRecipientProvider
 ) : EmergencyContactRepository {
 
     override fun getAllContacts(): Flow<List<EmergencyContact>> {
-        return emergencyContactDao.getAll().map { entities ->
-            mapper.toDomainList(entities)
-        }
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            emergencyContactDao.getAll(recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
     }
 
     override fun getContactById(id: Long): Flow<EmergencyContact?> {
@@ -33,7 +38,8 @@ class EmergencyContactRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to insert emergency contact", it) }
         ) {
-            emergencyContactDao.insert(mapper.toEntity(contact))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            emergencyContactDao.insert(mapper.toEntity(contact).copy(careRecipientId = recipientId))
         }
     }
 
@@ -41,7 +47,8 @@ class EmergencyContactRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to update emergency contact", it) }
         ) {
-            emergencyContactDao.update(mapper.toEntity(contact))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            emergencyContactDao.update(mapper.toEntity(contact).copy(careRecipientId = recipientId))
         }
     }
 

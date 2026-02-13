@@ -10,12 +10,16 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["is_completed"]),
         Index(value = ["due_date"]),
-        Index(value = ["is_completed", "created_at"])
+        Index(value = ["is_completed", "created_at"]),
+        Index(value = ["care_recipient_id"])
     ]
 )
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "title")
     val title: String,
@@ -43,6 +47,9 @@ data class TaskEntity(
 
     @ColumnInfo(name = "reminder_time")
     val reminderTime: String? = null,
+
+    @ColumnInfo(name = "created_by")
+    val createdBy: String = "",
 
     @ColumnInfo(name = "created_at")
     val createdAt: String,

@@ -11,6 +11,7 @@ import java.time.LocalTime
 @Immutable
 data class Task(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val title: String,
     val description: String = "",
     val dueDate: LocalDate? = null,
@@ -20,6 +21,7 @@ data class Task(
     val recurrenceInterval: Int = 1,
     val reminderEnabled: Boolean = false,
     val reminderTime: LocalTime? = null,
+    val createdBy: String = "",
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()
 )

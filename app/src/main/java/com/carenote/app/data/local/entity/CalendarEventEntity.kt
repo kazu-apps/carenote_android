@@ -8,12 +8,16 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "calendar_events",
     indices = [
-        Index(value = ["date"])
+        Index(value = ["date"]),
+        Index(value = ["care_recipient_id"])
     ]
 )
 data class CalendarEventEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "title")
     val title: String,
@@ -38,6 +42,12 @@ data class CalendarEventEntity(
 
     @ColumnInfo(name = "completed")
     val completed: Int = 0,
+
+    @ColumnInfo(name = "recurrence_frequency")
+    val recurrenceFrequency: String = "NONE",
+
+    @ColumnInfo(name = "recurrence_interval")
+    val recurrenceInterval: Int = 1,
 
     @ColumnInfo(name = "created_at")
     val createdAt: String,

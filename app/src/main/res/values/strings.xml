@@ -436,6 +436,15 @@
     <string name="notes_delete_failed">削除に失敗しました</string>
     <string name="notes_save_failed">保存に失敗しました</string>
 
+    <!-- NoteComment -->
+    <string name="note_comment_section_title">コメント</string>
+    <string name="note_comment_placeholder">コメントを入力…</string>
+    <string name="note_comment_add">追加</string>
+    <string name="note_comment_empty">コメントはまだありません</string>
+    <string name="note_comment_delete_confirm">このコメントを削除しますか？</string>
+    <string name="note_comment_save_failed">コメントの保存に失敗しました</string>
+    <string name="note_comment_delete_failed">コメントの削除に失敗しました</string>
+
     <!-- Common -->
     <string name="common_save">保存する</string>
     <string name="common_cancel">キャンセル</string>
@@ -648,4 +657,9 @@
     <string name="care_recipient_medical_history_hint">過去の病歴・手術歴など</string>
     <string name="care_recipient_allergies">アレルギー</string>
     <string name="care_recipient_allergies_hint">薬・食物アレルギーなど</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">ケアのてへようこそ</string>
+    <string name="onboarding_welcome_description">家族の介護記録を\nかんたんに管理できるアプリです。\nまずは介護を受ける方の\n基本情報を登録しましょう。</string>
+    <string name="onboarding_welcome_start">はじめる</string>
 </resources>

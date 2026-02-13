@@ -111,6 +111,26 @@ class PhotoMapperTest {
         assertEquals(PhotoUploadStatus.UPLOADED, domains[1].uploadStatus)
     }
 
+    @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val now = LocalDateTime.of(2026, 2, 8, 10, 0, 0)
+        val entity = PhotoEntity(
+            id = 1,
+            parentType = "health_record",
+            parentId = 42,
+            localUri = "file:///cache/photo.jpg",
+            remoteUrl = null,
+            uploadStatus = "PENDING",
+            createdAt = now.format(dateTimeFormatter),
+            updatedAt = now.format(dateTimeFormatter),
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
     private fun createEntity(
         id: Long = 1,
         uploadStatus: String = "PENDING"

@@ -16,6 +16,7 @@ class EmergencyContactMapper @Inject constructor() : Mapper<EmergencyContactEnti
     override fun toDomain(entity: EmergencyContactEntity): EmergencyContact {
         return EmergencyContact(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             name = entity.name,
             phoneNumber = entity.phoneNumber,
             relationship = parseRelationshipType(entity.relationship),
@@ -28,6 +29,7 @@ class EmergencyContactMapper @Inject constructor() : Mapper<EmergencyContactEnti
     override fun toEntity(domain: EmergencyContact): EmergencyContactEntity {
         return EmergencyContactEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             name = domain.name,
             phoneNumber = domain.phoneNumber,
             relationship = domain.relationship.name,

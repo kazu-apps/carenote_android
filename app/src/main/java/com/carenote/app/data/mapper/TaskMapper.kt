@@ -21,6 +21,7 @@ class TaskMapper @Inject constructor() : Mapper<TaskEntity, Task> {
     override fun toDomain(entity: TaskEntity): Task {
         return Task(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             title = entity.title,
             description = entity.description,
             dueDate = entity.dueDate?.let { LocalDate.parse(it, dateFormatter) },
@@ -30,6 +31,7 @@ class TaskMapper @Inject constructor() : Mapper<TaskEntity, Task> {
             recurrenceInterval = entity.recurrenceInterval,
             reminderEnabled = entity.reminderEnabled == 1,
             reminderTime = entity.reminderTime?.let { LocalTime.parse(it, timeFormatter) },
+            createdBy = entity.createdBy,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
             updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
         )
@@ -54,6 +56,7 @@ class TaskMapper @Inject constructor() : Mapper<TaskEntity, Task> {
     override fun toEntity(domain: Task): TaskEntity {
         return TaskEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             title = domain.title,
             description = domain.description,
             dueDate = domain.dueDate?.format(dateFormatter),
@@ -63,6 +66,7 @@ class TaskMapper @Inject constructor() : Mapper<TaskEntity, Task> {
             recurrenceInterval = domain.recurrenceInterval,
             reminderEnabled = if (domain.reminderEnabled) 1 else 0,
             reminderTime = domain.reminderTime?.format(timeFormatter),
+            createdBy = domain.createdBy,
             createdAt = domain.createdAt.format(dateTimeFormatter),
             updatedAt = domain.updatedAt.format(dateTimeFormatter)
         )

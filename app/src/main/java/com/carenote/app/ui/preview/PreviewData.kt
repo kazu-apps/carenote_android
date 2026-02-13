@@ -3,9 +3,11 @@ package com.carenote.app.ui.preview
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.ExcretionType
+import com.carenote.app.domain.model.Gender
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.domain.model.Medication
+import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.Note
@@ -18,7 +20,10 @@ import com.carenote.app.ui.screens.auth.ForgotPasswordFormState
 import com.carenote.app.ui.screens.auth.LoginFormState
 import com.carenote.app.ui.screens.auth.RegisterFormState
 import com.carenote.app.ui.screens.calendar.AddEditCalendarEventFormState
+import com.carenote.app.ui.screens.carerecipient.CareRecipientUiState
 import com.carenote.app.ui.screens.healthrecords.AddEditHealthRecordFormState
+import com.carenote.app.ui.screens.home.HomeUiState
+import com.carenote.app.ui.screens.home.MedicationWithLog
 import com.carenote.app.ui.screens.medication.AddEditMedicationFormState
 import com.carenote.app.ui.screens.notes.AddEditNoteFormState
 import com.carenote.app.ui.screens.tasks.AddEditTaskFormState
@@ -125,7 +130,7 @@ object PreviewData {
         title = "今日の体調メモ",
         content = "朝から食欲があり、散歩も30分できた。顔色も良い。",
         tag = NoteTag.CONDITION,
-        authorId = "user1",
+        createdBy = "user1",
         createdAt = fixedDateTime,
         updatedAt = fixedDateTime
     )
@@ -135,7 +140,7 @@ object PreviewData {
         title = "昼食の記録",
         content = "おかゆと煮物を完食。水分も十分に摂取。",
         tag = NoteTag.MEAL,
-        authorId = "user1",
+        createdBy = "user1",
         createdAt = fixedDateTime,
         updatedAt = fixedDateTime
     )
@@ -145,7 +150,7 @@ object PreviewData {
         title = "夜勤への申し送り",
         content = "15時に微熱あり（37.2度）。解熱剤は未服用。経過観察中。",
         tag = NoteTag.REPORT,
-        authorId = "user1",
+        createdBy = "user1",
         createdAt = fixedDateTime,
         updatedAt = fixedDateTime
     )
@@ -282,5 +287,50 @@ object PreviewData {
         title = "今日の体調メモ",
         content = "朝から食欲があり、散歩も30分できた。",
         tag = NoteTag.CONDITION
+    )
+
+    // --- Home Screen ---
+
+    val medicationWithLogs = listOf(
+        MedicationWithLog(
+            medication = medication1,
+            logs = listOf(
+                MedicationLog(
+                    id = 1,
+                    medicationId = 1,
+                    status = MedicationLogStatus.TAKEN,
+                    scheduledAt = fixedDateTime,
+                    recordedAt = fixedDateTime,
+                    timing = MedicationTiming.MORNING
+                )
+            )
+        ),
+        MedicationWithLog(
+            medication = medication2,
+            logs = emptyList()
+        )
+    )
+
+    val homeUiState = HomeUiState(
+        todayMedications = medicationWithLogs,
+        upcomingTasks = listOf(task1, task2),
+        latestHealthRecord = healthRecord1,
+        recentNotes = listOf(note1, note2),
+        todayEvents = listOf(calendarEvent1, calendarEvent2),
+        isLoading = false
+    )
+
+    // --- CareRecipient Screen ---
+
+    val careRecipientUiState = CareRecipientUiState(
+        name = "田中花子",
+        nickname = "はなちゃん",
+        birthDate = LocalDate.of(1940, 5, 15),
+        gender = Gender.FEMALE,
+        careLevel = "要介護2",
+        medicalHistory = "高血圧、糖尿病（2型）",
+        allergies = "ペニシリン系抗生物質",
+        memo = "午前中は体調が良いことが多い。散歩が好き。",
+        isLoading = false
     )
 }

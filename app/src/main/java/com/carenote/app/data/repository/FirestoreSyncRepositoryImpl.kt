@@ -33,7 +33,8 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
     @Named("note") private val noteSyncer: EntitySyncer<*, *>,
     @Named("healthRecord") private val healthRecordSyncer: EntitySyncer<*, *>,
     @Named("calendarEvent") private val calendarEventSyncer: EntitySyncer<*, *>,
-    @Named("task") private val taskSyncer: EntitySyncer<*, *>
+    @Named("task") private val taskSyncer: EntitySyncer<*, *>,
+    @Named("noteComment") private val noteCommentSyncer: EntitySyncer<*, *>
 ) : SyncRepository {
 
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
@@ -55,7 +56,8 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
             "notes",
             "healthRecords",
             "calendarEvents",
-            "tasks"
+            "tasks",
+            "noteComments"
         )
 
         entityNames.forEachIndexed { index, entityName ->
@@ -68,6 +70,7 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
                 "healthRecords" -> syncHealthRecords(careRecipientId)
                 "calendarEvents" -> syncCalendarEvents(careRecipientId)
                 "tasks" -> syncTasks(careRecipientId)
+                "noteComments" -> syncNoteComments(careRecipientId)
                 else -> SyncResult.Success(0, 0)
             }
 
@@ -176,6 +179,11 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         return taskSyncer.sync(careRecipientId, lastSyncTime)
     }
 
+    override suspend fun syncNoteComments(careRecipientId: String): SyncResult {
+        val lastSyncTime = getLastSyncTime()
+        return noteCommentSyncer.sync(careRecipientId, lastSyncTime)
+    }
+
     override suspend fun getLastSyncTime(): LocalDateTime? =
         settingsDataSource.getLastSyncTime()
 
@@ -190,7 +198,7 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         val allFailedEntities = mutableListOf<Long>()
         val allErrors = mutableListOf<DomainError>()
 
-        val syncers = listOf(medicationSyncer, noteSyncer, healthRecordSyncer, calendarEventSyncer, taskSyncer)
+        val syncers = listOf(medicationSyncer, noteSyncer, healthRecordSyncer, calendarEventSyncer, taskSyncer, noteCommentSyncer)
 
         syncers.forEachIndexed { index, syncer ->
             val progress = (index + 1).toFloat() / syncers.size
@@ -233,7 +241,7 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         val allFailedEntities = mutableListOf<Long>()
         val allErrors = mutableListOf<DomainError>()
 
-        val syncers = listOf(medicationSyncer, noteSyncer, healthRecordSyncer, calendarEventSyncer, taskSyncer)
+        val syncers = listOf(medicationSyncer, noteSyncer, healthRecordSyncer, calendarEventSyncer, taskSyncer, noteCommentSyncer)
 
         syncers.forEachIndexed { index, syncer ->
             val progress = (index + 1).toFloat() / syncers.size

@@ -13,6 +13,7 @@ import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
+import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.SyncMappingDao
 import com.carenote.app.data.local.dao.TaskDao
@@ -114,5 +115,11 @@ object DatabaseModule {
     @Singleton
     fun provideEmergencyContactDao(database: CareNoteDatabase): EmergencyContactDao {
         return database.emergencyContactDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNoteCommentDao(database: CareNoteDatabase): NoteCommentDao {
+        return database.noteCommentDao()
     }
 }

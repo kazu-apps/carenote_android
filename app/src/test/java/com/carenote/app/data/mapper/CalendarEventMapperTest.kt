@@ -2,6 +2,8 @@ package com.carenote.app.data.mapper
 
 import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.RecurrenceFrequency
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -172,6 +174,115 @@ class CalendarEventMapperTest {
     }
 
     @Test
+    fun `toDomain maps type field correctly`() {
+        val entity = createEntity(type = "HOSPITAL")
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(CalendarEventType.HOSPITAL, result.type)
+    }
+
+    @Test
+    fun `toDomain maps completed true correctly`() {
+        val entity = createEntity(completed = 1)
+
+        val result = mapper.toDomain(entity)
+
+        assertTrue(result.completed)
+    }
+
+    @Test
+    fun `toEntity maps type to string`() {
+        val domain = createCalendarEvent(type = CalendarEventType.DAYSERVICE)
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("DAYSERVICE", result.type)
+    }
+
+    @Test
+    fun `toEntity maps completed true to 1`() {
+        val domain = createCalendarEvent(completed = true)
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals(1, result.completed)
+    }
+
+    @Test
+    fun `roundtrip preserves type and completed`() {
+        val original = createEntity(
+            type = "VISIT",
+            completed = 1
+        )
+
+        val domain = mapper.toDomain(original)
+        val roundtrip = mapper.toEntity(domain)
+
+        assertEquals(original.type, roundtrip.type)
+        assertEquals(original.completed, roundtrip.completed)
+    }
+
+    @Test
+    fun `toDomain maps recurrence fields correctly`() {
+        val entity = createEntity(
+            recurrenceFrequency = "WEEKLY",
+            recurrenceInterval = 2
+        )
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(RecurrenceFrequency.WEEKLY, result.recurrenceFrequency)
+        assertEquals(2, result.recurrenceInterval)
+    }
+
+    @Test
+    fun `toDomain with default recurrence values`() {
+        val entity = createEntity()
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+        assertEquals(1, result.recurrenceInterval)
+    }
+
+    @Test
+    fun `toDomain with invalid recurrence frequency defaults to NONE`() {
+        val entity = createEntity(recurrenceFrequency = "INVALID")
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+    }
+
+    @Test
+    fun `toEntity maps recurrence fields correctly`() {
+        val domain = createCalendarEvent(
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceInterval = 3
+        )
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("MONTHLY", result.recurrenceFrequency)
+        assertEquals(3, result.recurrenceInterval)
+    }
+
+    @Test
+    fun `roundtrip preserves recurrence fields`() {
+        val original = createEntity(
+            recurrenceFrequency = "DAILY",
+            recurrenceInterval = 5
+        )
+
+        val domain = mapper.toDomain(original)
+        val roundtrip = mapper.toEntity(domain)
+
+        assertEquals(original.recurrenceFrequency, roundtrip.recurrenceFrequency)
+        assertEquals(original.recurrenceInterval, roundtrip.recurrenceInterval)
+    }
+
+    @Test
     fun `toDomainList maps list of entities`() {
         val entities = listOf(
             createEntity(id = 1L, title = "予定A"),
@@ -208,6 +319,26 @@ class CalendarEventMapperTest {
         assertEquals("予定B", result[1].title)
     }
 
+    @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val entity = CalendarEventEntity(
+            id = 1L,
+            title = "テスト予定",
+            description = "テスト説明",
+            date = "2025-04-10",
+            startTime = "09:00:00",
+            endTime = "10:00:00",
+            isAllDay = 0,
+            createdAt = "2025-03-15T10:00:00",
+            updatedAt = "2025-03-15T11:00:00",
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
     private fun createEntity(
         id: Long = 1L,
         title: String = "テスト予定",
@@ -216,6 +347,10 @@ class CalendarEventMapperTest {
         startTime: String? = "09:00:00",
         endTime: String? = "10:00:00",
         isAllDay: Int = 0,
+        type: String = "OTHER",
+        completed: Int = 0,
+        recurrenceFrequency: String = "NONE",
+        recurrenceInterval: Int = 1,
         createdAt: String = "2025-03-15T10:00:00",
         updatedAt: String = "2025-03-15T11:00:00"
     ): CalendarEventEntity = CalendarEventEntity(
@@ -226,6 +361,10 @@ class CalendarEventMapperTest {
         startTime = startTime,
         endTime = endTime,
         isAllDay = isAllDay,
+        type = type,
+        completed = completed,
+        recurrenceFrequency = recurrenceFrequency,
+        recurrenceInterval = recurrenceInterval,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -238,6 +377,10 @@ class CalendarEventMapperTest {
         startTime: LocalTime? = LocalTime.of(9, 0),
         endTime: LocalTime? = LocalTime.of(10, 0),
         isAllDay: Boolean = false,
+        type: CalendarEventType = CalendarEventType.OTHER,
+        completed: Boolean = false,
+        recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
+        recurrenceInterval: Int = 1,
         createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
     ): CalendarEvent = CalendarEvent(
@@ -248,6 +391,10 @@ class CalendarEventMapperTest {
         startTime = startTime,
         endTime = endTime,
         isAllDay = isAllDay,
+        type = type,
+        completed = completed,
+        recurrenceFrequency = recurrenceFrequency,
+        recurrenceInterval = recurrenceInterval,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

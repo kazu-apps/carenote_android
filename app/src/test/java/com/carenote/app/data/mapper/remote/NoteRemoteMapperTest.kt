@@ -35,7 +35,7 @@ class NoteRemoteMapperTest {
             "title" to "テストメモ",
             "content" to "メモの内容です",
             "tag" to "CONDITION",
-            "authorId" to "user123",
+            "createdBy" to "user123",
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -46,7 +46,7 @@ class NoteRemoteMapperTest {
         assertEquals("テストメモ", result.title)
         assertEquals("メモの内容です", result.content)
         assertEquals(NoteTag.CONDITION, result.tag)
-        assertEquals("user123", result.authorId)
+        assertEquals("user123", result.createdBy)
         assertEquals(testDateTime, result.createdAt)
         assertEquals(testDateTime, result.updatedAt)
     }
@@ -65,7 +65,24 @@ class NoteRemoteMapperTest {
         val result = mapper.toDomain(data)
 
         assertEquals(NoteTag.OTHER, result.tag)
-        assertEquals("", result.authorId)
+        assertEquals("", result.createdBy)
+    }
+
+    @Test
+    fun `toDomain reads authorId as legacy fallback for createdBy`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストメモ",
+            "content" to "内容",
+            "authorId" to "legacy-user",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals("legacy-user", result.createdBy)
     }
 
     @Test
@@ -212,7 +229,7 @@ class NoteRemoteMapperTest {
             title = "テストメモ",
             content = "メモの内容です",
             tag = NoteTag.CONDITION,
-            authorId = "user123",
+            createdBy = "user123",
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
@@ -223,7 +240,7 @@ class NoteRemoteMapperTest {
         assertEquals("テストメモ", result["title"])
         assertEquals("メモの内容です", result["content"])
         assertEquals("CONDITION", result["tag"])
-        assertEquals("user123", result["authorId"])
+        assertEquals("user123", result["createdBy"])
     }
 
     @Test
@@ -232,7 +249,7 @@ class NoteRemoteMapperTest {
             id = 1L,
             title = "テストメモ",
             content = "内容",
-            authorId = "user123",
+            createdBy = "user123",
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
@@ -382,7 +399,7 @@ class NoteRemoteMapperTest {
             title = "テストメモ",
             content = "メモの内容です",
             tag = NoteTag.REPORT,
-            authorId = "user123",
+            createdBy = "user123",
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
@@ -394,7 +411,7 @@ class NoteRemoteMapperTest {
         assertEquals(original.title, roundtrip.title)
         assertEquals(original.content, roundtrip.content)
         assertEquals(original.tag, roundtrip.tag)
-        assertEquals(original.authorId, roundtrip.authorId)
+        assertEquals(original.createdBy, roundtrip.createdBy)
         assertEquals(original.createdAt, roundtrip.createdAt)
         assertEquals(original.updatedAt, roundtrip.updatedAt)
     }

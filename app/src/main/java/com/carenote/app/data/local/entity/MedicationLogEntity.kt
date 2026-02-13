@@ -18,12 +18,16 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index(value = ["medication_id"]),
-        Index(value = ["scheduled_at"])
+        Index(value = ["scheduled_at"]),
+        Index(value = ["care_recipient_id"])
     ]
 )
 data class MedicationLogEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "medication_id")
     val medicationId: Long,

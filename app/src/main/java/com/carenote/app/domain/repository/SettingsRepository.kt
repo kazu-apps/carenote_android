@@ -47,5 +47,9 @@ interface SettingsRepository {
 
     suspend fun updateDynamicColor(enabled: Boolean): Result<Unit, DomainError>
 
+    fun isOnboardingCompleted(): Boolean
+
+    suspend fun setOnboardingCompleted(completed: Boolean): Result<Unit, DomainError>
+
     suspend fun resetToDefaults(): Result<Unit, DomainError>
 }

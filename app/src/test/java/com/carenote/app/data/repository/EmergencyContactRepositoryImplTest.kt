@@ -7,6 +7,7 @@ import com.carenote.app.data.mapper.EmergencyContactMapper
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -24,13 +25,15 @@ class EmergencyContactRepositoryImplTest {
 
     private lateinit var dao: EmergencyContactDao
     private lateinit var mapper: EmergencyContactMapper
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
     private lateinit var repository: EmergencyContactRepositoryImpl
 
     @Before
     fun setUp() {
         dao = mockk()
         mapper = EmergencyContactMapper()
-        repository = EmergencyContactRepositoryImpl(dao, mapper)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        repository = EmergencyContactRepositoryImpl(dao, mapper, activeRecipientProvider)
     }
 
     private fun createEntity(
@@ -54,7 +57,7 @@ class EmergencyContactRepositoryImplTest {
             createEntity(1L, "A"),
             createEntity(2L, "B")
         )
-        every { dao.getAll() } returns flowOf(entities)
+        every { dao.getAll(1L) } returns flowOf(entities)
 
         repository.getAllContacts().test {
             val result = awaitItem()
@@ -67,7 +70,7 @@ class EmergencyContactRepositoryImplTest {
 
     @Test
     fun `getAllContacts returns empty list when no contacts`() = runTest {
-        every { dao.getAll() } returns flowOf(emptyList())
+        every { dao.getAll(1L) } returns flowOf(emptyList())
 
         repository.getAllContacts().test {
             val result = awaitItem()

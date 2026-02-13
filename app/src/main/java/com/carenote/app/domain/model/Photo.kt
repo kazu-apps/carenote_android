@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 data class Photo(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val parentType: String,
     val parentId: Long,
     val localUri: String,

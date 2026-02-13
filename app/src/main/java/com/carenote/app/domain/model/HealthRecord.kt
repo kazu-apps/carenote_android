@@ -31,6 +31,7 @@ enum class ExcretionType {
 @Immutable
 data class HealthRecord(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val temperature: Double? = null,
     val bloodPressureHigh: Int? = null,
     val bloodPressureLow: Int? = null,
@@ -39,6 +40,7 @@ data class HealthRecord(
     val meal: MealAmount? = null,
     val excretion: ExcretionType? = null,
     val conditionNote: String = "",
+    val createdBy: String = "",
     val recordedAt: LocalDateTime = LocalDateTime.now(),
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()

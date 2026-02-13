@@ -436,6 +436,15 @@
     <string name="notes_delete_failed">Failed to delete</string>
     <string name="notes_save_failed">Failed to save</string>
 
+    <!-- NoteComment -->
+    <string name="note_comment_section_title">Comments</string>
+    <string name="note_comment_placeholder">Enter a comment…</string>
+    <string name="note_comment_add">Add</string>
+    <string name="note_comment_empty">No comments yet</string>
+    <string name="note_comment_delete_confirm">Delete this comment?</string>
+    <string name="note_comment_save_failed">Failed to save comment</string>
+    <string name="note_comment_delete_failed">Failed to delete comment</string>
+
     <!-- Common -->
     <string name="common_save">Save</string>
     <string name="common_cancel">Cancel</string>
@@ -648,4 +657,9 @@
     <string name="care_recipient_medical_history_hint">Past illnesses, surgeries, etc.</string>
     <string name="care_recipient_allergies">Allergies</string>
     <string name="care_recipient_allergies_hint">Drug or food allergies, etc.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Welcome to CareNote</string>
+    <string name="onboarding_welcome_description">An app to easily manage\ncare records for your family.\nLet\'s start by registering\nthe care recipient\'s basic information.</string>
+    <string name="onboarding_welcome_start">Get Started</string>
 </resources>

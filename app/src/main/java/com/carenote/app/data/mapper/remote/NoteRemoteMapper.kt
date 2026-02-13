@@ -36,7 +36,7 @@ class NoteRemoteMapper @Inject constructor(
             title = title,
             content = content,
             tag = tag,
-            authorId = data["authorId"] as? String ?: "",
+            createdBy = data["createdBy"] as? String ?: data["authorId"] as? String ?: "",
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
             updatedAt = timestampConverter.toLocalDateTimeFromAny(updatedAt)
         )
@@ -59,7 +59,7 @@ class NoteRemoteMapper @Inject constructor(
             "title" to domain.title,
             "content" to domain.content,
             "tag" to domain.tag.name,
-            "authorId" to domain.authorId,
+            "createdBy" to domain.createdBy,
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
             "updatedAt" to timestampConverter.toTimestamp(domain.updatedAt)
         )

@@ -24,7 +24,7 @@ class NoteMapperTest {
             title = "テストメモ",
             content = "テスト内容",
             tag = "CONDITION",
-            authorId = "user1",
+            createdBy = "user1",
             createdAt = "2025-03-15T10:00:00",
             updatedAt = "2025-03-15T11:00:00"
         )
@@ -35,7 +35,7 @@ class NoteMapperTest {
         assertEquals("テストメモ", result.title)
         assertEquals("テスト内容", result.content)
         assertEquals(NoteTag.CONDITION, result.tag)
-        assertEquals("user1", result.authorId)
+        assertEquals("user1", result.createdBy)
         assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
         assertEquals(LocalDateTime.of(2025, 3, 15, 11, 0), result.updatedAt)
     }
@@ -77,7 +77,7 @@ class NoteMapperTest {
             title = "申し送り",
             content = "今日の状態は良好",
             tag = NoteTag.REPORT,
-            authorId = "user2",
+            createdBy = "user2",
             createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
             updatedAt = LocalDateTime.of(2025, 3, 15, 12, 0)
         )
@@ -88,7 +88,7 @@ class NoteMapperTest {
         assertEquals("申し送り", result.title)
         assertEquals("今日の状態は良好", result.content)
         assertEquals("REPORT", result.tag)
-        assertEquals("user2", result.authorId)
+        assertEquals("user2", result.createdBy)
         assertEquals("2025-03-15T10:00:00", result.createdAt)
         assertEquals("2025-03-15T12:00:00", result.updatedAt)
     }
@@ -112,7 +112,7 @@ class NoteMapperTest {
             title = "体調メモ",
             content = "熱が37.2度",
             tag = "CONDITION",
-            authorId = "user1",
+            createdBy = "user1",
             createdAt = "2025-03-15T10:00:00",
             updatedAt = "2025-03-15T10:00:00"
         )
@@ -124,7 +124,7 @@ class NoteMapperTest {
         assertEquals(original.title, roundtrip.title)
         assertEquals(original.content, roundtrip.content)
         assertEquals(original.tag, roundtrip.tag)
-        assertEquals(original.authorId, roundtrip.authorId)
+        assertEquals(original.createdBy, roundtrip.createdBy)
         assertEquals(original.createdAt, roundtrip.createdAt)
         assertEquals(original.updatedAt, roundtrip.updatedAt)
     }
@@ -166,12 +166,30 @@ class NoteMapperTest {
         assertEquals("メモB", result[1].title)
     }
 
+    @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val entity = NoteEntity(
+            id = 1L,
+            title = "テストメモ",
+            content = "テスト内容",
+            tag = "OTHER",
+            createdBy = "",
+            createdAt = "2025-03-15T10:00:00",
+            updatedAt = "2025-03-15T10:00:00",
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
     private fun createEntity(
         id: Long = 1L,
         title: String = "テストメモ",
         content: String = "テスト内容",
         tag: String = "OTHER",
-        authorId: String = "",
+        createdBy: String = "",
         createdAt: String = "2025-03-15T10:00:00",
         updatedAt: String = "2025-03-15T10:00:00"
     ): NoteEntity = NoteEntity(
@@ -179,7 +197,7 @@ class NoteMapperTest {
         title = title,
         content = content,
         tag = tag,
-        authorId = authorId,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -189,7 +207,7 @@ class NoteMapperTest {
         title: String = "テストメモ",
         content: String = "テスト内容",
         tag: NoteTag = NoteTag.OTHER,
-        authorId: String = "",
+        createdBy: String = "",
         createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
         updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
     ): Note = Note(
@@ -197,7 +215,7 @@ class NoteMapperTest {
         title = title,
         content = content,
         tag = tag,
-        authorId = authorId,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

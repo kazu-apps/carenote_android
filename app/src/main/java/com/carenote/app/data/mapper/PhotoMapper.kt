@@ -16,6 +16,7 @@ class PhotoMapper @Inject constructor() : Mapper<PhotoEntity, Photo> {
     override fun toDomain(entity: PhotoEntity): Photo {
         return Photo(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             parentType = entity.parentType,
             parentId = entity.parentId,
             localUri = entity.localUri,
@@ -29,6 +30,7 @@ class PhotoMapper @Inject constructor() : Mapper<PhotoEntity, Photo> {
     override fun toEntity(domain: Photo): PhotoEntity {
         return PhotoEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             parentType = domain.parentType,
             parentId = domain.parentId,
             localUri = domain.localUri,

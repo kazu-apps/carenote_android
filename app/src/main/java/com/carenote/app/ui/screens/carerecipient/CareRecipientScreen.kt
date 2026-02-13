@@ -40,6 +40,9 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.Gender
 import com.carenote.app.ui.components.CareNoteDatePickerDialog
+import com.carenote.app.ui.preview.LightDarkPreview
+import com.carenote.app.ui.preview.PreviewData
+import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.ui.util.SnackbarEvent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -49,6 +52,8 @@ import java.time.format.FormatStyle
 @Composable
 fun CareRecipientScreen(
     onNavigateBack: () -> Unit,
+    onSaveSuccess: (() -> Unit)? = null,
+    showBackButton: Boolean = true,
     viewModel: CareRecipientViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -66,6 +71,12 @@ fun CareRecipientScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.saveSuccess.collect {
+            onSaveSuccess?.invoke()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,11 +87,13 @@ fun CareRecipientScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
-                        )
+                    if (showBackButton) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -90,121 +103,19 @@ fun CareRecipientScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-            verticalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp)
-        ) {
-            OutlinedTextField(
-                value = uiState.name,
-                onValueChange = { viewModel.updateName(it) },
-                label = { Text(stringResource(R.string.care_recipient_name)) },
-                placeholder = { Text(stringResource(R.string.care_recipient_name_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = uiState.nickname,
-                onValueChange = { viewModel.updateNickname(it) },
-                label = { Text(stringResource(R.string.care_recipient_nickname)) },
-                placeholder = { Text(stringResource(R.string.care_recipient_nickname_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            val birthDateText = uiState.birthDate?.let {
-                DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(it)
-            } ?: stringResource(R.string.care_recipient_birth_date_not_set)
-
-            OutlinedTextField(
-                value = birthDateText,
-                onValueChange = {},
-                label = { Text(stringResource(R.string.care_recipient_birth_date)) },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = true,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                    .also { interactionSource ->
-                        LaunchedEffect(interactionSource) {
-                            interactionSource.interactions.collect {
-                                if (it is androidx.compose.foundation.interaction.PressInteraction.Release) {
-                                    showDatePicker = true
-                                }
-                            }
-                        }
-                    }
-            )
-
-            Text(
-                text = stringResource(R.string.care_recipient_gender),
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Gender.entries.forEach { gender ->
-                    FilterChip(
-                        selected = uiState.gender == gender,
-                        onClick = { viewModel.updateGender(gender) },
-                        label = { Text(genderLabel(gender)) }
-                    )
-                }
-            }
-
-            OutlinedTextField(
-                value = uiState.careLevel,
-                onValueChange = { viewModel.updateCareLevel(it) },
-                label = { Text(stringResource(R.string.care_recipient_care_level)) },
-                placeholder = { Text(stringResource(R.string.care_recipient_care_level_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = uiState.medicalHistory,
-                onValueChange = { viewModel.updateMedicalHistory(it) },
-                label = { Text(stringResource(R.string.care_recipient_medical_history)) },
-                placeholder = { Text(stringResource(R.string.care_recipient_medical_history_hint)) },
-                minLines = 3,
-                maxLines = 6,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = uiState.allergies,
-                onValueChange = { viewModel.updateAllergies(it) },
-                label = { Text(stringResource(R.string.care_recipient_allergies)) },
-                placeholder = { Text(stringResource(R.string.care_recipient_allergies_hint)) },
-                minLines = 3,
-                maxLines = 6,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = uiState.memo,
-                onValueChange = { viewModel.updateMemo(it) },
-                label = { Text(stringResource(R.string.care_recipient_memo)) },
-                placeholder = { Text(stringResource(R.string.care_recipient_memo_hint)) },
-                minLines = 3,
-                maxLines = 6,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Button(
-                onClick = { viewModel.save() },
-                enabled = !uiState.isSaving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = AppConfig.UI.ITEM_SPACING_DP.dp)
-            ) {
-                Text(text = stringResource(R.string.common_save))
-            }
-        }
+        CareRecipientContent(
+            uiState = uiState,
+            onNameChange = { viewModel.updateName(it) },
+            onNicknameChange = { viewModel.updateNickname(it) },
+            onBirthDateClick = { showDatePicker = true },
+            onGenderChange = { viewModel.updateGender(it) },
+            onCareLevelChange = { viewModel.updateCareLevel(it) },
+            onMedicalHistoryChange = { viewModel.updateMedicalHistory(it) },
+            onAllergiesChange = { viewModel.updateAllergies(it) },
+            onMemoChange = { viewModel.updateMemo(it) },
+            onSave = { viewModel.save() },
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 
     if (showDatePicker) {
@@ -219,6 +130,137 @@ fun CareRecipientScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun CareRecipientContent(
+    uiState: CareRecipientUiState,
+    onNameChange: (String) -> Unit,
+    onNicknameChange: (String) -> Unit,
+    onBirthDateClick: () -> Unit,
+    onGenderChange: (Gender) -> Unit,
+    onCareLevelChange: (String) -> Unit,
+    onMedicalHistoryChange: (String) -> Unit,
+    onAllergiesChange: (String) -> Unit,
+    onMemoChange: (String) -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
+        verticalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp)
+    ) {
+        OutlinedTextField(
+            value = uiState.name,
+            onValueChange = onNameChange,
+            label = { Text(stringResource(R.string.care_recipient_name)) },
+            placeholder = { Text(stringResource(R.string.care_recipient_name_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = uiState.nickname,
+            onValueChange = onNicknameChange,
+            label = { Text(stringResource(R.string.care_recipient_nickname)) },
+            placeholder = { Text(stringResource(R.string.care_recipient_nickname_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        val birthDateText = uiState.birthDate?.let {
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(it)
+        } ?: stringResource(R.string.care_recipient_birth_date_not_set)
+
+        OutlinedTextField(
+            value = birthDateText,
+            onValueChange = {},
+            label = { Text(stringResource(R.string.care_recipient_birth_date)) },
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = true,
+            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                .also { interactionSource ->
+                    LaunchedEffect(interactionSource) {
+                        interactionSource.interactions.collect {
+                            if (it is androidx.compose.foundation.interaction.PressInteraction.Release) {
+                                onBirthDateClick()
+                            }
+                        }
+                    }
+                }
+        )
+
+        Text(
+            text = stringResource(R.string.care_recipient_gender),
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Gender.entries.forEach { gender ->
+                FilterChip(
+                    selected = uiState.gender == gender,
+                    onClick = { onGenderChange(gender) },
+                    label = { Text(genderLabel(gender)) }
+                )
+            }
+        }
+
+        OutlinedTextField(
+            value = uiState.careLevel,
+            onValueChange = onCareLevelChange,
+            label = { Text(stringResource(R.string.care_recipient_care_level)) },
+            placeholder = { Text(stringResource(R.string.care_recipient_care_level_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = uiState.medicalHistory,
+            onValueChange = onMedicalHistoryChange,
+            label = { Text(stringResource(R.string.care_recipient_medical_history)) },
+            placeholder = { Text(stringResource(R.string.care_recipient_medical_history_hint)) },
+            minLines = 3,
+            maxLines = 6,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = uiState.allergies,
+            onValueChange = onAllergiesChange,
+            label = { Text(stringResource(R.string.care_recipient_allergies)) },
+            placeholder = { Text(stringResource(R.string.care_recipient_allergies_hint)) },
+            minLines = 3,
+            maxLines = 6,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = uiState.memo,
+            onValueChange = onMemoChange,
+            label = { Text(stringResource(R.string.care_recipient_memo)) },
+            placeholder = { Text(stringResource(R.string.care_recipient_memo_hint)) },
+            minLines = 3,
+            maxLines = 6,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Button(
+            onClick = onSave,
+            enabled = !uiState.isSaving,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = AppConfig.UI.ITEM_SPACING_DP.dp)
+        ) {
+            Text(text = stringResource(R.string.common_save))
+        }
+    }
+}
+
 @Composable
 private fun genderLabel(gender: Gender): String {
     return when (gender) {
@@ -226,5 +268,24 @@ private fun genderLabel(gender: Gender): String {
         Gender.FEMALE -> stringResource(R.string.care_recipient_gender_female)
         Gender.OTHER -> stringResource(R.string.care_recipient_gender_other)
         Gender.UNSPECIFIED -> stringResource(R.string.care_recipient_gender_unspecified)
+    }
+}
+
+@LightDarkPreview
+@Composable
+private fun CareRecipientContentPreview() {
+    CareNoteTheme {
+        CareRecipientContent(
+            uiState = PreviewData.careRecipientUiState,
+            onNameChange = {},
+            onNicknameChange = {},
+            onBirthDateClick = {},
+            onGenderChange = {},
+            onCareLevelChange = {},
+            onMedicalHistoryChange = {},
+            onAllergiesChange = {},
+            onMemoChange = {},
+            onSave = {}
+        )
     }
 }

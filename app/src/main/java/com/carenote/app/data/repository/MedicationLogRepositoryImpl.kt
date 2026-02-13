@@ -6,8 +6,11 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.domain.repository.ActiveCareRecipientProvider
 import com.carenote.app.domain.repository.MedicationLogRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.LocalTime
@@ -15,10 +18,12 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class MedicationLogRepositoryImpl @Inject constructor(
     private val medicationLogDao: MedicationLogDao,
-    private val mapper: MedicationLogMapper
+    private val mapper: MedicationLogMapper,
+    private val activeRecipientProvider: ActiveCareRecipientProvider
 ) : MedicationLogRepository {
 
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -32,16 +37,17 @@ class MedicationLogRepositoryImpl @Inject constructor(
     override fun getLogsForDate(date: LocalDate): Flow<List<MedicationLog>> {
         val startOfDay = date.atTime(LocalTime.MIN).format(dateTimeFormatter)
         val endOfDay = date.plusDays(1).atTime(LocalTime.MIN).format(dateTimeFormatter)
-        return medicationLogDao.getLogsForDateRange(startOfDay, endOfDay).map { entities ->
-            mapper.toDomainList(entities)
-        }
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            medicationLogDao.getLogsForDateRange(startOfDay, endOfDay, recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
     }
 
     override suspend fun insertLog(log: MedicationLog): Result<Long, DomainError> {
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to insert medication log", it) }
         ) {
-            medicationLogDao.insertLog(mapper.toEntity(log))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            medicationLogDao.insertLog(mapper.toEntity(log).copy(careRecipientId = recipientId))
         }
     }
 
@@ -49,7 +55,8 @@ class MedicationLogRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to update medication log", it) }
         ) {
-            medicationLogDao.updateLog(mapper.toEntity(log))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            medicationLogDao.updateLog(mapper.toEntity(log).copy(careRecipientId = recipientId))
         }
     }
 
@@ -77,8 +84,8 @@ class MedicationLogRepositoryImpl @Inject constructor(
     }
 
     override fun getAllLogs(): Flow<List<MedicationLog>> {
-        return medicationLogDao.getAllLogs().map { entities ->
-            mapper.toDomainList(entities)
-        }
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            medicationLogDao.getAllLogs(recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
     }
 }

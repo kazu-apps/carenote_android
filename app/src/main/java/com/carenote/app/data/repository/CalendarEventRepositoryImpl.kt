@@ -5,26 +5,32 @@ import com.carenote.app.data.mapper.CalendarEventMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.repository.ActiveCareRecipientProvider
 import com.carenote.app.domain.repository.CalendarEventRepository
+import com.carenote.app.domain.util.RecurrenceExpander
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class CalendarEventRepositoryImpl @Inject constructor(
     private val calendarEventDao: CalendarEventDao,
-    private val mapper: CalendarEventMapper
+    private val mapper: CalendarEventMapper,
+    private val activeRecipientProvider: ActiveCareRecipientProvider
 ) : CalendarEventRepository {
 
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     override fun getAllEvents(): Flow<List<CalendarEvent>> {
-        return calendarEventDao.getAllEvents().map { entities ->
-            mapper.toDomainList(entities)
-        }
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getAllEvents(recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
     }
 
     override fun getEventById(id: Long): Flow<CalendarEvent?> {
@@ -34,10 +40,13 @@ class CalendarEventRepositoryImpl @Inject constructor(
     }
 
     override fun getEventsByDate(date: LocalDate): Flow<List<CalendarEvent>> {
-        return calendarEventDao.getEventsByDate(
-            date = date.format(dateFormatter)
-        ).map { entities ->
-            mapper.toDomainList(entities)
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getAllEvents(recipientId)
+        }.map { entities ->
+            val allEvents = mapper.toDomainList(entities)
+            allEvents.flatMap { event ->
+                RecurrenceExpander.expand(event, date, date)
+            }
         }
     }
 
@@ -45,11 +54,13 @@ class CalendarEventRepositoryImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): Flow<List<CalendarEvent>> {
-        return calendarEventDao.getEventsByDateRange(
-            startDate = startDate.format(dateFormatter),
-            endDate = endDate.format(dateFormatter)
-        ).map { entities ->
-            mapper.toDomainList(entities)
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getAllEvents(recipientId)
+        }.map { entities ->
+            val allEvents = mapper.toDomainList(entities)
+            allEvents.flatMap { event ->
+                RecurrenceExpander.expand(event, startDate, endDate)
+            }.sortedWith(compareBy({ it.date }, { it.startTime }))
         }
     }
 
@@ -57,7 +68,8 @@ class CalendarEventRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to insert calendar event", it) }
         ) {
-            calendarEventDao.insertEvent(mapper.toEntity(event))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            calendarEventDao.insertEvent(mapper.toEntity(event).copy(careRecipientId = recipientId))
         }
     }
 
@@ -65,7 +77,8 @@ class CalendarEventRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to update calendar event", it) }
         ) {
-            calendarEventDao.updateEvent(mapper.toEntity(event))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            calendarEventDao.updateEvent(mapper.toEntity(event).copy(careRecipientId = recipientId))
         }
     }
 

@@ -16,10 +16,11 @@ class NoteMapper @Inject constructor() : Mapper<NoteEntity, Note> {
     override fun toDomain(entity: NoteEntity): Note {
         return Note(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             title = entity.title,
             content = entity.content,
             tag = parseTag(entity.tag),
-            authorId = entity.authorId,
+            createdBy = entity.createdBy,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
             updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
         )
@@ -28,10 +29,11 @@ class NoteMapper @Inject constructor() : Mapper<NoteEntity, Note> {
     override fun toEntity(domain: Note): NoteEntity {
         return NoteEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             title = domain.title,
             content = domain.content,
             tag = domain.tag.name,
-            authorId = domain.authorId,
+            createdBy = domain.createdBy,
             createdAt = domain.createdAt.format(dateTimeFormatter),
             updatedAt = domain.updatedAt.format(dateTimeFormatter)
         )

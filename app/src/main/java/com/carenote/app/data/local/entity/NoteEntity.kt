@@ -9,12 +9,16 @@ import androidx.room.PrimaryKey
     tableName = "notes",
     indices = [
         Index(value = ["tag"]),
-        Index(value = ["created_at"])
+        Index(value = ["created_at"]),
+        Index(value = ["care_recipient_id"])
     ]
 )
 data class NoteEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "title")
     val title: String,
@@ -25,8 +29,8 @@ data class NoteEntity(
     @ColumnInfo(name = "tag")
     val tag: String,
 
-    @ColumnInfo(name = "author_id")
-    val authorId: String = "",
+    @ColumnInfo(name = "created_by")
+    val createdBy: String = "",
 
     @ColumnInfo(name = "created_at")
     val createdAt: String,

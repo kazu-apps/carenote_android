@@ -6,8 +6,11 @@ import com.carenote.app.data.mapper.HealthRecordMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.HealthRecord
+import com.carenote.app.domain.model.User
+import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.PhotoRepository
 import app.cash.turbine.test
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -28,6 +31,8 @@ class HealthRecordRepositoryImplTest {
     private lateinit var dao: HealthRecordDao
     private lateinit var mapper: HealthRecordMapper
     private lateinit var photoRepository: PhotoRepository
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
+    private lateinit var authRepository: AuthRepository
     private lateinit var repository: HealthRecordRepositoryImpl
 
     @Before
@@ -35,7 +40,15 @@ class HealthRecordRepositoryImplTest {
         dao = mockk()
         mapper = HealthRecordMapper()
         photoRepository = mockk()
-        repository = HealthRecordRepositoryImpl(dao, mapper, photoRepository)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        authRepository = mockk()
+        every { authRepository.getCurrentUser() } returns User(
+            uid = "test-uid",
+            name = "Test User",
+            email = "test@example.com",
+            createdAt = LocalDateTime.of(2025, 1, 1, 0, 0)
+        )
+        repository = HealthRecordRepositoryImpl(dao, mapper, photoRepository, activeRecipientProvider, authRepository)
     }
 
     private fun createEntity(
@@ -69,7 +82,7 @@ class HealthRecordRepositoryImplTest {
             createEntity(1L, conditionNote = "記録A"),
             createEntity(2L, conditionNote = "記録B")
         )
-        every { dao.getAllRecords() } returns flowOf(entities)
+        every { dao.getAllRecords(1L) } returns flowOf(entities)
 
         repository.getAllRecords().test {
             val result = awaitItem()
@@ -82,7 +95,7 @@ class HealthRecordRepositoryImplTest {
 
     @Test
     fun `getAllRecords returns empty list when no records`() = runTest {
-        every { dao.getAllRecords() } returns flowOf(emptyList())
+        every { dao.getAllRecords(1L) } returns flowOf(emptyList())
 
         repository.getAllRecords().test {
             val result = awaitItem()
@@ -123,7 +136,8 @@ class HealthRecordRepositoryImplTest {
         every {
             dao.getRecordsByDateRange(
                 "2025-03-01T00:00:00",
-                "2025-03-31T23:59:59"
+                "2025-03-31T23:59:59",
+                1L
             )
         } returns flowOf(entities)
 
@@ -139,7 +153,7 @@ class HealthRecordRepositoryImplTest {
     @Test
     fun `getRecordsByDateRange returns empty list when no records in range`() = runTest {
         every {
-            dao.getRecordsByDateRange(any(), any())
+            dao.getRecordsByDateRange(any(), any(), 1L)
         } returns flowOf(emptyList())
 
         val start = LocalDateTime.of(2025, 1, 1, 0, 0)

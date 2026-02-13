@@ -6,6 +6,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.model.PhotoUploadStatus
+import com.carenote.app.domain.repository.ActiveCareRecipientProvider
 import com.carenote.app.domain.repository.PhotoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,7 +18,8 @@ import javax.inject.Singleton
 @Singleton
 class PhotoRepositoryImpl @Inject constructor(
     private val photoDao: PhotoDao,
-    private val mapper: PhotoMapper
+    private val mapper: PhotoMapper,
+    private val activeRecipientProvider: ActiveCareRecipientProvider
 ) : PhotoRepository {
 
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -32,7 +34,8 @@ class PhotoRepositoryImpl @Inject constructor(
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to add photo", it) }
         ) {
-            photoDao.insert(mapper.toEntity(photo))
+            val recipientId = activeRecipientProvider.getActiveCareRecipientId()
+            photoDao.insert(mapper.toEntity(photo).copy(careRecipientId = recipientId))
         }
     }
 

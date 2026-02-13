@@ -125,6 +125,24 @@ class EmergencyContactMapperTest {
         assertEquals(original, roundtripped)
     }
 
+    @Test
+    fun `careRecipientId maps correctly in roundtrip`() {
+        val entity = EmergencyContactEntity(
+            id = 1,
+            name = "テスト太郎",
+            phoneNumber = "090-1234-5678",
+            relationship = "FAMILY",
+            memo = "",
+            createdAt = "2026-01-01T10:00:00",
+            updatedAt = "2026-01-01T10:00:00",
+            careRecipientId = 42L
+        )
+        val domain = mapper.toDomain(entity)
+        assertEquals(42L, domain.careRecipientId)
+        val roundtrip = mapper.toEntity(domain)
+        assertEquals(42L, roundtrip.careRecipientId)
+    }
+
     private fun createEntity(
         id: Long = 1,
         name: String = "テスト",

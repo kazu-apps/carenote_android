@@ -96,8 +96,11 @@ class MainActivity : AppCompatActivity() {
 
             val isLoggedIn = currentUser != null
             val startDestination = remember {
-                if (authRepository.getCurrentUser() != null) Screen.Home.route
-                else Screen.Login.route
+                when {
+                    !settingsRepository.isOnboardingCompleted() -> Screen.OnboardingWelcome.route
+                    authRepository.getCurrentUser() != null -> Screen.Home.route
+                    else -> Screen.Login.route
+                }
             }
 
             val darkTheme = when (settings.themeMode) {
@@ -187,7 +190,8 @@ class MainActivity : AppCompatActivity() {
                     val currentRoute = navBackStackEntry?.destination?.route
 
                     val isAuthScreen = currentRoute in Screen.authScreens.map { it.route }
-                    val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route } && !isAuthScreen
+                    val isOnboardingScreen = currentRoute == Screen.OnboardingWelcome.route || currentRoute == "onboarding_care_recipient"
+                    val showBottomBar = currentRoute in Screen.bottomNavItems.map { it.route } && !isAuthScreen && !isOnboardingScreen
 
                     // 認証状態変更時のナビゲーション処理
                     LaunchedEffect(isLoggedIn) {

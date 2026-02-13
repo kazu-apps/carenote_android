@@ -7,7 +7,10 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.domain.model.User
+import com.carenote.app.domain.repository.AuthRepository
 import app.cash.turbine.test
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,13 +29,23 @@ class TaskRepositoryImplTest {
 
     private lateinit var dao: TaskDao
     private lateinit var mapper: TaskMapper
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
+    private lateinit var authRepository: AuthRepository
     private lateinit var repository: TaskRepositoryImpl
 
     @Before
     fun setUp() {
         dao = mockk()
         mapper = TaskMapper()
-        repository = TaskRepositoryImpl(dao, mapper)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        authRepository = mockk()
+        every { authRepository.getCurrentUser() } returns User(
+            uid = "test-uid",
+            name = "Test User",
+            email = "test@example.com",
+            createdAt = LocalDateTime.of(2025, 1, 1, 0, 0)
+        )
+        repository = TaskRepositoryImpl(dao, mapper, activeRecipientProvider, authRepository)
     }
 
     private fun createEntity(
@@ -59,7 +72,7 @@ class TaskRepositoryImplTest {
             createEntity(1L, title = "タスクA"),
             createEntity(2L, title = "タスクB")
         )
-        every { dao.getAllTasks() } returns flowOf(entities)
+        every { dao.getAllTasks(1L) } returns flowOf(entities)
 
         repository.getAllTasks().test {
             val result = awaitItem()
@@ -72,7 +85,7 @@ class TaskRepositoryImplTest {
 
     @Test
     fun `getAllTasks returns empty list when no tasks`() = runTest {
-        every { dao.getAllTasks() } returns flowOf(emptyList())
+        every { dao.getAllTasks(1L) } returns flowOf(emptyList())
 
         repository.getAllTasks().test {
             val result = awaitItem()
@@ -110,7 +123,7 @@ class TaskRepositoryImplTest {
             createEntity(1L, title = "未完了タスク", isCompleted = 0),
             createEntity(2L, title = "別の未完了タスク", isCompleted = 0)
         )
-        every { dao.getIncompleteTasks() } returns flowOf(entities)
+        every { dao.getIncompleteTasks(1L) } returns flowOf(entities)
 
         repository.getIncompleteTasks().test {
             val result = awaitItem()
@@ -126,7 +139,7 @@ class TaskRepositoryImplTest {
             createEntity(1L, title = "今日のタスク", dueDate = "2025-04-10"),
             createEntity(2L, title = "今日の別タスク", dueDate = "2025-04-10")
         )
-        every { dao.getTasksByDueDate("2025-04-10") } returns flowOf(entities)
+        every { dao.getTasksByDueDate("2025-04-10", 1L) } returns flowOf(entities)
 
         repository.getTasksByDueDate(LocalDate.of(2025, 4, 10)).test {
             val result = awaitItem()
@@ -223,7 +236,7 @@ class TaskRepositoryImplTest {
 
     @Test
     fun `getIncompleteTaskCount returns flow of count`() = runTest {
-        every { dao.getIncompleteTaskCount() } returns flowOf(3)
+        every { dao.getIncompleteTaskCount(1L) } returns flowOf(3)
 
         repository.getIncompleteTaskCount().test {
             assertEquals(3, awaitItem())
@@ -233,7 +246,7 @@ class TaskRepositoryImplTest {
 
     @Test
     fun `getIncompleteTaskCount returns zero when no tasks`() = runTest {
-        every { dao.getIncompleteTaskCount() } returns flowOf(0)
+        every { dao.getIncompleteTaskCount(1L) } returns flowOf(0)
 
         repository.getIncompleteTaskCount().test {
             assertEquals(0, awaitItem())

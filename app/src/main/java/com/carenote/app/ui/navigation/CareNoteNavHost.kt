@@ -33,6 +33,7 @@ import com.carenote.app.ui.screens.auth.LoginScreen
 import com.carenote.app.ui.screens.auth.RegisterScreen
 import com.carenote.app.ui.screens.carerecipient.CareRecipientScreen
 import com.carenote.app.ui.screens.home.HomeScreen
+import com.carenote.app.ui.screens.onboarding.OnboardingWelcomeScreen
 import com.carenote.app.ui.screens.emergencycontact.AddEditEmergencyContactScreen
 import com.carenote.app.ui.screens.emergencycontact.EmergencyContactListScreen
 import com.carenote.app.ui.screens.search.SearchScreen
@@ -201,6 +202,28 @@ fun CareNoteNavHost(
         composable(Screen.CareRecipientProfile.route) {
             CareRecipientScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.OnboardingWelcome.route) {
+            OnboardingWelcomeScreen(
+                onStartClick = {
+                    navController.navigate("onboarding_care_recipient") {
+                        popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("onboarding_care_recipient") {
+            CareRecipientScreen(
+                onNavigateBack = {},
+                showBackButton = false,
+                onSaveSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

@@ -11,6 +11,7 @@ import java.time.LocalTime
 @Immutable
 data class CalendarEvent(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val title: String,
     val description: String = "",
     val date: LocalDate,
@@ -19,6 +20,8 @@ data class CalendarEvent(
     val isAllDay: Boolean = true,
     val type: CalendarEventType = CalendarEventType.OTHER,
     val completed: Boolean = false,
+    val recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
+    val recurrenceInterval: Int = 1,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()
 )

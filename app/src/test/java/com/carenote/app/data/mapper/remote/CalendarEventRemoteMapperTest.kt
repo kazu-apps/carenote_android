@@ -2,8 +2,11 @@ package com.carenote.app.data.mapper.remote
 
 import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -321,6 +324,205 @@ class CalendarEventRemoteMapperTest {
         )
 
         mapper.extractSyncMetadata(data)
+    }
+
+    // endregion
+
+    // region type and completed
+
+    @Test
+    fun `toDomain maps type field correctly`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "通院予定",
+            "date" to "2025-03-20",
+            "type" to "HOSPITAL",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(CalendarEventType.HOSPITAL, result.type)
+    }
+
+    @Test
+    fun `toDomain handles invalid type with fallback to OTHER`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to "2025-03-20",
+            "type" to "INVALID",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(CalendarEventType.OTHER, result.type)
+    }
+
+    @Test
+    fun `toDomain with missing type defaults to OTHER`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to "2025-03-20",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(CalendarEventType.OTHER, result.type)
+    }
+
+    @Test
+    fun `toDomain maps completed field correctly`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to "2025-03-20",
+            "completed" to true,
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertTrue(result.completed)
+    }
+
+    @Test
+    fun `toDomain with missing completed defaults to false`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to "2025-03-20",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertFalse(result.completed)
+    }
+
+    @Test
+    fun `toRemote includes type and completed`() {
+        val event = CalendarEvent(
+            id = 1L,
+            title = "訪問介護",
+            date = eventDate,
+            type = CalendarEventType.VISIT,
+            completed = true,
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val result = mapper.toRemote(event, null)
+
+        assertEquals("VISIT", result["type"])
+        assertEquals(true, result["completed"])
+    }
+
+    // endregion
+
+    // region recurrence
+
+    @Test
+    fun `toDomain maps recurrence fields correctly`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "通院予定",
+            "date" to "2025-03-20",
+            "recurrenceFrequency" to "WEEKLY",
+            "recurrenceInterval" to 2,
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.WEEKLY, result.recurrenceFrequency)
+        assertEquals(2, result.recurrenceInterval)
+    }
+
+    @Test
+    fun `toDomain with missing recurrence uses defaults`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to "2025-03-20",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+        assertEquals(1, result.recurrenceInterval)
+    }
+
+    @Test
+    fun `toDomain with invalid recurrence frequency defaults to NONE`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to "2025-03-20",
+            "recurrenceFrequency" to "INVALID",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(RecurrenceFrequency.NONE, result.recurrenceFrequency)
+    }
+
+    @Test
+    fun `toRemote includes recurrence fields`() {
+        val event = CalendarEvent(
+            id = 1L,
+            title = "通院予定",
+            date = eventDate,
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceInterval = 3,
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val result = mapper.toRemote(event, null)
+
+        assertEquals("MONTHLY", result["recurrenceFrequency"])
+        assertEquals(3, result["recurrenceInterval"])
+    }
+
+    @Test
+    fun `roundtrip preserves recurrence fields`() {
+        val original = CalendarEvent(
+            id = 1L,
+            title = "通院予定",
+            date = eventDate,
+            recurrenceFrequency = RecurrenceFrequency.DAILY,
+            recurrenceInterval = 5,
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val remote = mapper.toRemote(original, null)
+        val roundtrip = mapper.toDomain(remote)
+
+        assertEquals(original.recurrenceFrequency, roundtrip.recurrenceFrequency)
+        assertEquals(original.recurrenceInterval, roundtrip.recurrenceInterval)
     }
 
     // endregion

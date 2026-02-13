@@ -2,36 +2,13 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v8.0 Phase 2 カレンダー拡張（type, completed） — DONE
+## 現在のタスク: v8.1 Phase 7 テスト強化 + CLAUDE.md 更新 — DONE
 
-CalendarEvent に `type: CalendarEventType` (HOSPITAL/VISIT/DAYSERVICE/OTHER) と `completed: Boolean` を追加。イベント種別アイコン + 完了チェック UI。DB migration v15→v16 (fallbackToDestructiveMigration)。全テスト通過。
-
-### 実装内容
-- **Data Layer**: `CalendarEventType` enum 新規作成、`CalendarEventEntity` に type/completed カラム追加、Mapper 更新、DB v16
-- **UI Layer**: `CalendarEventCard` に種別アイコン + 完了チェックボックス追加、`CalendarViewModel.toggleCompleted()` 実装、`AddEditCalendarEventViewModel.updateType()` 実装、HomeScreen のカレンダーセクションに種別アイコン追加
-- **i18n**: strings.xml (JP/EN) にイベント種別ラベル追加
-- **Analytics**: `EVENT_CALENDAR_EVENT_COMPLETED` + `PARAM_EVENT_TYPE` を AppConfig.Analytics に追加
-- **テスト**: CalendarViewModelTest に toggleCompleted 4 件追加、AddEditCalendarEventViewModelTest に type 関連 6 件追加
-
-### 変更ファイル
-- `domain/model/CalendarEventType.kt` (新規)
-- `domain/model/CalendarEvent.kt` — type, completed フィールド追加
-- `data/local/entity/CalendarEventEntity.kt` — type, completed カラム追加
-- `data/mapper/CalendarEventMapper.kt` — type, completed マッピング
-- `data/local/CareNoteDatabase.kt` — version 16
-- `ui/screens/calendar/CalendarViewModel.kt` — toggleCompleted()
-- `ui/screens/calendar/AddEditCalendarEventViewModel.kt` — updateType(), FormState.type
-- `ui/screens/calendar/CalendarScreen.kt` — CalendarEventCard UI
-- `ui/screens/home/HomeScreen.kt` — 種別アイコン表示
-- `ui/preview/PreviewData.kt` — CalendarEventType サンプル
-- `config/AppConfig.kt` — Analytics 定数
-- `res/values/strings.xml`, `res/values-en/strings.xml` — i18n
-- `test/.../CalendarViewModelTest.kt` — 4 件追加
-- `test/.../AddEditCalendarEventViewModelTest.kt` — 6 件追加
+AddEditCalendarEventViewModelTest recurrence テスト 12 件、AddEditNoteViewModelTest comment テスト 10 件、CalendarEventRepositoryImplTest RecurrenceExpander 統合テスト 3 件追加。CLAUDE.md Phase 4-6 同期（DB v19、model 20、Repository 25、NoteComment/ActiveCareRecipientProvider/RecurrenceExpander/OnboardingWelcome 追加）。全ビルド・テスト通過。
 
 ## 次のアクション
 
-- v8.0 Phase 3: テスト + CLAUDE.md 更新（Roborazzi + JaCoCo 80% 維持）
+- v9.0 計画策定（家族招待フロー、Google Play Billing、通知制限）
 
 ## 既知の問題
 
@@ -86,10 +63,12 @@ CLAUDE.md を実コードに完全同期（Secondary Screen 名修正、DI/Repos
 
 ## v8.0 ロードマップ（MVP-First 戦略）
 
-### 仕様書 vs 実装 乖離サマリー
+### 仕様書 vs 実装 乖離サマリー（v8.0 Phase 3 完了時点で再検証済み）
 
-重大（コンセプト影響）: 家族共有・マルチユーザー完全未実装、ホーム画面なし、全 Entity に recipientId/createdBy なし
-中程度（機能差異）: CalendarEvent type/completed/recurrence 欠落、CareRecipient careLevel/medicalHistory/allergies 欠落、メモコメントなし、オンボーディングなし
+v8.0 で解消済み: ホーム画面（Phase 1）、CareRecipient 4フィールド（Phase 1）、CalendarEvent type/completed（Phase 2）
+残存・重大（コンセプト影響）: 家族共有・マルチユーザー未実装、全 Entity に recipientId/createdBy なし
+残存・中程度（機能差異）: CalendarEvent recurrence 欠落、メモコメントなし、オンボーディングなし
+対応不要: 緊急連絡先カテゴリ（実装が仕様より詳細化で互換性あり）、通知プレミアム制限（Billing 未実装で無意味）
 良い方向の進化: ローカルファースト設計、SQLCipher、生体認証、Root 検出、CSV/PDF エクスポート、横断検索、ウィジェット
 
 ### v8.0 Phase 1: ホーム画面 + CareRecipient 拡張 - DONE
@@ -104,34 +83,35 @@ CalendarEvent に type (HOSPITAL/VISIT/DAYSERVICE/OTHER) と completed フラグ
 - 対象: `domain/model/`, `data/local/entity/`, `data/mapper/`, `ui/screens/calendar/`, `ui/screens/home/`, `config/AppConfig.kt`, `res/values/strings.xml`
 - 依存: Phase 1
 
-### v8.0 Phase 3: テスト + CLAUDE.md 更新 - PENDING
+### v8.0 Phase 3: テスト + CLAUDE.md 更新 - DONE
 
-Phase 1-2 の新機能に対する UT + Roborazzi + CLAUDE.md 更新。JaCoCo 80% 維持。
-- 対象: `app/src/test/`, `CLAUDE.md`, `docs/HANDOVER.md`
+CalendarEventMapper/RemoteMapper type/completed テスト 11 件 + HomeScreen/CareRecipientScreen Content 抽出 + @LightDarkPreview + CLAUDE.md 同期（DB v16, BottomNav, model 19, パッケージ構成）。Roborazzi 新規 ~6 枚追加。
+- 対象: `app/src/test/`, `ui/screens/home/`, `ui/screens/carerecipient/`, `ui/preview/`, `CLAUDE.md`, `docs/HANDOVER.md`
 - 依存: Phase 2
 
-### v8.1 Phase 4: マルチユーザー基盤 — recipientId 追加 - PENDING
+### v8.1 Phase 4: マルチユーザー基盤 — recipientId 追加 - DONE
 
-全 8 Entity に recipientId を追加。DAO に recipientId WHERE 句追加。Firestore 同期パスは既に CareRecipient ベース構造のため変更不要。DB migration v16→v17。3 サブフェーズに分割予定。
-- 対象: `data/local/entity/`, `data/mapper/`, `data/local/dao/`, `data/repository/`, `di/`
-- 依存: Phase 3（v8.0 リリース後）
+全 8 Entity（Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, Photo, EmergencyContact）に care_recipient_id カラム追加。全 DAO に WHERE care_recipient_id = :id フィルター追加。Mapper 8 件の recipientId マッピング追加。Repository 実装に recipientId パラメータ追加。Firestore 同期パスは既に CareRecipient ベース構造のため変更不要。DB migration v16→v17（ALTER TABLE × 8 + INDEX × 8、DEFAULT "1"）。Migration UT 必須。
+- 対象: `data/local/entity/` (8 Entity), `data/local/dao/` (8 DAO, 15-20 クエリ修正), `data/mapper/` (8 Mapper), `data/repository/` (Repository 実装), `domain/model/` (8 Model)
+- ファイル数: 20-25
+- 依存: Phase 3（v8.0 完了後）
 
-### v8.1 Phase 5: createdBy 統一 + オンボーディング - PENDING
+### v8.1 Phase 5: createdBy 統一 + オンボーディング - DONE
 
-Note.authorId を createdBy に統一。HealthRecord/Task に createdBy 追加。オンボーディング画面実装。DB migration v17→v18。
-- 対象: `domain/model/`, `data/local/entity/`, `ui/screens/onboarding/`, `ui/navigation/`
+Note.authorId→createdBy リネーム + HealthRecord/Task に createdBy 追加。3 RepositoryImpl に AuthRepository inject（insert 時 createdBy 自動設定）。NoteRemoteMapper "authorId" レガシーフォールバック。OnboardingWelcomeScreen 新規作成。SettingsDataSource/Repository に onboarding_completed 追加。MainActivity startDestination 3分岐。DB v18。i18n JP/EN 追加。全テスト通過。
+- 対象: `domain/model/` (3 Model), `data/local/entity/` (3 Entity), `data/mapper/` (3 Mapper + 3 RemoteMapper), `data/repository/` (3 RepositoryImpl + SettingsRepositoryImpl), `di/AppModule.kt`, `data/local/SettingsDataSource.kt`, `domain/repository/SettingsRepository.kt`, `ui/screens/onboarding/OnboardingWelcomeScreen.kt` (新規), `ui/screens/carerecipient/` (Screen + ViewModel), `ui/navigation/` (Screen.kt + CareNoteNavHost.kt), `ui/MainActivity.kt`, `ui/preview/PreviewData.kt`, `res/values/strings.xml`, `res/values-en/strings.xml`, テスト 10+ 件
 - 依存: Phase 4
 
-### v8.1 Phase 6: メモコメント + カレンダー recurrence - PENDING
+### v8.1 Phase 6: メモコメント + カレンダー recurrence - DONE
 
-NoteComment モデル新規追加。CalendarEvent に recurrence, assignedTo, reminderEnabled 追加。RecurrenceExpander クラス抽出。
-- 対象: `domain/model/`, `data/local/`, `data/repository/`, `ui/screens/notes/`, `ui/screens/calendar/`
+NoteComment 1:N 新規追加（Entity+DAO+Mapper+RemoteMapper+Repository+UI）+ CalendarEvent recurrence 追加（RecurrenceExpander+UI）。DB v19。DI/Sync 統合。テスト 44 件追加。全ビルド・テスト通過。
+- 対象: `domain/model/` (NoteComment 新規, CalendarEvent 拡張), `data/local/` (Entity + DAO + DB v19), `data/repository/`, `data/mapper/`, `ui/screens/notes/`, `ui/screens/calendar/`, `di/`, `domain/util/RecurrenceExpander.kt`
 - 依存: Phase 5
 
-### v8.1 Phase 7: 家族招待 + テスト強化 - PENDING
+### v8.1 Phase 7: テスト強化 + CLAUDE.md 更新 - DONE
 
-家族招待フロー実装。全新機能の UT + E2E + Roborazzi。JaCoCo 80% + Detekt 0。CLAUDE.md 最終更新。
-- 対象: `ui/screens/invitation/`, `domain/model/`, `app/src/test/`, `CLAUDE.md`
+AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest comment 10 件、CalendarEventRepositoryImplTest RecurrenceExpander 3 件追加。CLAUDE.md Phase 4-6 同期（DB v19、model 20、Repository 25、NoteComment/ActiveCareRecipientProvider/RecurrenceExpander/OnboardingWelcome 追加）。全ビルド・テスト通過。
+- 対象: `app/src/test/`, `CLAUDE.md`, `docs/HANDOVER.md`
 - 依存: Phase 6
 
 ## v7.0 リサーチサマリー
@@ -186,12 +166,18 @@ NoteComment モデル新規追加。CalendarEvent に recurrence, assignedTo, re
 | v7.0 Ph1-6 | ProGuard 強化 + エクスポート拡充（MedicationLog/Task/Note CSV/PDF）+ クロスモジュール検索 + Roborazzi 拡充 + CLAUDE.md 同期 | DONE |
 | v8.0 Ph1 | ホーム画面（5 セクション）+ CareRecipient 4 フィールド + BottomNav 変更 + DB v15 + テスト 19 件 | DONE |
 | v8.0 Ph2 | CalendarEvent type/completed 追加 + 種別アイコン + 完了チェック UI + DB v16 + テスト 10 件追加 | DONE |
+| v8.0 Ph3 | CalendarEventMapper テスト 11 件 + HomeScreen/CareRecipientScreen Content 抽出 + Preview + CLAUDE.md 同期 | DONE |
+| v8.0 仕様検証 | 仕様書 vs 実装 全11項目検証。3件解消確認、8件残存（v8.1 でカバー）、2件対応不要判定、Phase 7 を v9.0 先送り | DONE |
+| v8.1 Ph4 | 全8 Entity/DAO/Model/Mapper/RepositoryImpl に care_recipient_id 追加。ActiveCareRecipientProvider パターン導入。SyncModule 修正。DB v16（fallbackToDestructiveMigration）。全テスト通過 | DONE |
+| v8.1 Ph5 | Note.authorId→createdBy + HealthRecord/Task createdBy 追加。3 RepositoryImpl AuthRepository inject。NoteRemoteMapper authorId レガシーフォールバック。OnboardingWelcomeScreen + SettingsDataSource onboarding_completed + MainActivity 3分岐。DB v18。全テスト通過 | DONE |
+| v8.1 Ph6 | NoteComment 1:N（Entity+DAO+Mapper+RemoteMapper+Repository+UI）+ CalendarEvent recurrence（RecurrenceExpander+UI）。DB v19。DI/Sync 統合。テスト 44 件追加。全ビルド・テスト通過 | DONE |
+| v8.1 Ph7 | テスト強化（recurrence 12件 + comment 10件 + RecurrenceExpander 3件）+ CLAUDE.md Phase 4-6 同期。全ビルド・テスト通過 | DONE |
 
 ## アーキテクチャ参照
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v16 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 10 Entity |
+| Room DB | v19 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 11 Entity |
 | Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
 | 同期 | ConfigDrivenEntitySyncer + Incremental Sync (updatedAt フィルター) |
 | Paging 3 | Task/Note/HealthRecord(LIST): PagingSource, Medication: DB検索のみ, Calendar: 対象外 |
@@ -201,12 +187,19 @@ NoteComment モデル新規追加。CalendarEvent に recurrence, assignedTo, re
 | エクスポート | HealthRecord + MedicationLog + Task + Note の CSV/PDF。FileProvider 経由。CsvExporter + PdfExporter パターン。Settings DataExportDialog で期間指定 |
 | SKIP 判定 | BaseCrudRepository（ROI マイナス）, BaseAddEditViewModel（Kotlin VM 不適合）, CareNoteListScaffold（構造多様性高） |
 | v8.0 戦略 | MVP-First: ホーム画面先行 + 段階的マルチユーザー。Firestore パスは既に CareRecipient ベース構造のため recipientId 追加は Entity 層のみ |
-| 仕様書乖離 | excretionMemo 未実装（conditionNote と混同注意）、Note.authorId のみ createdBy 相当、CalendarEvent recurrence 未実装（type/completed は v8.0 Ph2 で実装済み） |
+| 仕様書乖離 | excretionMemo 未実装（conditionNote と混同注意）。NoteComment + CalendarEvent recurrence は v8.1 Ph6 で解消済み |
+| 仕様書検証 (v8.1 Ph6後) | ホーム画面 ✅、CareRecipient 4フィールド ✅、CalendarEvent type/completed ✅、recipientId ✅(Ph4)、createdBy ✅(Ph5)、Onboarding ✅(Ph5)、NoteComment ✅(Ph6)、CalendarEvent recurrence ✅(Ph6)。全仕様差異解消 |
+| 対応不要判定 | 緊急連絡先カテゴリ（RelationshipType 6値 > 仕様3分類で互換性あり）、通知プレミアム制限（Billing 未実装で無意味）、家族招待は v9.0 先送り |
+
+## v9.0 計画（v8.1 完了後）
+
+- **家族招待フロー**: Member/Invitation データモデル、Firestore Security Rules、招待 UI（v8.1 Phase 7 から先送り。Firestore インテグレーション + バックエンド検証が複雑なため分離）
+- **Google Play Billing**: プレミアムサブスクリプション + 通知プレミアム制限（サーバーサイド検証必須）
+- **通知制限**: 無料/プレミアムの通知回数制限（Billing 実装と同時に PremiumFeatureGuard として一括実装）
 
 ## スコープ外 / 将来
 
-- **v8.0+**: Google Play Billing（プレミアムサブスクリプション、サーバーサイド検証必須）
-- **v8.0+**: FCM リモート通知（Cloud Functions / バックエンド構築が前提）
-- **v8.0+**: Wear OS 対応（Horologist + Health Services、別モジュール必要）
-- **v8.0+**: CSV データインポート（対象ユーザー適合性検証後）
+- **v9.0+**: FCM リモート通知（Cloud Functions / バックエンド構築が前提）
+- **v9.0+**: Wear OS 対応（Horologist + Health Services、別モジュール必要）
+- **v9.0+**: CSV データインポート（対象ユーザー適合性検証後）
 - **手動**: Play Console メタデータ、Firestore Security Rules 確認、問い合わせメール確定

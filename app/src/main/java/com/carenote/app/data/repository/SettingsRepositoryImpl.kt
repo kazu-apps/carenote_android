@@ -249,6 +249,21 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun isOnboardingCompleted(): Boolean {
+        return dataSource.isOnboardingCompleted()
+    }
+
+    override suspend fun setOnboardingCompleted(
+        completed: Boolean
+    ): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to save onboarding setting", it) }
+        ) {
+            dataSource.setOnboardingCompleted(completed)
+            Timber.d("Onboarding completed updated: $completed")
+        }
+    }
+
     override suspend fun resetToDefaults(): Result<Unit, DomainError> {
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to reset settings", it) }

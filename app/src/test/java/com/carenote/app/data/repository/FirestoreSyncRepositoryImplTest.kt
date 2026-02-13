@@ -43,6 +43,7 @@ class FirestoreSyncRepositoryImplTest {
     private lateinit var healthRecordSyncer: EntitySyncer<*, *>
     private lateinit var calendarEventSyncer: EntitySyncer<*, *>
     private lateinit var taskSyncer: EntitySyncer<*, *>
+    private lateinit var noteCommentSyncer: EntitySyncer<*, *>
 
     private lateinit var repository: FirestoreSyncRepositoryImpl
 
@@ -70,6 +71,7 @@ class FirestoreSyncRepositoryImplTest {
         healthRecordSyncer = mockk(relaxed = true)
         calendarEventSyncer = mockk(relaxed = true)
         taskSyncer = mockk(relaxed = true)
+        noteCommentSyncer = mockk(relaxed = true)
 
         // Default mock behavior: all syncers return success
         coEvery { medicationSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
@@ -77,6 +79,7 @@ class FirestoreSyncRepositoryImplTest {
         coEvery { healthRecordSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { calendarEventSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { taskSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
+        coEvery { noteCommentSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { medicationLogSyncer.syncForMedication(any(), any(), any(), any()) } returns
             SyncResult.Success(0, 0)
 
@@ -87,6 +90,7 @@ class FirestoreSyncRepositoryImplTest {
         every { calendarEventSyncer.entityType } returns "calendarEvent"
         every { taskSyncer.entityType } returns "task"
         every { medicationLogSyncer.entityType } returns "medicationLog"
+        every { noteCommentSyncer.entityType } returns "noteComment"
 
         repository = FirestoreSyncRepositoryImpl(
             settingsDataSource = settingsDataSource,
@@ -96,7 +100,8 @@ class FirestoreSyncRepositoryImplTest {
             noteSyncer = noteSyncer,
             healthRecordSyncer = healthRecordSyncer,
             calendarEventSyncer = calendarEventSyncer,
-            taskSyncer = taskSyncer
+            taskSyncer = taskSyncer,
+            noteCommentSyncer = noteCommentSyncer
         )
     }
 

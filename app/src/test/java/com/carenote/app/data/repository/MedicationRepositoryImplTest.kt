@@ -8,6 +8,7 @@ import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
 import app.cash.turbine.test
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -25,13 +26,15 @@ class MedicationRepositoryImplTest {
 
     private lateinit var dao: MedicationDao
     private lateinit var mapper: MedicationMapper
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
     private lateinit var repository: MedicationRepositoryImpl
 
     @Before
     fun setUp() {
         dao = mockk()
         mapper = MedicationMapper()
-        repository = MedicationRepositoryImpl(dao, mapper)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        repository = MedicationRepositoryImpl(dao, mapper, activeRecipientProvider)
     }
 
     private fun createEntity(
@@ -51,7 +54,7 @@ class MedicationRepositoryImplTest {
     @Test
     fun `getAllMedications returns flow of medications`() = runTest {
         val entities = listOf(createEntity(1L, "薬A"), createEntity(2L, "薬B"))
-        every { dao.getAllMedications() } returns flowOf(entities)
+        every { dao.getAllMedications(1L) } returns flowOf(entities)
 
         repository.getAllMedications().test {
             val result = awaitItem()
@@ -64,7 +67,7 @@ class MedicationRepositoryImplTest {
 
     @Test
     fun `getAllMedications returns empty list when no medications`() = runTest {
-        every { dao.getAllMedications() } returns flowOf(emptyList())
+        every { dao.getAllMedications(1L) } returns flowOf(emptyList())
 
         repository.getAllMedications().test {
             val result = awaitItem()
@@ -219,7 +222,7 @@ class MedicationRepositoryImplTest {
             createdAt = "2025-03-15T10:00:00",
             updatedAt = "2025-03-15T10:00:00"
         )
-        every { dao.getAllMedications() } returns flowOf(listOf(entity))
+        every { dao.getAllMedications(1L) } returns flowOf(listOf(entity))
 
         repository.getAllMedications().test {
             val result = awaitItem()

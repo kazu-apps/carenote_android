@@ -19,6 +19,7 @@ enum class MedicationTiming {
 @Immutable
 data class Medication(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val name: String,
     val dosage: String = "",
     val timings: List<MedicationTiming> = emptyList(),

@@ -8,12 +8,16 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "photos",
     indices = [
-        Index(value = ["parent_type", "parent_id"])
+        Index(value = ["parent_type", "parent_id"]),
+        Index(value = ["care_recipient_id"])
     ]
 )
 data class PhotoEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "parent_type")
     val parentType: String,

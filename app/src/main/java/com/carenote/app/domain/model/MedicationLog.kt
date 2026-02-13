@@ -16,6 +16,7 @@ enum class MedicationLogStatus {
  */
 data class MedicationLog(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val medicationId: Long,
     val status: MedicationLogStatus,
     val scheduledAt: LocalDateTime,

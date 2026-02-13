@@ -7,6 +7,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.CalendarEvent
 import app.cash.turbine.test
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,13 +27,15 @@ class CalendarEventRepositoryImplTest {
 
     private lateinit var dao: CalendarEventDao
     private lateinit var mapper: CalendarEventMapper
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
     private lateinit var repository: CalendarEventRepositoryImpl
 
     @Before
     fun setUp() {
         dao = mockk()
         mapper = CalendarEventMapper()
-        repository = CalendarEventRepositoryImpl(dao, mapper)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        repository = CalendarEventRepositoryImpl(dao, mapper, activeRecipientProvider)
     }
 
     private fun createEntity(
@@ -42,7 +45,9 @@ class CalendarEventRepositoryImplTest {
         date: String = "2025-04-10",
         startTime: String? = "09:00:00",
         endTime: String? = "10:00:00",
-        isAllDay: Int = 0
+        isAllDay: Int = 0,
+        recurrenceFrequency: String = "NONE",
+        recurrenceInterval: Int = 1
     ) = CalendarEventEntity(
         id = id,
         title = title,
@@ -51,6 +56,8 @@ class CalendarEventRepositoryImplTest {
         startTime = startTime,
         endTime = endTime,
         isAllDay = isAllDay,
+        recurrenceFrequency = recurrenceFrequency,
+        recurrenceInterval = recurrenceInterval,
         createdAt = "2025-03-15T10:00:00",
         updatedAt = "2025-03-15T10:00:00"
     )
@@ -61,7 +68,7 @@ class CalendarEventRepositoryImplTest {
             createEntity(1L, title = "予定A"),
             createEntity(2L, title = "予定B")
         )
-        every { dao.getAllEvents() } returns flowOf(entities)
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
 
         repository.getAllEvents().test {
             val result = awaitItem()
@@ -74,7 +81,7 @@ class CalendarEventRepositoryImplTest {
 
     @Test
     fun `getAllEvents returns empty list when no events`() = runTest {
-        every { dao.getAllEvents() } returns flowOf(emptyList())
+        every { dao.getAllEvents(1L) } returns flowOf(emptyList())
 
         repository.getAllEvents().test {
             val result = awaitItem()
@@ -112,7 +119,7 @@ class CalendarEventRepositoryImplTest {
             createEntity(1L, title = "朝の予定", date = "2025-04-10"),
             createEntity(2L, title = "午後の予定", date = "2025-04-10")
         )
-        every { dao.getEventsByDate("2025-04-10") } returns flowOf(entities)
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
 
         repository.getEventsByDate(LocalDate.of(2025, 4, 10)).test {
             val result = awaitItem()
@@ -124,14 +131,28 @@ class CalendarEventRepositoryImplTest {
     }
 
     @Test
+    fun `getEventsByDate filters out events not on target date`() = runTest {
+        val entities = listOf(
+            createEntity(1L, title = "当日の予定", date = "2025-04-10"),
+            createEntity(2L, title = "別日の予定", date = "2025-04-11")
+        )
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
+
+        repository.getEventsByDate(LocalDate.of(2025, 4, 10)).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals("当日の予定", result[0].title)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `getEventsByDateRange returns events in range`() = runTest {
         val entities = listOf(
             createEntity(1L, title = "予定A", date = "2025-04-01"),
             createEntity(2L, title = "予定B", date = "2025-04-15")
         )
-        every {
-            dao.getEventsByDateRange("2025-04-01", "2025-04-30")
-        } returns flowOf(entities)
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
 
         val start = LocalDate.of(2025, 4, 1)
         val end = LocalDate.of(2025, 4, 30)
@@ -144,15 +165,31 @@ class CalendarEventRepositoryImplTest {
 
     @Test
     fun `getEventsByDateRange returns empty list when no events in range`() = runTest {
-        every {
-            dao.getEventsByDateRange(any(), any())
-        } returns flowOf(emptyList())
+        every { dao.getAllEvents(1L) } returns flowOf(emptyList())
 
         val start = LocalDate.of(2025, 1, 1)
         val end = LocalDate.of(2025, 1, 31)
         repository.getEventsByDateRange(start, end).test {
             val result = awaitItem()
             assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getEventsByDateRange filters out events outside range`() = runTest {
+        val entities = listOf(
+            createEntity(1L, title = "範囲内", date = "2025-04-15"),
+            createEntity(2L, title = "範囲外", date = "2025-05-15")
+        )
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
+
+        val start = LocalDate.of(2025, 4, 1)
+        val end = LocalDate.of(2025, 4, 30)
+        repository.getEventsByDateRange(start, end).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals("範囲内", result[0].title)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -240,5 +277,71 @@ class CalendarEventRepositoryImplTest {
 
         assertTrue(result is Result.Failure)
         assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
+
+    // --- Recurrence Expansion Tests ---
+
+    @Test
+    fun `getEventsByDate expands daily recurring events`() = runTest {
+        val entities = listOf(
+            createEntity(
+                1L,
+                title = "毎日の予定",
+                date = "2025-04-01",
+                recurrenceFrequency = "DAILY",
+                recurrenceInterval = 1
+            )
+        )
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
+
+        repository.getEventsByDate(LocalDate.of(2025, 4, 5)).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals("毎日の予定", result[0].title)
+            assertEquals(LocalDate.of(2025, 4, 5), result[0].date)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getEventsByDate does not expand NONE recurrence events`() = runTest {
+        val entities = listOf(
+            createEntity(1L, title = "単発予定", date = "2025-04-01", recurrenceFrequency = "NONE")
+        )
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
+
+        repository.getEventsByDate(LocalDate.of(2025, 4, 5)).test {
+            val result = awaitItem()
+            assertTrue(result.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getEventsByDateRange includes expanded recurring events`() = runTest {
+        val entities = listOf(
+            createEntity(
+                1L,
+                title = "毎週の予定",
+                date = "2025-04-01",
+                recurrenceFrequency = "WEEKLY",
+                recurrenceInterval = 1
+            )
+        )
+        every { dao.getAllEvents(1L) } returns flowOf(entities)
+
+        val start = LocalDate.of(2025, 4, 1)
+        val end = LocalDate.of(2025, 4, 30)
+        repository.getEventsByDateRange(start, end).test {
+            val result = awaitItem()
+            // Weekly from April 1: Apr 1, 8, 15, 22, 29 = 5 occurrences
+            assertEquals(5, result.size)
+            assertEquals(LocalDate.of(2025, 4, 1), result[0].date)
+            assertEquals(LocalDate.of(2025, 4, 8), result[1].date)
+            assertEquals(LocalDate.of(2025, 4, 15), result[2].date)
+            assertEquals(LocalDate.of(2025, 4, 22), result[3].date)
+            assertEquals(LocalDate.of(2025, 4, 29), result[4].date)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

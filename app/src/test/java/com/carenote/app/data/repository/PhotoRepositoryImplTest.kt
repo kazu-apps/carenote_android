@@ -6,6 +6,7 @@ import com.carenote.app.data.mapper.PhotoMapper
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.model.PhotoUploadStatus
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,21 +27,23 @@ class PhotoRepositoryImplTest {
 
     private lateinit var repository: PhotoRepositoryImpl
     private lateinit var photoDao: PhotoDao
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
     private val mapper = PhotoMapper()
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @Before
     fun setup() {
         photoDao = mockk()
-        repository = PhotoRepositoryImpl(photoDao, mapper)
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
+        repository = PhotoRepositoryImpl(photoDao, mapper, activeRecipientProvider)
     }
 
     @Test
     fun `getPhotosForParent returns mapped photos`() = runTest {
         val now = LocalDateTime.now().format(dateTimeFormatter)
         val entities = listOf(
-            PhotoEntity(1, "health_record", 42, "file:///a.jpg", null, "PENDING", now, now),
-            PhotoEntity(2, "health_record", 42, "file:///b.jpg", null, "UPLOADED", now, now)
+            PhotoEntity(1, 1L, "health_record", 42, "file:///a.jpg", null, "PENDING", now, now),
+            PhotoEntity(2, 1L, "health_record", 42, "file:///b.jpg", null, "UPLOADED", now, now)
         )
         every { photoDao.getPhotosByParent("health_record", 42) } returns flowOf(entities)
 
@@ -98,7 +101,7 @@ class PhotoRepositoryImplTest {
     fun `getPendingPhotos returns pending photos`() = runTest {
         val now = LocalDateTime.now().format(dateTimeFormatter)
         val entities = listOf(
-            PhotoEntity(1, "note", 1, "file:///a.jpg", null, "PENDING", now, now)
+            PhotoEntity(1, 1L, "note", 1, "file:///a.jpg", null, "PENDING", now, now)
         )
         coEvery { photoDao.getPhotosWithStatus("PENDING") } returns entities
 

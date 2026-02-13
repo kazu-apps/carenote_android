@@ -120,7 +120,7 @@ detekt --config detekt.yml --input app/src/main/java
 | 言語 | Kotlin 2.3.0 / JVM 17 |
 | UI | Jetpack Compose + Material 3 (BOM 2026.01.01) |
 | DI | Hilt 2.59.1 (KSP 2.3.5) |
-| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v14 baseline) |
+| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v19, fallbackToDestructiveMigration) |
 | ナビゲーション | Navigation Compose 2.9.7 |
 | 非同期 | Coroutines 1.10.2 + StateFlow |
 | ログ | Timber 5.0.1 |
@@ -146,8 +146,8 @@ detekt --config detekt.yml --input app/src/main/java
 
 | モジュール | 責務 |
 |-----------|------|
-| `di/AppModule.kt` | 12 Repository + 8 Exporter + Clock/Compressor バインディング |
-| `di/DatabaseModule.kt` | Room DB + DAO (10 テーブル) + PassphraseManager + RecoveryHelper |
+| `di/AppModule.kt` | 13 Repository + 8 Exporter + Clock/Compressor バインディング |
+| `di/DatabaseModule.kt` | Room DB + DAO (11 テーブル) + PassphraseManager + RecoveryHelper |
 | `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging, Storage, Analytics + AuthRepository + AnalyticsRepository + No-Op フォールバック |
 | `di/SyncModule.kt` | SyncRepository + EntitySyncer 群 |
 | `di/WorkerModule.kt` | WorkManager + 3 Scheduler (Sync, MedicationReminder, TaskReminder) |
@@ -158,8 +158,8 @@ detekt --config detekt.yml --input app/src/main/java
 
 `ui/navigation/Screen.kt` の sealed class でルート定義:
 - **Auth**: Login, Register, ForgotPassword
-- **BottomNav**: Medication, Calendar, Tasks, HealthRecords, Notes, Settings（6タブ）
-- **Secondary**: AddMedication, EditMedication, MedicationDetail, AddNote, EditNote, AddHealthRecord, EditHealthRecord, AddCalendarEvent, EditCalendarEvent, AddTask, EditTask, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, CareRecipientProfile, Timeline, PrivacyPolicy, TermsOfService, Search
+- **BottomNav**: Home, Medication, Calendar, Tasks, HealthRecords, Notes（6タブ）
+- **Secondary**: AddMedication, EditMedication, MedicationDetail, AddNote, EditNote, AddHealthRecord, EditHealthRecord, AddCalendarEvent, EditCalendarEvent, AddTask, EditTask, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, CareRecipientProfile, Timeline, PrivacyPolicy, TermsOfService, Search, Settings, OnboardingWelcome
 - `ui/navigation/CareNoteNavHost.kt` でルーティング管理
 - `ui/navigation/AdaptiveNavigationScaffold.kt` — ウィンドウサイズに応じて Compact=Bottom, Medium=Rail, Expanded=Drawer を自動選択
 
@@ -187,16 +187,16 @@ app/src/main/java/com/carenote/app/
 │   │   └── remote/      Firestore ↔ Domain マッパー (RemoteMapper)
 │   ├── remote/
 │   │   └── model/       SyncMetadata（同期メタデータ）
-│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, Search, FirebaseStorage, NoOpStorage, FirebaseAnalytics, NoOpAnalytics)
-│   │   └── sync/        EntitySyncer + ConfigDrivenEntitySyncer + MedicationLogSyncer
+│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, Search, NoteComment, ActiveCareRecipientProvider, FirebaseStorage, NoOpStorage, FirebaseAnalytics, NoOpAnalytics)
+│   │   └── sync/        EntitySyncer + ConfigDrivenEntitySyncer + MedicationLogSyncer + NoteCommentSyncer
 │   ├── service/         CareNoteMessagingService (FCM)
 │   └── worker/          SyncWorker, MedicationReminderWorker, TaskReminderWorker
 ├── di/                  Hilt モジュール (App, Database, Firebase, Sync, Worker) + WidgetEntryPoint, FirebaseAvailability
 ├── domain/
 │   ├── common/          Result<T,E>, DomainError, SyncResult, SyncState
-│   ├── model/           ドメインモデル (18 model: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage, SearchResult)
-│   ├── repository/      Repository インターフェース (24: Medication, MedicationLog, Note, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline, Analytics, Search + Scheduler/Exporter/Compressor interfaces)
-│   └── util/            Clock interface + SystemClock（テスト用時刻制御）
+│   ├── model/           ドメインモデル (20 model: Medication, MedicationLog, Note, NoteComment, HealthRecord, CalendarEvent, CalendarEventType, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage, SearchResult)
+│   ├── repository/      Repository インターフェース (25: Medication, MedicationLog, Note, NoteComment, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline, Analytics, Search + ActiveCareRecipientProvider + Scheduler/Exporter/Compressor interfaces)
+│   └── util/            Clock interface + SystemClock（テスト用時刻制御）+ RecurrenceExpander
 └── ui/
     ├── common/          共通 UI ユーティリティ
     ├── components/      再利用可能コンポーネント (CareNoteCard, CareNoteTextField, CareNoteDatePickerDialog, CareNoteTimePickerDialog, ConfirmDialog, EmptyState, ErrorDisplay, LoadingIndicator, PhotoPickerSection, SwipeToDismissItem, CareNoteAddEditScaffold)
@@ -204,11 +204,17 @@ app/src/main/java/com/carenote/app/
     ├── preview/         PreviewAnnotations, PreviewData
     ├── screens/         各画面 (Screen.kt)
     │   ├── auth/        LoginScreen, RegisterScreen, ForgotPasswordScreen
+    │   ├── calendar/    CalendarScreen + AddEditCalendarEventScreen + components/
     │   ├── carerecipient/  CareRecipientProfileScreen
     │   ├── emergencycontact/  EmergencyContactsScreen, AddEmergencyContactScreen, EditEmergencyContactScreen
     │   ├── healthrecords/ HealthRecordsScreen + AddEditHealthRecordScreen + HealthMetricsParser
+    │   ├── home/        HomeScreen + HomeViewModel
+    │   ├── medication/  MedicationScreen + AddEditMedicationScreen + MedicationDetailScreen + components/
+    │   ├── notes/       NotesScreen + AddEditNoteScreen
+    │   ├── onboarding/  OnboardingWelcomeScreen
     │   ├── search/      SearchScreen + SearchViewModel
     │   ├── settings/    SettingsScreen + dialogs/ (SettingsDialogs, DataExportDialog), sections/ (各セクション + DataExportSection)
+    │   ├── tasks/       TasksScreen + AddEditTaskScreen
     │   └── timeline/    TimelineScreen
     ├── testing/         TestTags
     ├── theme/           Material3 テーマ（Color, Type, Theme）
@@ -249,7 +255,7 @@ abstract class EntitySyncer<Entity, Domain> {
 }
 ```
 
-各 Syncer: `MedicationSyncer`, `MedicationLogSyncer`, `NoteSyncer`, `HealthRecordSyncer`, `CalendarEventSyncer`, `TaskSyncer`
+各 Syncer: `MedicationSyncer`, `MedicationLogSyncer`, `NoteSyncer`, `NoteCommentSyncer`, `HealthRecordSyncer`, `CalendarEventSyncer`, `TaskSyncer`
 
 ### RemoteMapper パターン
 
@@ -364,7 +370,7 @@ Firebase 関連:
 - `FakeCareRecipientRepository`, `FakeEmergencyContactRepository`, `FakePhotoRepository`, `FakeSettingsRepository`, `FakeTimelineRepository`, `FakeSearchRepository`
 - `FakeMedicationReminderScheduler`, `FakeTaskReminderScheduler`
 - `FakeMedicationLogCsvExporter`, `FakeMedicationLogPdfExporter`, `FakeNoteCsvExporter`, `FakeNotePdfExporter`, `FakeTaskCsvExporter`, `FakeTaskPdfExporter`
-- `FakeNotificationHelper`, `FakeRootDetector`, `FakeSyncMappingDao`, `FakeClock`
+- `FakeNotificationHelper`, `FakeRootDetector`, `FakeSyncMappingDao`, `FakeClock`, `FakeNoteCommentRepository`, `FakeActiveCareRecipientProvider`
 
 ### E2E テスト
 

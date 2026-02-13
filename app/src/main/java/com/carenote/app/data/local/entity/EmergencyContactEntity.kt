@@ -2,12 +2,19 @@ package com.carenote.app.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "emergency_contacts")
+@Entity(
+    tableName = "emergency_contacts",
+    indices = [Index(value = ["care_recipient_id"])]
+)
 data class EmergencyContactEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "name")
     val name: String,

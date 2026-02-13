@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 data class EmergencyContact(
     val id: Long = 0,
+    val careRecipientId: Long = 0,
     val name: String,
     val phoneNumber: String,
     val relationship: RelationshipType = RelationshipType.OTHER,

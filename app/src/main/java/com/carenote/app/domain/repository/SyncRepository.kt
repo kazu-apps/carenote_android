@@ -120,6 +120,14 @@ interface SyncRepository {
      */
     suspend fun syncTasks(careRecipientId: String): SyncResult
 
+    /**
+     * メモコメントデータを同期する
+     *
+     * @param careRecipientId 被介護者 ID
+     * @return 同期結果
+     */
+    suspend fun syncNoteComments(careRecipientId: String): SyncResult
+
     // ========== 同期メタデータ ==========
 
     /**

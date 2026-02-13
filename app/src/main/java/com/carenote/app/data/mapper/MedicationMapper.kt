@@ -18,6 +18,7 @@ class MedicationMapper @Inject constructor() : Mapper<MedicationEntity, Medicati
     override fun toDomain(entity: MedicationEntity): Medication {
         return Medication(
             id = entity.id,
+            careRecipientId = entity.careRecipientId,
             name = entity.name,
             dosage = entity.dosage,
             timings = parseTimings(entity.timings),
@@ -33,6 +34,7 @@ class MedicationMapper @Inject constructor() : Mapper<MedicationEntity, Medicati
     override fun toEntity(domain: Medication): MedicationEntity {
         return MedicationEntity(
             id = domain.id,
+            careRecipientId = domain.careRecipientId,
             name = domain.name,
             dosage = domain.dosage,
             timings = serializeTimings(domain.timings),

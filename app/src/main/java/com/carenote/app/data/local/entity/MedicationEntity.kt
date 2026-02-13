@@ -7,11 +7,14 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "medications",
-    indices = [Index(value = ["name"])]
+    indices = [Index(value = ["name"]), Index(value = ["care_recipient_id"])]
 )
 data class MedicationEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+
+    @ColumnInfo(name = "care_recipient_id", defaultValue = "0")
+    val careRecipientId: Long = 0,
 
     @ColumnInfo(name = "name")
     val name: String,

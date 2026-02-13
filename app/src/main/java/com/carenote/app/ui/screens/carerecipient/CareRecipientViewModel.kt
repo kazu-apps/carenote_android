@@ -11,8 +11,11 @@ import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -40,6 +43,9 @@ class CareRecipientViewModel @Inject constructor(
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
+
+    private val _saveSuccess = MutableSharedFlow<Unit>()
+    val saveSuccess: SharedFlow<Unit> = _saveSuccess.asSharedFlow()
 
     private val _uiState = MutableStateFlow(CareRecipientUiState())
     val uiState: StateFlow<CareRecipientUiState> = _uiState.asStateFlow()
@@ -127,6 +133,7 @@ class CareRecipientViewModel @Inject constructor(
                 .onSuccess {
                     analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CARE_RECIPIENT_SAVED)
                     snackbarController.showMessage(R.string.care_recipient_save_success)
+                    _saveSuccess.emit(Unit)
                 }
                 .onFailure {
                     snackbarController.showMessage(R.string.care_recipient_save_error)

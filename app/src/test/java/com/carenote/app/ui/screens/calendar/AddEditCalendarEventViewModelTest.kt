@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.fakes.FakeCalendarEventRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
@@ -526,6 +527,171 @@ class AddEditCalendarEventViewModelTest {
         viewModel = createAddViewModel()
 
         viewModel.updateType(CalendarEventType.DAYSERVICE)
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    // --- Recurrence Tests ---
+
+    @Test
+    fun `default recurrenceFrequency is NONE`() {
+        viewModel = createAddViewModel()
+
+        assertEquals(RecurrenceFrequency.NONE, viewModel.formState.value.recurrenceFrequency)
+    }
+
+    @Test
+    fun `default recurrenceInterval is 1`() {
+        viewModel = createAddViewModel()
+
+        assertEquals(1, viewModel.formState.value.recurrenceInterval)
+    }
+
+    @Test
+    fun `updateRecurrenceFrequency updates form state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+
+        assertEquals(RecurrenceFrequency.DAILY, viewModel.formState.value.recurrenceFrequency)
+    }
+
+    @Test
+    fun `updateRecurrenceInterval updates form state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateRecurrenceInterval(3)
+
+        assertEquals(3, viewModel.formState.value.recurrenceInterval)
+    }
+
+    @Test
+    fun `updateRecurrenceFrequency clears recurrenceIntervalError`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(0)
+        viewModel.updateTitle("テスト")
+        viewModel.saveEvent()
+        advanceUntilIdle()
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.WEEKLY)
+
+        assertNull(viewModel.formState.value.recurrenceIntervalError)
+    }
+
+    @Test
+    fun `updateRecurrenceInterval clears recurrenceIntervalError`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(0)
+        viewModel.updateTitle("テスト")
+        viewModel.saveEvent()
+        advanceUntilIdle()
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+
+        viewModel.updateRecurrenceInterval(2)
+
+        assertNull(viewModel.formState.value.recurrenceIntervalError)
+    }
+
+    @Test
+    fun `saveEvent with invalid recurrenceInterval sets error`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("テスト")
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(0)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.formState.value.recurrenceIntervalError)
+    }
+
+    @Test
+    fun `saveEvent with valid recurrence includes recurrence in new event`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("毎日予定")
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.DAILY)
+        viewModel.updateRecurrenceInterval(2)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(1, events.size)
+            assertEquals(RecurrenceFrequency.DAILY, events[0].recurrenceFrequency)
+            assertEquals(2, events[0].recurrenceInterval)
+        }
+    }
+
+    @Test
+    fun `saveEvent includes recurrence in updated event`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "旧タイトル",
+                    date = LocalDate.of(2025, 3, 15),
+                    recurrenceFrequency = RecurrenceFrequency.NONE,
+                    recurrenceInterval = 1,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.WEEKLY)
+        viewModel.updateRecurrenceInterval(2)
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(RecurrenceFrequency.WEEKLY, events[0].recurrenceFrequency)
+            assertEquals(2, events[0].recurrenceInterval)
+        }
+    }
+
+    @Test
+    fun `edit mode loads recurrence from existing event`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "毎週予定",
+                    date = LocalDate.of(2025, 3, 15),
+                    recurrenceFrequency = RecurrenceFrequency.WEEKLY,
+                    recurrenceInterval = 2,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertEquals(RecurrenceFrequency.WEEKLY, viewModel.formState.value.recurrenceFrequency)
+        assertEquals(2, viewModel.formState.value.recurrenceInterval)
+    }
+
+    @Test
+    fun `isDirty detects recurrenceFrequency change`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateRecurrenceFrequency(RecurrenceFrequency.MONTHLY)
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty detects recurrenceInterval change`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateRecurrenceInterval(5)
 
         assertTrue(viewModel.isDirty)
     }

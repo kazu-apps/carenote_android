@@ -112,6 +112,11 @@ class FakeSyncRepository @Inject constructor() : SyncRepository {
         return defaultSyncResult
     }
 
+    override suspend fun syncNoteComments(careRecipientId: String): SyncResult {
+        if (shouldFail) return SyncResult.Failure(failureError)
+        return defaultSyncResult
+    }
+
     override suspend fun getLastSyncTime(): LocalDateTime? {
         return lastSyncTimeValue
     }
