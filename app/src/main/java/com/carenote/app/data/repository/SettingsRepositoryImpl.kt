@@ -249,6 +249,31 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateSessionTimeout(
+        minutes: Int
+    ): Result<Unit, DomainError> {
+        if (minutes !in AppConfig.Session.MIN_TIMEOUT_MINUTES..AppConfig.Session.MAX_TIMEOUT_MINUTES) {
+            return Result.Failure(
+                DomainError.ValidationError(
+                    message = "Session timeout must be between " +
+                        "${AppConfig.Session.MIN_TIMEOUT_MINUTES} and " +
+                        "${AppConfig.Session.MAX_TIMEOUT_MINUTES} minutes",
+                    field = "sessionTimeoutMinutes"
+                )
+            )
+        }
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to save session timeout", it) }
+        ) {
+            dataSource.updateSessionTimeout(minutes)
+            Timber.d("Session timeout updated: $minutes minutes")
+        }
+    }
+
+    override fun getSessionTimeoutMs(): Long {
+        return dataSource.getSessionTimeoutMs()
+    }
+
     override fun isOnboardingCompleted(): Boolean {
         return dataSource.isOnboardingCompleted()
     }

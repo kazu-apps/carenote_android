@@ -985,4 +985,48 @@ class SettingsViewModelTest {
         viewModel.resetExportState()
         assertEquals(ExportState.Idle, viewModel.exportState.value)
     }
+
+    // --- Session Timeout Tests ---
+
+    @Test
+    fun `updateSessionTimeout updates settings`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateSessionTimeout(10)
+        advanceUntilIdle()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertEquals(10, settings.sessionTimeoutMinutes)
+        }
+    }
+
+    @Test
+    fun `updateSessionTimeout with invalid value shows error`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateSessionTimeout(0) // Below minimum
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.settings_error_validation, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `session timeout default is 5 minutes`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+
+        viewModel.settings.test {
+            advanceUntilIdle()
+            val settings = expectMostRecentItem()
+            assertEquals(AppConfig.Session.DEFAULT_TIMEOUT_MINUTES, settings.sessionTimeoutMinutes)
+        }
+    }
 }

@@ -10,6 +10,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import com.carenote.app.data.util.ExceptionMasker
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
@@ -87,7 +88,7 @@ abstract class EntitySyncer<Entity, Domain>(
 
             mergeResults(pushResult, pullResult)
         } catch (e: Exception) {
-            Timber.e(e, "Sync failed for $entityType")
+            Timber.e("Sync failed for $entityType: ${ExceptionMasker.mask(e)}")
             SyncResult.Failure(mapException(e))
         }
     }
@@ -125,7 +126,7 @@ abstract class EntitySyncer<Entity, Domain>(
                     uploadEntity(careRecipientId, entity, existingMapping, syncTime)
                     uploadedCount++
                 } catch (e: Exception) {
-                    Timber.w("Failed to upload $entityType localId=$localId: $e")
+                    Timber.w("Failed to upload $entityType: ${ExceptionMasker.mask(e)}")
                     failedEntities.add(localId)
                     errors.add(mapException(e))
                 }
@@ -172,7 +173,7 @@ abstract class EntitySyncer<Entity, Domain>(
                 if (result.conflict) conflictCount++
             } catch (e: Exception) {
                 val localId = (doc.data?.get("localId") as? Number)?.toLong() ?: -1
-                Timber.w("Failed to process remote $entityType remoteId=${doc.id}: $e")
+                Timber.w("Failed to process remote $entityType: ${ExceptionMasker.mask(e)}")
                 failedEntities.add(localId)
                 errors.add(mapException(e))
             }
@@ -226,7 +227,7 @@ abstract class EntitySyncer<Entity, Domain>(
         )
         syncMappingDao.upsert(mapping)
 
-        Timber.d("Uploaded $entityType localId=$localId remoteId=$remoteId")
+        Timber.d("Uploaded $entityType successfully")
     }
 
     /**
@@ -298,18 +299,18 @@ abstract class EntitySyncer<Entity, Domain>(
         return when (e) {
             is com.google.firebase.firestore.FirebaseFirestoreException -> {
                 DomainError.NetworkError(
-                    message = "Firestore 同期エラー: ${e.message}",
+                    message = "Firestore 同期エラー: ${ExceptionMasker.mask(e)}",
                     cause = e
                 )
             }
             is IllegalArgumentException -> {
                 DomainError.ValidationError(
-                    message = "データ形式エラー: ${e.message}"
+                    message = "データ形式エラー: ${ExceptionMasker.mask(e)}"
                 )
             }
             else -> {
                 DomainError.UnknownError(
-                    message = "同期エラー: ${e.message}",
+                    message = "同期エラー: ${ExceptionMasker.mask(e)}",
                     cause = e
                 )
             }

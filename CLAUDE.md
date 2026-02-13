@@ -5,6 +5,8 @@
 
 ## エージェントチーム構成
 
+> **task-driver v8 連携**: `/task-driver` スキル使用時は、本セクションのルールに加え `~/.claude/skills/task-driver/SKILL.md` の手順に従う。Plan モードでは TeamCreate 3 Worker 並列リサーチ、Run モードでは Explore リサーチ + TeamCreate 3 Worker 実装のハイブリッドモデルを採用。
+
 すべての開発タスクは4人のエージェントチームで実行する。
 リーダー1人 + ワーカー3人の構成。
 
@@ -56,6 +58,16 @@ Task(
 - ワーカー同士は `SendMessage` で発見や依存情報を共有する
 - 依存関係があるワーカーは、先行ワーカーの完了メッセージを待ってから開始する
 
+### sub-agent-patterns 原則
+
+エージェント（Leader/Worker）のプロンプト設計で遵守すべき原則:
+
+1. **ツールアクセス制限**: Worker プロンプトの**冒頭**に許可/禁止ツールを明記する。Worker が不要なツール（Write, Bash 等）を使うリスクを防ぐ
+2. **重要指示先頭配置**: 制約事項・禁止事項はプロンプトの冒頭に配置する。末尾に置くとモデルが無視するリスクがある
+3. **コンテキスト衛生**: Worker に渡す情報は必要最小限にする。巨大ファイルの全文コピーやプロジェクト全体の説明は避け、担当範囲に関連する情報のみ渡す
+4. **2層深さ制限**: Leader → Worker の2層まで。Worker が Task/TeamCreate で更にサブエージェントを生成することは禁止
+5. **Bash approval spam 防止**: 実装 Worker（worker-impl, worker-test）は Bash 禁止。ビルド/テスト実行は worker-quality のみが担当。これにより approval プロンプトの頻度を最小化
+
 ### テンプレート集：タスクに応じた3ワーカーの役割
 
 リーダーは依頼内容に応じて、以下から最適なテンプレートを選択する。
@@ -70,6 +82,19 @@ Task(
 | 🏗️ レイヤー別実装 | フロントエンド | バックエンド | データ層 |
 | 📦 リリース準備 | コード仕上げ | テスト強化 | ドキュメント |
 | 🔍 技術調査 | 既存コード分析 | 外部リサーチ | プロトタイプ検証 |
+
+#### task-driver 専用テンプレート
+
+| モード | Worker | 役割 | Bash |
+|--------|--------|------|------|
+| Plan リサーチ | researcher | 事実収集 | ❌ |
+| Plan リサーチ | architect | 方針提案 | ❌ |
+| Plan リサーチ | critic | 穴突き | ❌ |
+| Run 実装 | worker-impl | ロジック実装 | ❌ |
+| Run 実装 | worker-test | テスト実装 | ❌ |
+| Run 実装 | worker-quality | ビルド/テスト確認 | ✅ |
+
+詳細は `~/.claude/skills/task-driver/references/team-templates.md` を参照。
 
 ### リーダーの進行フロー
 1. ユーザーの依頼を分析し、上記テンプレートから最適なものを選ぶ
@@ -450,6 +475,7 @@ Timber.d("User signed in successfully")
 18. **Root 検出ダイアログ** — MainActivity で `RootDetector` がルート検出時に「続ける/終了」AlertDialog を表示。テストでは `FakeRootDetector` で制御
 19. **リリース前チェックリスト** — `docs/RELEASE_CHECKLIST.md` を確認。署名、ProGuard、Firebase 設定、ストア掲載情報等の最終確認事項
 20. **エクスポート PII 注意** — CSV/PDF エクスポートに患者情報を含む。キャッシュクリア、ログ PII 禁止ルール遵守
+21. **Worker Bash approval spam** — 実装 Worker（worker-impl, worker-test）に Bash を許可すると、ビルド/テスト実行の approval プロンプトが大量発生する。Bash は worker-quality のみに許可し、ビルド/テスト実行を集約する
 
 ## 今後の追加予定
 

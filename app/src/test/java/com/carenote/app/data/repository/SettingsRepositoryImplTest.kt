@@ -360,4 +360,53 @@ class SettingsRepositoryImplTest {
         assertTrue(result is Result.Failure)
         assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
     }
+
+    @Test
+    fun `updateSessionTimeout with valid value succeeds`() = runTest {
+        coEvery { dataSource.updateSessionTimeout(10) } returns Unit
+
+        val result = repository.updateSessionTimeout(10)
+
+        assertTrue(result.isSuccess)
+        coVerify { dataSource.updateSessionTimeout(10) }
+    }
+
+    @Test
+    fun `updateSessionTimeout below minimum returns ValidationError`() = runTest {
+        val result = repository.updateSessionTimeout(0)
+
+        assertTrue(result.isFailure)
+        val error = (result as Result.Failure).error
+        assertTrue(error is DomainError.ValidationError)
+        assertEquals("sessionTimeoutMinutes", (error as DomainError.ValidationError).field)
+    }
+
+    @Test
+    fun `updateSessionTimeout above maximum returns ValidationError`() = runTest {
+        val result = repository.updateSessionTimeout(61)
+
+        assertTrue(result.isFailure)
+        val error = (result as Result.Failure).error
+        assertTrue(error is DomainError.ValidationError)
+        assertEquals("sessionTimeoutMinutes", (error as DomainError.ValidationError).field)
+    }
+
+    @Test
+    fun `getSessionTimeoutMs returns value from dataSource`() = runTest {
+        every { dataSource.getSessionTimeoutMs() } returns 600_000L
+
+        val result = repository.getSessionTimeoutMs()
+
+        assertEquals(600_000L, result)
+    }
+
+    @Test
+    fun `updateSessionTimeout returns Failure on db error`() = runTest {
+        coEvery { dataSource.updateSessionTimeout(any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateSessionTimeout(5)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+    }
 }

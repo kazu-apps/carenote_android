@@ -11,6 +11,7 @@ import com.carenote.app.domain.repository.NoteCsvExporterInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.carenote.app.data.util.SecureFileDeleter
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -28,6 +29,7 @@ class NoteCsvExporter @Inject constructor(
 
     override suspend fun export(notes: List<Note>): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, AppConfig.Export.CACHE_DIR_NAME).also { it.mkdirs() }
+        cleanupStaleCache(exportDir)
         val fileName = "${AppConfig.Export.NOTE_CSV_FILE_PREFIX}${System.currentTimeMillis()}.csv"
         val file = File(exportDir, fileName)
 
@@ -87,5 +89,12 @@ class NoteCsvExporter @Inject constructor(
         NoteTag.MEAL -> context.getString(R.string.notes_tag_meal)
         NoteTag.REPORT -> context.getString(R.string.notes_tag_report)
         NoteTag.OTHER -> context.getString(R.string.notes_tag_other)
+    }
+
+    private fun cleanupStaleCache(dir: File) {
+        val now = System.currentTimeMillis()
+        dir.listFiles()?.filter {
+            now - it.lastModified() > AppConfig.Export.CACHE_MAX_AGE_MS
+        }?.forEach { SecureFileDeleter.delete(it) }
     }
 }

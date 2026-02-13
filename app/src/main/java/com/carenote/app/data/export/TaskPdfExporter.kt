@@ -16,6 +16,7 @@ import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.carenote.app.data.util.SecureFileDeleter
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -35,6 +36,7 @@ class TaskPdfExporter @Inject constructor(
 
     override suspend fun export(tasks: List<Task>): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, AppConfig.Export.CACHE_DIR_NAME).also { it.mkdirs() }
+        cleanupStaleCache(exportDir)
         val fileName = "${AppConfig.Export.TASK_PDF_FILE_PREFIX}${System.currentTimeMillis()}.pdf"
         val file = File(exportDir, fileName)
 
@@ -201,5 +203,12 @@ class TaskPdfExporter @Inject constructor(
         RecurrenceFrequency.DAILY -> context.getString(R.string.tasks_recurrence_daily)
         RecurrenceFrequency.WEEKLY -> context.getString(R.string.tasks_recurrence_weekly)
         RecurrenceFrequency.MONTHLY -> context.getString(R.string.tasks_recurrence_monthly)
+    }
+
+    private fun cleanupStaleCache(dir: File) {
+        val now = System.currentTimeMillis()
+        dir.listFiles()?.filter {
+            now - it.lastModified() > AppConfig.Export.CACHE_MAX_AGE_MS
+        }?.forEach { SecureFileDeleter.delete(it) }
     }
 }

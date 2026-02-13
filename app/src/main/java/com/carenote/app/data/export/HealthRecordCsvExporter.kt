@@ -12,6 +12,7 @@ import com.carenote.app.domain.model.MealAmount
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.carenote.app.data.util.SecureFileDeleter
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -29,6 +30,7 @@ class HealthRecordCsvExporter @Inject constructor(
 
     override suspend fun export(records: List<HealthRecord>): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, AppConfig.Export.CACHE_DIR_NAME).also { it.mkdirs() }
+        cleanupStaleCache(exportDir)
         val fileName = "${AppConfig.Export.CSV_FILE_PREFIX}${System.currentTimeMillis()}.csv"
         val file = File(exportDir, fileName)
 
@@ -105,5 +107,12 @@ class HealthRecordCsvExporter @Inject constructor(
         ExcretionType.HARD -> context.getString(R.string.excretion_hard)
         ExcretionType.DIARRHEA -> context.getString(R.string.excretion_diarrhea)
         ExcretionType.NONE -> context.getString(R.string.excretion_none)
+    }
+
+    private fun cleanupStaleCache(dir: File) {
+        val now = System.currentTimeMillis()
+        dir.listFiles()?.filter {
+            now - it.lastModified() > AppConfig.Export.CACHE_MAX_AGE_MS
+        }?.forEach { SecureFileDeleter.delete(it) }
     }
 }

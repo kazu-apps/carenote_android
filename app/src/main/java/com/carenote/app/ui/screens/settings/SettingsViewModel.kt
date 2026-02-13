@@ -190,6 +190,11 @@ class SettingsViewModel @Inject constructor(
         logTag = "Biometric enabled updated: $enabled"
     ) { settingsRepository.updateBiometricEnabled(enabled) }
 
+    fun updateSessionTimeout(minutes: Int) = updateSetting(
+        logTag = "Session timeout updated: $minutes minutes",
+        failureMessageResId = R.string.settings_error_validation
+    ) { settingsRepository.updateSessionTimeout(minutes) }
+
     fun toggleDynamicColor(enabled: Boolean) = updateSetting(
         logTag = "Dynamic color updated: $enabled"
     ) { settingsRepository.updateDynamicColor(enabled) }

@@ -32,7 +32,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.carenote.app.R
-import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AnalyticsRepository
@@ -82,7 +81,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onStart(owner: LifecycleOwner) {
-                checkBiometricAuth()
+                checkSessionTimeout()
             }
         })
 
@@ -236,7 +235,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkBiometricAuth() {
+    private fun checkSessionTimeout() {
         if (!biometricHelper.canAuthenticate(this)) {
             isAuthenticated.value = true
             return
@@ -244,7 +243,7 @@ class MainActivity : AppCompatActivity() {
 
         val elapsed = System.currentTimeMillis() - lastBackgroundTime
         val isFirstLaunch = lastBackgroundTime == 0L
-        val needsAuth = isFirstLaunch || elapsed > AppConfig.Biometric.BACKGROUND_TIMEOUT_MS
+        val needsAuth = isFirstLaunch || elapsed > settingsRepository.getSessionTimeoutMs()
 
         if (!needsAuth) {
             isAuthenticated.value = true

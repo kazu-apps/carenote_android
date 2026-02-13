@@ -5,6 +5,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.repository.StorageRepository
 import com.google.firebase.storage.FirebaseStorage
+import com.carenote.app.data.util.ExceptionMasker
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import javax.inject.Inject
@@ -20,22 +21,22 @@ class FirebaseStorageRepositoryImpl @Inject constructor(
         remotePath: String
     ): Result<String, DomainError> {
         return Result.catchingSuspend(
-            errorTransform = { DomainError.NetworkError("Failed to upload photo: ${it.message}", it) }
+            errorTransform = { DomainError.NetworkError("Failed to upload photo: ${ExceptionMasker.mask(it as Exception)}", it) }
         ) {
             val ref = storage.get().reference.child(remotePath)
             ref.putFile(Uri.parse(localUri)).await()
             val downloadUrl = ref.downloadUrl.await().toString()
-            Timber.d("Photo uploaded: $remotePath")
+            Timber.d("Photo uploaded successfully")
             downloadUrl
         }
     }
 
     override suspend fun deletePhoto(remotePath: String): Result<Unit, DomainError> {
         return Result.catchingSuspend(
-            errorTransform = { DomainError.NetworkError("Failed to delete photo: ${it.message}", it) }
+            errorTransform = { DomainError.NetworkError("Failed to delete photo: ${ExceptionMasker.mask(it as Exception)}", it) }
         ) {
             storage.get().reference.child(remotePath).delete().await()
-            Timber.d("Photo deleted: $remotePath")
+            Timber.d("Photo deleted successfully")
         }
     }
 }

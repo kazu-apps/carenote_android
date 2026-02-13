@@ -47,6 +47,10 @@ interface SettingsRepository {
 
     suspend fun updateDynamicColor(enabled: Boolean): Result<Unit, DomainError>
 
+    suspend fun updateSessionTimeout(minutes: Int): Result<Unit, DomainError>
+
+    fun getSessionTimeoutMs(): Long
+
     fun isOnboardingCompleted(): Boolean
 
     suspend fun setOnboardingCompleted(completed: Boolean): Result<Unit, DomainError>

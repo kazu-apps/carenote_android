@@ -83,6 +83,12 @@
     <string name="settings_biometric_enabled">Lock with biometrics</string>
     <string name="settings_biometric_summary">Require authentication on app launch and resume</string>
     <string name="settings_biometric_not_available">Biometric authentication is not available on this device</string>
+    <string name="settings_session_timeout_title">Auto-lock</string>
+    <string name="settings_session_timeout_summary">Time before requiring re-authentication when returning from background</string>
+    <string name="settings_session_timeout_minutes">%d min</string>
+    <string name="settings_session_timeout_dialog_title">Auto-lock timeout</string>
+    <string name="settings_session_timeout_min_label">Min: %d min</string>
+    <string name="settings_session_timeout_max_label">Max: %d min</string>
     <string name="security_root_detected_title">Root Detected</string>
     <string name="security_root_detected_summary">This device may be rooted. Data security could be compromised.</string>
     <string name="security_root_warning_dialog_title">Security Warning</string>

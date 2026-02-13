@@ -233,6 +233,28 @@ class FakeSettingsRepository : SettingsRepository {
         return Result.Success(Unit)
     }
 
+    override suspend fun updateSessionTimeout(
+        minutes: Int
+    ): Result<Unit, DomainError> {
+        if (shouldFail) {
+            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        }
+        if (minutes !in AppConfig.Session.MIN_TIMEOUT_MINUTES..AppConfig.Session.MAX_TIMEOUT_MINUTES) {
+            return Result.Failure(
+                DomainError.ValidationError(
+                    message = "Session timeout must be between ${AppConfig.Session.MIN_TIMEOUT_MINUTES} and ${AppConfig.Session.MAX_TIMEOUT_MINUTES} minutes",
+                    field = "sessionTimeoutMinutes"
+                )
+            )
+        }
+        settings.value = settings.value.copy(sessionTimeoutMinutes = minutes)
+        return Result.Success(Unit)
+    }
+
+    override fun getSessionTimeoutMs(): Long {
+        return settings.value.sessionTimeoutMinutes * 60_000L
+    }
+
     override suspend fun updateDynamicColor(
         enabled: Boolean
     ): Result<Unit, DomainError> {

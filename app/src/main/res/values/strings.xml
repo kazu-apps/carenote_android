@@ -83,6 +83,12 @@
     <string name="settings_biometric_enabled">生体認証でロック</string>
     <string name="settings_biometric_summary">アプリ起動時・復帰時に認証を要求</string>
     <string name="settings_biometric_not_available">このデバイスでは生体認証を利用できません</string>
+    <string name="settings_session_timeout_title">自動ロック</string>
+    <string name="settings_session_timeout_summary">バックグラウンドからの復帰時に再認証を要求するまでの時間</string>
+    <string name="settings_session_timeout_minutes">%d 分</string>
+    <string name="settings_session_timeout_dialog_title">自動ロック時間</string>
+    <string name="settings_session_timeout_min_label">最小: %d 分</string>
+    <string name="settings_session_timeout_max_label">最大: %d 分</string>
     <string name="security_root_detected_title">Root 検出</string>
     <string name="security_root_detected_summary">このデバイスは Root 化されている可能性があります。データの安全性が低下する恐れがあります。</string>
     <string name="security_root_warning_dialog_title">セキュリティ警告</string>

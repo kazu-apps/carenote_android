@@ -40,6 +40,7 @@ data class UserSettings(
 
     // セキュリティ設定
     val biometricEnabled: Boolean = false,
+    val sessionTimeoutMinutes: Int = AppConfig.Session.DEFAULT_TIMEOUT_MINUTES,
 
     // テーマ拡張設定
     val useDynamicColor: Boolean = false

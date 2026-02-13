@@ -2,12 +2,13 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: v8.1 Phase 7 テスト強化 + CLAUDE.md 更新 — DONE
+## 現在のタスク: v9.0-sec Phase 2A 完了
 
-AddEditCalendarEventViewModelTest recurrence テスト 12 件、AddEditNoteViewModelTest comment テスト 10 件、CalendarEventRepositoryImplTest RecurrenceExpander 統合テスト 3 件追加。CLAUDE.md Phase 4-6 同期（DB v19、model 20、Repository 25、NoteComment/ActiveCareRecipientProvider/RecurrenceExpander/OnboardingWelcome 追加）。全ビルド・テスト通過。
+Session タイムアウト user-configurable（1-60分、デフォルト5分）、PBKDF2WithHmacSHA256 derived key（100K iterations, 256-bit）、master passphrase ゼロクリア。テスト ~16 件追加。全ビルド・テスト通過。
 
 ## 次のアクション
 
+- セキュリティ改善 Phase 2B 実行（入力検証パターン統一）
 - v9.0 計画策定（家族招待フロー、Google Play Billing、通知制限）
 
 ## 既知の問題
@@ -25,6 +26,47 @@ AddEditCalendarEventViewModelTest recurrence テスト 12 件、AddEditNoteViewM
 | LOW | v2.0 | FCM トークンのサーバー送信未実装（バックエンド前提） |
 
 ## ロードマップ
+
+### v9.0-sec Phase 1: データ保護 + Firestore Rules - DONE
+
+Firestore Security Rules 新規作成、ExceptionMasker/SecureFileDeleter 新規ユーティリティ、8 Exporter キャッシュ上書き削除、EntitySyncer/MedicationLogSyncer/FirebaseStorageRepositoryImpl PII ログマスク。テスト 35 件追加。全ビルド・テスト通過。
+
+### v9.0-sec Phase 2A: Session タイムアウト + Derived Key - DONE
+
+Session タイムアウト user-configurable（1-60分、デフォルト5分）、PBKDF2WithHmacSHA256 derived key（100K iterations, 256-bit）、master passphrase ゼロクリア。テスト ~16 件追加。全ビルド・テスト通過。
+- 対象: `config/AppConfig.kt`, `domain/model/UserSettings.kt`, `data/local/SettingsDataSource.kt`, `domain/repository/SettingsRepository.kt`, `data/repository/SettingsRepositoryImpl.kt`, `ui/MainActivity.kt`, `data/local/DatabasePassphraseManager.kt`, `ui/screens/settings/SettingsViewModel.kt`, `res/values/strings.xml`, `res/values-en/strings.xml`
+- テスト: DatabasePassphraseManagerTest (8件) + SettingsRepositoryImplTest (5件) + SettingsViewModelTest (3件)
+- 依存: Phase 1
+
+### v9.0-sec Phase 2B: 入力検証パターン統一 - PENDING
+
+既存 FormValidator/AuthValidators を domain/validator/ に拡張。外部ライブラリ不要。6-8 AddEdit ViewModel の入力検証パターンを統一。
+- 対象: `domain/validator/` (新規), `ui/viewmodel/` (6-8 AddEdit ViewModel)
+- 依存: Phase 2A
+
+### v9.0-sec Phase 3: バイナリ保護 + APPI 準拠 - PENDING
+
+ProGuard/R8 難読化ルール強化、FileProvider grantUriPermissions 制限、Root 検出時の機密データアクセス制限オプション。APPI（個人情報保護法）準拠ドキュメント整備（SECURITY.md, DATA_RETENTION_POLICY.md）。
+- 対象: `app/proguard-rules.pro`, `app/src/main/res/xml/file_paths.xml`, `ui/util/RootDetector.kt`, `ui/MainActivity.kt`, `docs/SECURITY.md` (新規), `docs/DATA_RETENTION_POLICY.md` (新規)
+- 依存: Phase 1, Phase 2A, Phase 2B
+
+### v9.0-test Phase 1: テストユーティリティ基盤構築 - PENDING
+
+テストデータ生成の重複削減と品質向上のための共通ユーティリティを新設。Builder DSL（Medication/Note/Task/HealthRecord）、ResultMatchers、FlowAssertions（Turbine ラッパー）、TestDataFixtures（FakeClock 統合）を testing/ パッケージに配置。
+- 対象: `app/src/test/java/com/carenote/app/testing/` (新規 7-8 ファイル)
+- 依存: なし
+
+### v9.0-test Phase 2: テストデータ統一 + E2E デバッグ改善 - PENDING
+
+Mapper/Exporter テスト 16 件のハードコード日時を Phase 1 の Fixtures/FakeClock に統一。E2E テスト失敗時の Screenshot 自動保存機能を追加。ViewModel テストの Dispatcher セットアップ重複を ViewModelTestBase に抽出。
+- 対象: `app/src/test/` (変更 12-15 ファイル)、`app/src/androidTest/e2e/` (変更 2 ファイル)
+- 依存: Phase 1
+
+### v9.0-test Phase 3: カバレッジ向上 + ドキュメント - PENDING
+
+Syncer 具象テスト追加（MedicationSyncer/NoteSyncer 等）、PagingSource ユニットテスト追加、ViewModel エラーシナリオテスト追加。CLAUDE.md に落とし穴 #22（テスト開発 Best Practices）を追記。
+- 対象: `app/src/test/` (新規/変更 8-10 ファイル)、`CLAUDE.md`
+- 依存: Phase 2
 
 ### v7.0 Phase 1: リリース品質強化 - DONE
 
@@ -172,6 +214,12 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | v8.1 Ph5 | Note.authorId→createdBy + HealthRecord/Task createdBy 追加。3 RepositoryImpl AuthRepository inject。NoteRemoteMapper authorId レガシーフォールバック。OnboardingWelcomeScreen + SettingsDataSource onboarding_completed + MainActivity 3分岐。DB v18。全テスト通過 | DONE |
 | v8.1 Ph6 | NoteComment 1:N（Entity+DAO+Mapper+RemoteMapper+Repository+UI）+ CalendarEvent recurrence（RecurrenceExpander+UI）。DB v19。DI/Sync 統合。テスト 44 件追加。全ビルド・テスト通過 | DONE |
 | v8.1 Ph7 | テスト強化（recurrence 12件 + comment 10件 + RecurrenceExpander 3件）+ CLAUDE.md Phase 4-6 同期。全ビルド・テスト通過 | DONE |
+| v9.0-sec Ph2A | Session タイムアウト user-configurable（1-60分）+ PBKDF2 derived key + master passphrase ゼロクリア。テスト 16 件追加。全テスト通過 | DONE |
+| task-driver v8 | SKILL.md + team-templates.md 全面書き換え（TeamCreate ハイブリッド）+ CLAUDE.md sub-agent-patterns 原則追加 + MEMORY.md 更新 | DONE |
+| task-driver v8 レビューラウンド | Plan モード Round 2 相互レビュー追加。SKILL.md（手順 Round 1/Round 2 構造化 + Rule #18）+ team-templates.md（レビューテンプレート 3 件） | DONE |
+| テスト機能リサーチ | テスト基盤調査（126 unit + 22 E2E + 31 Fakes + 56 Roborazzi）、Builder DSL 方針策定、リスク分析（Flaky LOW、E2E screenshot MEDIUM、日時統一 MEDIUM）、3 Phase ロードマップ作成 | DONE |
+| セキュリティ分析 | OWASP Mobile Top 10 + 攻撃ベクター + APPI 準拠評価。成熟度 93/100。CRITICAL 1 (Firestore Rules), HIGH 5 (Export PII, Sync PII, Session timeout, Input validation, Biometric memory dump), MEDIUM 5。総工数 107h。3 Phase ロードマップ作成 | DONE |
+| v9.0-sec Ph1 | データ保護 + Firestore Rules（ExceptionMasker/SecureFileDeleter、8 Exporter cache cleanup、Sync PII マスク、firestore.rules）。テスト 35 件追加。全テスト通過 | DONE |
 
 ## アーキテクチャ参照
 
@@ -190,6 +238,9 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | 仕様書乖離 | excretionMemo 未実装（conditionNote と混同注意）。NoteComment + CalendarEvent recurrence は v8.1 Ph6 で解消済み |
 | 仕様書検証 (v8.1 Ph6後) | ホーム画面 ✅、CareRecipient 4フィールド ✅、CalendarEvent type/completed ✅、recipientId ✅(Ph4)、createdBy ✅(Ph5)、Onboarding ✅(Ph5)、NoteComment ✅(Ph6)、CalendarEvent recurrence ✅(Ph6)。全仕様差異解消 |
 | 対応不要判定 | 緊急連絡先カテゴリ（RelationshipType 6値 > 仕様3分類で互換性あり）、通知プレミアム制限（Billing 未実装で無意味）、家族招待は v9.0 先送り |
+| セキュリティ分析 | 成熟度 93/100。SQLCipher+EncryptedPrefs+Root検出+生体認証=業界標準超。CRITICAL: Firestore Rules 欠落。要改善: Export cache PII, Sync PII log, Session timeout, Validator pattern, Biometric memory dump. APPI 技術面 ~70% |
+| セキュリティ強化 (Ph1) | ExceptionMasker（PII ログマスク）、SecureFileDeleter（3-pass 上書き削除）、Firestore Rules（careRecipients/{uid} owner auth）、Export cache 1h TTL |
+| セキュリティ強化 (Ph2A) | Session timeout user-configurable (1-60min, default 5min), PBKDF2WithHmacSHA256 derived key (100K iter, 256-bit), master passphrase zero-clear |
 
 ## v9.0 計画（v8.1 完了後）
 

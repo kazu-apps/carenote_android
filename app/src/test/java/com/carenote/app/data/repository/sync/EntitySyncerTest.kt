@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -118,7 +119,7 @@ class EntitySyncerTest {
         assertTrue(result is SyncResult.Failure)
         val failure = result as SyncResult.Failure
         assertTrue(failure.error is DomainError.UnknownError)
-        assertTrue(failure.error.message.contains("Critical push error"))
+        assertTrue(failure.error.message.contains("RuntimeException"))
     }
 
     @Test
@@ -348,7 +349,7 @@ class EntitySyncerTest {
         assertTrue(result is SyncResult.Failure)
         val failure = result as SyncResult.Failure
         assertTrue(failure.error is DomainError.ValidationError)
-        assertTrue(failure.error.message.contains("Invalid field value"))
+        assertTrue(failure.error.message.contains("IllegalArgumentException"))
     }
 
     @Test
@@ -363,6 +364,39 @@ class EntitySyncerTest {
         assertTrue(result is SyncResult.Failure)
         val failure = result as SyncResult.Failure
         assertTrue(failure.error is DomainError.UnknownError)
+        assertTrue(failure.error.message.contains("RuntimeException"))
+    }
+
+    @Test
+    fun `mapException masks PII email in IllegalArgumentException`() = runTest {
+        syncer.throwOnPush = IllegalArgumentException("Field email=john@example.com is invalid")
+        val result = syncer.sync(careRecipientId, null)
+        assertTrue(result is SyncResult.Failure)
+        val failure = result as SyncResult.Failure
+        assertTrue(failure.error is DomainError.ValidationError)
+        assertFalse(failure.error.message.contains("john@example.com"))
+        assertTrue(failure.error.message.contains("IllegalArgumentException"))
+    }
+
+    @Test
+    fun `mapException masks PII uid in RuntimeException`() = runTest {
+        syncer.throwOnPush = RuntimeException("Failed for uid=abc123 email=test@test.com")
+        val result = syncer.sync(careRecipientId, null)
+        assertTrue(result is SyncResult.Failure)
+        val failure = result as SyncResult.Failure
+        assertFalse(failure.error.message.contains("abc123"))
+        assertFalse(failure.error.message.contains("test@test.com"))
+        assertTrue(failure.error.message.contains("RuntimeException"))
+    }
+
+    @Test
+    fun `mapException masks sensitive document path`() = runTest {
+        syncer.throwOnPush = RuntimeException("Document careRecipients/uid123/medications/med456 not found")
+        val result = syncer.sync(careRecipientId, null)
+        assertTrue(result is SyncResult.Failure)
+        val failure = result as SyncResult.Failure
+        assertFalse(failure.error.message.contains("uid123"))
+        assertFalse(failure.error.message.contains("med456"))
     }
 
     // ========== 初回同期（lastSyncTime = null） テスト ==========

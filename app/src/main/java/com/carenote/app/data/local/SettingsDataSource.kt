@@ -49,6 +49,7 @@ class SettingsDataSource @Inject constructor(
         const val SYNC_ENABLED = "sync_enabled"
         const val LAST_SYNC_TIME = "last_sync_time"
         const val BIOMETRIC_ENABLED = "biometric_enabled"
+        const val SESSION_TIMEOUT_MINUTES = "session_timeout_minutes"
         const val DYNAMIC_COLOR = "dynamic_color"
         const val ONBOARDING_COMPLETED = "onboarding_completed"
     }
@@ -151,6 +152,10 @@ class SettingsDataSource @Inject constructor(
                 PreferencesKeys.BIOMETRIC_ENABLED,
                 false
             ),
+            sessionTimeoutMinutes = prefs.getInt(
+                PreferencesKeys.SESSION_TIMEOUT_MINUTES,
+                AppConfig.Session.DEFAULT_TIMEOUT_MINUTES
+            ),
             useDynamicColor = prefs.getBoolean(
                 PreferencesKeys.DYNAMIC_COLOR,
                 false
@@ -222,6 +227,18 @@ class SettingsDataSource @Inject constructor(
 
     suspend fun updateBiometricEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(PreferencesKeys.BIOMETRIC_ENABLED, enabled).apply()
+    }
+
+    suspend fun updateSessionTimeout(minutes: Int) {
+        prefs.edit().putInt(PreferencesKeys.SESSION_TIMEOUT_MINUTES, minutes).apply()
+    }
+
+    fun getSessionTimeoutMs(): Long {
+        val minutes = prefs.getInt(
+            PreferencesKeys.SESSION_TIMEOUT_MINUTES,
+            AppConfig.Session.DEFAULT_TIMEOUT_MINUTES
+        )
+        return minutes * 60_000L
     }
 
     suspend fun updateDynamicColor(enabled: Boolean) {

@@ -451,6 +451,34 @@ object AppConfig {
     }
 
     /**
+     * セッション管理の設定値
+     */
+    object Session {
+        /** デフォルトのセッションタイムアウト（分） */
+        const val DEFAULT_TIMEOUT_MINUTES = 5
+
+        /** セッションタイムアウトの最小値（分） */
+        const val MIN_TIMEOUT_MINUTES = 1
+
+        /** セッションタイムアウトの最大値（分） */
+        const val MAX_TIMEOUT_MINUTES = 60
+    }
+
+    /**
+     * セキュリティ関連の設定値
+     */
+    object Security {
+        /** PBKDF2 イテレーション回数 */
+        const val PBKDF2_ITERATIONS = 100_000
+
+        /** PBKDF2 鍵長（ビット） */
+        const val PBKDF2_KEY_LENGTH_BITS = 256
+
+        /** PBKDF2 ソルト長（バイト） */
+        const val PBKDF2_SALT_LENGTH = 32
+    }
+
+    /**
      * 写真添付関連の設定値
      */
     object Photo {
@@ -500,6 +528,9 @@ object AppConfig {
         const val TASK_PDF_FILE_PREFIX = "tasks_"
         const val NOTE_CSV_FILE_PREFIX = "notes_"
         const val NOTE_PDF_FILE_PREFIX = "notes_"
+
+        /** エクスポートキャッシュファイルの最大保持期間（ミリ秒）— 1時間 */
+        const val CACHE_MAX_AGE_MS = 3_600_000L
     }
 
     /**

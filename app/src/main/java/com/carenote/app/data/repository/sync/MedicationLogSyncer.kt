@@ -15,6 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
+import com.carenote.app.data.util.ExceptionMasker
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
@@ -130,7 +131,7 @@ class MedicationLogSyncer @Inject constructor(
             )
             mergeResults(pushResult, pullResult)
         } catch (e: Exception) {
-            Timber.e(e, "Sync failed for medicationLog medicationId=$medicationLocalId")
+            Timber.e("Sync failed for medicationLog: ${ExceptionMasker.mask(e)}")
             SyncResult.Failure(mapException(e))
         }
     }
@@ -163,7 +164,7 @@ class MedicationLogSyncer @Inject constructor(
                     uploadLog(careRecipientId, medicationRemoteId, log, existingMapping, syncTime)
                     uploadedCount++
                 } catch (e: Exception) {
-                    Timber.w("Failed to upload medicationLog localId=$localId: $e")
+                    Timber.w("Failed to upload medicationLog: ${ExceptionMasker.mask(e)}")
                     failedEntities.add(localId)
                     errors.add(mapException(e))
                 }
@@ -205,7 +206,7 @@ class MedicationLogSyncer @Inject constructor(
         )
         syncMappingDao.upsert(mapping)
 
-        Timber.d("Uploaded medicationLog localId=$localId remoteId=$remoteId")
+        Timber.d("Uploaded medicationLog successfully")
     }
 
     private suspend fun pullLogsForMedication(
@@ -249,7 +250,7 @@ class MedicationLogSyncer @Inject constructor(
                 }
             } catch (e: Exception) {
                 val localId = (doc.data?.get("localId") as? Number)?.toLong() ?: -1
-                Timber.w("Failed to process remote medicationLog: $e")
+                Timber.w("Failed to process remote medicationLog: ${ExceptionMasker.mask(e)}")
                 failedEntities.add(localId)
                 errors.add(mapException(e))
             }

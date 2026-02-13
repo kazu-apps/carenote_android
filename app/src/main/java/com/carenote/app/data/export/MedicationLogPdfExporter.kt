@@ -16,6 +16,7 @@ import com.carenote.app.domain.repository.MedicationLogPdfExporterInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.carenote.app.data.util.SecureFileDeleter
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -37,6 +38,7 @@ class MedicationLogPdfExporter @Inject constructor(
         medicationNames: Map<Long, String>
     ): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, AppConfig.Export.CACHE_DIR_NAME).also { it.mkdirs() }
+        cleanupStaleCache(exportDir)
         val fileName = "${AppConfig.Export.MEDICATION_LOG_PDF_FILE_PREFIX}${System.currentTimeMillis()}.pdf"
         val file = File(exportDir, fileName)
 
@@ -197,5 +199,12 @@ class MedicationLogPdfExporter @Inject constructor(
         MedicationTiming.MORNING -> context.getString(R.string.medication_morning)
         MedicationTiming.NOON -> context.getString(R.string.medication_noon)
         MedicationTiming.EVENING -> context.getString(R.string.medication_evening)
+    }
+
+    private fun cleanupStaleCache(dir: File) {
+        val now = System.currentTimeMillis()
+        dir.listFiles()?.filter {
+            now - it.lastModified() > AppConfig.Export.CACHE_MAX_AGE_MS
+        }?.forEach { SecureFileDeleter.delete(it) }
     }
 }
