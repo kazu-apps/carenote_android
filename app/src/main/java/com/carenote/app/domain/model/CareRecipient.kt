@@ -21,5 +21,6 @@ data class CareRecipient(
     val allergies: String = "",
     val memo: String = "",
     val createdAt: LocalDateTime = LocalDateTime.now(),
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
+    val firestoreId: String? = null
 )

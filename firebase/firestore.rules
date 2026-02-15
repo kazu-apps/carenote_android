@@ -6,38 +6,59 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // CareRecipient documents: only the authenticated owner can access
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(recipientId) {
+      return isAuthenticated() && request.auth.uid == recipientId;
+    }
+
+    function isMember(recipientId) {
+      return isAuthenticated() && exists(/databases/$(database)/documents/careRecipients/$(recipientId)/members/$(request.auth.uid));
+    }
+
+    function hasAccess(recipientId) {
+      return isOwner(recipientId) || isMember(recipientId);
+    }
+
+    // CareRecipient documents
     match /careRecipients/{recipientId} {
-      allow read, write: if request.auth != null && request.auth.uid == recipientId;
+      allow read, write: if hasAccess(recipientId);
 
-      // Sub-collections inherit parent auth rule
+      // Members sub-collection: read by owner/member, write by owner only
+      match /members/{uid} {
+        allow read: if hasAccess(recipientId);
+        allow write: if isOwner(recipientId);
+      }
+
       match /medications/{medicationId} {
-        allow read, write: if request.auth != null && request.auth.uid == recipientId;
+        allow read, write: if hasAccess(recipientId);
 
-        // Nested sub-collection: medication logs
         match /logs/{logId} {
-          allow read, write: if request.auth != null && request.auth.uid == recipientId;
+          allow read, write: if hasAccess(recipientId);
         }
       }
 
       match /notes/{noteId} {
-        allow read, write: if request.auth != null && request.auth.uid == recipientId;
+        allow read, write: if hasAccess(recipientId);
 
         match /comments/{commentId} {
-          allow read, write: if request.auth != null && request.auth.uid == recipientId;
+          allow read, write: if hasAccess(recipientId);
         }
       }
 
       match /healthRecords/{recordId} {
-        allow read, write: if request.auth != null && request.auth.uid == recipientId;
+        allow read, write: if hasAccess(recipientId);
       }
 
       match /calendarEvents/{eventId} {
-        allow read, write: if request.auth != null && request.auth.uid == recipientId;
+        allow read, write: if hasAccess(recipientId);
       }
 
       match /tasks/{taskId} {
-        allow read, write: if request.auth != null && request.auth.uid == recipientId;
+        allow read, write: if hasAccess(recipientId);
       }
     }
   }

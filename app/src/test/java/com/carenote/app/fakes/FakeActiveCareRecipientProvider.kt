@@ -9,7 +9,11 @@ class FakeActiveCareRecipientProvider : ActiveCareRecipientProvider {
     private val _activeCareRecipientId = MutableStateFlow(1L)
     override val activeCareRecipientId: Flow<Long> = _activeCareRecipientId
 
+    var firestoreId: String? = null
+
     override suspend fun getActiveCareRecipientId(): Long = _activeCareRecipientId.first()
+
+    override suspend fun getActiveFirestoreId(): String? = firestoreId
 
     fun setActiveCareRecipientId(id: Long) {
         _activeCareRecipientId.value = id

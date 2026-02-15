@@ -30,4 +30,12 @@ class CareRecipientRepositoryImpl @Inject constructor(
             careRecipientDao.insertOrUpdate(mapper.toEntity(careRecipient))
         }
     }
+
+    override suspend fun updateFirestoreId(id: Long, firestoreId: String): Result<Unit, DomainError> {
+        return Result.catchingSuspend(
+            errorTransform = { DomainError.DatabaseError("Failed to update firestoreId", it) }
+        ) {
+            careRecipientDao.updateFirestoreId(id, firestoreId)
+        }
+    }
 }

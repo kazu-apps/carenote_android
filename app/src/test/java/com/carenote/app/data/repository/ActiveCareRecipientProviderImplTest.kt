@@ -5,6 +5,7 @@ import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.fakes.FakeCareRecipientRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -59,5 +60,31 @@ class ActiveCareRecipientProviderImplTest {
 
         val result = provider.getActiveCareRecipientId()
         assertEquals(99L, result)
+    }
+
+    @Test
+    fun `getActiveFirestoreId returns null when no care recipient`() = runTest {
+        val result = provider.getActiveFirestoreId()
+        assertNull(result)
+    }
+
+    @Test
+    fun `getActiveFirestoreId returns firestoreId when exists`() = runTest {
+        careRecipientRepository.setCareRecipient(
+            CareRecipient(id = 1L, name = "テスト太郎", firestoreId = "fs-abc-123")
+        )
+
+        val result = provider.getActiveFirestoreId()
+        assertEquals("fs-abc-123", result)
+    }
+
+    @Test
+    fun `getActiveFirestoreId returns null when firestoreId not set`() = runTest {
+        careRecipientRepository.setCareRecipient(
+            CareRecipient(id = 1L, name = "テスト太郎")
+        )
+
+        val result = provider.getActiveFirestoreId()
+        assertNull(result)
     }
 }

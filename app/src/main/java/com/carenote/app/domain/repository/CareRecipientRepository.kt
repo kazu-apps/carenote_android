@@ -10,4 +10,6 @@ interface CareRecipientRepository {
     fun getCareRecipient(): Flow<CareRecipient?>
 
     suspend fun saveCareRecipient(careRecipient: CareRecipient): Result<Unit, DomainError>
+
+    suspend fun updateFirestoreId(id: Long, firestoreId: String): Result<Unit, DomainError>
 }

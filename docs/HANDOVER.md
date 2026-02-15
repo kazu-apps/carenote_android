@@ -1,8 +1,8 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: v9.0 Phase 2 (PremiumFeatureGuard) 完了
+## セッションステータス: v9.0 Phase 3 (Firestore 構造移行) 完了
 
-## 現在のタスク: v9.0 Phase 2 完了。Phase 1B (Cloud Functions) or Phase 3 から実行可能
+## 現在のタスク: v9.0 Phase 3 完了。Phase 1B (Cloud Functions) or Phase 4 から実行可能
 
 Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → architect 提案 (6 Phase Plan) → critic リスク分析 (6リスク指摘) → researcher 相互レビュー (誤認6点、見落とし3点指摘)。
 
@@ -274,12 +274,13 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | v10.0-tdd Ph4 | 残り 8 RepositoryImpl テストに ResultMatchers 適用 + SyncResult matchers 3関数追加。全テスト通過 | DONE |
 | v9.0 Ph1 Billing | Google Play Billing 7.1.1 基盤（BillingRepository + NoOp + DI + PurchaseEntity v21 + Mapper + テスト 30件）。全テスト通過 | DONE |
 | v9.0 Ph2 PremiumGuard | PremiumFeatureGuard + NotificationCountDataSource + TaskReminderWorker 制限チェック + Settings 残り表示。テスト 22 件追加。全テスト通過 | DONE |
+| v9.0 Ph3 | CareRecipient firestoreId 追加 + SyncWorker 保存 + Firestore Rules isOwner/isMember + DB v22 + テスト 15 件。全テスト通過 | DONE |
 
 ## アーキテクチャ参照
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v21 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 12 Entity (PurchaseEntity 追加) |
+| Room DB | v22 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 12 Entity (PurchaseEntity 追加) |
 | Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
 | 同期 | ConfigDrivenEntitySyncer + Incremental Sync (updatedAt フィルター) |
 | Paging 3 | Task/Note/HealthRecord(LIST): PagingSource, Medication: DB検索のみ, Calendar: 対象外 |
@@ -323,14 +324,12 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 - 注意: **Claude Code の守備範囲外**。手動またはデスクトップ版で実装。Firebase CLI + Node.js 環境が必要
 - 手動作業: Firebase Functions デプロイ、サービスアカウント設定、Google Play Developer API 有効化
 
-### Phase 3: 家族招待 — Firestore 構造移行 - PENDING
-現在の `careRecipients/{uid}/` (uid ベース) を `careRecipients/{id}/` (ID ベース) に移行。
-Member サブコレクション (`members/{uid}`) を追加。
-既存の全 EntitySyncer の collectionPath にメンバー権限チェックを統合。
-- 対象: data/repository/sync/ (全 Syncer), di/SyncModule, Firestore Security Rules
-- 依存: なし（Billing と独立して実装可能だが、最大リスクのため慎重に）
-- 注意: 既存データの移行スクリプトが必要。fallbackToDestructiveMigration を proper migration に切り替え検討
-- 手動作業: Firestore Security Rules のデプロイ・テスト
+### Phase 3: 家族招待 — Firestore 構造移行 - DONE
+
+CareRecipient に firestoreId: String? フィールド追加（Entity/Model/Mapper/DAO/Repository/ActiveCareRecipientProvider）。SyncWorker が Firestore の careRecipientId をローカル DB に保存。DB v22。Firestore Security Rules を isOwner/isMember/hasAccess ヘルパー関数に移行 + members サブコレクション追加（前方互換）。テスト 15 件追加（CareRecipientMapperTest 10件 + CareRecipientRepositoryImplTest 2件 + ActiveCareRecipientProviderImplTest 3件）。全ビルド・テスト通過。
+- 対象: `data/local/entity/CareRecipientEntity.kt`, `domain/model/CareRecipient.kt`, `data/mapper/CareRecipientMapper.kt`, `data/local/dao/CareRecipientDao.kt`, `domain/repository/CareRecipientRepository.kt`, `data/repository/CareRecipientRepositoryImpl.kt`, `domain/repository/ActiveCareRecipientProvider.kt`, `data/repository/ActiveCareRecipientProviderImpl.kt`, `data/worker/SyncWorker.kt`, `data/local/CareNoteDatabase.kt` (v22), `firebase/firestore.rules`
+- テスト: CareRecipientMapperTest (新規10件) + CareRecipientRepositoryImplTest (+2件) + ActiveCareRecipientProviderImplTest (+3件) + FakeCareRecipientRepository更新 + FakeActiveCareRecipientProvider更新 + TestBuilders更新
+- 依存: Phase 2
 
 ### Phase 4: 家族招待 — データモデル + Room - PENDING
 Member/Invitation ドメインモデル、Room Entity、DAO、Mapper の実装。

@@ -44,7 +44,7 @@ import com.carenote.app.data.local.entity.TaskEntity
         NoteCommentEntity::class,
         PurchaseEntity::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)

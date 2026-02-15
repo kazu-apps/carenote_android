@@ -19,4 +19,8 @@ class ActiveCareRecipientProviderImpl @Inject constructor(
     override suspend fun getActiveCareRecipientId(): Long {
         return activeCareRecipientId.first()
     }
+
+    override suspend fun getActiveFirestoreId(): String? {
+        return careRecipientRepository.getCareRecipient().first()?.firestoreId
+    }
 }

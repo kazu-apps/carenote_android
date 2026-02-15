@@ -27,7 +27,8 @@ class CareRecipientMapper @Inject constructor() : Mapper<CareRecipientEntity, Ca
             allergies = entity.allergies,
             memo = entity.memo,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
-            updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
+            updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter),
+            firestoreId = entity.firestoreId
         )
     }
 
@@ -43,7 +44,8 @@ class CareRecipientMapper @Inject constructor() : Mapper<CareRecipientEntity, Ca
             allergies = domain.allergies,
             memo = domain.memo,
             createdAt = domain.createdAt.format(dateTimeFormatter),
-            updatedAt = domain.updatedAt.format(dateTimeFormatter)
+            updatedAt = domain.updatedAt.format(dateTimeFormatter),
+            firestoreId = domain.firestoreId
         )
     }
 

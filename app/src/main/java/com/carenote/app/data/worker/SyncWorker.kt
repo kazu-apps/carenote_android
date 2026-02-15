@@ -9,6 +9,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.model.PhotoUploadStatus
 import com.carenote.app.domain.repository.AuthRepository
+import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.repository.PhotoRepository
 import com.carenote.app.domain.repository.StorageRepository
@@ -17,6 +18,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
@@ -45,6 +47,7 @@ class SyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val syncRepository: SyncRepository,
     private val authRepository: AuthRepository,
+    private val careRecipientRepository: CareRecipientRepository,
     private val firestore: dagger.Lazy<FirebaseFirestore>,
     private val photoRepository: PhotoRepository,
     private val storageRepository: StorageRepository,
@@ -67,6 +70,9 @@ class SyncWorker @AssistedInject constructor(
             Timber.w("SyncWorker: No careRecipientId found for current user")
             return Result.failure()
         }
+
+        // 2.5 Save firestoreId to local DB
+        saveFirestoreIdLocally(careRecipientId)
 
         // 3. Upload pending photos first
         uploadPendingPhotos(careRecipientId)
@@ -93,6 +99,23 @@ class SyncWorker @AssistedInject constructor(
             throw e
         } catch (e: Exception) {
             Timber.w("SyncWorker: Cache cleanup failed: $e")
+        }
+    }
+
+    /**
+     * Firestore から取得した careRecipientId をローカル DB に保存
+     */
+    private suspend fun saveFirestoreIdLocally(careRecipientId: String) {
+        try {
+            val currentRecipient = careRecipientRepository.getCareRecipient().first()
+            if (currentRecipient != null && currentRecipient.firestoreId != careRecipientId) {
+                careRecipientRepository.updateFirestoreId(currentRecipient.id, careRecipientId)
+                Timber.d("SyncWorker: Updated firestoreId for local care recipient")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w("SyncWorker: Failed to save firestoreId: $e")
         }
     }
 

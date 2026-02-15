@@ -15,4 +15,7 @@ interface CareRecipientDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(entity: CareRecipientEntity): Long
+
+    @Query("UPDATE care_recipients SET firestore_id = :firestoreId WHERE id = :id")
+    suspend fun updateFirestoreId(id: Long, firestoreId: String)
 }

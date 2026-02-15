@@ -36,7 +36,8 @@ class CareRecipientRepositoryImplTest {
         name: String = "山田太郎",
         birthDate: String? = "1940-05-15",
         gender: String = "MALE",
-        memo: String = "テストメモ"
+        memo: String = "テストメモ",
+        firestoreId: String? = null
     ) = CareRecipientEntity(
         id = id,
         name = name,
@@ -44,7 +45,8 @@ class CareRecipientRepositoryImplTest {
         gender = gender,
         memo = memo,
         createdAt = "2025-03-15T10:00:00",
-        updatedAt = "2025-03-15T10:00:00"
+        updatedAt = "2025-03-15T10:00:00",
+        firestoreId = firestoreId
     )
 
     @Test
@@ -114,6 +116,25 @@ class CareRecipientRepositoryImplTest {
 
         val careRecipient = mapper.toDomain(createEntity())
         val result = repository.saveCareRecipient(careRecipient)
+
+        result.assertDatabaseError()
+    }
+
+    @Test
+    fun `updateFirestoreId returns Success`() = runTest {
+        coEvery { dao.updateFirestoreId(any(), any()) } returns Unit
+
+        val result = repository.updateFirestoreId(1L, "firestore-abc")
+
+        result.assertSuccess()
+        coVerify { dao.updateFirestoreId(1L, "firestore-abc") }
+    }
+
+    @Test
+    fun `updateFirestoreId returns Failure on db error`() = runTest {
+        coEvery { dao.updateFirestoreId(any(), any()) } throws RuntimeException("DB error")
+
+        val result = repository.updateFirestoreId(1L, "firestore-abc")
 
         result.assertDatabaseError()
     }

@@ -228,6 +228,7 @@ fun aCareRecipient(
     medicalHistory: String = "",
     allergies: String = "",
     memo: String = "",
+    firestoreId: String? = null,
     clock: Clock = TestDataFixtures.DEFAULT_CLOCK
 ): CareRecipient = CareRecipient(
     id = id,
@@ -240,7 +241,8 @@ fun aCareRecipient(
     allergies = allergies,
     memo = memo,
     createdAt = clock.now(),
-    updatedAt = clock.now()
+    updatedAt = clock.now(),
+    firestoreId = firestoreId
 )
 
 fun aEmergencyContact(

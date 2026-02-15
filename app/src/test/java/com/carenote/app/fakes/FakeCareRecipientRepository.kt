@@ -11,6 +11,7 @@ class FakeCareRecipientRepository : CareRecipientRepository {
 
     private val careRecipient = MutableStateFlow<CareRecipient?>(null)
     var shouldFail = false
+    var updateFirestoreIdCalled = false
 
     fun setCareRecipient(value: CareRecipient?) {
         careRecipient.value = value
@@ -19,6 +20,7 @@ class FakeCareRecipientRepository : CareRecipientRepository {
     fun clear() {
         careRecipient.value = null
         shouldFail = false
+        updateFirestoreIdCalled = false
     }
 
     override fun getCareRecipient(): Flow<CareRecipient?> = careRecipient
@@ -28,6 +30,18 @@ class FakeCareRecipientRepository : CareRecipientRepository {
             return Result.Failure(DomainError.DatabaseError("Fake save error"))
         }
         this.careRecipient.value = careRecipient
+        return Result.Success(Unit)
+    }
+
+    override suspend fun updateFirestoreId(id: Long, firestoreId: String): Result<Unit, DomainError> {
+        updateFirestoreIdCalled = true
+        if (shouldFail) {
+            return Result.Failure(DomainError.DatabaseError("Fake update firestoreId error"))
+        }
+        val current = careRecipient.value
+        if (current != null && current.id == id) {
+            careRecipient.value = current.copy(firestoreId = firestoreId)
+        }
         return Result.Success(Unit)
     }
 }
