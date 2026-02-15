@@ -36,6 +36,7 @@ import com.carenote.app.ui.screens.settings.sections.NotificationSection
 import com.carenote.app.ui.screens.settings.sections.AccountSection
 import com.carenote.app.ui.screens.settings.sections.CareRecipientSection
 import com.carenote.app.ui.screens.settings.sections.EmergencyContactSection
+import com.carenote.app.ui.screens.settings.sections.MemberManagementSection
 import com.carenote.app.ui.screens.settings.sections.SecuritySection
 import com.carenote.app.ui.screens.settings.sections.DataExportSection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
@@ -54,6 +55,7 @@ fun SettingsScreen(
     onNavigateToTermsOfService: () -> Unit = {},
     onNavigateToCareRecipient: () -> Unit = {},
     onNavigateToEmergencyContacts: () -> Unit = {},
+    onNavigateToMemberManagement: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -117,6 +119,11 @@ fun SettingsScreen(
             item(key = "emergency_contact") {
                 EmergencyContactSection(
                     onEmergencyContactClick = onNavigateToEmergencyContacts
+                )
+            }
+            item(key = "member_management") {
+                MemberManagementSection(
+                    onMemberManagementClick = onNavigateToMemberManagement
                 )
             }
             item(key = "theme") {

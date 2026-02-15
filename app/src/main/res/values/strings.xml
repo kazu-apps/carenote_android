@@ -674,4 +674,61 @@
     <string name="onboarding_welcome_title">ケアのてへようこそ</string>
     <string name="onboarding_welcome_description">家族の介護記録を\nかんたんに管理できるアプリです。\nまずは介護を受ける方の\n基本情報を登録しましょう。</string>
     <string name="onboarding_welcome_start">はじめる</string>
+
+    <!-- Member Management -->
+    <string name="member_management_title">メンバー管理</string>
+    <string name="member_management_section_title">家族メンバー</string>
+    <string name="member_management_section_summary">家族メンバーの招待と管理</string>
+    <string name="member_management_empty">メンバーはまだいません</string>
+    <string name="member_management_empty_action">家族を招待する</string>
+    <string name="member_role_owner">オーナー</string>
+    <string name="member_role_member">メンバー</string>
+    <string name="member_delete_confirm">このメンバーを削除しますか？このメンバーはケア記録にアクセスできなくなります。</string>
+    <string name="member_deleted">メンバーを削除しました</string>
+    <string name="member_delete_failed">メンバーの削除に失敗しました</string>
+    <string name="member_delete_self_error">自分自身を削除することはできません</string>
+    <string name="member_delete_permission_error">オーナーのみがメンバーを削除できます</string>
+    <string name="member_joined_at">参加日: %s</string>
+
+    <!-- Send Invitation -->
+    <string name="send_invitation_title">招待を送信</string>
+    <string name="send_invitation_email_label">メールアドレス</string>
+    <string name="send_invitation_email_placeholder">招待先のメールアドレスを入力</string>
+    <string name="send_invitation_email_required">メールアドレスを入力してください</string>
+    <string name="send_invitation_email_invalid">有効なメールアドレスを入力してください</string>
+    <string name="send_invitation_message_label">メッセージ（任意）</string>
+    <string name="send_invitation_message_placeholder">招待メッセージを入力</string>
+    <string name="send_invitation_send">招待を送信</string>
+    <string name="send_invitation_success">招待を送信しました</string>
+    <string name="send_invitation_failed">招待の送信に失敗しました</string>
+    <string name="send_invitation_share_title">ケアのてへの招待</string>
+    <string name="send_invitation_share_text">ケアのてで一緒に介護記録を管理しましょう。\n以下のリンクから参加できます:\n%s</string>
+    <string name="send_invitation_link_copied">招待リンクをコピーしました</string>
+    <string name="send_invitation_self_error">自分自身を招待することはできません</string>
+    <string name="send_invitation_duplicate_error">このメールアドレスにはすでに招待を送信済みです</string>
+
+    <!-- Pending Invitations -->
+    <string name="invitation_pending_section">保留中の招待</string>
+    <string name="invitation_cancel_confirm">この招待をキャンセルしますか？</string>
+    <string name="invitation_cancelled">招待をキャンセルしました</string>
+    <string name="invitation_cancel_failed">招待のキャンセルに失敗しました</string>
+    <string name="invitation_cancel_permission_error">招待をキャンセルする権限がありません</string>
+    <string name="invitation_status_pending">保留中</string>
+    <string name="invitation_status_accepted">承認済み</string>
+    <string name="invitation_status_rejected">拒否</string>
+    <string name="invitation_status_expired">期限切れ</string>
+    <string name="invitation_expires_at">有効期限: %s</string>
+
+    <!-- Accept Invitation -->
+    <string name="accept_invitation_title">招待を受け入れ</string>
+    <string name="accept_invitation_description">家族メンバーからケア記録の共有に招待されました。</string>
+    <string name="accept_invitation_accept">参加する</string>
+    <string name="accept_invitation_decline">辞退する</string>
+    <string name="accept_invitation_success">招待を受け入れました。ケア記録にアクセスできるようになりました。</string>
+    <string name="accept_invitation_failed">招待の受け入れに失敗しました</string>
+    <string name="accept_invitation_invalid_token">無効な招待リンクです</string>
+    <string name="accept_invitation_expired">この招待は期限切れです</string>
+    <string name="accept_invitation_already_accepted">この招待はすでに受け入れ済みです</string>
+    <string name="accept_invitation_not_logged_in">招待を受け入れるにはログインが必要です</string>
+    <string name="accept_invitation_loading">招待情報を読み込み中…</string>
 </resources>

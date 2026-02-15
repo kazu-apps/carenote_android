@@ -379,6 +379,9 @@ object AppConfig {
         /** セクション間の垂直スペース（dp） */
         const val CONTENT_SPACING_DP = 16
 
+        /** セクション間の大きなスペース（dp） */
+        const val SECTION_SPACING_DP = 32
+
         /** リストアイテム間のスペース（dp） */
         const val ITEM_SPACING_DP = 8
 
@@ -647,6 +650,13 @@ object AppConfig {
         const val EVENT_HOME_SEE_ALL_CLICKED = "home_see_all_clicked"
         const val EVENT_HOME_SECTION_CLICKED = "home_section_clicked"
         const val PARAM_SECTION = "section"
+
+        // Member
+        const val SCREEN_MEMBER_MANAGEMENT = "member_management"
+        const val EVENT_INVITATION_SENT = "invitation_sent"
+        const val EVENT_INVITATION_ACCEPTED = "invitation_accepted"
+        const val EVENT_INVITATION_CANCELLED = "invitation_cancelled"
+        const val EVENT_MEMBER_DELETED = "member_deleted"
     }
 
     /**
@@ -677,5 +687,17 @@ object AppConfig {
     object Fcm {
         /** 全ユーザー向けトピック */
         const val TOPIC_ALL_USERS = "all_users"
+    }
+
+    /**
+     * メンバー管理関連の設定値
+     */
+    object Member {
+        const val INVITATION_TOKEN_LENGTH = 32
+        const val INVITATION_VALID_DAYS = 30L
+        const val EMAIL_MAX_LENGTH = 254
+        const val MESSAGE_MAX_LENGTH = 500
+        const val DEEP_LINK_HOST = "carenote.example.com"
+        const val DEEP_LINK_PATH_PREFIX = "/invite"
     }
 }

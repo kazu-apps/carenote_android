@@ -242,6 +242,29 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.EmojiPeople
     )
 
+    data object MemberManagement : Screen(
+        route = "member_management",
+        titleResId = R.string.member_management_title,
+        selectedIcon = Icons.Filled.Group,
+        unselectedIcon = Icons.Outlined.Group
+    )
+
+    data object SendInvitation : Screen(
+        route = "send_invitation",
+        titleResId = R.string.send_invitation_title,
+        selectedIcon = Icons.Filled.PersonAdd,
+        unselectedIcon = Icons.Outlined.PersonAdd
+    )
+
+    data object AcceptInvitation : Screen(
+        route = "accept_invitation/{invitationToken}",
+        titleResId = R.string.accept_invitation_title,
+        selectedIcon = Icons.Filled.GroupAdd,
+        unselectedIcon = Icons.Outlined.GroupAdd
+    ) {
+        fun createRoute(token: String): String = "accept_invitation/$token"
+    }
+
     companion object {
         val bottomNavItems get() = listOf(Home, Medication, Calendar, Tasks, HealthRecords, Notes)
         val authScreens get() = listOf(Login, Register, ForgotPassword)

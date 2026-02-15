@@ -1,8 +1,8 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: v9.0 Phase 4 (家族招待データモデル + Room) 完了
+## セッションステータス: v9.0 Phase 6 (統合テスト + E2E) 完了
 
-## 現在のタスク: v9.0 Phase 4 完了。Phase 5 (招待 UI + フロー) から実行可能
+## 現在のタスク: v9.0 Phase 6 完了。全 Phase 完了
 
 Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → architect 提案 (6 Phase Plan) → critic リスク分析 (6リスク指摘) → researcher 相互レビュー (誤認6点、見落とし3点指摘)。
 
@@ -16,9 +16,8 @@ Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → archit
 
 ## 次のアクション
 
-- v9.0 Phase 5: 家族招待 — 招待 UI + 招待フロー（InvitationScreen, MemberManagementScreen, App Links）
 - v9.0 Phase 1B: Billing サーバーサイド検証 (Cloud Functions) — Claude Code 守備範囲外、手動作業
-- v9.0 Phase 6: 統合テスト + E2E（Phase 5 完了後）
+- CLAUDE.md 更新: Phase 6 完了の反映（E2E テストファイル追加等）
 
 ## 既知の問題
 
@@ -277,6 +276,8 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | v9.0 Ph2 PremiumGuard | PremiumFeatureGuard + NotificationCountDataSource + TaskReminderWorker 制限チェック + Settings 残り表示。テスト 22 件追加。全テスト通過 | DONE |
 | v9.0 Ph3 | CareRecipient firestoreId 追加 + SyncWorker 保存 + Firestore Rules isOwner/isMember + DB v22 + テスト 15 件。全テスト通過 | DONE |
 | v9.0 Ph4 | Member/Invitation ドメインモデル + Room Entity + DAO + Mapper + Repository + DI。DB v23（14 Entity）。テスト ~44 件追加。全テスト通過 | DONE |
+| v9.0 Ph5 | 招待 UI + 招待フロー + 品質修正（PII削除 + 重複防止 + 権限チェック + WhileSubscribed + メールマスキング + AppConfig集約）。テスト ~42 件。全テスト通過 | DONE |
+| v9.0 Ph6 | 統合テスト + E2E（TestDatabaseModule 5 DAO追加 + TestTags + Deep Link + E2eTestUtils seedヘルパー + MemberInvitationFlowTest 8件 + AcceptInvitationFlowTest 5件）。全ビルド・テスト通過 | DONE |
 
 ## アーキテクチャ参照
 
@@ -340,19 +341,20 @@ Member/Invitation ドメインモデル、Room Entity、DAO、Mapper、Repositor
 - テスト: MemberMapperTest + InvitationMapperTest + MemberRepositoryImplTest + InvitationRepositoryImplTest + FakeMemberRepository (新規) + FakeInvitationRepository (新規) + TestBuilders (aMember/aInvitation 追加)
 - 依存: Phase 3
 
-### Phase 5: 家族招待 — 招待 UI + 招待フロー - PENDING
-招待画面 (InvitationScreen)、メンバー管理画面 (MemberManagementScreen) の実装。
-App Links で招待コード共有 → 受諾 → メンバー追加フロー。
-- 対象: ui/screens/invitation/, ui/screens/member/, ui/navigation/Screen.kt (新ルート追加), res/values/strings.xml (JP/EN), AndroidManifest.xml (App Links intent-filter)
-- 依存: Phase 4
-- 注意: Firebase Dynamic Links 廃止済み → App Links + Firebase Hosting 短縮 URL で代替
-- 手動作業: Firebase Hosting 設定、App Links assetlinks.json 配置、ドメイン検証
+### Phase 5: 家族招待 — 招待 UI + 招待フロー - DONE
 
-### Phase 6: 統合テスト + E2E - PENDING
-全新機能の統合テスト、E2E テスト、セキュリティレビュー。
-- 対象: app/src/test/ (Unit), app/src/androidTest/ (E2E), Firestore Security Rules テスト
+招待 UI (SendInvitationScreen, AcceptInvitationScreen, MemberManagementScreen) + ViewModel + Navigation + DI + App Links intent-filter + 品質修正（CRITICAL: UID PII 表示削除、HIGH: 重複招待防止 + cancelInvitation 権限チェック、MEDIUM: WhileSubscribed/メールマスキング/AppConfig 集約）。テスト ~42 件（既存 38 + 新規 4）。全ビルド・テスト通過。
+- 対象: `ui/screens/member/` (新規 8 ファイル), `ui/navigation/Screen.kt`, `ui/navigation/CareNoteNavHost.kt`, `AndroidManifest.xml`, `config/AppConfig.kt`, `res/values/strings.xml`, `res/values-en/strings.xml`
+- テスト: AcceptInvitationViewModelTest (10件) + SendInvitationViewModelTest (14件) + MemberManagementViewModelTest (14件) + FakeInvitationRepository + FakeMemberRepository
+- 依存: Phase 4
+
+### Phase 6: 統合テスト + E2E - DONE
+
+TestDatabaseModule に 5 DAO 追加（Member, Invitation, NoteComment, SyncMapping, Purchase）。TestTags に MEMBER_MANAGEMENT_FAB 追加。MemberManagementScreen FAB に testTag 追加。CareNoteNavHost に carenote:// Deep Link 追加。E2eTestUtils に seedCareRecipient/seedMember/seedInvitation ヘルパー追加。MemberInvitationFlowTest 新規作成（8 テスト: ナビゲーション、空状態、FAB遷移、メールバリデーション、入力表示、メンバーリスト、招待一覧、招待キャンセル）。AcceptInvitationFlowTest 新規作成（5 テスト: 有効トークン表示、承認成功、辞退、無効トークンエラー、期限切れエラー）。全ビルド・ユニットテスト通過。
+- 対象: `app/src/androidTest/java/com/carenote/app/di/TestDatabaseModule.kt`, `app/src/main/java/com/carenote/app/ui/testing/TestTags.kt`, `app/src/main/java/com/carenote/app/ui/screens/member/MemberManagementScreen.kt`, `app/src/main/java/com/carenote/app/ui/navigation/CareNoteNavHost.kt`, `app/src/androidTest/java/com/carenote/app/e2e/E2eTestUtils.kt`, `app/src/androidTest/java/com/carenote/app/e2e/MemberInvitationFlowTest.kt` (新規), `app/src/androidTest/java/com/carenote/app/e2e/AcceptInvitationFlowTest.kt` (新規)
+- テスト: MemberInvitationFlowTest (8件) + AcceptInvitationFlowTest (5件)
 - 依存: Phase 1, 2, 3, 4, 5
-- 注意: Billing テストは Google Play Console テスター設定が必要（実機テスト）。Security Rules テストは firebase-rules-unit-testing パッケージ
+- 注意: E2E テストは connectedDebugAndroidTest で実機/エミュレータが必要。Billing テストは Google Play Console テスター設定が必要
 
 ## スコープ外 / 将来
 

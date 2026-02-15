@@ -36,6 +36,9 @@ import com.carenote.app.ui.screens.home.HomeScreen
 import com.carenote.app.ui.screens.onboarding.OnboardingWelcomeScreen
 import com.carenote.app.ui.screens.emergencycontact.AddEditEmergencyContactScreen
 import com.carenote.app.ui.screens.emergencycontact.EmergencyContactListScreen
+import com.carenote.app.ui.screens.member.AcceptInvitationScreen
+import com.carenote.app.ui.screens.member.MemberManagementScreen
+import com.carenote.app.ui.screens.member.SendInvitationScreen
 import com.carenote.app.ui.screens.search.SearchScreen
 import com.carenote.app.ui.screens.settings.LegalDocumentScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
@@ -173,6 +176,9 @@ fun CareNoteNavHost(
                 },
                 onNavigateToEmergencyContacts = {
                     navController.navigate(Screen.EmergencyContacts.route)
+                },
+                onNavigateToMemberManagement = {
+                    navController.navigate(Screen.MemberManagement.route)
                 }
             )
         }
@@ -253,6 +259,41 @@ fun CareNoteNavHost(
         ) {
             AddEditEmergencyContactScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.MemberManagement.route) {
+            MemberManagementScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSendInvitation = { navController.navigate(Screen.SendInvitation.route) }
+            )
+        }
+
+        composable(Screen.SendInvitation.route) {
+            SendInvitationScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.AcceptInvitation.route,
+            arguments = listOf(navArgument("invitationToken") { type = NavType.StringType }),
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "https://${AppConfig.Member.DEEP_LINK_HOST}${AppConfig.Member.DEEP_LINK_PATH_PREFIX}/{invitationToken}"
+                },
+                navDeepLink {
+                    uriPattern = "${AppConfig.Notification.DEEP_LINK_SCHEME}://accept_invitation/{invitationToken}"
+                }
+            )
+        ) {
+            AcceptInvitationScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

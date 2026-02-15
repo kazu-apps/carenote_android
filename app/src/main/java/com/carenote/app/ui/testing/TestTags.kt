@@ -10,4 +10,6 @@ object TestTags {
     const val EXPORT_BUTTON = "export_button"
     const val EXPORT_CSV_ITEM = "export_csv_item"
     const val EXPORT_PDF_ITEM = "export_pdf_item"
+
+    const val MEMBER_MANAGEMENT_FAB = "member_management_fab"
 }

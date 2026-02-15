@@ -674,4 +674,61 @@
     <string name="onboarding_welcome_title">Welcome to CareNote</string>
     <string name="onboarding_welcome_description">An app to easily manage\ncare records for your family.\nLet\'s start by registering\nthe care recipient\'s basic information.</string>
     <string name="onboarding_welcome_start">Get Started</string>
+
+    <!-- Member Management -->
+    <string name="member_management_title">Member Management</string>
+    <string name="member_management_section_title">Family Members</string>
+    <string name="member_management_section_summary">Invite and manage family members</string>
+    <string name="member_management_empty">No members yet</string>
+    <string name="member_management_empty_action">Invite family</string>
+    <string name="member_role_owner">Owner</string>
+    <string name="member_role_member">Member</string>
+    <string name="member_delete_confirm">Delete this member? They will lose access to care records.</string>
+    <string name="member_deleted">Member deleted</string>
+    <string name="member_delete_failed">Failed to delete member</string>
+    <string name="member_delete_self_error">You cannot delete yourself</string>
+    <string name="member_delete_permission_error">Only the owner can delete members</string>
+    <string name="member_joined_at">Joined: %s</string>
+
+    <!-- Send Invitation -->
+    <string name="send_invitation_title">Send Invitation</string>
+    <string name="send_invitation_email_label">Email Address</string>
+    <string name="send_invitation_email_placeholder">Enter invitee\'s email address</string>
+    <string name="send_invitation_email_required">Please enter an email address</string>
+    <string name="send_invitation_email_invalid">Please enter a valid email address</string>
+    <string name="send_invitation_message_label">Message (optional)</string>
+    <string name="send_invitation_message_placeholder">Enter invitation message</string>
+    <string name="send_invitation_send">Send Invitation</string>
+    <string name="send_invitation_success">Invitation sent</string>
+    <string name="send_invitation_failed">Failed to send invitation</string>
+    <string name="send_invitation_share_title">Invitation to CareNote</string>
+    <string name="send_invitation_share_text">Let\'s manage care records together with CareNote.\nJoin using this link:\n%s</string>
+    <string name="send_invitation_link_copied">Invitation link copied</string>
+    <string name="send_invitation_self_error">You cannot invite yourself</string>
+    <string name="send_invitation_duplicate_error">An invitation has already been sent to this email address</string>
+
+    <!-- Pending Invitations -->
+    <string name="invitation_pending_section">Pending Invitations</string>
+    <string name="invitation_cancel_confirm">Cancel this invitation?</string>
+    <string name="invitation_cancelled">Invitation cancelled</string>
+    <string name="invitation_cancel_failed">Failed to cancel invitation</string>
+    <string name="invitation_cancel_permission_error">You don\'t have permission to cancel this invitation</string>
+    <string name="invitation_status_pending">Pending</string>
+    <string name="invitation_status_accepted">Accepted</string>
+    <string name="invitation_status_rejected">Rejected</string>
+    <string name="invitation_status_expired">Expired</string>
+    <string name="invitation_expires_at">Expires: %s</string>
+
+    <!-- Accept Invitation -->
+    <string name="accept_invitation_title">Accept Invitation</string>
+    <string name="accept_invitation_description">You have been invited to share care records with a family member.</string>
+    <string name="accept_invitation_accept">Join</string>
+    <string name="accept_invitation_decline">Decline</string>
+    <string name="accept_invitation_success">Invitation accepted. You now have access to care records.</string>
+    <string name="accept_invitation_failed">Failed to accept invitation</string>
+    <string name="accept_invitation_invalid_token">Invalid invitation link</string>
+    <string name="accept_invitation_expired">This invitation has expired</string>
+    <string name="accept_invitation_already_accepted">This invitation has already been accepted</string>
+    <string name="accept_invitation_not_logged_in">Please log in to accept this invitation</string>
+    <string name="accept_invitation_loading">Loading invitation…</string>
 </resources>
