@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ケアのて (CareNote) - 家族でつながる介護記録</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+            line-height: 1.8;
+            color: #212121;
+            background: #FFF8F0;
+            padding: 0 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 60px 0 40px;
+            flex: 1;
+            width: 100%;
+        }
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            background: #2E7D32;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        .app-title {
+            color: #2E7D32;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        .app-subtitle {
+            color: #757575;
+            font-size: 1em;
+        }
+        .lang-switcher {
+            display: flex;
+            gap: 8px;
+            margin: 24px 0 32px;
+        }
+        .lang-switcher a {
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9em;
+            border: 1px solid #2E7D32;
+            color: #2E7D32;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .lang-switcher a.active, .lang-switcher a:hover {
+            background: #2E7D32;
+            color: #fff;
+        }
+        .section { display: none; }
+        .section.active { display: block; }
+        .description {
+            color: #424242;
+            font-size: 1.05em;
+            margin-bottom: 32px;
+        }
+        .links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .links li {
+            margin-bottom: 12px;
+        }
+        .links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 24px;
+            background: #fff;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #212121;
+            font-size: 1.1em;
+            border: 1px solid #E0E0E0;
+            transition: all 0.2s;
+        }
+        .links a:hover {
+            border-color: #2E7D32;
+            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.12);
+            transform: translateY(-1px);
+        }
+        .links .link-icon {
+            width: 40px;
+            height: 40px;
+            background: #E8F5E9;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .links .link-text {
+            flex: 1;
+        }
+        .links .link-title {
+            font-weight: 600;
+            color: #1B5E20;
+        }
+        .links .link-desc {
+            font-size: 0.85em;
+            color: #757575;
+            margin-top: 2px;
+        }
+        .links .link-arrow {
+            color: #BDBDBD;
+            font-size: 1.2em;
+        }
+        footer {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 0 40px;
+            text-align: center;
+            color: #9E9E9E;
+            font-size: 0.85em;
+            width: 100%;
+        }
+        footer a {
+            color: #757575;
+            text-decoration: none;
+        }
+        footer a:hover {
+            color: #2E7D32;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-header">
+            <div class="app-icon" aria-hidden="true">&hearts;</div>
+            <div>
+                <div class="app-title" id="app-name">ケアのて</div>
+                <div class="app-subtitle" id="app-name-en">CareNote</div>
+            </div>
+        </div>
+
+        <div class="lang-switcher">
+            <a id="btn-ja" class="active" onclick="switchLang('ja')">日本語</a>
+            <a id="btn-en" onclick="switchLang('en')">English</a>
+        </div>
+
+        <div id="content-ja" class="section active">
+            <p class="description">家族でつながる介護記録アプリ</p>
+            <ul class="links">
+                <li>
+                    <a href="privacy-policy.html">
+                        <div class="link-icon">&#128274;</div>
+                        <div class="link-text">
+                            <div class="link-title">プライバシーポリシー</div>
+                            <div class="link-desc">個人情報の取り扱いについて</div>
+                        </div>
+                        <div class="link-arrow">&#8250;</div>
+                    </a>
+                </li>
+                <li>
+                    <a href="terms-of-service.html">
+                        <div class="link-icon">&#128220;</div>
+                        <div class="link-text">
+                            <div class="link-title">利用規約</div>
+                            <div class="link-desc">サービスのご利用条件</div>
+                        </div>
+                        <div class="link-arrow">&#8250;</div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div id="content-en" class="section">
+            <p class="description">Family care record app that connects your family</p>
+            <ul class="links">
+                <li>
+                    <a href="privacy-policy.html">
+                        <div class="link-icon">&#128274;</div>
+                        <div class="link-text">
+                            <div class="link-title">Privacy Policy</div>
+                            <div class="link-desc">How we handle your personal information</div>
+                        </div>
+                        <div class="link-arrow">&#8250;</div>
+                    </a>
+                </li>
+                <li>
+                    <a href="terms-of-service.html">
+                        <div class="link-icon">&#128220;</div>
+                        <div class="link-text">
+                            <div class="link-title">Terms of Service</div>
+                            <div class="link-desc">Conditions for using our service</div>
+                        </div>
+                        <div class="link-arrow">&#8250;</div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 CareNote</p>
+        <p><a href="mailto:carenote.app.support@gmail.com">carenote.app.support@gmail.com</a></p>
+    </footer>
+
+    <script>
+        function switchLang(lang) {
+            document.getElementById('content-ja').classList.toggle('active', lang === 'ja');
+            document.getElementById('content-en').classList.toggle('active', lang === 'en');
+            document.getElementById('btn-ja').classList.toggle('active', lang === 'ja');
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            document.documentElement.lang = lang;
+            if (lang === 'en') {
+                document.getElementById('app-name').textContent = 'CareNote';
+                document.getElementById('app-name-en').textContent = '';
+            } else {
+                document.getElementById('app-name').textContent = 'ケアのて';
+                document.getElementById('app-name-en').textContent = 'CareNote';
+            }
+        }
+    </script>
+</body>
+</html>
