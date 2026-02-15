@@ -145,7 +145,7 @@ detekt --config detekt.yml --input app/src/main/java
 | 言語 | Kotlin 2.3.0 / JVM 17 |
 | UI | Jetpack Compose + Material 3 (BOM 2026.01.01) |
 | DI | Hilt 2.59.1 (KSP 2.3.5) |
-| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v19, fallbackToDestructiveMigration) |
+| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v23, fallbackToDestructiveMigration) |
 | ナビゲーション | Navigation Compose 2.9.7 |
 | 非同期 | Coroutines 1.10.2 + StateFlow |
 | ログ | Timber 5.0.1 |
@@ -171,11 +171,13 @@ detekt --config detekt.yml --input app/src/main/java
 
 | モジュール | 責務 |
 |-----------|------|
-| `di/AppModule.kt` | 13 Repository + 8 Exporter + Clock/Compressor バインディング |
-| `di/DatabaseModule.kt` | Room DB + DAO (11 テーブル) + PassphraseManager + RecoveryHelper |
+| `di/AppModule.kt` | 15 Repository + 8 Exporter + Clock/Compressor/RootDetector/PremiumFeatureGuard バインディング |
+| `di/DatabaseModule.kt` | Room DB + DAO (14 テーブル) + PassphraseManager + RecoveryHelper |
 | `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging, Storage, Analytics + AuthRepository + AnalyticsRepository + No-Op フォールバック |
 | `di/SyncModule.kt` | SyncRepository + EntitySyncer 群 |
 | `di/WorkerModule.kt` | WorkManager + 3 Scheduler (Sync, MedicationReminder, TaskReminder) |
+| `di/BillingModule.kt` | BillingRepository + PremiumFeatureGuard + No-Op フォールバック |
+| `di/BillingAvailability.kt` | Google Play Billing 利用可否チェック |
 | `di/WidgetEntryPoint.kt` | Glance Widget DI (EntryPointAccessors) |
 | `di/FirebaseAvailability.kt` | Firebase 利用可否チェック |
 
@@ -184,7 +186,7 @@ detekt --config detekt.yml --input app/src/main/java
 `ui/navigation/Screen.kt` の sealed class でルート定義:
 - **Auth**: Login, Register, ForgotPassword
 - **BottomNav**: Home, Medication, Calendar, Tasks, HealthRecords, Notes（6タブ）
-- **Secondary**: AddMedication, EditMedication, MedicationDetail, AddNote, EditNote, AddHealthRecord, EditHealthRecord, AddCalendarEvent, EditCalendarEvent, AddTask, EditTask, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, CareRecipientProfile, Timeline, PrivacyPolicy, TermsOfService, Search, Settings, OnboardingWelcome
+- **Secondary**: AddMedication, EditMedication, MedicationDetail, AddNote, EditNote, AddHealthRecord, EditHealthRecord, AddCalendarEvent, EditCalendarEvent, AddTask, EditTask, EmergencyContacts, AddEmergencyContact, EditEmergencyContact, CareRecipientProfile, Timeline, PrivacyPolicy, TermsOfService, Search, Settings, OnboardingWelcome, MemberManagement, SendInvitation, AcceptInvitation
 - `ui/navigation/CareNoteNavHost.kt` でルーティング管理
 - `ui/navigation/AdaptiveNavigationScaffold.kt` — ウィンドウサイズに応じて Compact=Bottom, Medium=Rail, Expanded=Drawer を自動選択
 
@@ -212,15 +214,15 @@ app/src/main/java/com/carenote/app/
 │   │   └── remote/      Firestore ↔ Domain マッパー (RemoteMapper)
 │   ├── remote/
 │   │   └── model/       SyncMetadata（同期メタデータ）
-│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, Search, NoteComment, ActiveCareRecipientProvider, FirebaseStorage, NoOpStorage, FirebaseAnalytics, NoOpAnalytics)
+│   ├── repository/      Repository 実装 (Medication, Note, HealthRecord, Calendar, Task, CareRecipient, EmergencyContact, Photo, Settings, Timeline, Search, NoteComment, ActiveCareRecipientProvider, FirebaseStorage, NoOpStorage, FirebaseAnalytics, NoOpAnalytics, Member, Invitation, Billing, NoOpBilling, PremiumFeatureGuard)
 │   │   └── sync/        EntitySyncer + ConfigDrivenEntitySyncer + MedicationLogSyncer + NoteCommentSyncer
 │   ├── service/         CareNoteMessagingService (FCM)
 │   └── worker/          SyncWorker, MedicationReminderWorker, TaskReminderWorker
-├── di/                  Hilt モジュール (App, Database, Firebase, Sync, Worker) + WidgetEntryPoint, FirebaseAvailability
+├── di/                  Hilt モジュール (App, Database, Firebase, Sync, Worker, Billing) + WidgetEntryPoint, FirebaseAvailability, BillingAvailability
 ├── domain/
 │   ├── common/          Result<T,E>, DomainError, SyncResult, SyncState
-│   ├── model/           ドメインモデル (20 model: Medication, MedicationLog, Note, NoteComment, HealthRecord, CalendarEvent, CalendarEventType, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage, SearchResult)
-│   ├── repository/      Repository インターフェース (25: Medication, MedicationLog, Note, NoteComment, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline, Analytics, Search + ActiveCareRecipientProvider + Scheduler/Exporter/Compressor interfaces)
+│   ├── model/           ドメインモデル (25 model: Medication, MedicationLog, Note, NoteComment, HealthRecord, CalendarEvent, CalendarEventType, Task, CareRecipient, EmergencyContact, Photo, User, UserSettings, TimelineItem, ThemeMode, TaskPriority, RecurrenceFrequency, RelationshipType, AppLanguage, SearchResult, Member, Invitation, PremiumStatus, ProductInfo, BillingConnectionState)
+│   ├── repository/      Repository インターフェース (30: Medication, MedicationLog, Note, NoteComment, HealthRecord, CalendarEvent, Task, CareRecipient, EmergencyContact, Photo, Auth, Sync, Storage, Settings, Timeline, Analytics, Search, Member, Invitation, Billing, PremiumFeatureGuard + ActiveCareRecipientProvider + Scheduler/Exporter/Compressor interfaces)
 │   └── util/            Clock interface + SystemClock（テスト用時刻制御）+ RecurrenceExpander
 └── ui/
     ├── common/          共通 UI ユーティリティ
@@ -238,7 +240,8 @@ app/src/main/java/com/carenote/app/
     │   ├── notes/       NotesScreen + AddEditNoteScreen
     │   ├── onboarding/  OnboardingWelcomeScreen
     │   ├── search/      SearchScreen + SearchViewModel
-    │   ├── settings/    SettingsScreen + dialogs/ (SettingsDialogs, DataExportDialog), sections/ (各セクション + DataExportSection)
+    │   ├── member/      MemberManagementScreen + SendInvitationScreen + AcceptInvitationScreen + ViewModels
+    │   ├── settings/    SettingsScreen + dialogs/ (SettingsDialogs, DataExportDialog), sections/ (各セクション + DataExportSection + MemberManagementSection)
     │   ├── tasks/       TasksScreen + AddEditTaskScreen
     │   └── timeline/    TimelineScreen
     ├── testing/         TestTags
@@ -396,14 +399,15 @@ Firebase 関連:
 - `FakeMedicationReminderScheduler`, `FakeTaskReminderScheduler`
 - `FakeMedicationLogCsvExporter`, `FakeMedicationLogPdfExporter`, `FakeNoteCsvExporter`, `FakeNotePdfExporter`, `FakeTaskCsvExporter`, `FakeTaskPdfExporter`
 - `FakeNotificationHelper`, `FakeRootDetector`, `FakeSyncMappingDao`, `FakeClock`, `FakeNoteCommentRepository`, `FakeActiveCareRecipientProvider`
+- `FakeMemberRepository`, `FakeInvitationRepository`, `FakeBillingRepository`, `FakePremiumFeatureGuard`
 
 ### E2E テスト
 
 `androidTest/.../di/TestFirebaseModule.kt` で本番モジュールを Fake に置換。
 
-16 テストファイル（`androidTest/.../e2e/`）:
+18 テストファイル（`androidTest/.../e2e/`）:
 - **基盤**: `E2eTestBase`, `E2eTestUtils`
-- **画面別**: `AuthFlowTest`, `MedicationFlowTest`, `CalendarFlowTest`, `TasksFlowTest`, `HealthRecordsFlowTest`, `NotesFlowTest`, `NavigationFlowTest`
+- **画面別**: `AuthFlowTest`, `MedicationFlowTest`, `CalendarFlowTest`, `TasksFlowTest`, `HealthRecordsFlowTest`, `NotesFlowTest`, `NavigationFlowTest`, `MemberInvitationFlowTest`, `AcceptInvitationFlowTest`
 - **横断**: `CriticalPathFlowTest`, `EditFlowTest`, `DeleteFlowTest`, `ValidationFlowTest`, `ExportFlowTest`, `PhotoSectionFlowTest`, `SyncFlowTest`
 
 ## コード規約
@@ -441,6 +445,8 @@ Timber.d("User signed in successfully")
 - `AppConfig.Photo` — 画像キャッシュ TTL/サイズ上限、圧縮品質
 - `AppConfig.UI` — デバウンス時間、アニメーション、Badge 最大値、検索デバウンス等
 - `AppConfig.Support` — 問い合わせメールアドレス
+- `AppConfig.Member` — 招待リンク設定（DEEP_LINK_HOST, DEEP_LINK_PATH_PREFIX, トークン有効期限）
+- `AppConfig.Billing` — プレミアム機能設定（SKU, 機能制限値）
 - `AppConfig.Analytics` — 画面名定数 + イベント定数（40+ 種）
 
 ### Detekt ルール（maxIssues=0）
@@ -480,6 +486,5 @@ Timber.d("User signed in successfully")
 
 ## 今後の追加予定
 
-- Google Play Billing（プレミアムサブスクリプション）
 - Wear OS 対応
 - FCM リモート通知（Cloud Functions バックエンド必要）
