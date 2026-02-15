@@ -252,11 +252,8 @@ Google Play Console の「コンテンツのレーティング」質問票への
 
 | 項目 | 値 |
 |------|-----|
-| URL | (公開前にホスティング先を決定し URL を設定) |
+| URL | https://kazu-apps.github.io/carenote_android/privacy-policy.html |
 | ドキュメント | `docs/privacy-policy.md` |
-
-> **TODO**: プライバシーポリシーを Web 上に公開し、URL を Google Play Console に登録する。
-> GitHub Pages、Firebase Hosting、または独自ドメインでホスティング可能。
 
 ---
 
@@ -265,7 +262,7 @@ Google Play Console の「コンテンツのレーティング」質問票への
 | 項目 | 値 |
 |------|-----|
 | メールアドレス | carenote.app.support@gmail.com |
-| ウェブサイト | (任意: 公開前に設定) |
+| ウェブサイト | https://kazu-apps.github.io/carenote_android/ |
 | 電話番号 | (任意: 個人開発の場合は不要) |
 
 ---
@@ -299,7 +296,7 @@ Google Play Console への入力時に確認するチェックリスト。
 - [ ] レーティング結果を確認
 
 ### プライバシーとポリシー
-- [ ] プライバシーポリシー URL を設定
+- [x] プライバシーポリシー URL を設定
 - [ ] データセーフティセクションを入力（詳細は「12. データセーフティ」セクション参照）
   - [ ] データ収集: メールアドレス、名前、健康情報、写真、クラッシュログ、使用状況データ
   - [ ] データ共有: 第三者への共有なし
