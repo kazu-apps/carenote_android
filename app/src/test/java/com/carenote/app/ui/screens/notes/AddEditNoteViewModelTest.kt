@@ -14,27 +14,26 @@ import com.carenote.app.fakes.FakeNoteRepository
 import com.carenote.app.fakes.FakePhotoRepository
 import com.carenote.app.ui.common.UiText
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddEditNoteViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var photoRepository: FakePhotoRepository
     private val imageCompressor: ImageCompressorInterface = mockk()
@@ -45,16 +44,10 @@ class AddEditNoteViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         noteRepository = FakeNoteRepository()
         photoRepository = FakePhotoRepository()
         analyticsRepository = FakeAnalyticsRepository()
         noteCommentRepository = FakeNoteCommentRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createAddViewModel(): AddEditNoteViewModel {

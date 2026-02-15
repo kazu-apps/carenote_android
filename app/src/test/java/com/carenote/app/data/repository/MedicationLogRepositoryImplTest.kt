@@ -3,9 +3,10 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.data.mapper.MedicationLogMapper
-import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.MedicationLog
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertFailure
+import com.carenote.app.testing.assertSuccess
 import com.carenote.app.domain.model.MedicationLogStatus
 import app.cash.turbine.test
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
@@ -122,8 +123,8 @@ class MedicationLogRepositoryImplTest {
         )
         val result = repository.insertLog(log)
 
-        assertTrue(result is Result.Success)
-        assertEquals(1L, (result as Result.Success).value)
+        val value = result.assertSuccess()
+        assertEquals(1L, value)
     }
 
     @Test
@@ -138,8 +139,7 @@ class MedicationLogRepositoryImplTest {
         )
         val result = repository.insertLog(log)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -155,7 +155,7 @@ class MedicationLogRepositoryImplTest {
         )
         val result = repository.updateLog(log)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
     }
 
     @Test
@@ -171,7 +171,7 @@ class MedicationLogRepositoryImplTest {
         )
         val result = repository.updateLog(log)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test
@@ -180,7 +180,7 @@ class MedicationLogRepositoryImplTest {
 
         val result = repository.deleteLog(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteLog(1L) }
     }
 
@@ -190,7 +190,7 @@ class MedicationLogRepositoryImplTest {
 
         val result = repository.deleteLog(1L)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test

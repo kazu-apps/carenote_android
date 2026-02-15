@@ -279,4 +279,53 @@ class TaskReminderWorkerTest {
         assertTrue(taskBase > medicationBase)
         assertTrue(taskBase - medicationBase >= 1000)
     }
+
+    // ========== Premium Feature Guard Tests ==========
+
+    @Test
+    fun `TASK_REMINDER_FREE_DAILY_LIMIT config is 3`() {
+        assertEquals(3, AppConfig.Notification.TASK_REMINDER_FREE_DAILY_LIMIT)
+    }
+
+    @Test
+    fun `FakePremiumFeatureGuard initial canSend is true`() = runTest {
+        val guard = com.carenote.app.fakes.FakePremiumFeatureGuard()
+        assertTrue(guard.canSendTaskReminder())
+    }
+
+    @Test
+    fun `FakePremiumFeatureGuard blocks when canSend is false`() = runTest {
+        val guard = com.carenote.app.fakes.FakePremiumFeatureGuard()
+        guard.canSend = false
+        assertFalse(guard.canSendTaskReminder())
+    }
+
+    @Test
+    fun `FakePremiumFeatureGuard tracks recordTaskReminderSent calls`() = runTest {
+        val guard = com.carenote.app.fakes.FakePremiumFeatureGuard()
+        guard.recordTaskReminderSent()
+        guard.recordTaskReminderSent()
+        assertEquals(2, guard.recordedCount)
+        assertEquals(2, guard.todayCount)
+    }
+
+    @Test
+    fun `FakePremiumFeatureGuard clear resets state`() = runTest {
+        val guard = com.carenote.app.fakes.FakePremiumFeatureGuard()
+        guard.canSend = false
+        guard.recordTaskReminderSent()
+        guard.clear()
+        assertTrue(guard.canSendTaskReminder())
+        assertEquals(0, guard.recordedCount)
+        assertEquals(0, guard.todayCount)
+    }
+
+    @Test
+    fun `FakePremiumFeatureGuard daily limit matches config`() {
+        val guard = com.carenote.app.fakes.FakePremiumFeatureGuard()
+        assertEquals(
+            AppConfig.Notification.TASK_REMINDER_FREE_DAILY_LIMIT,
+            guard.getTaskReminderDailyLimit()
+        )
+    }
 }

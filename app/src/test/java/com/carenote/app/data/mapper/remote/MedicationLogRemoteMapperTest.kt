@@ -4,6 +4,7 @@ import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.testing.TestDataFixtures
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -18,9 +19,9 @@ class MedicationLogRemoteMapperTest {
     private lateinit var timestampConverter: FirestoreTimestampConverter
     private lateinit var mapper: MedicationLogRemoteMapper
 
-    private val testDateTime = LocalDateTime.of(2025, 3, 15, 10, 0, 0)
-    private val scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0, 0)
-    private val recordedAt = LocalDateTime.of(2025, 3, 15, 8, 5, 0)
+    private val testDateTime = TestDataFixtures.NOW
+    private val scheduledAt = TestDataFixtures.NOW.minusHours(2)
+    private val recordedAt = TestDataFixtures.NOW.minusHours(2).plusMinutes(5)
 
     @Before
     fun setUp() {
@@ -222,7 +223,7 @@ class MedicationLogRemoteMapperTest {
             scheduledAt = scheduledAt,
             recordedAt = recordedAt
         )
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val syncMetadata = SyncMetadata(
             localId = 1L,
             syncedAt = testDateTime,
@@ -257,8 +258,8 @@ class MedicationLogRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata extracts all fields correctly`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),
@@ -274,7 +275,7 @@ class MedicationLogRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata with null deletedAt`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),

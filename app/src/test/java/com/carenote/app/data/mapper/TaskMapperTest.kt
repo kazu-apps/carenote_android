@@ -4,6 +4,7 @@ import com.carenote.app.data.local.entity.TaskEntity
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,6 +14,7 @@ import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 class TaskMapperTest {
 
@@ -44,8 +46,8 @@ class TaskMapperTest {
         assertFalse(result.isCompleted)
         assertEquals(TaskPriority.HIGH, result.priority)
         assertEquals("user1", result.createdBy)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 11, 0), result.updatedAt)
+        assertEquals(TestDataFixtures.NOW, result.createdAt)
+        assertEquals(TestDataFixtures.NOW.plusHours(1), result.updatedAt)
     }
 
     @Test
@@ -180,8 +182,8 @@ class TaskMapperTest {
         assertEquals(0, result.isCompleted)
         assertEquals("MEDIUM", result.priority)
         assertEquals("user1", result.createdBy)
-        assertEquals("2025-03-15T10:00:00", result.createdAt)
-        assertEquals("2025-03-15T10:00:00", result.updatedAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.createdAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.updatedAt)
     }
 
     @Test
@@ -343,8 +345,8 @@ class TaskMapperTest {
             dueDate = "2025-04-10",
             isCompleted = 0,
             priority = "MEDIUM",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T11:00:00",
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -365,8 +367,8 @@ class TaskMapperTest {
         reminderEnabled: Int = 0,
         reminderTime: String? = null,
         createdBy: String = "",
-        createdAt: String = "2025-03-15T10:00:00",
-        updatedAt: String = "2025-03-15T11:00:00"
+        createdAt: String = TestDataFixtures.NOW_STRING,
+        updatedAt: String = TestDataFixtures.NOW.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     ): TaskEntity = TaskEntity(
         id = id,
         title = title,
@@ -395,8 +397,8 @@ class TaskMapperTest {
         reminderEnabled: Boolean = false,
         reminderTime: LocalTime? = null,
         createdBy: String = "",
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
+        createdAt: LocalDateTime = TestDataFixtures.NOW,
+        updatedAt: LocalDateTime = TestDataFixtures.NOW
     ): Task = Task(
         id = id,
         title = title,

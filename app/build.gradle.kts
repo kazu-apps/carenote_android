@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.baselineprofile)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.play.publisher)
     jacoco
 }
 
@@ -29,7 +30,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.carenote.app"
+        applicationId = "com.carenote.original.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -101,6 +102,12 @@ android {
             }
         }
     }
+}
+
+play {
+    serviceAccountCredentials.set(file("../api-key.json"))
+    defaultToAppBundles.set(true)
+    track.set("internal")
 }
 
 @OptIn(com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
@@ -178,6 +185,9 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.analytics)
+
+    // Google Play Billing
+    implementation(libs.google.billing)
 
     // Glance Widget
     implementation(libs.androidx.glance.appwidget)

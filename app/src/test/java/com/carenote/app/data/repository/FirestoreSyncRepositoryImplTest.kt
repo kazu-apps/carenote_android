@@ -14,6 +14,9 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import com.carenote.app.testing.assertSyncFailure
+import com.carenote.app.testing.assertSyncPartialSuccess
+import com.carenote.app.testing.assertSyncSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -125,8 +128,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncAll(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
-        val success = result as SyncResult.Success
+        val success = result.assertSyncSuccess()
         assertEquals(6, success.uploadedCount) // 2 + 1 + 0 + 1 + 2
         assertEquals(8, success.downloadedCount) // 1 + 2 + 3 + 0 + 2
         assertEquals(1, success.conflictCount)
@@ -148,8 +150,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncAll(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.PartialSuccess)
-        val partial = result as SyncResult.PartialSuccess
+        val partial = result.assertSyncPartialSuccess()
         assertEquals(listOf(1L, 2L), partial.failedEntities)
         assertEquals(1, partial.errors.size)
     }
@@ -166,8 +167,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncAll(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Failure)
-        val failure = result as SyncResult.Failure
+        val failure = result.assertSyncFailure()
         assertTrue(failure.error is DomainError.NetworkError)
         assertEquals("Connection timeout", failure.error.message)
 
@@ -186,7 +186,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncAll(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
+        result.assertSyncSuccess()
         assertTrue(lastSyncTime != null)
     }
 
@@ -247,8 +247,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncMedications(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
-        val success = result as SyncResult.Success
+        val success = result.assertSyncSuccess()
         assertEquals(5, success.uploadedCount)
         assertEquals(3, success.downloadedCount)
 
@@ -265,7 +264,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncNotes(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
+        result.assertSyncSuccess()
         coVerify(exactly = 1) { noteSyncer.sync(careRecipientId, any()) }
     }
 
@@ -279,7 +278,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncHealthRecords(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
+        result.assertSyncSuccess()
         coVerify(exactly = 1) { healthRecordSyncer.sync(careRecipientId, any()) }
     }
 
@@ -293,7 +292,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncCalendarEvents(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
+        result.assertSyncSuccess()
         coVerify(exactly = 1) { calendarEventSyncer.sync(careRecipientId, any()) }
     }
 
@@ -307,7 +306,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncTasks(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
+        result.assertSyncSuccess()
         coVerify(exactly = 1) { taskSyncer.sync(careRecipientId, any()) }
     }
 
@@ -322,8 +321,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncMedicationLogs(careRecipientId, medicationId)
 
         // Then
-        assertTrue(result is SyncResult.Failure)
-        val failure = result as SyncResult.Failure
+        val failure = result.assertSyncFailure()
         assertTrue(failure.error is DomainError.NotFoundError)
         assertTrue(failure.error.message.contains("999"))
     }
@@ -356,7 +354,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncMedicationLogs(careRecipientId, medicationLocalId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
+        result.assertSyncSuccess()
         coVerify(exactly = 1) {
             medicationLogSyncer.syncForMedication(
                 careRecipientId,
@@ -389,8 +387,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.pushLocalChanges(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
-        val success = result as SyncResult.Success
+        val success = result.assertSyncSuccess()
         assertEquals(5, success.uploadedCount) // 1 + 2 + 0 + 1 + 1
         assertEquals(0, success.downloadedCount)
 
@@ -425,8 +422,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.pullRemoteChanges(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Success)
-        val success = result as SyncResult.Success
+        val success = result.assertSyncSuccess()
         assertEquals(0, success.uploadedCount)
         assertEquals(15, success.downloadedCount) // 3 + 2 + 5 + 1 + 4
         assertEquals(2, success.conflictCount)
@@ -447,8 +443,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.pushLocalChanges(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.Failure)
-        val failure = result as SyncResult.Failure
+        val failure = result.assertSyncFailure()
         assertTrue(failure.error is DomainError.UnauthorizedError)
 
         // 後続の Syncer は呼ばれない
@@ -471,8 +466,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.pullRemoteChanges(careRecipientId)
 
         // Then
-        assertTrue(result is SyncResult.PartialSuccess)
-        val partial = result as SyncResult.PartialSuccess
+        val partial = result.assertSyncPartialSuccess()
         assertEquals(listOf(5L), partial.failedEntities)
     }
 
@@ -611,8 +605,7 @@ class FirestoreSyncRepositoryImplTest {
         val result = repository.syncAll(careRecipientId)
 
         // Then: PartialSuccess（一部失敗があるため）
-        assertTrue(result is SyncResult.PartialSuccess)
-        val partial = result as SyncResult.PartialSuccess
+        val partial = result.assertSyncPartialSuccess()
         assertEquals(listOf(1L), partial.failedEntities)
         assertEquals(1, partial.errors.size)
     }

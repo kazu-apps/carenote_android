@@ -15,6 +15,7 @@ import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
+import com.carenote.app.data.local.dao.PurchaseDao
 import com.carenote.app.data.local.dao.SyncMappingDao
 import com.carenote.app.data.local.dao.TaskDao
 import dagger.Module
@@ -121,5 +122,11 @@ object DatabaseModule {
     @Singleton
     fun provideNoteCommentDao(database: CareNoteDatabase): NoteCommentDao {
         return database.noteCommentDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePurchaseDao(database: CareNoteDatabase): PurchaseDao {
+        return database.purchaseDao()
     }
 }

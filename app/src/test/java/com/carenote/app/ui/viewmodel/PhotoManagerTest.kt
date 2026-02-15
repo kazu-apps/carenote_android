@@ -5,30 +5,28 @@ import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakePhotoRepository
+import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.ui.util.SnackbarController
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PhotoManagerTest {
 
-    private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+    private lateinit var testScope: TestScope
 
     private lateinit var photoRepository: FakePhotoRepository
     private lateinit var imageCompressor: ImageCompressorInterface
@@ -37,15 +35,10 @@ class PhotoManagerTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        testScope = TestScope(mainCoroutineRule.testDispatcher)
         photoRepository = FakePhotoRepository()
         imageCompressor = mockk()
         snackbarController = SnackbarController()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createManager(

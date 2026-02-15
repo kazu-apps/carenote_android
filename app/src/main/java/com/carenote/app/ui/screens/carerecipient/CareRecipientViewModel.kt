@@ -9,6 +9,8 @@ import com.carenote.app.domain.model.Gender
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.util.Clock
+import com.carenote.app.ui.common.UiText
+import com.carenote.app.ui.util.FormValidator
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,6 +33,7 @@ data class CareRecipientUiState(
     val medicalHistory: String = "",
     val allergies: String = "",
     val memo: String = "",
+    val nameError: UiText? = null,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false
 )
@@ -78,7 +81,7 @@ class CareRecipientViewModel @Inject constructor(
     }
 
     fun updateName(name: String) {
-        _uiState.value = _uiState.value.copy(name = name)
+        _uiState.value = _uiState.value.copy(name = name, nameError = null)
     }
 
     fun updateBirthDate(birthDate: LocalDate?) {
@@ -111,6 +114,13 @@ class CareRecipientViewModel @Inject constructor(
 
     fun save() {
         val current = _uiState.value
+
+        val nameError = FormValidator.validateRequired(current.name, R.string.care_recipient_name_required)
+        if (nameError != null) {
+            _uiState.value = current.copy(nameError = nameError)
+            return
+        }
+
         _uiState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {

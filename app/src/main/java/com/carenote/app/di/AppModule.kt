@@ -57,6 +57,12 @@ import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import com.carenote.app.domain.repository.ImageCompressorInterface
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.util.SystemClock
+import com.carenote.app.data.local.NotificationCountDataSource
+import com.carenote.app.data.repository.PremiumFeatureGuardImpl
+import com.carenote.app.domain.repository.BillingRepository
+import com.carenote.app.domain.repository.PremiumFeatureGuard
+import com.carenote.app.ui.util.RootDetectionChecker
+import com.carenote.app.ui.util.RootDetector
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
@@ -292,4 +298,18 @@ object AppModule {
     @Provides
     @Singleton
     fun provideClock(): Clock = SystemClock()
+
+    @Provides
+    @Singleton
+    fun provideRootDetectionChecker(): RootDetectionChecker = RootDetector()
+
+    @Provides
+    @Singleton
+    fun providePremiumFeatureGuard(
+        billingRepository: BillingRepository,
+        notificationCountDataSource: NotificationCountDataSource,
+        clock: Clock
+    ): PremiumFeatureGuard {
+        return PremiumFeatureGuardImpl(billingRepository, notificationCountDataSource, clock)
+    }
 }

@@ -6,6 +6,7 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,7 +42,7 @@ class HealthRecordCsvExporterTest {
         meal: MealAmount? = MealAmount.FULL,
         excretion: ExcretionType? = ExcretionType.NORMAL,
         conditionNote: String = "",
-        recordedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
+        recordedAt: LocalDateTime = TestDataFixtures.NOW
     ) = HealthRecord(
         id = id,
         temperature = temperature,

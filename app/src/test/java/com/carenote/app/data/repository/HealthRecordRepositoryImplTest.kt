@@ -5,17 +5,19 @@ import com.carenote.app.data.local.entity.HealthRecordEntity
 import com.carenote.app.data.mapper.HealthRecordMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
-import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.PhotoRepository
 import app.cash.turbine.test
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
-import io.mockk.Runs
+import com.carenote.app.testing.TestDataFixtures
+import com.carenote.app.testing.aHealthRecord
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertSuccess
+import com.carenote.app.testing.assertSuccessValue
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -53,6 +55,7 @@ class HealthRecordRepositoryImplTest {
 
     private fun createEntity(
         id: Long = 1L,
+        careRecipientId: Long = 1L,
         temperature: Double? = 36.5,
         bloodPressureHigh: Int? = 120,
         bloodPressureLow: Int? = 80,
@@ -60,9 +63,11 @@ class HealthRecordRepositoryImplTest {
         weight: Double? = 65.0,
         meal: String? = "FULL",
         excretion: String? = "NORMAL",
-        conditionNote: String = "体調良好"
+        conditionNote: String = "体調良好",
+        createdBy: String = "test-uid"
     ) = HealthRecordEntity(
         id = id,
+        careRecipientId = careRecipientId,
         temperature = temperature,
         bloodPressureHigh = bloodPressureHigh,
         bloodPressureLow = bloodPressureLow,
@@ -71,9 +76,10 @@ class HealthRecordRepositoryImplTest {
         meal = meal,
         excretion = excretion,
         conditionNote = conditionNote,
-        recordedAt = "2025-03-15T10:00:00",
-        createdAt = "2025-03-15T10:00:00",
-        updatedAt = "2025-03-15T10:00:00"
+        createdBy = createdBy,
+        recordedAt = TestDataFixtures.NOW_STRING,
+        createdAt = TestDataFixtures.NOW_STRING,
+        updatedAt = TestDataFixtures.NOW_STRING
     )
 
     @Test
@@ -169,69 +175,40 @@ class HealthRecordRepositoryImplTest {
     fun `insertRecord returns Success with id`() = runTest {
         coEvery { dao.insertRecord(any()) } returns 1L
 
-        val record = HealthRecord(
-            temperature = 36.5,
-            conditionNote = "テスト",
-            recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val record = aHealthRecord(temperature = 36.5, conditionNote = "テスト")
         val result = repository.insertRecord(record)
 
-        assertTrue(result is Result.Success)
-        assertEquals(1L, (result as Result.Success).value)
+        result.assertSuccessValue(1L)
     }
 
     @Test
     fun `insertRecord returns Failure on db error`() = runTest {
         coEvery { dao.insertRecord(any()) } throws RuntimeException("DB error")
 
-        val record = HealthRecord(
-            temperature = 36.5,
-            conditionNote = "テスト",
-            recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val record = aHealthRecord(temperature = 36.5, conditionNote = "テスト")
         val result = repository.insertRecord(record)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
     fun `updateRecord returns Success`() = runTest {
         coEvery { dao.updateRecord(any()) } returns Unit
 
-        val record = HealthRecord(
-            id = 1L,
-            temperature = 37.0,
-            conditionNote = "更新テスト",
-            recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 11, 0)
-        )
+        val record = aHealthRecord(id = 1L, temperature = 37.0, conditionNote = "更新テスト")
         val result = repository.updateRecord(record)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateRecord returns Failure on db error`() = runTest {
         coEvery { dao.updateRecord(any()) } throws RuntimeException("DB error")
 
-        val record = HealthRecord(
-            id = 1L,
-            temperature = 37.0,
-            conditionNote = "更新テスト",
-            recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 11, 0)
-        )
+        val record = aHealthRecord(id = 1L, temperature = 37.0, conditionNote = "更新テスト")
         val result = repository.updateRecord(record)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -241,7 +218,7 @@ class HealthRecordRepositoryImplTest {
 
         val result = repository.deleteRecord(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteRecord(1L) }
     }
 
@@ -252,8 +229,7 @@ class HealthRecordRepositoryImplTest {
 
         val result = repository.deleteRecord(1L)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -293,7 +269,7 @@ class HealthRecordRepositoryImplTest {
 
         val result = repository.deleteRecord(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { photoRepository.deletePhotosForParent("health_record", 1L) }
         coVerify { dao.deleteRecord(1L) }
     }

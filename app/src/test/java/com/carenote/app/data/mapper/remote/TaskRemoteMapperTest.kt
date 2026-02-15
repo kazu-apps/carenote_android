@@ -4,6 +4,7 @@ import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
+import com.carenote.app.testing.TestDataFixtures
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,8 +22,8 @@ class TaskRemoteMapperTest {
     private lateinit var timestampConverter: FirestoreTimestampConverter
     private lateinit var mapper: TaskRemoteMapper
 
-    private val testDateTime = LocalDateTime.of(2025, 3, 15, 10, 0, 0)
-    private val dueDate = LocalDate.of(2025, 3, 20)
+    private val testDateTime = TestDataFixtures.NOW
+    private val dueDate = TestDataFixtures.TODAY.plusDays(5)
 
     @Before
     fun setUp() {
@@ -39,7 +40,7 @@ class TaskRemoteMapperTest {
             "localId" to 1L,
             "title" to "買い物",
             "description" to "薬局で薬を受け取る",
-            "dueDate" to "2025-03-20",
+            "dueDate" to dueDate.toString(),
             "isCompleted" to false,
             "priority" to "HIGH",
             "createdBy" to "user1",
@@ -321,7 +322,7 @@ class TaskRemoteMapperTest {
         assertEquals(1L, result["localId"])
         assertEquals("買い物", result["title"])
         assertEquals("薬局で薬を受け取る", result["description"])
-        assertEquals("2025-03-20", result["dueDate"])
+        assertEquals(dueDate.toString(), result["dueDate"])
         assertEquals(false, result["isCompleted"])
         assertEquals("HIGH", result["priority"])
         assertEquals("user1", result["createdBy"])
@@ -429,7 +430,7 @@ class TaskRemoteMapperTest {
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val syncMetadata = SyncMetadata(
             localId = 1L,
             syncedAt = testDateTime,
@@ -463,8 +464,8 @@ class TaskRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata extracts all fields correctly`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),
@@ -480,7 +481,7 @@ class TaskRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata with null deletedAt`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),

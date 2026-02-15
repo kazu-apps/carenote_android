@@ -5,11 +5,16 @@ import com.carenote.app.data.local.entity.NoteEntity
 import com.carenote.app.data.mapper.NoteMapper
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
-import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.PhotoRepository
+import com.carenote.app.testing.TestDataFixtures
+import com.carenote.app.testing.aNote
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertFailure
+import com.carenote.app.testing.assertSuccess
+import com.carenote.app.testing.assertSuccessValue
 import app.cash.turbine.test
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
@@ -52,24 +57,27 @@ class NoteRepositoryImplTest {
 
     private fun createEntity(
         id: Long = 1L,
+        careRecipientId: Long = 1L,
         title: String = "テストメモ",
         content: String = "テスト内容",
-        tag: String = "OTHER"
+        tag: String = "OTHER",
+        createdBy: String = "test-uid"
     ) = NoteEntity(
         id = id,
+        careRecipientId = careRecipientId,
         title = title,
         content = content,
         tag = tag,
-        createdBy = "",
-        createdAt = "2025-03-15T10:00:00",
-        updatedAt = "2025-03-15T10:00:00"
+        createdBy = createdBy,
+        createdAt = TestDataFixtures.NOW_STRING,
+        updatedAt = TestDataFixtures.NOW_STRING
     )
 
     @Test
     fun `getAllNotes returns flow of notes`() = runTest {
         val entities = listOf(
-            createEntity(1L, "メモA"),
-            createEntity(2L, "メモB")
+            createEntity(id = 1L, title = "メモA"),
+            createEntity(id = 2L, title = "メモB")
         )
         every { dao.getAllNotes(1L) } returns flowOf(entities)
 
@@ -95,7 +103,7 @@ class NoteRepositoryImplTest {
 
     @Test
     fun `getNoteById returns note when found`() = runTest {
-        val entity = createEntity(1L, "テストメモ")
+        val entity = createEntity(id = 1L, title = "テストメモ")
         every { dao.getNoteById(1L) } returns flowOf(entity)
 
         repository.getNoteById(1L).test {
@@ -118,7 +126,7 @@ class NoteRepositoryImplTest {
 
     @Test
     fun `searchNotes with empty query and null tag returns all notes`() = runTest {
-        val entities = listOf(createEntity(1L, "メモA"), createEntity(2L, "メモB"))
+        val entities = listOf(createEntity(id = 1L, title = "メモA"), createEntity(id = 2L, title = "メモB"))
         every { dao.getAllNotes(1L) } returns flowOf(entities)
 
         repository.searchNotes("", null).test {
@@ -130,7 +138,7 @@ class NoteRepositoryImplTest {
 
     @Test
     fun `searchNotes with query and null tag searches by text`() = runTest {
-        val entities = listOf(createEntity(1L, "体調メモ"))
+        val entities = listOf(createEntity(id = 1L, title = "体調メモ"))
         every { dao.searchNotes("体調", 1L) } returns flowOf(entities)
 
         repository.searchNotes("体調", null).test {
@@ -143,7 +151,7 @@ class NoteRepositoryImplTest {
 
     @Test
     fun `searchNotes with empty query and tag filters by tag`() = runTest {
-        val entities = listOf(createEntity(1L, "体調メモ", tag = "CONDITION"))
+        val entities = listOf(createEntity(id = 1L, title = "体調メモ", tag = "CONDITION"))
         every { dao.getNotesByTag("CONDITION", 1L) } returns flowOf(entities)
 
         repository.searchNotes("", NoteTag.CONDITION).test {
@@ -156,7 +164,7 @@ class NoteRepositoryImplTest {
     @Test
     fun `searchNotes with query and tag searches by both`() = runTest {
         val entities = listOf(
-            createEntity(1L, "体調メモ", tag = "CONDITION")
+            createEntity(id = 1L, title = "体調メモ", tag = "CONDITION")
         )
         every { dao.searchNotesByTag("体調", "CONDITION", 1L) } returns flowOf(entities)
 
@@ -172,64 +180,40 @@ class NoteRepositoryImplTest {
     fun `insertNote returns Success with id`() = runTest {
         coEvery { dao.insertNote(any()) } returns 1L
 
-        val note = Note(
-            title = "テストメモ",
-            content = "テスト内容",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val note = aNote(title = "テストメモ", content = "テスト内容")
         val result = repository.insertNote(note)
 
-        assertTrue(result is Result.Success)
-        assertEquals(1L, (result as Result.Success).value)
+        result.assertSuccessValue(1L)
     }
 
     @Test
     fun `insertNote returns Failure on db error`() = runTest {
         coEvery { dao.insertNote(any()) } throws RuntimeException("DB error")
 
-        val note = Note(
-            title = "テストメモ",
-            content = "テスト内容",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val note = aNote(title = "テストメモ", content = "テスト内容")
         val result = repository.insertNote(note)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
     fun `updateNote returns Success`() = runTest {
         coEvery { dao.updateNote(any()) } returns Unit
 
-        val note = Note(
-            id = 1L,
-            title = "更新メモ",
-            content = "更新内容",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val note = aNote(id = 1L, title = "更新メモ", content = "更新内容")
         val result = repository.updateNote(note)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateNote returns Failure on db error`() = runTest {
         coEvery { dao.updateNote(any()) } throws RuntimeException("DB error")
 
-        val note = Note(
-            id = 1L,
-            title = "更新メモ",
-            content = "更新内容",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val note = aNote(id = 1L, title = "更新メモ", content = "更新内容")
         val result = repository.updateNote(note)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test
@@ -239,7 +223,7 @@ class NoteRepositoryImplTest {
 
         val result = repository.deleteNote(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteNote(1L) }
     }
 
@@ -250,7 +234,7 @@ class NoteRepositoryImplTest {
 
         val result = repository.deleteNote(1L)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test
@@ -290,7 +274,7 @@ class NoteRepositoryImplTest {
 
         val result = repository.deleteNote(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { photoRepository.deletePhotosForParent("note", 1L) }
         coVerify { dao.deleteNote(1L) }
     }

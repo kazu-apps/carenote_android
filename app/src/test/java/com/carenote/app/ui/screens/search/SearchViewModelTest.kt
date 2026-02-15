@@ -2,46 +2,38 @@ package com.carenote.app.ui.screens.search
 
 import app.cash.turbine.test
 import com.carenote.app.config.AppConfig
-import com.carenote.app.domain.model.Medication
-import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.SearchResult
-import com.carenote.app.domain.model.Task
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeSearchRepository
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aMedication
+import com.carenote.app.testing.aNote
+import com.carenote.app.testing.aTask
 import com.carenote.app.ui.viewmodel.UiState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var searchRepository: FakeSearchRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: SearchViewModel
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         searchRepository = FakeSearchRepository()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): SearchViewModel {
@@ -52,47 +44,25 @@ class SearchViewModelTest {
         id: Long = 1L,
         name: String = "テスト薬"
     ): SearchResult.MedicationResult {
-        return SearchResult.MedicationResult(
-            Medication(
-                id = id,
-                name = name,
-                createdAt = LocalDateTime.of(2026, 1, 1, 10, 0),
-                updatedAt = LocalDateTime.of(2026, 1, 1, 10, 0)
-            )
-        )
+        return SearchResult.MedicationResult(aMedication(id = id, name = name))
     }
 
     private fun createNoteResult(
         id: Long = 2L,
         title: String = "テストメモ"
     ): SearchResult.NoteResult {
-        return SearchResult.NoteResult(
-            Note(
-                id = id,
-                title = title,
-                content = "内容",
-                createdAt = LocalDateTime.of(2026, 1, 1, 11, 0),
-                updatedAt = LocalDateTime.of(2026, 1, 1, 11, 0)
-            )
-        )
+        return SearchResult.NoteResult(aNote(id = id, title = title, content = "内容"))
     }
 
     private fun createTaskResult(
         id: Long = 3L,
         title: String = "テストタスク"
     ): SearchResult.TaskResult {
-        return SearchResult.TaskResult(
-            Task(
-                id = id,
-                title = title,
-                createdAt = LocalDateTime.of(2026, 1, 1, 12, 0),
-                updatedAt = LocalDateTime.of(2026, 1, 1, 12, 0)
-            )
-        )
+        return SearchResult.TaskResult(aTask(id = id, title = title))
     }
 
     @Test
-    fun `initial state is Success with empty list`() = runTest(testDispatcher) {
+    fun `initial state is Success with empty list`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -102,7 +72,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `empty query returns Success with empty list`() = runTest(testDispatcher) {
+    fun `empty query returns Success with empty list`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -115,7 +85,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `blank query returns Success with empty list`() = runTest(testDispatcher) {
+    fun `blank query returns Success with empty list`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -128,7 +98,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `non-empty query triggers search and returns results`() = runTest(testDispatcher) {
+    fun `non-empty query triggers search and returns results`() = runTest(mainCoroutineRule.testDispatcher) {
         val medicationResult = createMedicationResult()
         searchRepository.setResults(listOf(medicationResult))
         viewModel = createViewModel()
@@ -149,7 +119,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `debounce waits before search`() = runTest(testDispatcher) {
+    fun `debounce waits before search`() = runTest(mainCoroutineRule.testDispatcher) {
         val medicationResult = createMedicationResult()
         searchRepository.setResults(listOf(medicationResult))
         viewModel = createViewModel()
@@ -176,7 +146,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search logs analytics event`() = runTest(testDispatcher) {
+    fun `search logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
         searchRepository.setResults(listOf(createMedicationResult()))
         viewModel = createViewModel()
 
@@ -197,7 +167,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `search error emits UiState Error`() = runTest(testDispatcher) {
+    fun `search error emits UiState Error`() = runTest(mainCoroutineRule.testDispatcher) {
         searchRepository.shouldFail = true
         viewModel = createViewModel()
 
@@ -214,7 +184,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `rapid query changes only triggers last search`() = runTest(testDispatcher) {
+    fun `rapid query changes only triggers last search`() = runTest(mainCoroutineRule.testDispatcher) {
         val results = listOf(createMedicationResult(name = "abc薬"))
         searchRepository.setResults(results)
         viewModel = createViewModel()

@@ -476,6 +476,7 @@ Timber.d("User signed in successfully")
 19. **リリース前チェックリスト** — `docs/RELEASE_CHECKLIST.md` を確認。署名、ProGuard、Firebase 設定、ストア掲載情報等の最終確認事項
 20. **エクスポート PII 注意** — CSV/PDF エクスポートに患者情報を含む。キャッシュクリア、ログ PII 禁止ルール遵守
 21. **Worker Bash approval spam** — 実装 Worker（worker-impl, worker-test）に Bash を許可すると、ビルド/テスト実行の approval プロンプトが大量発生する。Bash は worker-quality のみに許可し、ビルド/テスト実行を集約する
+22. **テスト開発 Best Practices** — (a) Syncer テスト: EntitySyncerTest + TestEntitySyncer パターンを踏襲。MedicationLogSyncer は独自実装（サブコレクション）のため専用テスト必須。他の Syncer は ConfigDrivenEntitySyncer（SyncerConfigTest でカバー）。(b) PagingSource テスト: ViewModel の cachedIn(viewModelScope) は UncompletedCoroutinesError を発生させるため、DAO 層で直接テスト推奨。(c) FakeRepository エラーテスト: shouldFail フラグで DatabaseError 返却。ViewModel エラーハンドリングは snackbar パターンで統一。(d) TestDataFixtures.NOW / NOW_STRING でハードコード日時を統一
 
 ## 今後の追加予定
 

@@ -61,6 +61,7 @@ fun SettingsScreen(
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val careRecipientName by viewModel.careRecipientName.collectAsStateWithLifecycle()
+    val taskReminderLimitText by viewModel.taskReminderLimitText.collectAsStateWithLifecycle()
     val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -193,7 +194,8 @@ fun SettingsScreen(
                         settings.quietHoursStart,
                         settings.quietHoursEnd
                     ),
-                    onQuietHoursClick = { dialogState = SettingsDialogState.QuietHoursStart }
+                    onQuietHoursClick = { dialogState = SettingsDialogState.QuietHoursStart },
+                    taskReminderLimitText = taskReminderLimitText
                 )
             }
             item(key = "health_threshold") {

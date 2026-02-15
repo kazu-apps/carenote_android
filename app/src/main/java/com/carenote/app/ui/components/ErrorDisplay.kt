@@ -101,4 +101,5 @@ private fun errorMessage(error: DomainError): String = when (error) {
     is DomainError.NetworkError -> stringResource(R.string.ui_error_network)
     is DomainError.UnauthorizedError -> stringResource(R.string.ui_error_unauthorized)
     is DomainError.UnknownError -> stringResource(R.string.ui_error_unknown)
+    is DomainError.SecurityError -> stringResource(R.string.ui_error_security)
 }

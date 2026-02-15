@@ -2,6 +2,7 @@ package com.carenote.app.ui.screens.auth
 
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.validator.InputValidator
 import com.carenote.app.ui.common.UiText
 
 object AuthValidators {
@@ -10,7 +11,8 @@ object AuthValidators {
         if (email.isBlank()) {
             return UiText.Resource(R.string.auth_email_required)
         }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        val domainError = InputValidator.validateEmail(email)
+        if (domainError != null && domainError != "Email is required") {
             return UiText.Resource(R.string.auth_email_invalid)
         }
         if (email.length > AppConfig.Auth.EMAIL_MAX_LENGTH) {

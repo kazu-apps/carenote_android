@@ -4,8 +4,8 @@ import app.cash.turbine.test
 import com.carenote.app.data.local.dao.EmergencyContactDao
 import com.carenote.app.data.local.entity.EmergencyContactEntity
 import com.carenote.app.data.mapper.EmergencyContactMapper
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.EmergencyContact
+import com.carenote.app.testing.assertSuccess
 import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
@@ -115,8 +115,8 @@ class EmergencyContactRepositoryImplTest {
         )
         val result = repository.insertContact(contact)
 
-        assertTrue(result.isSuccess)
-        assertEquals(5L, (result as Result.Success).value)
+        val value = result.assertSuccess()
+        assertEquals(5L, value)
         coVerify { dao.insert(any()) }
     }
 
@@ -126,7 +126,7 @@ class EmergencyContactRepositoryImplTest {
 
         val result = repository.deleteContact(1L)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dao.deleteById(1L) }
     }
 }

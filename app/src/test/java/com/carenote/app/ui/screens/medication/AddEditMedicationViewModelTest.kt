@@ -11,20 +11,17 @@ import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -32,7 +29,9 @@ import java.time.LocalTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddEditMedicationViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var reminderScheduler: FakeMedicationReminderScheduler
     private lateinit var analyticsRepository: FakeAnalyticsRepository
@@ -41,15 +40,9 @@ class AddEditMedicationViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         medicationRepository = FakeMedicationRepository()
         reminderScheduler = FakeMedicationReminderScheduler()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createAddViewModel(): AddEditMedicationViewModel {
@@ -291,7 +284,7 @@ class AddEditMedicationViewModelTest {
     }
 
     @Test
-    fun `saveMedication failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `saveMedication failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateName("テスト薬")
         viewModel.toggleTiming(MedicationTiming.MORNING)
@@ -310,7 +303,7 @@ class AddEditMedicationViewModelTest {
     }
 
     @Test
-    fun `saveMedication failure keeps isSaving false`() = runTest(testDispatcher) {
+    fun `saveMedication failure keeps isSaving false`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateName("テスト薬")
         viewModel.toggleTiming(MedicationTiming.MORNING)
@@ -346,7 +339,7 @@ class AddEditMedicationViewModelTest {
     }
 
     @Test
-    fun `saveMedication failure does not emit savedEvent`() = runTest(testDispatcher) {
+    fun `saveMedication failure does not emit savedEvent`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateName("テスト薬")
         viewModel.toggleTiming(MedicationTiming.MORNING)
@@ -362,7 +355,7 @@ class AddEditMedicationViewModelTest {
 
     @Test
     fun `saveMedication with reminder enabled and times schedules reminders`() =
-        runTest(testDispatcher) {
+        runTest(mainCoroutineRule.testDispatcher) {
             viewModel = createAddViewModel()
             viewModel.updateName("テスト薬")
             viewModel.toggleTiming(MedicationTiming.MORNING)
@@ -381,7 +374,7 @@ class AddEditMedicationViewModelTest {
 
     @Test
     fun `saveMedication with reminder disabled does not schedule reminders`() =
-        runTest(testDispatcher) {
+        runTest(mainCoroutineRule.testDispatcher) {
             viewModel = createAddViewModel()
             viewModel.updateName("テスト薬")
             viewModel.toggleTiming(MedicationTiming.MORNING)
@@ -394,7 +387,7 @@ class AddEditMedicationViewModelTest {
         }
 
     @Test
-    fun `saveMedication failure does not schedule reminders`() = runTest(testDispatcher) {
+    fun `saveMedication failure does not schedule reminders`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateName("テスト薬")
         viewModel.toggleTiming(MedicationTiming.MORNING)
@@ -583,7 +576,7 @@ class AddEditMedicationViewModelTest {
     }
 
     @Test
-    fun `saveMedication in edit mode reschedules reminders`() = runTest(testDispatcher) {
+    fun `saveMedication in edit mode reschedules reminders`() = runTest(mainCoroutineRule.testDispatcher) {
         medicationRepository.setMedications(listOf(existingMedication))
         viewModel = createEditViewModel(1L)
         advanceUntilIdle()
@@ -604,7 +597,7 @@ class AddEditMedicationViewModelTest {
 
     @Test
     fun `saveMedication in edit mode with reminder disabled cancels existing reminders`() =
-        runTest(testDispatcher) {
+        runTest(mainCoroutineRule.testDispatcher) {
             medicationRepository.setMedications(listOf(existingMedication))
             viewModel = createEditViewModel(1L)
             advanceUntilIdle()
@@ -619,7 +612,7 @@ class AddEditMedicationViewModelTest {
         }
 
     @Test
-    fun `saveMedication failure in edit mode shows error snackbar`() = runTest(testDispatcher) {
+    fun `saveMedication failure in edit mode shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         medicationRepository.setMedications(listOf(existingMedication))
         viewModel = createEditViewModel(1L)
         advanceUntilIdle()

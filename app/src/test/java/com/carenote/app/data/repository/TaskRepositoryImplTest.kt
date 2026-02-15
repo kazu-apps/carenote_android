@@ -3,14 +3,17 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.dao.TaskDao
 import com.carenote.app.data.local.entity.TaskEntity
 import com.carenote.app.data.mapper.TaskMapper
-import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.repository.AuthRepository
 import app.cash.turbine.test
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
+import com.carenote.app.testing.TestDataFixtures
+import com.carenote.app.testing.aTask
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertSuccess
+import com.carenote.app.testing.assertSuccessValue
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -50,20 +53,24 @@ class TaskRepositoryImplTest {
 
     private fun createEntity(
         id: Long = 1L,
+        careRecipientId: Long = 1L,
         title: String = "テストタスク",
         description: String = "テスト説明",
         dueDate: String? = "2025-04-10",
         isCompleted: Int = 0,
-        priority: String = "MEDIUM"
+        priority: String = "MEDIUM",
+        createdBy: String = "test-uid"
     ) = TaskEntity(
         id = id,
+        careRecipientId = careRecipientId,
         title = title,
         description = description,
         dueDate = dueDate,
         isCompleted = isCompleted,
         priority = priority,
-        createdAt = "2025-03-15T10:00:00",
-        updatedAt = "2025-03-15T10:00:00"
+        createdBy = createdBy,
+        createdAt = TestDataFixtures.NOW_STRING,
+        updatedAt = TestDataFixtures.NOW_STRING
     )
 
     @Test
@@ -154,64 +161,40 @@ class TaskRepositoryImplTest {
     fun `insertTask returns Success with id`() = runTest {
         coEvery { dao.insertTask(any()) } returns 1L
 
-        val task = Task(
-            title = "テストタスク",
-            dueDate = LocalDate.of(2025, 4, 10),
-            priority = TaskPriority.HIGH,
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val task = aTask(title = "テストタスク", dueDate = LocalDate.of(2025, 4, 10), priority = TaskPriority.HIGH)
         val result = repository.insertTask(task)
 
-        assertTrue(result is Result.Success)
-        assertEquals(1L, (result as Result.Success).value)
+        result.assertSuccessValue(1L)
     }
 
     @Test
     fun `insertTask returns Failure on db error`() = runTest {
         coEvery { dao.insertTask(any()) } throws RuntimeException("DB error")
 
-        val task = Task(
-            title = "テストタスク",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
-        )
+        val task = aTask(title = "テストタスク")
         val result = repository.insertTask(task)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
     fun `updateTask returns Success`() = runTest {
         coEvery { dao.updateTask(any()) } returns Unit
 
-        val task = Task(
-            id = 1L,
-            title = "更新タスク",
-            isCompleted = true,
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 11, 0)
-        )
+        val task = aTask(id = 1L, title = "更新タスク", isCompleted = true)
         val result = repository.updateTask(task)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateTask returns Failure on db error`() = runTest {
         coEvery { dao.updateTask(any()) } throws RuntimeException("DB error")
 
-        val task = Task(
-            id = 1L,
-            title = "更新タスク",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 11, 0)
-        )
+        val task = aTask(id = 1L, title = "更新タスク")
         val result = repository.updateTask(task)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -220,7 +203,7 @@ class TaskRepositoryImplTest {
 
         val result = repository.deleteTask(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteTask(1L) }
     }
 
@@ -230,8 +213,7 @@ class TaskRepositoryImplTest {
 
         val result = repository.deleteTask(1L)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test

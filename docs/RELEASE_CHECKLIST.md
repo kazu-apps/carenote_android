@@ -26,6 +26,11 @@ CareNote Android のリリース前に確認すべき項目一覧。
 - [ ] `google-services.json` が `.gitignore` に含まれていること
 - [ ] SQLCipher パスフレーズ管理の動作確認
 - [ ] Root 検出ダイアログの動作確認
+- [ ] Root 検出時のエクスポート/アップロード制限動作確認
+- [ ] ProGuard ルール — WorkManager, Paging, Security-Crypto, Biometric の keep ルール確認
+- [ ] SecureFileDeleter によるキャッシュクリア動作確認
+- [ ] ExceptionMasker によるエラーメッセージのサニタイズ確認
+- [ ] セキュリティドキュメント（SECURITY.md, DATA_RETENTION_POLICY.md）の最新性確認
 - [ ] 生体認証ロックの動作確認
 
 ## ローカライゼーション

@@ -3,10 +3,10 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.PhotoEntity
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.model.PhotoUploadStatus
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class PhotoMapperTest {
@@ -21,7 +21,7 @@ class PhotoMapperTest {
 
     @Test
     fun `toDomain maps entity to domain correctly`() {
-        val now = LocalDateTime.of(2026, 2, 8, 10, 0, 0)
+        val now = TestDataFixtures.NOW
         val entity = PhotoEntity(
             id = 1,
             parentType = "health_record",
@@ -47,7 +47,7 @@ class PhotoMapperTest {
 
     @Test
     fun `toEntity maps domain to entity correctly`() {
-        val now = LocalDateTime.of(2026, 2, 8, 10, 0, 0)
+        val now = TestDataFixtures.NOW
         val domain = Photo(
             id = 2,
             parentType = "note",
@@ -113,7 +113,7 @@ class PhotoMapperTest {
 
     @Test
     fun `careRecipientId maps correctly in roundtrip`() {
-        val now = LocalDateTime.of(2026, 2, 8, 10, 0, 0)
+        val now = TestDataFixtures.NOW
         val entity = PhotoEntity(
             id = 1,
             parentType = "health_record",
@@ -135,7 +135,6 @@ class PhotoMapperTest {
         id: Long = 1,
         uploadStatus: String = "PENDING"
     ): PhotoEntity {
-        val now = LocalDateTime.now().format(dateTimeFormatter)
         return PhotoEntity(
             id = id,
             parentType = "health_record",
@@ -143,8 +142,8 @@ class PhotoMapperTest {
             localUri = "file:///test.jpg",
             remoteUrl = null,
             uploadStatus = uploadStatus,
-            createdAt = now,
-            updatedAt = now
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
     }
 }

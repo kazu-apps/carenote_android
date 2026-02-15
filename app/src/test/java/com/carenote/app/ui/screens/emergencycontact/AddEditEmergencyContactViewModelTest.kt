@@ -3,46 +3,39 @@ package com.carenote.app.ui.screens.emergencycontact
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
-import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeEmergencyContactRepository
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aEmergencyContact
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddEditEmergencyContactViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
+
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeEmergencyContactRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeEmergencyContactRepository()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(
@@ -55,22 +48,6 @@ class AddEditEmergencyContactViewModelTest {
         }
         return AddEditEmergencyContactViewModel(savedStateHandle, repository, analyticsRepository, clock = fakeClock)
     }
-
-    private fun createContact(
-        id: Long = 1L,
-        name: String = "テスト太郎",
-        phoneNumber: String = "090-1234-5678",
-        relationship: RelationshipType = RelationshipType.FAMILY,
-        memo: String = ""
-    ) = EmergencyContact(
-        id = id,
-        name = name,
-        phoneNumber = phoneNumber,
-        relationship = relationship,
-        memo = memo,
-        createdAt = LocalDateTime.of(2026, 1, 1, 10, 0),
-        updatedAt = LocalDateTime.of(2026, 1, 1, 10, 0)
-    )
 
     @Test
     fun `initial state is add mode with empty fields`() {
@@ -89,7 +66,7 @@ class AddEditEmergencyContactViewModelTest {
 
     @Test
     fun `edit mode loads existing contact`() = runTest {
-        val contact = createContact(1L, "既存太郎", "080-9999-0000", RelationshipType.DOCTOR, "メモ")
+        val contact = aEmergencyContact(id = 1L, name = "既存太郎", phoneNumber = "080-9999-0000", relationship = RelationshipType.DOCTOR, memo = "メモ")
         repository.setContacts(listOf(contact))
 
         val viewModel = createViewModel(contactId = 1L)
@@ -210,7 +187,7 @@ class AddEditEmergencyContactViewModelTest {
 
     @Test
     fun `save success emits savedEvent for edit`() = runTest {
-        val contact = createContact(1L, "既存", "090-0000-0000")
+        val contact = aEmergencyContact(id = 1L, name = "既存", phoneNumber = "090-0000-0000")
         repository.setContacts(listOf(contact))
 
         val viewModel = createViewModel(contactId = 1L)

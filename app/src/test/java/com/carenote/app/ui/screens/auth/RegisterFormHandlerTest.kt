@@ -7,17 +7,14 @@ import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,6 +22,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,8 +33,9 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class RegisterFormHandlerTest {
 
-    private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+    private lateinit var testScope: TestScope
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var analyticsRepository: FakeAnalyticsRepository
@@ -45,7 +44,7 @@ class RegisterFormHandlerTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        testScope = TestScope(mainCoroutineRule.testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
         analyticsRepository = FakeAnalyticsRepository()
@@ -58,12 +57,11 @@ class RegisterFormHandlerTest {
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
         authRepository.clear()
     }
 
     @Test
-    fun `initial state is empty`() = runTest(testDispatcher) {
+    fun `initial state is empty`() = runTest(mainCoroutineRule.testDispatcher) {
         val state = handler.formState.value
 
         assertEquals("", state.email)
@@ -76,7 +74,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `updateEmail updates state and clears error`() = runTest(testDispatcher) {
+    fun `updateEmail updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         advanceUntilIdle()
 
@@ -86,7 +84,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `updatePassword updates state and clears error`() = runTest(testDispatcher) {
+    fun `updatePassword updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updatePassword("password123")
         advanceUntilIdle()
 
@@ -96,7 +94,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `updateDisplayName updates state and clears error`() = runTest(testDispatcher) {
+    fun `updateDisplayName updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateDisplayName("John Doe")
         advanceUntilIdle()
 
@@ -106,7 +104,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp with empty email sets error`() = runTest(testDispatcher) {
+    fun `signUp with empty email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updatePassword("password123")
         handler.updateDisplayName("John Doe")
         handler.signUp()
@@ -119,7 +117,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp with empty password sets error`() = runTest(testDispatcher) {
+    fun `signUp with empty password sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updateDisplayName("John Doe")
         handler.signUp()
@@ -132,7 +130,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp with empty displayName sets error`() = runTest(testDispatcher) {
+    fun `signUp with empty displayName sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
         handler.signUp()
@@ -148,7 +146,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp with short password sets error`() = runTest(testDispatcher) {
+    fun `signUp with short password sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("123")
         handler.updateDisplayName("John Doe")
@@ -165,7 +163,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp success emits authSuccessEvent and shows snackbar`() = runTest(testDispatcher) {
+    fun `signUp success emits authSuccessEvent and shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
         handler.updateDisplayName("John Doe")
@@ -189,7 +187,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp failure sets isLoading false`() = runTest(testDispatcher) {
+    fun `signUp failure sets isLoading false`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("Registration failed")
 
@@ -204,7 +202,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp with all empty fields sets all errors simultaneously`() = runTest(testDispatcher) {
+    fun `signUp with all empty fields sets all errors simultaneously`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.signUp()
         advanceUntilIdle()
 
@@ -215,7 +213,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp with validation error shows message`() = runTest(testDispatcher) {
+    fun `signUp with validation error shows message`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.ValidationError("Email already in use")
 
@@ -233,7 +231,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `signUp success triggers immediate sync`() = runTest(testDispatcher) {
+    fun `signUp success triggers immediate sync`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
         handler.updateDisplayName("John Doe")
@@ -244,7 +242,7 @@ class RegisterFormHandlerTest {
     }
 
     @Test
-    fun `resetState clears form`() = runTest(testDispatcher) {
+    fun `resetState clears form`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
         handler.updateDisplayName("John Doe")

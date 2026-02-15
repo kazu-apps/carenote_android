@@ -10,10 +10,12 @@ sealed class UiText {
         @StringRes val resId: Int,
         val args: List<Any>
     ) : UiText()
+    data class DynamicString(val text: String) : UiText()
 
     @Composable
     fun asString(): String = when (this) {
         is Resource -> stringResource(resId)
         is ResourceWithArgs -> stringResource(resId, *args.toTypedArray())
+        is DynamicString -> text
     }
 }

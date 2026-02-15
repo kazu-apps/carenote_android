@@ -4,6 +4,7 @@ import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.testing.TestDataFixtures
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,8 +22,8 @@ class CalendarEventRemoteMapperTest {
     private lateinit var timestampConverter: FirestoreTimestampConverter
     private lateinit var mapper: CalendarEventRemoteMapper
 
-    private val testDateTime = LocalDateTime.of(2025, 3, 15, 10, 0, 0)
-    private val eventDate = LocalDate.of(2025, 3, 20)
+    private val testDateTime = TestDataFixtures.NOW
+    private val eventDate = TestDataFixtures.TODAY.plusDays(5)
 
     @Before
     fun setUp() {
@@ -39,7 +40,7 @@ class CalendarEventRemoteMapperTest {
             "localId" to 1L,
             "title" to "通院予定",
             "description" to "定期検診",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "startTime" to "10:00",
             "endTime" to "11:30",
             "isAllDay" to false,
@@ -66,7 +67,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "終日イベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -85,7 +86,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "startTime" to null,
             "endTime" to null,
             "isAllDay" to true,
@@ -104,7 +105,7 @@ class CalendarEventRemoteMapperTest {
         val timestamp = toTimestamp(testDateTime)
         val data = mapOf(
             "title" to "イベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -117,7 +118,7 @@ class CalendarEventRemoteMapperTest {
         val timestamp = toTimestamp(testDateTime)
         val data = mapOf(
             "localId" to 1L,
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -144,7 +145,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "イベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "updatedAt" to timestamp
         )
 
@@ -157,7 +158,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "イベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp
         )
 
@@ -187,7 +188,7 @@ class CalendarEventRemoteMapperTest {
         assertEquals(1L, result["localId"])
         assertEquals("通院予定", result["title"])
         assertEquals("定期検診", result["description"])
-        assertEquals("2025-03-20", result["date"])
+        assertEquals(eventDate.toString(), result["date"])
         assertEquals("10:00", result["startTime"])
         assertEquals("11:30", result["endTime"])
         assertEquals(false, result["isAllDay"])
@@ -242,7 +243,7 @@ class CalendarEventRemoteMapperTest {
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val syncMetadata = SyncMetadata(
             localId = 1L,
             syncedAt = testDateTime,
@@ -277,8 +278,8 @@ class CalendarEventRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata extracts all fields correctly`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),
@@ -294,7 +295,7 @@ class CalendarEventRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata with null deletedAt`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),
@@ -336,7 +337,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "通院予定",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "type" to "HOSPITAL",
             "createdAt" to timestamp,
             "updatedAt" to timestamp
@@ -353,7 +354,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "type" to "INVALID",
             "createdAt" to timestamp,
             "updatedAt" to timestamp
@@ -370,7 +371,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -386,7 +387,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "completed" to true,
             "createdAt" to timestamp,
             "updatedAt" to timestamp
@@ -403,7 +404,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -441,7 +442,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "通院予定",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "recurrenceFrequency" to "WEEKLY",
             "recurrenceInterval" to 2,
             "createdAt" to timestamp,
@@ -460,7 +461,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "createdAt" to timestamp,
             "updatedAt" to timestamp
         )
@@ -477,7 +478,7 @@ class CalendarEventRemoteMapperTest {
         val data = mapOf(
             "localId" to 1L,
             "title" to "テストイベント",
-            "date" to "2025-03-20",
+            "date" to eventDate.toString(),
             "recurrenceFrequency" to "INVALID",
             "createdAt" to timestamp,
             "updatedAt" to timestamp
@@ -592,14 +593,14 @@ class CalendarEventRemoteMapperTest {
             mapOf(
                 "localId" to 1L,
                 "title" to "イベントA",
-                "date" to "2025-03-20",
+                "date" to eventDate.toString(),
                 "createdAt" to timestamp,
                 "updatedAt" to timestamp
             ),
             mapOf(
                 "localId" to 2L,
                 "title" to "イベントB",
-                "date" to "2025-03-21",
+                "date" to eventDate.plusDays(1).toString(),
                 "createdAt" to timestamp,
                 "updatedAt" to timestamp
             )

@@ -7,17 +7,15 @@ import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.model.TimelineItem
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeTimelineRepository
+import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.ui.viewmodel.UiState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalTime
@@ -25,7 +23,9 @@ import java.time.LocalTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class TimelineViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
+
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeTimelineRepository
     private lateinit var viewModel: TimelineViewModel
@@ -34,13 +34,7 @@ class TimelineViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeTimelineRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): TimelineViewModel {

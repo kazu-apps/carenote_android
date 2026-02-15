@@ -12,20 +12,17 @@ import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.common.UiText
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -34,7 +31,9 @@ import java.time.LocalTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddEditTaskViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var repository: FakeTaskRepository
     private lateinit var scheduler: FakeTaskReminderScheduler
     private lateinit var analyticsRepository: FakeAnalyticsRepository
@@ -43,15 +42,9 @@ class AddEditTaskViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeTaskRepository()
         scheduler = FakeTaskReminderScheduler()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createAddViewModel(): AddEditTaskViewModel {

@@ -7,17 +7,14 @@ import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,6 +22,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,8 +33,9 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class LoginFormHandlerTest {
 
-    private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+    private lateinit var testScope: TestScope
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var analyticsRepository: FakeAnalyticsRepository
@@ -45,7 +44,7 @@ class LoginFormHandlerTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        testScope = TestScope(mainCoroutineRule.testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
         analyticsRepository = FakeAnalyticsRepository()
@@ -58,12 +57,11 @@ class LoginFormHandlerTest {
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
         authRepository.clear()
     }
 
     @Test
-    fun `initial state is empty`() = runTest(testDispatcher) {
+    fun `initial state is empty`() = runTest(mainCoroutineRule.testDispatcher) {
         val state = handler.formState.value
 
         assertEquals("", state.email)
@@ -74,7 +72,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `updateEmail updates state and clears error`() = runTest(testDispatcher) {
+    fun `updateEmail updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         advanceUntilIdle()
 
@@ -84,7 +82,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `updatePassword updates state and clears error`() = runTest(testDispatcher) {
+    fun `updatePassword updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updatePassword("password123")
         advanceUntilIdle()
 
@@ -94,7 +92,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn with empty email sets error`() = runTest(testDispatcher) {
+    fun `signIn with empty email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updatePassword("password123")
         handler.signIn()
         advanceUntilIdle()
@@ -106,7 +104,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn with invalid email sets error`() = runTest(testDispatcher) {
+    fun `signIn with invalid email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("invalid-email")
         handler.updatePassword("password123")
         handler.signIn()
@@ -119,7 +117,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn with empty password sets error`() = runTest(testDispatcher) {
+    fun `signIn with empty password sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.signIn()
         advanceUntilIdle()
@@ -131,7 +129,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn success emits authSuccessEvent`() = runTest(testDispatcher) {
+    fun `signIn success emits authSuccessEvent`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
 
@@ -144,7 +142,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn success with unverified email shows snackbar warning`() = runTest(testDispatcher) {
+    fun `signIn success with unverified email shows snackbar warning`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.isEmailVerified = false
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
@@ -162,7 +160,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn failure sets isLoading false`() = runTest(testDispatcher) {
+    fun `signIn failure sets isLoading false`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("Invalid credentials")
 
@@ -176,7 +174,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn with network error shows snackbar`() = runTest(testDispatcher) {
+    fun `signIn with network error shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.NetworkError("No internet connection")
 
@@ -193,7 +191,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn with unauthorized error shows snackbar`() = runTest(testDispatcher) {
+    fun `signIn with unauthorized error shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("Invalid credentials")
 
@@ -209,7 +207,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `signIn success triggers immediate sync`() = runTest(testDispatcher) {
+    fun `signIn success triggers immediate sync`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
         handler.signIn()
@@ -219,7 +217,7 @@ class LoginFormHandlerTest {
     }
 
     @Test
-    fun `resetState clears form`() = runTest(testDispatcher) {
+    fun `resetState clears form`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.updatePassword("password123")
         advanceUntilIdle()

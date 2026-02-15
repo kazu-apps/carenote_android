@@ -230,7 +230,8 @@ class SettingsSectionsTest {
                 notificationsEnabled = true,
                 onNotificationsEnabledChange = {},
                 quietHoursText = "22:00 〜 7:00",
-                onQuietHoursClick = {}
+                onQuietHoursClick = {},
+                taskReminderLimitText = null
             )
         }
 
@@ -245,7 +246,8 @@ class SettingsSectionsTest {
                 notificationsEnabled = true,
                 onNotificationsEnabledChange = {},
                 quietHoursText = "22:00 〜 7:00",
-                onQuietHoursClick = {}
+                onQuietHoursClick = {},
+                taskReminderLimitText = null
             )
         }
 
@@ -262,7 +264,8 @@ class SettingsSectionsTest {
                 notificationsEnabled = true,
                 onNotificationsEnabledChange = {},
                 quietHoursText = "22:00 〜 7:00",
-                onQuietHoursClick = { clicked = true }
+                onQuietHoursClick = { clicked = true },
+                taskReminderLimitText = null
             )
         }
 

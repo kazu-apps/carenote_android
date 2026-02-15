@@ -3,9 +3,9 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.dao.CareRecipientDao
 import com.carenote.app.data.local.entity.CareRecipientEntity
 import com.carenote.app.data.mapper.CareRecipientMapper
-import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Gender
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertSuccess
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -105,7 +104,7 @@ class CareRecipientRepositoryImplTest {
         val careRecipient = mapper.toDomain(createEntity())
         val result = repository.saveCareRecipient(careRecipient)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.insertOrUpdate(any()) }
     }
 
@@ -116,7 +115,6 @@ class CareRecipientRepositoryImplTest {
         val careRecipient = mapper.toDomain(createEntity())
         val result = repository.saveCareRecipient(careRecipient)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 }

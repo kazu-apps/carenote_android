@@ -13,6 +13,7 @@ import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.TaskRepository
+import com.carenote.app.domain.validator.RecurrenceValidator
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.FormValidator.combineValidations
 import com.carenote.app.ui.util.FormValidator.validateMaxLength
@@ -178,8 +179,7 @@ class AddEditTaskViewModel @Inject constructor(
         )
         val recurrenceIntervalError = if (
             current.recurrenceFrequency != RecurrenceFrequency.NONE &&
-            (current.recurrenceInterval < 1 ||
-                current.recurrenceInterval > AppConfig.Task.MAX_RECURRENCE_INTERVAL)
+            RecurrenceValidator.validateInterval(current.recurrenceInterval, AppConfig.Task.MAX_RECURRENCE_INTERVAL) != null
         ) {
             UiText.Resource(R.string.tasks_recurrence_interval_error)
         } else {

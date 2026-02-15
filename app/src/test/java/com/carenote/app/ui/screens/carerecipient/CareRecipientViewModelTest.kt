@@ -7,22 +7,19 @@ import com.carenote.app.domain.model.Gender
 import com.carenote.app.fakes.FakeCareRecipientRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -30,21 +27,17 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class CareRecipientViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeCareRecipientRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeCareRecipientRepository()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): CareRecipientViewModel {
@@ -52,7 +45,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `initial state when no care recipient exists`() = runTest {
+    fun `initial state when no care recipient exists`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -65,7 +58,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `loads existing care recipient`() = runTest {
+    fun `loads existing care recipient`() = runTest(mainCoroutineRule.testDispatcher) {
         val existing = CareRecipient(
             id = 1L,
             name = "田中太郎",
@@ -89,7 +82,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateName changes name in state`() = runTest {
+    fun `updateName changes name in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -98,7 +91,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateBirthDate changes birth date in state`() = runTest {
+    fun `updateBirthDate changes birth date in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -108,7 +101,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateGender changes gender in state`() = runTest {
+    fun `updateGender changes gender in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -117,7 +110,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateMemo changes memo in state`() = runTest {
+    fun `updateMemo changes memo in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -126,7 +119,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `save success shows snackbar`() = runTest {
+    fun `save success shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -148,7 +141,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `save failure shows error snackbar`() = runTest {
+    fun `save failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         repository.shouldFail = true
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -171,7 +164,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `loads existing care recipient with extended fields`() = runTest {
+    fun `loads existing care recipient with extended fields`() = runTest(mainCoroutineRule.testDispatcher) {
         val existing = CareRecipient(
             id = 1L,
             name = "田中太郎",
@@ -198,7 +191,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateNickname changes nickname in state`() = runTest {
+    fun `updateNickname changes nickname in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -207,7 +200,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateCareLevel changes careLevel in state`() = runTest {
+    fun `updateCareLevel changes careLevel in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -216,7 +209,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateMedicalHistory changes medicalHistory in state`() = runTest {
+    fun `updateMedicalHistory changes medicalHistory in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -225,7 +218,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `updateAllergies changes allergies in state`() = runTest {
+    fun `updateAllergies changes allergies in state`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -234,7 +227,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `save includes extended fields`() = runTest {
+    fun `save includes extended fields`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -259,7 +252,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `initial state has empty extended fields`() = runTest {
+    fun `initial state has empty extended fields`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -271,7 +264,7 @@ class CareRecipientViewModelTest {
     }
 
     @Test
-    fun `save trims extended fields`() = runTest {
+    fun `save trims extended fields`() = runTest(mainCoroutineRule.testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -288,5 +281,115 @@ class CareRecipientViewModelTest {
         val saved = repository.getCareRecipient().first()
         assertEquals("たろう", saved!!.nickname)
         assertEquals("要介護2", saved.careLevel)
+    }
+
+    @Test
+    fun `save with empty name shows name error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // name is empty by default
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.nameError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with blank name shows name error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("   ")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.nameError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `updateName clears name error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Trigger error
+        viewModel.save()
+        advanceUntilIdle()
+        assertNotNull(viewModel.uiState.value.nameError)
+
+        // Clear error by updating name
+        viewModel.updateName("山田太郎")
+        assertNull(viewModel.uiState.value.nameError)
+    }
+
+    // --- Error scenario tests ---
+
+    @Test
+    fun `save failure preserves form state`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("山田太郎")
+        viewModel.updateNickname("たろさん")
+        viewModel.updateCareLevel("要介護3")
+        viewModel.updateMedicalHistory("高血圧")
+        viewModel.updateAllergies("花粉症")
+        viewModel.updateMemo("備考メモ")
+        viewModel.updateGender(Gender.MALE)
+
+        repository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.save()
+            advanceUntilIdle()
+            awaitItem() // error snackbar
+        }
+
+        val state = viewModel.uiState.value
+        assertEquals("山田太郎", state.name)
+        assertEquals("たろさん", state.nickname)
+        assertEquals("要介護3", state.careLevel)
+        assertEquals("高血圧", state.medicalHistory)
+        assertEquals("花粉症", state.allergies)
+        assertEquals("備考メモ", state.memo)
+        assertEquals(Gender.MALE, state.gender)
+    }
+
+    @Test
+    fun `save failure resets isSaving flag`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("山田太郎")
+        repository.shouldFail = true
+
+        viewModel.snackbarController.events.test {
+            viewModel.save()
+            advanceUntilIdle()
+            awaitItem() // error snackbar
+        }
+
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `load with empty repository shows default state with all fields`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isLoading)
+        assertFalse(state.isSaving)
+        assertEquals("", state.name)
+        assertNull(state.birthDate)
+        assertEquals(Gender.UNSPECIFIED, state.gender)
+        assertEquals("", state.nickname)
+        assertEquals("", state.careLevel)
+        assertEquals("", state.medicalHistory)
+        assertEquals("", state.allergies)
+        assertEquals("", state.memo)
+        assertNull(state.nameError)
     }
 }

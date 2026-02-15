@@ -12,6 +12,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
+import com.carenote.app.ui.util.RootDetectionChecker
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
@@ -39,7 +40,8 @@ class HealthRecordsViewModel @Inject constructor(
     private val healthRecordRepository: HealthRecordRepository,
     private val csvExporter: HealthRecordCsvExporterInterface,
     private val pdfExporter: HealthRecordPdfExporterInterface,
-    private val analyticsRepository: AnalyticsRepository
+    private val analyticsRepository: AnalyticsRepository,
+    private val rootDetector: RootDetectionChecker
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -104,6 +106,12 @@ class HealthRecordsViewModel @Inject constructor(
     val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
 
     fun exportCsv() {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         val currentRecords = getCurrentRecords()
         if (currentRecords.isEmpty()) {
             viewModelScope.launch {
@@ -126,6 +134,12 @@ class HealthRecordsViewModel @Inject constructor(
     }
 
     fun exportPdf() {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         val currentRecords = getCurrentRecords()
         if (currentRecords.isEmpty()) {
             viewModelScope.launch {

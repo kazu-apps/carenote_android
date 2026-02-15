@@ -2,9 +2,11 @@ package com.carenote.app.e2e
 
 import android.Manifest
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -29,6 +32,8 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -67,6 +72,23 @@ abstract class E2eTestBase {
 
     @get:Rule(order = 2)
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    @get:Rule(order = 3)
+    val screenshotRule = object : TestWatcher() {
+        override fun failed(e: Throwable?, description: Description?) {
+            try {
+                val bitmap = composeRule.onRoot().captureToImage().asAndroidBitmap()
+                val file = File(
+                    context.getExternalFilesDir(null),
+                    "screenshots/${description?.methodName ?: "unknown"}_${System.currentTimeMillis()}.png"
+                )
+                file.parentFile?.mkdirs()
+                file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            } catch (ignored: Exception) {
+                // Don't fail the test if screenshot capture fails
+            }
+        }
+    }
 
     protected val context: Context
         get() = ApplicationProvider.getApplicationContext()

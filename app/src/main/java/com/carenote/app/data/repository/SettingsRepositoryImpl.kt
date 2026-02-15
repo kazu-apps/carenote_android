@@ -1,7 +1,7 @@
 package com.carenote.app.data.repository
 
-import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.SettingsDataSource
+import com.carenote.app.domain.validator.SettingsValidator
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.AppLanguage
@@ -38,21 +38,11 @@ class SettingsRepositoryImpl @Inject constructor(
         start: Int,
         end: Int
     ): Result<Unit, DomainError> {
-        if (start !in HOUR_MIN..HOUR_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Quiet hours start must be between $HOUR_MIN and $HOUR_MAX",
-                    field = "quietHoursStart"
-                )
-            )
+        SettingsValidator.validateQuietHour(start)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "quietHoursStart"))
         }
-        if (end !in HOUR_MIN..HOUR_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Quiet hours end must be between $HOUR_MIN and $HOUR_MAX",
-                    field = "quietHoursEnd"
-                )
-            )
+        SettingsValidator.validateQuietHour(end)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "quietHoursEnd"))
         }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save quiet hours", it) }
@@ -65,17 +55,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun updateTemperatureThreshold(
         value: Double
     ): Result<Unit, DomainError> {
-        if (value < AppConfig.HealthRecord.TEMPERATURE_MIN ||
-            value > AppConfig.HealthRecord.TEMPERATURE_MAX
-        ) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Temperature must be between " +
-                        "${AppConfig.HealthRecord.TEMPERATURE_MIN} and " +
-                        "${AppConfig.HealthRecord.TEMPERATURE_MAX}",
-                    field = "temperatureHigh"
-                )
-            )
+        SettingsValidator.validateTemperatureThreshold(value)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "temperatureHigh"))
         }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save temperature threshold", it) }
@@ -89,33 +70,14 @@ class SettingsRepositoryImpl @Inject constructor(
         upper: Int,
         lower: Int
     ): Result<Unit, DomainError> {
-        if (upper !in AppConfig.HealthRecord.BLOOD_PRESSURE_MIN..AppConfig.HealthRecord.BLOOD_PRESSURE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Blood pressure upper must be between " +
-                        "${AppConfig.HealthRecord.BLOOD_PRESSURE_MIN} and " +
-                        "${AppConfig.HealthRecord.BLOOD_PRESSURE_MAX}",
-                    field = "bloodPressureHighUpper"
-                )
-            )
+        SettingsValidator.validateBloodPressureThreshold(upper, "Blood pressure upper")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "bloodPressureHighUpper"))
         }
-        if (lower !in AppConfig.HealthRecord.BLOOD_PRESSURE_MIN..AppConfig.HealthRecord.BLOOD_PRESSURE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Blood pressure lower must be between " +
-                        "${AppConfig.HealthRecord.BLOOD_PRESSURE_MIN} and " +
-                        "${AppConfig.HealthRecord.BLOOD_PRESSURE_MAX}",
-                    field = "bloodPressureHighLower"
-                )
-            )
+        SettingsValidator.validateBloodPressureThreshold(lower, "Blood pressure lower")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "bloodPressureHighLower"))
         }
-        if (lower >= upper) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Blood pressure lower must be less than upper",
-                    field = "bloodPressureHighLower"
-                )
-            )
+        SettingsValidator.validateBloodPressureRelation(upper, lower)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "bloodPressureHighLower"))
         }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save blood pressure thresholds", it) }
@@ -129,33 +91,14 @@ class SettingsRepositoryImpl @Inject constructor(
         high: Int,
         low: Int
     ): Result<Unit, DomainError> {
-        if (high !in AppConfig.HealthRecord.PULSE_MIN..AppConfig.HealthRecord.PULSE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Pulse high must be between " +
-                        "${AppConfig.HealthRecord.PULSE_MIN} and " +
-                        "${AppConfig.HealthRecord.PULSE_MAX}",
-                    field = "pulseHigh"
-                )
-            )
+        SettingsValidator.validatePulseThreshold(high, "Pulse high")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "pulseHigh"))
         }
-        if (low !in AppConfig.HealthRecord.PULSE_MIN..AppConfig.HealthRecord.PULSE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Pulse low must be between " +
-                        "${AppConfig.HealthRecord.PULSE_MIN} and " +
-                        "${AppConfig.HealthRecord.PULSE_MAX}",
-                    field = "pulseLow"
-                )
-            )
+        SettingsValidator.validatePulseThreshold(low, "Pulse low")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "pulseLow"))
         }
-        if (low >= high) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Pulse low must be less than high",
-                    field = "pulseLow"
-                )
-            )
+        SettingsValidator.validatePulseRelation(high, low)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "pulseLow"))
         }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save pulse thresholds", it) }
@@ -170,21 +113,11 @@ class SettingsRepositoryImpl @Inject constructor(
         hour: Int,
         minute: Int
     ): Result<Unit, DomainError> {
-        if (hour !in HOUR_MIN..HOUR_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Hour must be between $HOUR_MIN and $HOUR_MAX",
-                    field = "hour"
-                )
-            )
+        SettingsValidator.validateMedicationHour(hour)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "hour"))
         }
-        if (minute !in MINUTE_MIN..MINUTE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Minute must be between $MINUTE_MIN and $MINUTE_MAX",
-                    field = "minute"
-                )
-            )
+        SettingsValidator.validateMedicationMinute(minute)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "minute"))
         }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save medication time", it) }
@@ -252,15 +185,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun updateSessionTimeout(
         minutes: Int
     ): Result<Unit, DomainError> {
-        if (minutes !in AppConfig.Session.MIN_TIMEOUT_MINUTES..AppConfig.Session.MAX_TIMEOUT_MINUTES) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Session timeout must be between " +
-                        "${AppConfig.Session.MIN_TIMEOUT_MINUTES} and " +
-                        "${AppConfig.Session.MAX_TIMEOUT_MINUTES} minutes",
-                    field = "sessionTimeoutMinutes"
-                )
-            )
+        SettingsValidator.validateSessionTimeout(minutes)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "sessionTimeoutMinutes"))
         }
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save session timeout", it) }
@@ -298,10 +224,4 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
-    companion object {
-        private const val HOUR_MIN = AppConfig.Time.HOUR_MIN
-        private const val HOUR_MAX = AppConfig.Time.HOUR_MAX
-        private const val MINUTE_MIN = AppConfig.Time.MINUTE_MIN
-        private const val MINUTE_MAX = AppConfig.Time.MINUTE_MAX
-    }
 }

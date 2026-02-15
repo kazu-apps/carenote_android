@@ -1,6 +1,5 @@
 package com.carenote.app.fakes
 
-import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.AppLanguage
@@ -8,6 +7,7 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.domain.validator.SettingsValidator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -43,47 +43,23 @@ class FakeSettingsRepository : SettingsRepository {
         start: Int,
         end: Int
     ): Result<Unit, DomainError> {
-        if (shouldFail) {
-            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake error"))
+        SettingsValidator.validateQuietHour(start)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "quietHoursStart"))
         }
-        if (start !in AppConfig.Time.HOUR_MIN..AppConfig.Time.HOUR_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Quiet hours start must be between ${AppConfig.Time.HOUR_MIN} and ${AppConfig.Time.HOUR_MAX}",
-                    field = "quietHoursStart"
-                )
-            )
+        SettingsValidator.validateQuietHour(end)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "quietHoursEnd"))
         }
-        if (end !in AppConfig.Time.HOUR_MIN..AppConfig.Time.HOUR_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Quiet hours end must be between ${AppConfig.Time.HOUR_MIN} and ${AppConfig.Time.HOUR_MAX}",
-                    field = "quietHoursEnd"
-                )
-            )
-        }
-        settings.value = settings.value.copy(
-            quietHoursStart = start,
-            quietHoursEnd = end
-        )
+        settings.value = settings.value.copy(quietHoursStart = start, quietHoursEnd = end)
         return Result.Success(Unit)
     }
 
     override suspend fun updateTemperatureThreshold(
         value: Double
     ): Result<Unit, DomainError> {
-        if (shouldFail) {
-            return Result.Failure(DomainError.DatabaseError("Fake error"))
-        }
-        if (value < AppConfig.HealthRecord.TEMPERATURE_MIN ||
-            value > AppConfig.HealthRecord.TEMPERATURE_MAX
-        ) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Temperature must be between ${AppConfig.HealthRecord.TEMPERATURE_MIN} and ${AppConfig.HealthRecord.TEMPERATURE_MAX}",
-                    field = "temperatureHigh"
-                )
-            )
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake error"))
+        SettingsValidator.validateTemperatureThreshold(value)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "temperatureHigh"))
         }
         settings.value = settings.value.copy(temperatureHigh = value)
         return Result.Success(Unit)
@@ -93,37 +69,17 @@ class FakeSettingsRepository : SettingsRepository {
         upper: Int,
         lower: Int
     ): Result<Unit, DomainError> {
-        if (shouldFail) {
-            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake error"))
+        SettingsValidator.validateBloodPressureThreshold(upper, "Blood pressure upper")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "bloodPressureHighUpper"))
         }
-        if (upper !in AppConfig.HealthRecord.BLOOD_PRESSURE_MIN..AppConfig.HealthRecord.BLOOD_PRESSURE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Blood pressure upper must be between ${AppConfig.HealthRecord.BLOOD_PRESSURE_MIN} and ${AppConfig.HealthRecord.BLOOD_PRESSURE_MAX}",
-                    field = "bloodPressureHighUpper"
-                )
-            )
+        SettingsValidator.validateBloodPressureThreshold(lower, "Blood pressure lower")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "bloodPressureHighLower"))
         }
-        if (lower !in AppConfig.HealthRecord.BLOOD_PRESSURE_MIN..AppConfig.HealthRecord.BLOOD_PRESSURE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Blood pressure lower must be between ${AppConfig.HealthRecord.BLOOD_PRESSURE_MIN} and ${AppConfig.HealthRecord.BLOOD_PRESSURE_MAX}",
-                    field = "bloodPressureHighLower"
-                )
-            )
+        SettingsValidator.validateBloodPressureRelation(upper, lower)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "bloodPressureHighLower"))
         }
-        if (lower >= upper) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Blood pressure lower must be less than upper",
-                    field = "bloodPressureHighLower"
-                )
-            )
-        }
-        settings.value = settings.value.copy(
-            bloodPressureHighUpper = upper,
-            bloodPressureHighLower = lower
-        )
+        settings.value = settings.value.copy(bloodPressureHighUpper = upper, bloodPressureHighLower = lower)
         return Result.Success(Unit)
     }
 
@@ -131,32 +87,15 @@ class FakeSettingsRepository : SettingsRepository {
         high: Int,
         low: Int
     ): Result<Unit, DomainError> {
-        if (shouldFail) {
-            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake error"))
+        SettingsValidator.validatePulseThreshold(high, "Pulse high")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "pulseHigh"))
         }
-        if (high !in AppConfig.HealthRecord.PULSE_MIN..AppConfig.HealthRecord.PULSE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Pulse high must be between ${AppConfig.HealthRecord.PULSE_MIN} and ${AppConfig.HealthRecord.PULSE_MAX}",
-                    field = "pulseHigh"
-                )
-            )
+        SettingsValidator.validatePulseThreshold(low, "Pulse low")?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "pulseLow"))
         }
-        if (low !in AppConfig.HealthRecord.PULSE_MIN..AppConfig.HealthRecord.PULSE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Pulse low must be between ${AppConfig.HealthRecord.PULSE_MIN} and ${AppConfig.HealthRecord.PULSE_MAX}",
-                    field = "pulseLow"
-                )
-            )
-        }
-        if (low >= high) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Pulse low must be less than high",
-                    field = "pulseLow"
-                )
-            )
+        SettingsValidator.validatePulseRelation(high, low)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "pulseLow"))
         }
         settings.value = settings.value.copy(pulseHigh = high, pulseLow = low)
         return Result.Success(Unit)
@@ -167,38 +106,17 @@ class FakeSettingsRepository : SettingsRepository {
         hour: Int,
         minute: Int
     ): Result<Unit, DomainError> {
-        if (shouldFail) {
-            return Result.Failure(DomainError.DatabaseError("Fake error"))
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake error"))
+        SettingsValidator.validateMedicationHour(hour)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "hour"))
         }
-        if (hour !in AppConfig.Time.HOUR_MIN..AppConfig.Time.HOUR_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Hour must be between ${AppConfig.Time.HOUR_MIN} and ${AppConfig.Time.HOUR_MAX}",
-                    field = "hour"
-                )
-            )
-        }
-        if (minute !in AppConfig.Time.MINUTE_MIN..AppConfig.Time.MINUTE_MAX) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Minute must be between ${AppConfig.Time.MINUTE_MIN} and ${AppConfig.Time.MINUTE_MAX}",
-                    field = "minute"
-                )
-            )
+        SettingsValidator.validateMedicationMinute(minute)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "minute"))
         }
         settings.value = when (timing) {
-            MedicationTiming.MORNING -> settings.value.copy(
-                morningHour = hour,
-                morningMinute = minute
-            )
-            MedicationTiming.NOON -> settings.value.copy(
-                noonHour = hour,
-                noonMinute = minute
-            )
-            MedicationTiming.EVENING -> settings.value.copy(
-                eveningHour = hour,
-                eveningMinute = minute
-            )
+            MedicationTiming.MORNING -> settings.value.copy(morningHour = hour, morningMinute = minute)
+            MedicationTiming.NOON -> settings.value.copy(noonHour = hour, noonMinute = minute)
+            MedicationTiming.EVENING -> settings.value.copy(eveningHour = hour, eveningMinute = minute)
         }
         return Result.Success(Unit)
     }
@@ -236,16 +154,9 @@ class FakeSettingsRepository : SettingsRepository {
     override suspend fun updateSessionTimeout(
         minutes: Int
     ): Result<Unit, DomainError> {
-        if (shouldFail) {
-            return Result.Failure(DomainError.DatabaseError("Fake error"))
-        }
-        if (minutes !in AppConfig.Session.MIN_TIMEOUT_MINUTES..AppConfig.Session.MAX_TIMEOUT_MINUTES) {
-            return Result.Failure(
-                DomainError.ValidationError(
-                    message = "Session timeout must be between ${AppConfig.Session.MIN_TIMEOUT_MINUTES} and ${AppConfig.Session.MAX_TIMEOUT_MINUTES} minutes",
-                    field = "sessionTimeoutMinutes"
-                )
-            )
+        if (shouldFail) return Result.Failure(DomainError.DatabaseError("Fake error"))
+        SettingsValidator.validateSessionTimeout(minutes)?.let { msg ->
+            return Result.Failure(DomainError.ValidationError(message = msg, field = "sessionTimeoutMinutes"))
         }
         settings.value = settings.value.copy(sessionTimeoutMinutes = minutes)
         return Result.Success(Unit)

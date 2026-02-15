@@ -43,6 +43,7 @@ import com.carenote.app.ui.navigation.AdaptiveNavigationScaffold
 import com.carenote.app.ui.navigation.CareNoteNavHost
 import com.carenote.app.ui.navigation.Screen
 import com.carenote.app.ui.theme.CareNoteTheme
+import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetector
 import dagger.hilt.android.AndroidEntryPoint
@@ -66,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     private val biometricHelper = BiometricHelper()
     private val isAuthenticated = mutableStateOf(false)
     private var lastBackgroundTime: Long = 0L
+    private var isRootDetected: Boolean = false
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -74,6 +76,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        isRootDetected = RootDetector().isDeviceRooted()
 
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStop(owner: LifecycleOwner) {
@@ -125,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                 var showRootWarning by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
-                    if (RootDetector().isDeviceRooted()) {
+                    if (isRootDetected) {
                         showRootWarning = true
                     }
                 }
@@ -144,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                             Text(text = stringResource(R.string.security_root_warning_dialog_title))
                         },
                         text = {
-                            Text(text = stringResource(R.string.security_root_warning_dialog_message))
+                            Text(text = stringResource(R.string.security_root_warning_dialog_message_restricted))
                         },
                         confirmButton = {
                             TextButton(onClick = { showRootWarning = false }) {
@@ -243,7 +247,12 @@ class MainActivity : AppCompatActivity() {
 
         val elapsed = System.currentTimeMillis() - lastBackgroundTime
         val isFirstLaunch = lastBackgroundTime == 0L
-        val needsAuth = isFirstLaunch || elapsed > settingsRepository.getSessionTimeoutMs()
+        val timeoutMs = if (isRootDetected) {
+            AppConfig.Security.ROOT_SESSION_TIMEOUT_MS
+        } else {
+            settingsRepository.getSessionTimeoutMs()
+        }
+        val needsAuth = isFirstLaunch || elapsed > timeoutMs
 
         if (!needsAuth) {
             isAuthenticated.value = true

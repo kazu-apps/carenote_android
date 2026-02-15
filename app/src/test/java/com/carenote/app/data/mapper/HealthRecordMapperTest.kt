@@ -4,6 +4,7 @@ import com.carenote.app.data.local.entity.HealthRecordEntity
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -46,9 +47,9 @@ class HealthRecordMapperTest {
         assertEquals(ExcretionType.NORMAL, result.excretion)
         assertEquals("体調良好", result.conditionNote)
         assertEquals("user1", result.createdBy)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.recordedAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.updatedAt)
+        assertEquals(TestDataFixtures.NOW, result.recordedAt)
+        assertEquals(TestDataFixtures.NOW, result.createdAt)
+        assertEquals(TestDataFixtures.NOW, result.updatedAt)
     }
 
     @Test
@@ -167,9 +168,9 @@ class HealthRecordMapperTest {
         assertEquals("SOFT", result.excretion)
         assertEquals("少し熱っぽい", result.conditionNote)
         assertEquals("user1", result.createdBy)
-        assertEquals("2025-03-15T10:00:00", result.recordedAt)
-        assertEquals("2025-03-15T10:00:00", result.createdAt)
-        assertEquals("2025-03-15T10:00:00", result.updatedAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.recordedAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.createdAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.updatedAt)
     }
 
     @Test
@@ -299,9 +300,9 @@ class HealthRecordMapperTest {
             meal = "FULL",
             excretion = "NORMAL",
             conditionNote = "体調良好",
-            recordedAt = "2025-03-15T10:00:00",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00",
+            recordedAt = TestDataFixtures.NOW_STRING,
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING,
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -321,9 +322,9 @@ class HealthRecordMapperTest {
         excretion: String? = null,
         conditionNote: String = "",
         createdBy: String = "",
-        recordedAt: String = "2025-03-15T10:00:00",
-        createdAt: String = "2025-03-15T10:00:00",
-        updatedAt: String = "2025-03-15T10:00:00"
+        recordedAt: String = TestDataFixtures.NOW_STRING,
+        createdAt: String = TestDataFixtures.NOW_STRING,
+        updatedAt: String = TestDataFixtures.NOW_STRING
     ): HealthRecordEntity = HealthRecordEntity(
         id = id,
         temperature = temperature,
@@ -351,9 +352,9 @@ class HealthRecordMapperTest {
         excretion: ExcretionType? = null,
         conditionNote: String = "",
         createdBy: String = "",
-        recordedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
+        recordedAt: LocalDateTime = TestDataFixtures.NOW,
+        createdAt: LocalDateTime = TestDataFixtures.NOW,
+        updatedAt: LocalDateTime = TestDataFixtures.NOW
     ): HealthRecord = HealthRecord(
         id = id,
         temperature = temperature,

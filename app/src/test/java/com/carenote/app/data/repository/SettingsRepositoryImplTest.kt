@@ -1,12 +1,14 @@
 package com.carenote.app.data.repository
 
 import com.carenote.app.data.local.SettingsDataSource
-import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.AppLanguage
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertFailure
+import com.carenote.app.testing.assertSuccess
+import com.carenote.app.testing.assertValidationError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -14,7 +16,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -42,7 +43,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateNotifications(false)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateNotifications(false) }
     }
 
@@ -52,27 +53,23 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateQuietHours(23, 6)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateQuietHours failure with negative start`() = runTest {
         val result = repository.updateQuietHours(-1, 7)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("quietHoursStart", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("quietHoursStart", error.field)
     }
 
     @Test
     fun `updateQuietHours failure with end over 23`() = runTest {
         val result = repository.updateQuietHours(22, 24)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("quietHoursEnd", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("quietHoursEnd", error.field)
     }
 
     @Test
@@ -81,24 +78,22 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateTemperatureThreshold(38.0)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateTemperatureThreshold failure with low value`() = runTest {
         val result = repository.updateTemperatureThreshold(33.0)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("temperatureHigh", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("temperatureHigh", error.field)
     }
 
     @Test
     fun `updateTemperatureThreshold failure with high value`() = runTest {
         val result = repository.updateTemperatureThreshold(43.0)
 
-        assertTrue(result.isFailure)
+        result.assertFailure()
     }
 
     @Test
@@ -107,26 +102,22 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateBloodPressureThresholds(150, 95)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateBloodPressureThresholds failure with upper out of range`() = runTest {
         val result = repository.updateBloodPressureThresholds(300, 90)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
+        result.assertValidationError()
     }
 
     @Test
     fun `updateBloodPressureThresholds failure with lower greater than upper`() = runTest {
         val result = repository.updateBloodPressureThresholds(100, 100)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("bloodPressureHighLower", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("bloodPressureHighLower", error.field)
     }
 
     @Test
@@ -135,24 +126,22 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updatePulseThresholds(110, 45)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
     }
 
     @Test
     fun `updatePulseThresholds failure with high out of range`() = runTest {
         val result = repository.updatePulseThresholds(250, 50)
 
-        assertTrue(result.isFailure)
+        result.assertFailure()
     }
 
     @Test
     fun `updatePulseThresholds failure with low greater than high`() = runTest {
         val result = repository.updatePulseThresholds(80, 80)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("pulseLow", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("pulseLow", error.field)
     }
 
     @Test
@@ -163,7 +152,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateMedicationTime(MedicationTiming.MORNING, 7, 30)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
     }
 
     @Test
@@ -174,27 +163,23 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateMedicationTime(MedicationTiming.NOON, 11, 45)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
     }
 
     @Test
     fun `updateMedicationTime failure with invalid hour`() = runTest {
         val result = repository.updateMedicationTime(MedicationTiming.EVENING, 25, 0)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("hour", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("hour", error.field)
     }
 
     @Test
     fun `updateMedicationTime failure with invalid minute`() = runTest {
         val result = repository.updateMedicationTime(MedicationTiming.MORNING, 8, 60)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("minute", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("minute", error.field)
     }
 
     @Test
@@ -203,7 +188,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateThemeMode(ThemeMode.DARK)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateThemeMode("DARK") }
     }
 
@@ -213,7 +198,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateThemeMode(ThemeMode.LIGHT)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateThemeMode("LIGHT") }
     }
 
@@ -223,7 +208,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateThemeMode(ThemeMode.SYSTEM)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateThemeMode("SYSTEM") }
     }
 
@@ -233,7 +218,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateAppLanguage(AppLanguage.JAPANESE)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateAppLanguage("JAPANESE") }
     }
 
@@ -243,7 +228,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateAppLanguage(AppLanguage.ENGLISH)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateAppLanguage("ENGLISH") }
     }
 
@@ -253,7 +238,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateAppLanguage(AppLanguage.SYSTEM)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateAppLanguage("SYSTEM") }
     }
 
@@ -263,8 +248,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateAppLanguage(AppLanguage.JAPANESE)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -273,7 +257,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.resetToDefaults()
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.clearAll() }
     }
 
@@ -285,8 +269,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateNotifications(false)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -295,8 +278,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateQuietHours(22, 6)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -305,8 +287,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateTemperatureThreshold(38.0)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -315,8 +296,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateBloodPressureThresholds(140, 90)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -325,8 +305,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updatePulseThresholds(100, 50)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -337,8 +316,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateMedicationTime(MedicationTiming.MORNING, 8, 0)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -347,8 +325,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateThemeMode(ThemeMode.DARK)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -357,8 +334,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.resetToDefaults()
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -367,7 +343,7 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateSessionTimeout(10)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { dataSource.updateSessionTimeout(10) }
     }
 
@@ -375,20 +351,16 @@ class SettingsRepositoryImplTest {
     fun `updateSessionTimeout below minimum returns ValidationError`() = runTest {
         val result = repository.updateSessionTimeout(0)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("sessionTimeoutMinutes", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("sessionTimeoutMinutes", error.field)
     }
 
     @Test
     fun `updateSessionTimeout above maximum returns ValidationError`() = runTest {
         val result = repository.updateSessionTimeout(61)
 
-        assertTrue(result.isFailure)
-        val error = (result as Result.Failure).error
-        assertTrue(error is DomainError.ValidationError)
-        assertEquals("sessionTimeoutMinutes", (error as DomainError.ValidationError).field)
+        val error = result.assertValidationError()
+        assertEquals("sessionTimeoutMinutes", error.field)
     }
 
     @Test
@@ -406,7 +378,6 @@ class SettingsRepositoryImplTest {
 
         val result = repository.updateSessionTimeout(5)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 }

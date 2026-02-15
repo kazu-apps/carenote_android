@@ -9,20 +9,17 @@ import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,7 +30,9 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class AuthViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var analyticsRepository: FakeAnalyticsRepository
@@ -41,23 +40,16 @@ class AuthViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
         analyticsRepository = FakeAnalyticsRepository()
         viewModel = AuthViewModel(authRepository, syncWorkScheduler, analyticsRepository)
     }
 
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-        authRepository.clear()
-    }
-
     // ====== Login Form State Tests ======
 
     @Test
-    fun `initial loginFormState has empty fields`() = runTest(testDispatcher) {
+    fun `initial loginFormState has empty fields`() = runTest(mainCoroutineRule.testDispatcher) {
         val state = viewModel.loginFormState.value
 
         assertEquals("", state.email)
@@ -68,7 +60,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateLoginEmail updates state and clears error`() = runTest(testDispatcher) {
+    fun `updateLoginEmail updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginEmail("test@example.com")
         advanceUntilIdle()
 
@@ -78,7 +70,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateLoginPassword updates state and clears error`() = runTest(testDispatcher) {
+    fun `updateLoginPassword updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginPassword("password123")
         advanceUntilIdle()
 
@@ -88,7 +80,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn with empty email sets error`() = runTest(testDispatcher) {
+    fun `signIn with empty email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginPassword("password123")
         viewModel.signIn()
         advanceUntilIdle()
@@ -100,7 +92,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn with invalid email sets error`() = runTest(testDispatcher) {
+    fun `signIn with invalid email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginEmail("invalid-email")
         viewModel.updateLoginPassword("password123")
         viewModel.signIn()
@@ -113,7 +105,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn with empty password sets error`() = runTest(testDispatcher) {
+    fun `signIn with empty password sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginEmail("test@example.com")
         viewModel.signIn()
         advanceUntilIdle()
@@ -125,7 +117,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn with email exceeding max length sets error`() = runTest(testDispatcher) {
+    fun `signIn with email exceeding max length sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         val longEmail = "a".repeat(AppConfig.Auth.EMAIL_MAX_LENGTH + 1) + "@example.com"
         viewModel.updateLoginEmail(longEmail)
         viewModel.updateLoginPassword("password123")
@@ -138,7 +130,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn success emits authSuccessEvent`() = runTest(testDispatcher) {
+    fun `signIn success emits authSuccessEvent`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginEmail("test@example.com")
         viewModel.updateLoginPassword("password123")
 
@@ -151,7 +143,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn success with unverified email shows warning snackbar`() = runTest(testDispatcher) {
+    fun `signIn success with unverified email shows warning snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.isEmailVerified = false
         viewModel.updateLoginEmail("test@example.com")
         viewModel.updateLoginPassword("password123")
@@ -169,7 +161,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn success with verified email does not show warning`() = runTest(testDispatcher) {
+    fun `signIn success with verified email does not show warning`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.isEmailVerified = true
         viewModel.updateLoginEmail("test@example.com")
         viewModel.updateLoginPassword("password123")
@@ -184,7 +176,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn failure shows snackbar`() = runTest(testDispatcher) {
+    fun `signIn failure shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("Invalid credentials")
 
@@ -200,7 +192,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn failure sets isLoading false`() = runTest(testDispatcher) {
+    fun `signIn failure sets isLoading false`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("Invalid credentials")
 
@@ -214,7 +206,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signIn with network error shows network error snackbar`() = runTest(testDispatcher) {
+    fun `signIn with network error shows network error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.NetworkError("No internet connection")
 
@@ -233,7 +225,7 @@ class AuthViewModelTest {
     // ====== Register Form State Tests ======
 
     @Test
-    fun `initial registerFormState has empty fields`() = runTest(testDispatcher) {
+    fun `initial registerFormState has empty fields`() = runTest(mainCoroutineRule.testDispatcher) {
         val state = viewModel.registerFormState.value
 
         assertEquals("", state.email)
@@ -246,7 +238,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateRegisterEmail updates state`() = runTest(testDispatcher) {
+    fun `updateRegisterEmail updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("new@example.com")
         advanceUntilIdle()
 
@@ -256,7 +248,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateRegisterPassword updates state`() = runTest(testDispatcher) {
+    fun `updateRegisterPassword updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterPassword("securepassword")
         advanceUntilIdle()
 
@@ -266,7 +258,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateDisplayName updates state`() = runTest(testDispatcher) {
+    fun `updateDisplayName updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateDisplayName("John Doe")
         advanceUntilIdle()
 
@@ -276,7 +268,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with empty email sets error`() = runTest(testDispatcher) {
+    fun `signUp with empty email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterPassword("password123")
         viewModel.updateDisplayName("John Doe")
         viewModel.signUp()
@@ -289,7 +281,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with empty password sets error`() = runTest(testDispatcher) {
+    fun `signUp with empty password sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateDisplayName("John Doe")
         viewModel.signUp()
@@ -302,7 +294,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with short password sets error`() = runTest(testDispatcher) {
+    fun `signUp with short password sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("123") // less than PASSWORD_MIN_LENGTH
         viewModel.updateDisplayName("John Doe")
@@ -319,7 +311,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with password exceeding max length sets error`() = runTest(testDispatcher) {
+    fun `signUp with password exceeding max length sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         val longPassword = "a".repeat(AppConfig.Auth.PASSWORD_MAX_LENGTH + 1)
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword(longPassword)
@@ -333,7 +325,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with empty displayName sets error`() = runTest(testDispatcher) {
+    fun `signUp with empty displayName sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("password123")
         viewModel.signUp()
@@ -349,7 +341,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with displayName exceeding max length sets error`() = runTest(testDispatcher) {
+    fun `signUp with displayName exceeding max length sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         val longName = "a".repeat(AppConfig.Auth.DISPLAY_NAME_MAX_LENGTH + 1)
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("password123")
@@ -363,7 +355,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp success emits authSuccessEvent and shows snackbar`() = runTest(testDispatcher) {
+    fun `signUp success emits authSuccessEvent and shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("password123")
         viewModel.updateDisplayName("John Doe")
@@ -387,7 +379,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp failure shows snackbar`() = runTest(testDispatcher) {
+    fun `signUp failure shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.ValidationError("Email already in use")
 
@@ -404,7 +396,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp failure sets isLoading false`() = runTest(testDispatcher) {
+    fun `signUp failure sets isLoading false`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("Registration failed")
 
@@ -419,7 +411,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp all validation errors set simultaneously`() = runTest(testDispatcher) {
+    fun `signUp all validation errors set simultaneously`() = runTest(mainCoroutineRule.testDispatcher) {
         // All fields empty
         viewModel.signUp()
         advanceUntilIdle()
@@ -433,7 +425,7 @@ class AuthViewModelTest {
     // ====== ForgotPassword Form State Tests ======
 
     @Test
-    fun `initial forgotPasswordFormState has empty email`() = runTest(testDispatcher) {
+    fun `initial forgotPasswordFormState has empty email`() = runTest(mainCoroutineRule.testDispatcher) {
         val state = viewModel.forgotPasswordFormState.value
 
         assertEquals("", state.email)
@@ -443,7 +435,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateForgotPasswordEmail updates state`() = runTest(testDispatcher) {
+    fun `updateForgotPasswordEmail updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateForgotPasswordEmail("forgot@example.com")
         advanceUntilIdle()
 
@@ -453,7 +445,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail with empty email sets error`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail with empty email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.sendPasswordResetEmail()
         advanceUntilIdle()
 
@@ -464,7 +456,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail with invalid email sets error`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail with invalid email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateForgotPasswordEmail("invalid-email")
         viewModel.sendPasswordResetEmail()
         advanceUntilIdle()
@@ -476,7 +468,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail success sets emailSent true`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail success sets emailSent true`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateForgotPasswordEmail("test@example.com")
         viewModel.sendPasswordResetEmail()
         advanceUntilIdle()
@@ -487,7 +479,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail success shows snackbar`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail success shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateForgotPasswordEmail("test@example.com")
 
         viewModel.snackbarController.events.test {
@@ -504,7 +496,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail failure shows snackbar`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail failure shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.NetworkError("Network error")
 
@@ -521,7 +513,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail failure sets isLoading false`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail failure sets isLoading false`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("User not found")
 
@@ -537,7 +529,7 @@ class AuthViewModelTest {
     // ====== Reset State Tests ======
 
     @Test
-    fun `resetLoginState clears form`() = runTest(testDispatcher) {
+    fun `resetLoginState clears form`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateLoginEmail("test@example.com")
         viewModel.updateLoginPassword("password123")
         advanceUntilIdle()
@@ -554,7 +546,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `resetRegisterState clears form`() = runTest(testDispatcher) {
+    fun `resetRegisterState clears form`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("password123")
         viewModel.updateDisplayName("John Doe")
@@ -574,7 +566,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `resetForgotPasswordState clears form`() = runTest(testDispatcher) {
+    fun `resetForgotPasswordState clears form`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateForgotPasswordEmail("test@example.com")
         advanceUntilIdle()
 
@@ -591,7 +583,7 @@ class AuthViewModelTest {
     // ====== Error Handling Tests ======
 
     @Test
-    fun `signIn with unknown error shows unknown error snackbar`() = runTest(testDispatcher) {
+    fun `signIn with unknown error shows unknown error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnknownError("Something went wrong")
 
@@ -608,7 +600,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `signUp with validation error shows validation message`() = runTest(testDispatcher) {
+    fun `signUp with validation error shows validation message`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.ValidationError("Custom validation message")
 
@@ -628,7 +620,7 @@ class AuthViewModelTest {
     // ====== Edge Cases ======
 
     @Test
-    fun `updateLoginEmail clears previous error after input`() = runTest(testDispatcher) {
+    fun `updateLoginEmail clears previous error after input`() = runTest(mainCoroutineRule.testDispatcher) {
         // First trigger an error
         viewModel.signIn() // empty email
         advanceUntilIdle()
@@ -642,7 +634,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `updateLoginPassword clears previous error after input`() = runTest(testDispatcher) {
+    fun `updateLoginPassword clears previous error after input`() = runTest(mainCoroutineRule.testDispatcher) {
         // First trigger an error
         viewModel.updateLoginEmail("test@example.com")
         viewModel.signIn() // empty password
@@ -657,7 +649,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `email with leading and trailing spaces fails validation`() = runTest(testDispatcher) {
+    fun `email with leading and trailing spaces fails validation`() = runTest(mainCoroutineRule.testDispatcher) {
         // Note: The email pattern matcher does not accept leading/trailing spaces
         // so this tests that such emails are properly rejected
         viewModel.updateLoginEmail("  test@example.com  ")
@@ -671,7 +663,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `valid email is trimmed before sending to repository on signIn`() = runTest(testDispatcher) {
+    fun `valid email is trimmed before sending to repository on signIn`() = runTest(mainCoroutineRule.testDispatcher) {
         // Use valid email without spaces in the value itself
         viewModel.updateLoginEmail("test@example.com")
         viewModel.updateLoginPassword("password123")
@@ -690,7 +682,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `valid email is trimmed before sending to repository on signUp`() = runTest(testDispatcher) {
+    fun `valid email is trimmed before sending to repository on signUp`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("newuser@example.com")
         viewModel.updateRegisterPassword("password123")
         viewModel.updateDisplayName("New User")
@@ -708,7 +700,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `blank displayName with only spaces sets error`() = runTest(testDispatcher) {
+    fun `blank displayName with only spaces sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("password123")
         viewModel.updateDisplayName("   ") // only spaces
@@ -720,7 +712,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `password at exactly minimum length is valid`() = runTest(testDispatcher) {
+    fun `password at exactly minimum length is valid`() = runTest(mainCoroutineRule.testDispatcher) {
         val minLengthPassword = "a".repeat(AppConfig.Auth.PASSWORD_MIN_LENGTH)
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword(minLengthPassword)
@@ -735,7 +727,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `password at exactly maximum length is valid`() = runTest(testDispatcher) {
+    fun `password at exactly maximum length is valid`() = runTest(mainCoroutineRule.testDispatcher) {
         val maxLengthPassword = "a".repeat(AppConfig.Auth.PASSWORD_MAX_LENGTH)
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword(maxLengthPassword)
@@ -750,7 +742,7 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `displayName at exactly maximum length is valid`() = runTest(testDispatcher) {
+    fun `displayName at exactly maximum length is valid`() = runTest(mainCoroutineRule.testDispatcher) {
         val maxLengthName = "a".repeat(AppConfig.Auth.DISPLAY_NAME_MAX_LENGTH)
         viewModel.updateRegisterEmail("test@example.com")
         viewModel.updateRegisterPassword("password123")

@@ -4,32 +4,31 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.Task
-import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeTaskRepository
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aTask
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TasksViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
+
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeTaskRepository
     private lateinit var scheduler: FakeTaskReminderScheduler
@@ -38,15 +37,9 @@ class TasksViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeTaskRepository()
         scheduler = FakeTaskReminderScheduler()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): TasksViewModel {
@@ -55,34 +48,6 @@ class TasksViewModelTest {
 
     /** Helper: read the current tasks from the FakeTaskRepository's internal state. */
     private fun repoTasks(): List<Task> = repository.currentTasks()
-
-    private fun createTask(
-        id: Long = 1L,
-        title: String = "テストタスク",
-        description: String = "テスト説明",
-        dueDate: LocalDate? = null,
-        isCompleted: Boolean = false,
-        priority: TaskPriority = TaskPriority.MEDIUM,
-        recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
-        recurrenceInterval: Int = 1,
-        reminderEnabled: Boolean = false,
-        reminderTime: LocalTime? = null,
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
-    ) = Task(
-        id = id,
-        title = title,
-        description = description,
-        dueDate = dueDate,
-        isCompleted = isCompleted,
-        priority = priority,
-        recurrenceFrequency = recurrenceFrequency,
-        recurrenceInterval = recurrenceInterval,
-        reminderEnabled = reminderEnabled,
-        reminderTime = reminderTime,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
 
     @Test
     fun `initial filter mode is ALL`() {
@@ -102,7 +67,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion flips isCompleted`() = runTest {
-        val task = createTask(id = 1L, title = "タスク", isCompleted = false)
+        val task = aTask(id = 1L, title = "タスク", isCompleted = false)
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
@@ -115,7 +80,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion on completed task sets incomplete`() = runTest {
-        val task = createTask(id = 1L, title = "完了タスク", isCompleted = true)
+        val task = aTask(id = 1L, title = "完了タスク", isCompleted = true)
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
@@ -127,7 +92,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion cancels reminder when completing task`() = runTest {
-        val task = createTask(
+        val task = aTask(
             id = 1L,
             title = "リマインダータスク",
             isCompleted = false,
@@ -147,7 +112,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion reschedules reminder when uncompleting task`() = runTest {
-        val task = createTask(
+        val task = aTask(
             id = 1L,
             title = "リマインダータスク",
             isCompleted = true,
@@ -167,7 +132,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion does not reschedule if reminder not enabled`() = runTest {
-        val task = createTask(
+        val task = aTask(
             id = 1L,
             title = "タスク",
             isCompleted = true,
@@ -184,7 +149,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion generates next task for recurring task`() = runTest {
-        val task = createTask(
+        val task = aTask(
             id = 1L,
             title = "繰り返しタスク",
             isCompleted = false,
@@ -236,7 +201,7 @@ class TasksViewModelTest {
 
     @Test
     fun `recurring task without due date does not generate next task`() = runTest {
-        val task = createTask(
+        val task = aTask(
             id = 1L,
             title = "繰り返しタスク",
             isCompleted = false,
@@ -256,8 +221,8 @@ class TasksViewModelTest {
     @Test
     fun `deleteTask removes task`() = runTest {
         val tasks = listOf(
-            createTask(id = 1L, title = "タスクA"),
-            createTask(id = 2L, title = "タスクB")
+            aTask(id = 1L, title = "タスクA"),
+            aTask(id = 2L, title = "タスクB")
         )
         repository.setTasks(tasks)
         viewModel = createViewModel()
@@ -271,7 +236,7 @@ class TasksViewModelTest {
 
     @Test
     fun `deleteTask cancels reminder`() = runTest {
-        repository.setTasks(listOf(createTask(id = 1L)))
+        repository.setTasks(listOf(aTask(id = 1L)))
         viewModel = createViewModel()
 
         viewModel.deleteTask(1L)
@@ -284,7 +249,7 @@ class TasksViewModelTest {
 
     @Test
     fun `snackbar emitted on delete success`() = runTest {
-        repository.setTasks(listOf(createTask(id = 1L)))
+        repository.setTasks(listOf(aTask(id = 1L)))
         viewModel = createViewModel()
 
         viewModel.snackbarController.events.test {
@@ -297,7 +262,7 @@ class TasksViewModelTest {
 
     @Test
     fun `snackbar emitted on delete failure`() = runTest {
-        repository.setTasks(listOf(createTask(id = 1L)))
+        repository.setTasks(listOf(aTask(id = 1L)))
         repository.shouldFail = true
         viewModel = createViewModel()
 
@@ -311,7 +276,7 @@ class TasksViewModelTest {
 
     @Test
     fun `toggleCompletion failure does not change task state`() = runTest {
-        val task = createTask(id = 1L, isCompleted = false)
+        val task = aTask(id = 1L, isCompleted = false)
         repository.setTasks(listOf(task))
         viewModel = createViewModel()
 
@@ -324,7 +289,7 @@ class TasksViewModelTest {
 
     @Test
     fun `snackbar emitted on toggle failure`() = runTest {
-        val task = createTask(id = 1L, isCompleted = false)
+        val task = aTask(id = 1L, isCompleted = false)
         repository.setTasks(listOf(task))
         repository.shouldFail = true
         viewModel = createViewModel()
@@ -343,14 +308,14 @@ class TasksViewModelTest {
 
         assertEquals(0, repoTasks().size)
 
-        repository.setTasks(listOf(createTask(id = 1L)))
+        repository.setTasks(listOf(aTask(id = 1L)))
 
         assertEquals(1, repoTasks().size)
     }
 
     @Test
     fun `next recurring task schedules reminder if enabled`() = runTest {
-        val task = createTask(
+        val task = aTask(
             id = 1L,
             title = "繰り返しリマインダータスク",
             isCompleted = false,
@@ -391,9 +356,9 @@ class TasksViewModelTest {
     @Test
     fun `search filters tasks by title`() = runTest {
         val tasks = listOf(
-            createTask(id = 1L, title = "買い物に行く", description = ""),
-            createTask(id = 2L, title = "薬を取りに行く", description = ""),
-            createTask(id = 3L, title = "買い物リスト作成", description = "")
+            aTask(id = 1L, title = "買い物に行く", description = ""),
+            aTask(id = 2L, title = "薬を取りに行く", description = ""),
+            aTask(id = 3L, title = "買い物リスト作成", description = "")
         )
         repository.setTasks(tasks)
         viewModel = createViewModel()
@@ -408,8 +373,8 @@ class TasksViewModelTest {
     @Test
     fun `search filters tasks by description`() = runTest {
         val tasks = listOf(
-            createTask(id = 1L, title = "タスクA", description = "病院の予約を確認"),
-            createTask(id = 2L, title = "タスクB", description = "スーパーで買い物")
+            aTask(id = 1L, title = "タスクA", description = "病院の予約を確認"),
+            aTask(id = 2L, title = "タスクB", description = "スーパーで買い物")
         )
         repository.setTasks(tasks)
         viewModel = createViewModel()
@@ -424,8 +389,8 @@ class TasksViewModelTest {
     @Test
     fun `filter INCOMPLETE shows only incomplete tasks via repository`() = runTest {
         val tasks = listOf(
-            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
-            createTask(id = 2L, title = "完了タスク", isCompleted = true)
+            aTask(id = 1L, title = "未完了タスク", isCompleted = false),
+            aTask(id = 2L, title = "完了タスク", isCompleted = true)
         )
         repository.setTasks(tasks)
         viewModel = createViewModel()
@@ -439,8 +404,8 @@ class TasksViewModelTest {
     @Test
     fun `filter COMPLETED shows only completed tasks via repository`() = runTest {
         val tasks = listOf(
-            createTask(id = 1L, title = "未完了タスク", isCompleted = false),
-            createTask(id = 2L, title = "完了タスク", isCompleted = true)
+            aTask(id = 1L, title = "未完了タスク", isCompleted = false),
+            aTask(id = 2L, title = "完了タスク", isCompleted = true)
         )
         repository.setTasks(tasks)
         viewModel = createViewModel()

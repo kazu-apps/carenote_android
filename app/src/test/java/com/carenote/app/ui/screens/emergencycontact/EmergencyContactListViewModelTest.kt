@@ -3,61 +3,39 @@ package com.carenote.app.ui.screens.emergencycontact
 import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.model.EmergencyContact
-import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeEmergencyContactRepository
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aEmergencyContact
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EmergencyContactListViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
+
     private lateinit var repository: FakeEmergencyContactRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: EmergencyContactListViewModel
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeEmergencyContactRepository()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): EmergencyContactListViewModel {
         return EmergencyContactListViewModel(repository, analyticsRepository)
     }
-
-    private fun createContact(
-        id: Long = 1L,
-        name: String = "テスト太郎",
-        phoneNumber: String = "090-1234-5678",
-        relationship: RelationshipType = RelationshipType.FAMILY
-    ) = EmergencyContact(
-        id = id,
-        name = name,
-        phoneNumber = phoneNumber,
-        relationship = relationship,
-        memo = "",
-        createdAt = LocalDateTime.of(2026, 1, 1, 10, 0),
-        updatedAt = LocalDateTime.of(2026, 1, 1, 10, 0)
-    )
 
     @Test
     fun `contacts state initially empty`() = runTest {
@@ -68,8 +46,8 @@ class EmergencyContactListViewModelTest {
     @Test
     fun `contacts state reflects repository data`() = runTest {
         val contactList = listOf(
-            createContact(1L, "A"),
-            createContact(2L, "B")
+            aEmergencyContact(id = 1L, name = "A"),
+            aEmergencyContact(id = 2L, name = "B")
         )
         repository.setContacts(contactList)
         viewModel = createViewModel()
@@ -85,7 +63,7 @@ class EmergencyContactListViewModelTest {
 
     @Test
     fun `deleteContact removes contact from list`() = runTest {
-        val contact = createContact(1L, "削除対象")
+        val contact = aEmergencyContact(id = 1L, name = "削除対象")
         repository.setContacts(listOf(contact))
         viewModel = createViewModel()
 
@@ -100,7 +78,7 @@ class EmergencyContactListViewModelTest {
 
     @Test
     fun `deleteContact shows success snackbar`() = runTest {
-        val contact = createContact(1L)
+        val contact = aEmergencyContact(1L)
         repository.setContacts(listOf(contact))
         viewModel = createViewModel()
 
@@ -115,7 +93,7 @@ class EmergencyContactListViewModelTest {
 
     @Test
     fun `deleteContact shows error snackbar on failure`() = runTest {
-        val contact = createContact(1L)
+        val contact = aEmergencyContact(1L)
         repository.setContacts(listOf(contact))
         repository.shouldFail = true
         viewModel = createViewModel()
@@ -136,7 +114,7 @@ class EmergencyContactListViewModelTest {
         viewModel.contacts.test {
             assertEquals(emptyList<EmergencyContact>(), awaitItem())
 
-            repository.setContacts(listOf(createContact(1L, "新規")))
+            repository.setContacts(listOf(aEmergencyContact(id = 1L, name = "新規")))
             val updated = awaitItem()
             assertEquals(1, updated.size)
             assertEquals("新規", updated[0].name)
@@ -148,9 +126,9 @@ class EmergencyContactListViewModelTest {
     @Test
     fun `deleteContact does not remove other contacts`() = runTest {
         val contacts = listOf(
-            createContact(1L, "A"),
-            createContact(2L, "B"),
-            createContact(3L, "C")
+            aEmergencyContact(id = 1L, name = "A"),
+            aEmergencyContact(id = 2L, name = "B"),
+            aEmergencyContact(id = 3L, name = "C")
         )
         repository.setContacts(contacts)
         viewModel = createViewModel()
@@ -169,8 +147,8 @@ class EmergencyContactListViewModelTest {
     @Test
     fun `multiple deletes work correctly`() = runTest {
         val contacts = listOf(
-            createContact(1L, "A"),
-            createContact(2L, "B")
+            aEmergencyContact(id = 1L, name = "A"),
+            aEmergencyContact(id = 2L, name = "B")
         )
         repository.setContacts(contacts)
         viewModel = createViewModel()

@@ -69,6 +69,12 @@ class DomainErrorTest {
     }
 
     @Test
+    fun `SecurityError carries message`() {
+        val error = DomainError.SecurityError("Root detected")
+        assertEquals("Root detected", error.message)
+    }
+
+    @Test
     fun `when expression covers all error types`() {
         val errors: List<DomainError> = listOf(
             DomainError.DatabaseError("db"),
@@ -76,7 +82,8 @@ class DomainErrorTest {
             DomainError.ValidationError("invalid"),
             DomainError.NetworkError("network"),
             DomainError.UnauthorizedError("unauth"),
-            DomainError.UnknownError("unknown")
+            DomainError.UnknownError("unknown"),
+            DomainError.SecurityError("security")
         )
 
         errors.forEach { error ->
@@ -87,6 +94,7 @@ class DomainErrorTest {
                 is DomainError.NetworkError -> "network"
                 is DomainError.UnauthorizedError -> "unauthorized"
                 is DomainError.UnknownError -> "unknown"
+                is DomainError.SecurityError -> "security"
             }
             assertTrue(description.isNotEmpty())
         }

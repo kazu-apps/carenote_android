@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.util.Clock
+import com.carenote.app.domain.validator.MedicationValidator
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.model.Medication
@@ -187,13 +188,13 @@ class AddEditMedicationViewModel @Inject constructor(
 
         val parsedStock = parseStockValue(current.currentStock)
         val parsedThreshold = parseStockValue(current.lowStockThreshold)
-        if (parsedStock != null && (parsedStock < 0 || parsedStock > AppConfig.Medication.MAX_STOCK)) {
+        if (parsedStock != null && MedicationValidator.validateStock(parsedStock) != null) {
             viewModelScope.launch {
                 snackbarController.showMessage(R.string.medication_stock_validation_range)
             }
             return
         }
-        if (parsedThreshold != null && (parsedThreshold < 0 || parsedThreshold > AppConfig.Medication.MAX_STOCK)) {
+        if (parsedThreshold != null && MedicationValidator.validateLowStockThreshold(parsedThreshold) != null) {
             viewModelScope.launch {
                 snackbarController.showMessage(R.string.medication_stock_validation_range)
             }

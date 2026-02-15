@@ -3,9 +3,9 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.dao.CalendarEventDao
 import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.data.mapper.CalendarEventMapper
-import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertSuccess
 import app.cash.turbine.test
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import io.mockk.coEvery
@@ -206,8 +206,8 @@ class CalendarEventRepositoryImplTest {
         )
         val result = repository.insertEvent(event)
 
-        assertTrue(result is Result.Success)
-        assertEquals(1L, (result as Result.Success).value)
+        val value = result.assertSuccess()
+        assertEquals(1L, value)
     }
 
     @Test
@@ -222,8 +222,7 @@ class CalendarEventRepositoryImplTest {
         )
         val result = repository.insertEvent(event)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -239,7 +238,7 @@ class CalendarEventRepositoryImplTest {
         )
         val result = repository.updateEvent(event)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
     }
 
     @Test
@@ -255,8 +254,7 @@ class CalendarEventRepositoryImplTest {
         )
         val result = repository.updateEvent(event)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -265,7 +263,7 @@ class CalendarEventRepositoryImplTest {
 
         val result = repository.deleteEvent(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteEvent(1L) }
     }
 
@@ -275,8 +273,7 @@ class CalendarEventRepositoryImplTest {
 
         val result = repository.deleteEvent(1L)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     // --- Recurrence Expansion Tests ---

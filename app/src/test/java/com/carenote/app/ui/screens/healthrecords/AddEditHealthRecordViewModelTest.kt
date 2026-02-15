@@ -15,27 +15,26 @@ import com.carenote.app.fakes.FakePhotoRepository
 import io.mockk.mockk
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddEditHealthRecordViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var photoRepository: FakePhotoRepository
     private val imageCompressor: ImageCompressorInterface = mockk(relaxed = true)
@@ -45,15 +44,9 @@ class AddEditHealthRecordViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeHealthRecordRepository()
         photoRepository = FakePhotoRepository()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createAddViewModel(): AddEditHealthRecordViewModel {
@@ -214,7 +207,7 @@ class AddEditHealthRecordViewModelTest {
     }
 
     @Test
-    fun `saveRecord failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `saveRecord failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateTemperature("36.5")
         repository.shouldFail = true
@@ -232,7 +225,7 @@ class AddEditHealthRecordViewModelTest {
     }
 
     @Test
-    fun `saveRecord failure keeps isSaving false`() = runTest(testDispatcher) {
+    fun `saveRecord failure keeps isSaving false`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createAddViewModel()
         viewModel.updateTemperature("36.5")
         repository.shouldFail = true

@@ -27,6 +27,7 @@
     <string name="settings_notifications_enabled">Enable notifications</string>
     <string name="settings_quiet_hours">Quiet Hours</string>
     <string name="settings_quiet_hours_format">%1$d:00 – %2$d:00</string>
+    <string name="settings_task_reminder_limit">Task reminder limit</string>
     <string name="settings_health_thresholds">Health Thresholds</string>
     <string name="settings_temperature_high">Temperature Alert</string>
     <string name="settings_temperature_format">%1$.1f\u2103 or above</string>
@@ -93,6 +94,9 @@
     <string name="security_root_detected_summary">This device may be rooted. Data security could be compromised.</string>
     <string name="security_root_warning_dialog_title">Security Warning</string>
     <string name="security_root_warning_dialog_message">This device appears to be rooted. On a rooted device, your app data may be accessible to third parties. Please be cautious with personal information.</string>
+    <string name="security_root_warning_dialog_message_restricted">This device appears to be rooted. For security protection, data export and photo upload features will be restricted. Session timeout will also be shortened.</string>
+    <string name="security_root_export_blocked">Data export is not available on rooted devices</string>
+    <string name="security_root_upload_blocked">Photo upload is not available on rooted devices</string>
 
     <!-- Account Settings -->
     <string name="settings_account">Account</string>
@@ -145,6 +149,7 @@
     <string name="care_recipient_memo_hint">Special notes, allergies, preferences, etc.</string>
     <string name="care_recipient_save_success">Profile saved</string>
     <string name="care_recipient_save_error">Failed to save profile</string>
+    <string name="care_recipient_name_required">Please enter a name</string>
 
     <!-- Biometric Prompt -->
     <string name="biometric_prompt_title">Identity verification</string>
@@ -472,6 +477,7 @@
     <string name="ui_error_network">Unable to connect to the network</string>
     <string name="ui_error_unauthorized">Authentication required</string>
     <string name="ui_error_unknown">An unexpected error occurred</string>
+    <string name="ui_error_security">A security error occurred</string>
     <string name="ui_empty_default">No data available</string>
     <string name="ui_confirm_title">Confirm</string>
     <string name="ui_confirm_delete_title">Confirm Deletion</string>

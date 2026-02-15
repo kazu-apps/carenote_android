@@ -4,6 +4,7 @@ import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -11,10 +12,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class MedicationLogMapperTest {
 
     private lateinit var mapper: MedicationLogMapper
+
+    private val fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @Before
     fun setUp() {
@@ -27,8 +31,8 @@ class MedicationLogMapperTest {
             id = 1L,
             medicationId = 10L,
             status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00",
-            recordedAt = "2025-03-15T08:05:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(5).format(fmt),
             memo = "メモ"
         )
 
@@ -37,8 +41,8 @@ class MedicationLogMapperTest {
         assertEquals(1L, result.id)
         assertEquals(10L, result.medicationId)
         assertEquals(MedicationLogStatus.TAKEN, result.status)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 8, 0), result.scheduledAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 8, 5), result.recordedAt)
+        assertEquals(TestDataFixtures.NOW.withHour(8).withMinute(0), result.scheduledAt)
+        assertEquals(TestDataFixtures.NOW.withHour(8).withMinute(5), result.recordedAt)
         assertEquals("メモ", result.memo)
     }
 
@@ -48,8 +52,8 @@ class MedicationLogMapperTest {
             id = 1L,
             medicationId = 10L,
             status = MedicationLogStatus.SKIPPED,
-            scheduledAt = LocalDateTime.of(2025, 3, 15, 12, 0),
-            recordedAt = LocalDateTime.of(2025, 3, 15, 12, 30),
+            scheduledAt = TestDataFixtures.NOW.withHour(12).withMinute(0),
+            recordedAt = TestDataFixtures.NOW.withHour(12).withMinute(30),
             memo = "飲めなかった"
         )
 
@@ -58,8 +62,8 @@ class MedicationLogMapperTest {
         assertEquals(1L, result.id)
         assertEquals(10L, result.medicationId)
         assertEquals("SKIPPED", result.status)
-        assertEquals("2025-03-15T12:00:00", result.scheduledAt)
-        assertEquals("2025-03-15T12:30:00", result.recordedAt)
+        assertEquals(TestDataFixtures.NOW.withHour(12).withMinute(0).format(fmt), result.scheduledAt)
+        assertEquals(TestDataFixtures.NOW.withHour(12).withMinute(30).format(fmt), result.recordedAt)
         assertEquals("飲めなかった", result.memo)
     }
 
@@ -69,8 +73,8 @@ class MedicationLogMapperTest {
             id = 1L,
             medicationId = 10L,
             status = "POSTPONED",
-            scheduledAt = "2025-03-15T18:00:00",
-            recordedAt = "2025-03-15T18:00:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(18).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(18).withMinute(0).format(fmt),
             memo = ""
         )
 
@@ -90,11 +94,13 @@ class MedicationLogMapperTest {
         val entities = listOf(
             MedicationLogEntity(
                 id = 1L, medicationId = 10L, status = "TAKEN",
-                scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:05:00"
+                scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+                recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(5).format(fmt)
             ),
             MedicationLogEntity(
                 id = 2L, medicationId = 10L, status = "SKIPPED",
-                scheduledAt = "2025-03-15T12:00:00", recordedAt = "2025-03-15T12:00:00"
+                scheduledAt = TestDataFixtures.NOW.withHour(12).withMinute(0).format(fmt),
+                recordedAt = TestDataFixtures.NOW.withHour(12).withMinute(0).format(fmt)
             )
         )
 
@@ -109,7 +115,8 @@ class MedicationLogMapperTest {
     fun `toDomain maps TAKEN status`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00"
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
         )
 
         assertEquals(MedicationLogStatus.TAKEN, mapper.toDomain(entity).status)
@@ -119,7 +126,8 @@ class MedicationLogMapperTest {
     fun `toDomain maps SKIPPED status`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "SKIPPED",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00"
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
         )
 
         assertEquals(MedicationLogStatus.SKIPPED, mapper.toDomain(entity).status)
@@ -129,7 +137,8 @@ class MedicationLogMapperTest {
     fun `toDomain maps POSTPONED status`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "POSTPONED",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00"
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
         )
 
         assertEquals(MedicationLogStatus.POSTPONED, mapper.toDomain(entity).status)
@@ -139,7 +148,8 @@ class MedicationLogMapperTest {
     fun `toDomain throws IllegalArgumentException for invalid status`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "INVALID_STATUS",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00"
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
         )
 
         val exception = assertThrows(IllegalArgumentException::class.java) {
@@ -154,7 +164,8 @@ class MedicationLogMapperTest {
     fun `toDomain with empty memo`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
             memo = ""
         )
 
@@ -165,7 +176,8 @@ class MedicationLogMapperTest {
     fun `toDomain maps null timing to null`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
             timing = null
         )
 
@@ -176,7 +188,8 @@ class MedicationLogMapperTest {
     fun `toDomain maps MORNING timing`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
             timing = "MORNING"
         )
 
@@ -189,8 +202,8 @@ class MedicationLogMapperTest {
             id = 1L,
             medicationId = 1L,
             status = MedicationLogStatus.TAKEN,
-            scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0),
-            recordedAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0),
             timing = MedicationTiming.EVENING
         )
 
@@ -203,8 +216,8 @@ class MedicationLogMapperTest {
             id = 1L,
             medicationId = 1L,
             status = MedicationLogStatus.TAKEN,
-            scheduledAt = LocalDateTime.of(2025, 3, 15, 8, 0),
-            recordedAt = LocalDateTime.of(2025, 3, 15, 8, 0),
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0),
             timing = null
         )
 
@@ -215,7 +228,8 @@ class MedicationLogMapperTest {
     fun `roundtrip preserves timing`() {
         val original = MedicationLogEntity(
             id = 1L, medicationId = 10L, status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:05:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(5).format(fmt),
             timing = "NOON"
         )
 
@@ -232,8 +246,8 @@ class MedicationLogMapperTest {
             id = 1L,
             medicationId = 10L,
             status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00",
-            recordedAt = "2025-03-15T08:05:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(5).format(fmt),
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -246,7 +260,8 @@ class MedicationLogMapperTest {
     fun `toDomain falls back to null for invalid timing`() {
         val entity = MedicationLogEntity(
             id = 1L, medicationId = 1L, status = "TAKEN",
-            scheduledAt = "2025-03-15T08:00:00", recordedAt = "2025-03-15T08:00:00",
+            scheduledAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            recordedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
             timing = "INVALID_TIMING"
         )
 

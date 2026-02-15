@@ -2,14 +2,17 @@ package com.carenote.app.data.mapper
 
 import com.carenote.app.data.local.entity.NoteCommentEntity
 import com.carenote.app.domain.model.NoteComment
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class NoteCommentMapperTest {
 
     private lateinit var mapper: NoteCommentMapper
+
+    private val fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @Before
     fun setUp() {
@@ -24,8 +27,8 @@ class NoteCommentMapperTest {
             noteId = 10L,
             content = "テストコメント",
             createdBy = "user123",
-            createdAt = "2025-03-15T08:00:00",
-            updatedAt = "2025-03-15T08:05:00"
+            createdAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            updatedAt = TestDataFixtures.NOW.withHour(8).withMinute(5).format(fmt)
         )
 
         val result = mapper.toDomain(entity)
@@ -35,8 +38,8 @@ class NoteCommentMapperTest {
         assertEquals(10L, result.noteId)
         assertEquals("テストコメント", result.content)
         assertEquals("user123", result.createdBy)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 8, 0), result.createdAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 8, 5), result.updatedAt)
+        assertEquals(TestDataFixtures.NOW.withHour(8).withMinute(0), result.createdAt)
+        assertEquals(TestDataFixtures.NOW.withHour(8).withMinute(5), result.updatedAt)
     }
 
     @Test
@@ -47,8 +50,8 @@ class NoteCommentMapperTest {
             noteId = 10L,
             content = "コメント内容",
             createdBy = "user456",
-            createdAt = LocalDateTime.of(2025, 3, 15, 12, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 12, 30)
+            createdAt = TestDataFixtures.NOW.withHour(12).withMinute(0),
+            updatedAt = TestDataFixtures.NOW.withHour(12).withMinute(30)
         )
 
         val result = mapper.toEntity(domain)
@@ -58,8 +61,8 @@ class NoteCommentMapperTest {
         assertEquals(10L, result.noteId)
         assertEquals("コメント内容", result.content)
         assertEquals("user456", result.createdBy)
-        assertEquals("2025-03-15T12:00:00", result.createdAt)
-        assertEquals("2025-03-15T12:30:00", result.updatedAt)
+        assertEquals(TestDataFixtures.NOW.withHour(12).withMinute(0).format(fmt), result.createdAt)
+        assertEquals(TestDataFixtures.NOW.withHour(12).withMinute(30).format(fmt), result.updatedAt)
     }
 
     @Test
@@ -70,8 +73,8 @@ class NoteCommentMapperTest {
             noteId = 10L,
             content = "往復テスト",
             createdBy = "user789",
-            createdAt = "2025-03-15T18:00:00",
-            updatedAt = "2025-03-15T18:00:00"
+            createdAt = TestDataFixtures.NOW.withHour(18).withMinute(0).format(fmt),
+            updatedAt = TestDataFixtures.NOW.withHour(18).withMinute(0).format(fmt)
         )
 
         val domain = mapper.toDomain(original)
@@ -91,11 +94,13 @@ class NoteCommentMapperTest {
         val entities = listOf(
             NoteCommentEntity(
                 id = 1L, noteId = 10L, content = "コメント1",
-                createdAt = "2025-03-15T08:00:00", updatedAt = "2025-03-15T08:00:00"
+                createdAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+                updatedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
             ),
             NoteCommentEntity(
                 id = 2L, noteId = 10L, content = "コメント2",
-                createdAt = "2025-03-15T09:00:00", updatedAt = "2025-03-15T09:00:00"
+                createdAt = TestDataFixtures.NOW.withHour(9).withMinute(0).format(fmt),
+                updatedAt = TestDataFixtures.NOW.withHour(9).withMinute(0).format(fmt)
             )
         )
 
@@ -113,8 +118,8 @@ class NoteCommentMapperTest {
             careRecipientId = 42L,
             noteId = 10L,
             content = "テスト",
-            createdAt = "2025-03-15T08:00:00",
-            updatedAt = "2025-03-15T08:05:00"
+            createdAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            updatedAt = TestDataFixtures.NOW.withHour(8).withMinute(5).format(fmt)
         )
         val domain = mapper.toDomain(entity)
         assertEquals(42L, domain.careRecipientId)
@@ -126,7 +131,8 @@ class NoteCommentMapperTest {
     fun `toDomain with empty content`() {
         val entity = NoteCommentEntity(
             id = 1L, noteId = 10L, content = "",
-            createdAt = "2025-03-15T08:00:00", updatedAt = "2025-03-15T08:00:00"
+            createdAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            updatedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
         )
 
         assertEquals("", mapper.toDomain(entity).content)
@@ -136,7 +142,8 @@ class NoteCommentMapperTest {
     fun `toDomain with empty createdBy`() {
         val entity = NoteCommentEntity(
             id = 1L, noteId = 10L, content = "テスト", createdBy = "",
-            createdAt = "2025-03-15T08:00:00", updatedAt = "2025-03-15T08:00:00"
+            createdAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt),
+            updatedAt = TestDataFixtures.NOW.withHour(8).withMinute(0).format(fmt)
         )
 
         assertEquals("", mapper.toDomain(entity).createdBy)

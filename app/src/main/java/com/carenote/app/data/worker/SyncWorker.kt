@@ -219,6 +219,11 @@ class SyncWorker @AssistedInject constructor(
                 Timber.d("SyncWorker: Unknown error, will retry")
                 handleRetryOrFailure()
             }
+
+            is DomainError.SecurityError -> {
+                Timber.w("SyncWorker: Security error, failing")
+                Result.failure()
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.util.Clock
+import com.carenote.app.domain.validator.RecurrenceValidator
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.ui.common.UiText
@@ -181,7 +182,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
             current.description, AppConfig.Calendar.DESCRIPTION_MAX_LENGTH
         )
         val recurrenceIntervalError = if (current.recurrenceFrequency != RecurrenceFrequency.NONE) {
-            if (current.recurrenceInterval < 1 || current.recurrenceInterval > AppConfig.Task.MAX_RECURRENCE_INTERVAL) {
+            if (RecurrenceValidator.validateInterval(current.recurrenceInterval, AppConfig.Task.MAX_RECURRENCE_INTERVAL) != null) {
                 UiText.Resource(R.string.tasks_recurrence_interval_error)
             } else null
         } else null

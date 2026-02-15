@@ -3,9 +3,10 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.entity.NoteCommentEntity
 import com.carenote.app.data.mapper.NoteCommentMapper
-import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.NoteComment
+import com.carenote.app.testing.assertDatabaseError
+import com.carenote.app.testing.assertFailure
+import com.carenote.app.testing.assertSuccess
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.repository.AuthRepository
 import app.cash.turbine.test
@@ -110,8 +111,8 @@ class NoteCommentRepositoryImplTest {
         )
         val result = repository.insertComment(comment)
 
-        assertTrue(result is Result.Success)
-        assertEquals(1L, (result as Result.Success).value)
+        val value = result.assertSuccess()
+        assertEquals(1L, value)
     }
 
     @Test
@@ -145,8 +146,7 @@ class NoteCommentRepositoryImplTest {
         )
         val result = repository.insertComment(comment)
 
-        assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is DomainError.DatabaseError)
+        result.assertDatabaseError()
     }
 
     @Test
@@ -162,7 +162,7 @@ class NoteCommentRepositoryImplTest {
         )
         val result = repository.updateComment(comment)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
     }
 
     @Test
@@ -178,7 +178,7 @@ class NoteCommentRepositoryImplTest {
         )
         val result = repository.updateComment(comment)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test
@@ -187,7 +187,7 @@ class NoteCommentRepositoryImplTest {
 
         val result = repository.deleteComment(1L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteComment(1L) }
     }
 
@@ -197,7 +197,7 @@ class NoteCommentRepositoryImplTest {
 
         val result = repository.deleteComment(1L)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test
@@ -206,7 +206,7 @@ class NoteCommentRepositoryImplTest {
 
         val result = repository.deleteCommentsForNote(10L)
 
-        assertTrue(result is Result.Success)
+        result.assertSuccess()
         coVerify { dao.deleteCommentsForNote(10L) }
     }
 
@@ -216,7 +216,7 @@ class NoteCommentRepositoryImplTest {
 
         val result = repository.deleteCommentsForNote(10L)
 
-        assertTrue(result is Result.Failure)
+        result.assertFailure()
     }
 
     @Test

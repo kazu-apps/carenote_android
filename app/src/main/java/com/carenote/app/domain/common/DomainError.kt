@@ -61,4 +61,12 @@ sealed class DomainError {
         override val message: String,
         override val cause: Throwable? = null
     ) : DomainError()
+
+    /**
+     * セキュリティポリシー違反エラー
+     * Root 検出時の機密操作ブロック等に使用
+     */
+    data class SecurityError(
+        override val message: String
+    ) : DomainError()
 }

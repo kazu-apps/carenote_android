@@ -11,6 +11,7 @@ import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
+import com.carenote.app.data.local.dao.PurchaseDao
 import com.carenote.app.data.local.dao.CareRecipientDao
 import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.SyncMappingDao
@@ -23,6 +24,7 @@ import com.carenote.app.data.local.entity.MedicationEntity
 import com.carenote.app.data.local.entity.MedicationLogEntity
 import com.carenote.app.data.local.entity.NoteCommentEntity
 import com.carenote.app.data.local.entity.NoteEntity
+import com.carenote.app.data.local.entity.PurchaseEntity
 import com.carenote.app.data.local.entity.PhotoEntity
 import com.carenote.app.data.local.entity.SyncMappingEntity
 import com.carenote.app.data.local.entity.TaskEntity
@@ -39,9 +41,10 @@ import com.carenote.app.data.local.entity.TaskEntity
         CareRecipientEntity::class,
         PhotoEntity::class,
         EmergencyContactEntity::class,
-        NoteCommentEntity::class
+        NoteCommentEntity::class,
+        PurchaseEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)
@@ -58,6 +61,7 @@ abstract class CareNoteDatabase : RoomDatabase() {
     abstract fun photoDao(): PhotoDao
     abstract fun emergencyContactDao(): EmergencyContactDao
     abstract fun noteCommentDao(): NoteCommentDao
+    abstract fun purchaseDao(): PurchaseDao
 
     companion object {
         const val DATABASE_NAME = "carenote_database"

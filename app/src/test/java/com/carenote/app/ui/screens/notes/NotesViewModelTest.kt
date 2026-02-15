@@ -2,64 +2,41 @@ package com.carenote.app.ui.screens.notes
 
 import app.cash.turbine.test
 import com.carenote.app.R
-import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeNoteRepository
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aNote
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotesViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
+
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var viewModel: NotesViewModel
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         noteRepository = FakeNoteRepository()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): NotesViewModel {
         return NotesViewModel(noteRepository, analyticsRepository)
     }
-
-    private fun createNote(
-        id: Long = 1L,
-        title: String = "テストメモ",
-        content: String = "テスト内容",
-        tag: NoteTag = NoteTag.OTHER,
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
-    ) = Note(
-        id = id,
-        title = title,
-        content = content,
-        tag = tag,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
 
     @Test
     fun `initial search query is empty`() {
@@ -106,9 +83,9 @@ class NotesViewModelTest {
     @Test
     fun `tag filter shows only matching notes`() = runTest {
         val notes = listOf(
-            createNote(id = 1L, title = "体調メモ", tag = NoteTag.CONDITION),
-            createNote(id = 2L, title = "食事メモ", tag = NoteTag.MEAL),
-            createNote(id = 3L, title = "申し送り", tag = NoteTag.REPORT)
+            aNote(id = 1L, title = "体調メモ", tag = NoteTag.CONDITION),
+            aNote(id = 2L, title = "食事メモ", tag = NoteTag.MEAL),
+            aNote(id = 3L, title = "申し送り", tag = NoteTag.REPORT)
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
@@ -121,8 +98,8 @@ class NotesViewModelTest {
     @Test
     fun `deleteNote removes note from list`() = runTest {
         val notes = listOf(
-            createNote(id = 1L, title = "メモA"),
-            createNote(id = 2L, title = "メモB")
+            aNote(id = 1L, title = "メモA"),
+            aNote(id = 2L, title = "メモB")
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
@@ -136,7 +113,7 @@ class NotesViewModelTest {
 
     @Test
     fun `snackbar emitted on delete success`() = runTest {
-        val notes = listOf(createNote(id = 1L))
+        val notes = listOf(aNote(id = 1L))
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
 
@@ -150,7 +127,7 @@ class NotesViewModelTest {
 
     @Test
     fun `snackbar emitted on delete failure`() = runTest {
-        val notes = listOf(createNote(id = 1L))
+        val notes = listOf(aNote(id = 1L))
         noteRepository.setNotes(notes)
         noteRepository.shouldFail = true
         viewModel = createViewModel()
@@ -169,7 +146,7 @@ class NotesViewModelTest {
 
         assertEquals(0, noteRepository.currentNotes().size)
 
-        noteRepository.setNotes(listOf(createNote(id = 1L)))
+        noteRepository.setNotes(listOf(aNote(id = 1L)))
 
         assertEquals(1, noteRepository.currentNotes().size)
     }
@@ -177,8 +154,8 @@ class NotesViewModelTest {
     @Test
     fun `search filters notes by title`() = runTest {
         val notes = listOf(
-            createNote(id = 1L, title = "体調メモ", content = "良好"),
-            createNote(id = 2L, title = "食事メモ", content = "朝食")
+            aNote(id = 1L, title = "体調メモ", content = "良好"),
+            aNote(id = 2L, title = "食事メモ", content = "朝食")
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
@@ -192,8 +169,8 @@ class NotesViewModelTest {
     @Test
     fun `search filters notes by content`() = runTest {
         val notes = listOf(
-            createNote(id = 1L, title = "メモA", content = "熱が37度"),
-            createNote(id = 2L, title = "メモB", content = "昼食は完食")
+            aNote(id = 1L, title = "メモA", content = "熱が37度"),
+            aNote(id = 2L, title = "メモB", content = "昼食は完食")
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()
@@ -207,9 +184,9 @@ class NotesViewModelTest {
     @Test
     fun `combined search and tag filter`() = runTest {
         val notes = listOf(
-            createNote(id = 1L, title = "体調A", tag = NoteTag.CONDITION),
-            createNote(id = 2L, title = "体調B", tag = NoteTag.MEAL),
-            createNote(id = 3L, title = "食事C", tag = NoteTag.CONDITION)
+            aNote(id = 1L, title = "体調A", tag = NoteTag.CONDITION),
+            aNote(id = 2L, title = "体調B", tag = NoteTag.MEAL),
+            aNote(id = 3L, title = "食事C", tag = NoteTag.CONDITION)
         )
         noteRepository.setNotes(notes)
         viewModel = createViewModel()

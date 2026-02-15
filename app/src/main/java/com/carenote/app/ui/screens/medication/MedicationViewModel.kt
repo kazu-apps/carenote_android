@@ -16,6 +16,7 @@ import com.carenote.app.domain.repository.MedicationLogPdfExporterInterface
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.util.Clock
+import com.carenote.app.ui.util.RootDetectionChecker
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
@@ -49,7 +50,8 @@ class MedicationViewModel @Inject constructor(
     private val analyticsRepository: AnalyticsRepository,
     private val clock: Clock,
     private val csvExporter: MedicationLogCsvExporterInterface,
-    private val pdfExporter: MedicationLogPdfExporterInterface
+    private val pdfExporter: MedicationLogPdfExporterInterface,
+    private val rootDetector: RootDetectionChecker
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -171,6 +173,12 @@ class MedicationViewModel @Inject constructor(
     val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
 
     fun exportCsv() {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {
@@ -193,6 +201,12 @@ class MedicationViewModel @Inject constructor(
     }
 
     fun exportPdf() {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {

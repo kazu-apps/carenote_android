@@ -6,28 +6,28 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.User
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeBillingRepository
 import com.carenote.app.fakes.FakeCareRecipientRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeNoteCsvExporter
 import com.carenote.app.fakes.FakeNotePdfExporter
 import com.carenote.app.fakes.FakeNoteRepository
+import com.carenote.app.fakes.FakePremiumFeatureGuard
+import com.carenote.app.fakes.FakeRootDetector
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.fakes.FakeTaskCsvExporter
 import com.carenote.app.fakes.FakeTaskPdfExporter
 import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 
@@ -41,7 +41,9 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelUpdateTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
@@ -53,11 +55,13 @@ class SettingsViewModelUpdateTest {
     private lateinit var taskPdfExporter: FakeTaskPdfExporter
     private lateinit var noteCsvExporter: FakeNoteCsvExporter
     private lateinit var notePdfExporter: FakeNotePdfExporter
+    private lateinit var rootDetector: FakeRootDetector
+    private lateinit var billingRepository: FakeBillingRepository
+    private lateinit var premiumFeatureGuard: FakePremiumFeatureGuard
     private lateinit var viewModel: SettingsViewModel
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         settingsRepository = FakeSettingsRepository()
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
@@ -69,11 +73,9 @@ class SettingsViewModelUpdateTest {
         taskPdfExporter = FakeTaskPdfExporter()
         noteCsvExporter = FakeNoteCsvExporter()
         notePdfExporter = FakeNotePdfExporter()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
+        rootDetector = FakeRootDetector()
+        billingRepository = FakeBillingRepository()
+        premiumFeatureGuard = FakePremiumFeatureGuard()
     }
 
     private fun createViewModel(): SettingsViewModel {
@@ -82,14 +84,16 @@ class SettingsViewModelUpdateTest {
             analyticsRepository, careRecipientRepository,
             taskRepository, noteRepository,
             taskCsvExporter, taskPdfExporter,
-            noteCsvExporter, notePdfExporter
+            noteCsvExporter, notePdfExporter,
+            rootDetector,
+            billingRepository, premiumFeatureGuard
         )
     }
 
     // --- 汎用パターン: 成功時 Snackbar ---
 
     @Test
-    fun `toggleNotifications success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `toggleNotifications success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -108,7 +112,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `toggleNotifications failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `toggleNotifications failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -128,7 +132,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `updateQuietHours success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `updateQuietHours success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -147,7 +151,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `updateQuietHours failure shows validation error snackbar`() = runTest(testDispatcher) {
+    fun `updateQuietHours failure shows validation error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -167,7 +171,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `updateTemperatureThreshold success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `updateTemperatureThreshold success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -186,7 +190,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `updateThemeMode success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `updateThemeMode success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -205,7 +209,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `updateMedicationTime success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `updateMedicationTime success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -225,7 +229,7 @@ class SettingsViewModelUpdateTest {
 
     @Test
     fun `updateBloodPressureThresholds success shows saved snackbar`() =
-        runTest(testDispatcher) {
+        runTest(mainCoroutineRule.testDispatcher) {
             viewModel = createViewModel()
             advanceUntilIdle()
 
@@ -244,7 +248,7 @@ class SettingsViewModelUpdateTest {
         }
 
     @Test
-    fun `updatePulseThresholds success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `updatePulseThresholds success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -265,7 +269,7 @@ class SettingsViewModelUpdateTest {
     // --- toggleDynamicColor パターン ---
 
     @Test
-    fun `toggleDynamicColor success shows saved snackbar`() = runTest(testDispatcher) {
+    fun `toggleDynamicColor success shows saved snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -284,7 +288,7 @@ class SettingsViewModelUpdateTest {
     }
 
     @Test
-    fun `toggleDynamicColor failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `toggleDynamicColor failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -307,7 +311,7 @@ class SettingsViewModelUpdateTest {
 
     @Test
     fun `toggleSyncEnabled success schedules sync when enabled and logged in`() =
-        runTest(testDispatcher) {
+        runTest(mainCoroutineRule.testDispatcher) {
             authRepository.setCurrentUser(
                 User(
                     uid = "test-uid",
@@ -339,7 +343,7 @@ class SettingsViewModelUpdateTest {
         }
 
     @Test
-    fun `toggleSyncEnabled success cancels sync when disabled`() = runTest(testDispatcher) {
+    fun `toggleSyncEnabled success cancels sync when disabled`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -363,7 +367,7 @@ class SettingsViewModelUpdateTest {
     // --- resetToDefaults: カスタムメッセージパターン ---
 
     @Test
-    fun `resetToDefaults success shows reset done snackbar`() = runTest(testDispatcher) {
+    fun `resetToDefaults success shows reset done snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 

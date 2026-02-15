@@ -114,6 +114,9 @@ object AppConfig {
 
         /** Deep Link URI スキーム */
         const val DEEP_LINK_SCHEME = "carenote"
+
+        /** 無料ユーザーのタスクリマインダー1日あたりの上限回数 */
+        const val TASK_REMINDER_FREE_DAILY_LIMIT = 3
     }
 
     /**
@@ -476,6 +479,9 @@ object AppConfig {
 
         /** PBKDF2 ソルト長（バイト） */
         const val PBKDF2_SALT_LENGTH = 32
+
+        /** Root 検出時の短縮セッションタイムアウト（ミリ秒） */
+        const val ROOT_SESSION_TIMEOUT_MS = 60_000L
     }
 
     /**
@@ -641,6 +647,28 @@ object AppConfig {
         const val EVENT_HOME_SEE_ALL_CLICKED = "home_see_all_clicked"
         const val EVENT_HOME_SECTION_CLICKED = "home_section_clicked"
         const val PARAM_SECTION = "section"
+    }
+
+    /**
+     * ケア対象者関連の設定値
+     */
+    object CareRecipient {
+        const val NAME_MAX_LENGTH = 100
+        const val NICKNAME_MAX_LENGTH = 50
+        const val CARE_LEVEL_MAX_LENGTH = 50
+        const val MEDICAL_HISTORY_MAX_LENGTH = 1000
+        const val ALLERGIES_MAX_LENGTH = 500
+        const val MEMO_MAX_LENGTH = 500
+    }
+
+    /**
+     * Google Play Billing 関連の設定値
+     */
+    object Billing {
+        const val MONTHLY_PRODUCT_ID = "carenote_premium_monthly"
+        const val YEARLY_PRODUCT_ID = "carenote_premium_yearly"
+        const val CONNECTION_RETRY_DELAY_MS = 3_000L
+        const val MAX_CONNECTION_RETRIES = 3
     }
 
     /**

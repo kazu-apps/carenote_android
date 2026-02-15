@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.domain.repository.PremiumFeatureGuard
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.ui.util.NotificationHelper
@@ -40,7 +41,8 @@ class TaskReminderWorker @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
     private val notificationHelper: NotificationHelper,
     private val taskRepository: TaskRepository,
-    private val reminderScheduler: TaskReminderSchedulerInterface
+    private val reminderScheduler: TaskReminderSchedulerInterface,
+    private val premiumFeatureGuard: PremiumFeatureGuard
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -87,8 +89,15 @@ class TaskReminderWorker @AssistedInject constructor(
             return Result.success()
         }
 
+        // プレミアム通知制限チェック
+        if (!premiumFeatureGuard.canSendTaskReminder()) {
+            Timber.d("TaskReminderWorker: Daily task reminder limit reached, skipping")
+            return Result.success()
+        }
+
         // 通知表示
         notificationHelper.showTaskReminder(taskId, taskTitle)
+        premiumFeatureGuard.recordTaskReminderSent()
 
         // フォローアップスケジュール
         reminderScheduler.scheduleFollowUp(

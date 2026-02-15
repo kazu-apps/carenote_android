@@ -3,10 +3,12 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.NoteEntity
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class NoteMapperTest {
 
@@ -25,8 +27,8 @@ class NoteMapperTest {
             content = "テスト内容",
             tag = "CONDITION",
             createdBy = "user1",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T11:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         )
 
         val result = mapper.toDomain(entity)
@@ -36,8 +38,8 @@ class NoteMapperTest {
         assertEquals("テスト内容", result.content)
         assertEquals(NoteTag.CONDITION, result.tag)
         assertEquals("user1", result.createdBy)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 11, 0), result.updatedAt)
+        assertEquals(TestDataFixtures.NOW, result.createdAt)
+        assertEquals(TestDataFixtures.NOW.plusHours(1), result.updatedAt)
     }
 
     @Test
@@ -78,8 +80,8 @@ class NoteMapperTest {
             content = "今日の状態は良好",
             tag = NoteTag.REPORT,
             createdBy = "user2",
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 12, 0)
+            createdAt = TestDataFixtures.NOW,
+            updatedAt = TestDataFixtures.NOW.plusHours(2)
         )
 
         val result = mapper.toEntity(domain)
@@ -89,8 +91,8 @@ class NoteMapperTest {
         assertEquals("今日の状態は良好", result.content)
         assertEquals("REPORT", result.tag)
         assertEquals("user2", result.createdBy)
-        assertEquals("2025-03-15T10:00:00", result.createdAt)
-        assertEquals("2025-03-15T12:00:00", result.updatedAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.createdAt)
+        assertEquals(TestDataFixtures.NOW.plusHours(2).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), result.updatedAt)
     }
 
     @Test
@@ -113,8 +115,8 @@ class NoteMapperTest {
             content = "熱が37.2度",
             tag = "CONDITION",
             createdBy = "user1",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val domain = mapper.toDomain(original)
@@ -174,8 +176,8 @@ class NoteMapperTest {
             content = "テスト内容",
             tag = "OTHER",
             createdBy = "",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00",
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING,
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -190,8 +192,8 @@ class NoteMapperTest {
         content: String = "テスト内容",
         tag: String = "OTHER",
         createdBy: String = "",
-        createdAt: String = "2025-03-15T10:00:00",
-        updatedAt: String = "2025-03-15T10:00:00"
+        createdAt: String = TestDataFixtures.NOW_STRING,
+        updatedAt: String = TestDataFixtures.NOW_STRING
     ): NoteEntity = NoteEntity(
         id = id,
         title = title,
@@ -208,8 +210,8 @@ class NoteMapperTest {
         content: String = "テスト内容",
         tag: NoteTag = NoteTag.OTHER,
         createdBy: String = "",
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
+        createdAt: LocalDateTime = TestDataFixtures.NOW,
+        updatedAt: LocalDateTime = TestDataFixtures.NOW
     ): Note = Note(
         id = id,
         title = title,

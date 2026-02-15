@@ -8,11 +8,14 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.fakes.FakeAuthRepository
+import com.carenote.app.fakes.FakeBillingRepository
 import com.carenote.app.fakes.FakeCareRecipientRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeNoteCsvExporter
 import com.carenote.app.fakes.FakeNotePdfExporter
 import com.carenote.app.fakes.FakeNoteRepository
+import com.carenote.app.fakes.FakePremiumFeatureGuard
+import com.carenote.app.fakes.FakeRootDetector
 import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.fakes.FakeTaskCsvExporter
@@ -27,25 +30,24 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
@@ -57,11 +59,13 @@ class SettingsViewModelTest {
     private lateinit var taskPdfExporter: FakeTaskPdfExporter
     private lateinit var noteCsvExporter: FakeNoteCsvExporter
     private lateinit var notePdfExporter: FakeNotePdfExporter
+    private lateinit var rootDetector: FakeRootDetector
+    private lateinit var billingRepository: FakeBillingRepository
+    private lateinit var premiumFeatureGuard: FakePremiumFeatureGuard
     private lateinit var viewModel: SettingsViewModel
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         settingsRepository = FakeSettingsRepository()
         authRepository = FakeAuthRepository()
         syncWorkScheduler = FakeSyncWorkScheduler()
@@ -73,11 +77,9 @@ class SettingsViewModelTest {
         taskPdfExporter = FakeTaskPdfExporter()
         noteCsvExporter = FakeNoteCsvExporter()
         notePdfExporter = FakeNotePdfExporter()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
+        rootDetector = FakeRootDetector()
+        billingRepository = FakeBillingRepository()
+        premiumFeatureGuard = FakePremiumFeatureGuard()
     }
 
     private fun createViewModel(): SettingsViewModel {
@@ -86,12 +88,14 @@ class SettingsViewModelTest {
             analyticsRepository, careRecipientRepository,
             taskRepository, noteRepository,
             taskCsvExporter, taskPdfExporter,
-            noteCsvExporter, notePdfExporter
+            noteCsvExporter, notePdfExporter,
+            rootDetector,
+            billingRepository, premiumFeatureGuard
         )
     }
 
     @Test
-    fun `settings flow emits default values initially`() = runTest(testDispatcher) {
+    fun `settings flow emits default values initially`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.settings.test {
@@ -105,7 +109,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleNotifications updates state to false`() = runTest(testDispatcher) {
+    fun `toggleNotifications updates state to false`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -120,7 +124,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleNotifications updates state to true`() = runTest(testDispatcher) {
+    fun `toggleNotifications updates state to true`() = runTest(mainCoroutineRule.testDispatcher) {
         settingsRepository.setSettings(UserSettings(notificationsEnabled = false))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -136,7 +140,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateQuietHours success updates state`() = runTest(testDispatcher) {
+    fun `updateQuietHours success updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -152,7 +156,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateTemperatureThreshold success`() = runTest(testDispatcher) {
+    fun `updateTemperatureThreshold success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -167,7 +171,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateTemperatureThreshold with invalid value shows error`() = runTest(testDispatcher) {
+    fun `updateTemperatureThreshold with invalid value shows error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -183,7 +187,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateBloodPressureThresholds success`() = runTest(testDispatcher) {
+    fun `updateBloodPressureThresholds success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -199,7 +203,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updatePulseThresholds success`() = runTest(testDispatcher) {
+    fun `updatePulseThresholds success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -215,7 +219,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateMedicationTime MORNING success`() = runTest(testDispatcher) {
+    fun `updateMedicationTime MORNING success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -231,7 +235,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateMedicationTime NOON success`() = runTest(testDispatcher) {
+    fun `updateMedicationTime NOON success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -247,7 +251,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateMedicationTime EVENING success`() = runTest(testDispatcher) {
+    fun `updateMedicationTime EVENING success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -263,7 +267,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateThemeMode DARK success`() = runTest(testDispatcher) {
+    fun `updateThemeMode DARK success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -278,7 +282,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateThemeMode LIGHT success`() = runTest(testDispatcher) {
+    fun `updateThemeMode LIGHT success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -293,7 +297,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateThemeMode SYSTEM success`() = runTest(testDispatcher) {
+    fun `updateThemeMode SYSTEM success`() = runTest(mainCoroutineRule.testDispatcher) {
         settingsRepository.setSettings(UserSettings(themeMode = ThemeMode.DARK))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -309,7 +313,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateThemeMode failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `updateThemeMode failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -326,7 +330,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateAppLanguage JAPANESE success`() = runTest(testDispatcher) {
+    fun `updateAppLanguage JAPANESE success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -341,7 +345,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateAppLanguage ENGLISH success`() = runTest(testDispatcher) {
+    fun `updateAppLanguage ENGLISH success`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -356,7 +360,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateAppLanguage failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `updateAppLanguage failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -373,7 +377,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `resetToDefaults restores default values`() = runTest(testDispatcher) {
+    fun `resetToDefaults restores default values`() = runTest(mainCoroutineRule.testDispatcher) {
         settingsRepository.setSettings(
             UserSettings(
                 themeMode = ThemeMode.DARK,
@@ -401,7 +405,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `repository failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `repository failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -418,7 +422,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateAppLanguage calls LocaleManager applyLanguage on success`() = runTest(testDispatcher) {
+    fun `updateAppLanguage calls LocaleManager applyLanguage on success`() = runTest(mainCoroutineRule.testDispatcher) {
         mockkObject(LocaleManager)
         every { LocaleManager.applyLanguage(any()) } returns Unit
 
@@ -433,7 +437,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateAppLanguage does not call LocaleManager on failure`() = runTest(testDispatcher) {
+    fun `updateAppLanguage does not call LocaleManager on failure`() = runTest(mainCoroutineRule.testDispatcher) {
         mockkObject(LocaleManager)
         every { LocaleManager.applyLanguage(any()) } returns Unit
 
@@ -449,7 +453,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleDynamicColor true updates state`() = runTest(testDispatcher) {
+    fun `toggleDynamicColor true updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -464,7 +468,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleDynamicColor false updates state`() = runTest(testDispatcher) {
+    fun `toggleDynamicColor false updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         settingsRepository.setSettings(UserSettings(useDynamicColor = true))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -480,7 +484,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleDynamicColor failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `toggleDynamicColor failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -497,7 +501,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleBiometricEnabled true updates state`() = runTest(testDispatcher) {
+    fun `toggleBiometricEnabled true updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -512,7 +516,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleBiometricEnabled false updates state`() = runTest(testDispatcher) {
+    fun `toggleBiometricEnabled false updates state`() = runTest(mainCoroutineRule.testDispatcher) {
         settingsRepository.setSettings(UserSettings(biometricEnabled = true))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -528,7 +532,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `toggleBiometricEnabled failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `toggleBiometricEnabled failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         settingsRepository.shouldFail = true
@@ -545,7 +549,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `settings reflect pre-set values`() = runTest(testDispatcher) {
+    fun `settings reflect pre-set values`() = runTest(mainCoroutineRule.testDispatcher) {
         settingsRepository.setSettings(
             UserSettings(
                 notificationsEnabled = false,
@@ -585,7 +589,7 @@ class SettingsViewModelTest {
     // --- Account Management Tests ---
 
     @Test
-    fun `signOut success clears user and shows snackbar`() = runTest(testDispatcher) {
+    fun `signOut success clears user and shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.setCurrentUser(
             com.carenote.app.domain.model.User(
                 uid = "test-uid",
@@ -614,7 +618,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `signOut failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `signOut failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.setCurrentUser(
             com.carenote.app.domain.model.User(
                 uid = "test-uid",
@@ -639,7 +643,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `changePassword success shows snackbar`() = runTest(testDispatcher) {
+    fun `changePassword success shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -655,7 +659,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `changePassword failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `changePassword failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -677,7 +681,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `deleteAccount success clears user and shows snackbar`() = runTest(testDispatcher) {
+    fun `deleteAccount success clears user and shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.setCurrentUser(
             com.carenote.app.domain.model.User(
                 uid = "test-uid",
@@ -706,7 +710,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `deleteAccount failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `deleteAccount failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         authRepository.shouldFail = true
@@ -723,7 +727,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `sendEmailVerification success shows snackbar`() = runTest(testDispatcher) {
+    fun `sendEmailVerification success shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -739,7 +743,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `sendEmailVerification failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `sendEmailVerification failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
         authRepository.shouldFail = true
@@ -756,7 +760,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `currentUser emits user when logged in`() = runTest(testDispatcher) {
+    fun `currentUser emits user when logged in`() = runTest(mainCoroutineRule.testDispatcher) {
         val user = com.carenote.app.domain.model.User(
             uid = "test-uid",
             email = "test@example.com",
@@ -776,7 +780,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `currentUser emits null when not logged in`() = runTest(testDispatcher) {
+    fun `currentUser emits null when not logged in`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.currentUser.test {
@@ -789,7 +793,7 @@ class SettingsViewModelTest {
     // --- Task Export Tests ---
 
     @Test
-    fun `exportTasksCsv with empty list shows snackbar`() = runTest(testDispatcher) {
+    fun `exportTasksCsv with empty list shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -806,7 +810,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportTasksCsv success updates exportState`() = runTest(testDispatcher) {
+    fun `exportTasksCsv success updates exportState`() = runTest(mainCoroutineRule.testDispatcher) {
         taskRepository.insertTask(Task(id = 0, title = "Test Task"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -819,7 +823,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportTasksPdf success updates exportState`() = runTest(testDispatcher) {
+    fun `exportTasksPdf success updates exportState`() = runTest(mainCoroutineRule.testDispatcher) {
         taskRepository.insertTask(Task(id = 0, title = "Test Task"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -832,7 +836,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportTasksCsv failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `exportTasksCsv failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         taskRepository.insertTask(Task(id = 0, title = "Test Task"))
         taskCsvExporter.shouldFail = true
         viewModel = createViewModel()
@@ -851,7 +855,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportTasksCsv logs analytics event`() = runTest(testDispatcher) {
+    fun `exportTasksCsv logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
         taskRepository.insertTask(Task(id = 0, title = "Test Task"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -865,7 +869,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportTasksPdf logs analytics event`() = runTest(testDispatcher) {
+    fun `exportTasksPdf logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
         taskRepository.insertTask(Task(id = 0, title = "Test Task"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -881,7 +885,7 @@ class SettingsViewModelTest {
     // --- Note Export Tests ---
 
     @Test
-    fun `exportNotesCsv with empty list shows snackbar`() = runTest(testDispatcher) {
+    fun `exportNotesCsv with empty list shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -898,7 +902,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportNotesCsv success updates exportState`() = runTest(testDispatcher) {
+    fun `exportNotesCsv success updates exportState`() = runTest(mainCoroutineRule.testDispatcher) {
         noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -911,7 +915,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportNotesPdf success updates exportState`() = runTest(testDispatcher) {
+    fun `exportNotesPdf success updates exportState`() = runTest(mainCoroutineRule.testDispatcher) {
         noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -924,7 +928,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportNotesCsv failure shows error snackbar`() = runTest(testDispatcher) {
+    fun `exportNotesCsv failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
         noteCsvExporter.shouldFail = true
         viewModel = createViewModel()
@@ -943,7 +947,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportNotesCsv logs analytics event`() = runTest(testDispatcher) {
+    fun `exportNotesCsv logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
         noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -957,7 +961,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `exportNotesPdf logs analytics event`() = runTest(testDispatcher) {
+    fun `exportNotesPdf logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
         noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -973,7 +977,7 @@ class SettingsViewModelTest {
     // --- Export State Tests ---
 
     @Test
-    fun `resetExportState sets state to Idle`() = runTest(testDispatcher) {
+    fun `resetExportState sets state to Idle`() = runTest(mainCoroutineRule.testDispatcher) {
         taskRepository.insertTask(Task(id = 0, title = "Test Task"))
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -986,10 +990,144 @@ class SettingsViewModelTest {
         assertEquals(ExportState.Idle, viewModel.exportState.value)
     }
 
+    // --- Root Detection Export Block Tests ---
+
+    @Test
+    fun `exportTasksCsv on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        rootDetector.isRooted = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.security_root_export_blocked, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertEquals(0, taskCsvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportTasksPdf on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        rootDetector.isRooted = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksPdf()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.security_root_export_blocked, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertEquals(0, taskPdfExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportNotesCsv on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        rootDetector.isRooted = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.security_root_export_blocked, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertEquals(0, noteCsvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportNotesPdf on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        rootDetector.isRooted = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesPdf()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.security_root_export_blocked, (event as SnackbarEvent.WithResId).messageResId)
+        }
+        assertEquals(0, notePdfExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportTasksCsv on non-rooted device succeeds normally`() = runTest(mainCoroutineRule.testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        rootDetector.isRooted = false
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksCsv()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, taskCsvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportTasksPdf on non-rooted device succeeds normally`() = runTest(mainCoroutineRule.testDispatcher) {
+        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        rootDetector.isRooted = false
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportTasksPdf()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, taskPdfExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportNotesCsv on non-rooted device succeeds normally`() = runTest(mainCoroutineRule.testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        rootDetector.isRooted = false
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesCsv()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, noteCsvExporter.exportCallCount)
+    }
+
+    @Test
+    fun `exportNotesPdf on non-rooted device succeeds normally`() = runTest(mainCoroutineRule.testDispatcher) {
+        noteRepository.insertNote(Note(id = 0, title = "Test Note", content = "Content"))
+        rootDetector.isRooted = false
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportNotesPdf()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.exportState.value is ExportState.Success)
+        assertEquals(1, notePdfExporter.exportCallCount)
+    }
+
     // --- Session Timeout Tests ---
 
     @Test
-    fun `updateSessionTimeout updates settings`() = runTest(testDispatcher) {
+    fun `updateSessionTimeout updates settings`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -1004,7 +1142,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `updateSessionTimeout with invalid value shows error`() = runTest(testDispatcher) {
+    fun `updateSessionTimeout with invalid value shows error`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -1020,13 +1158,63 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `session timeout default is 5 minutes`() = runTest(testDispatcher) {
+    fun `session timeout default is 5 minutes`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.settings.test {
             advanceUntilIdle()
             val settings = expectMostRecentItem()
             assertEquals(AppConfig.Session.DEFAULT_TIMEOUT_MINUTES, settings.sessionTimeoutMinutes)
+        }
+    }
+
+    // --- Task Reminder Limit Tests ---
+
+    @Test
+    fun `taskReminderLimitText shows count for free user`() = runTest(mainCoroutineRule.testDispatcher) {
+        premiumFeatureGuard.todayCount = 1
+        viewModel = createViewModel()
+
+        viewModel.taskReminderLimitText.test {
+            advanceUntilIdle()
+            val text = expectMostRecentItem()
+            assertEquals("2/3", text)
+        }
+    }
+
+    @Test
+    fun `taskReminderLimitText is null for premium user`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.setPremiumActive()
+        viewModel = createViewModel()
+
+        viewModel.taskReminderLimitText.test {
+            advanceUntilIdle()
+            val text = expectMostRecentItem()
+            assertNull(text)
+        }
+    }
+
+    @Test
+    fun `taskReminderLimitText shows zero remaining at limit`() = runTest(mainCoroutineRule.testDispatcher) {
+        premiumFeatureGuard.todayCount = 3
+        viewModel = createViewModel()
+
+        viewModel.taskReminderLimitText.test {
+            advanceUntilIdle()
+            val text = expectMostRecentItem()
+            assertEquals("0/3", text)
+        }
+    }
+
+    @Test
+    fun `taskReminderLimitText shows full count when no reminders sent`() = runTest(mainCoroutineRule.testDispatcher) {
+        premiumFeatureGuard.todayCount = 0
+        viewModel = createViewModel()
+
+        viewModel.taskReminderLimitText.test {
+            advanceUntilIdle()
+            val text = expectMostRecentItem()
+            assertEquals("3/3", text)
         }
     }
 }

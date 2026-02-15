@@ -3,10 +3,11 @@ package com.carenote.app.data.repository
 import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.entity.PhotoEntity
 import com.carenote.app.data.mapper.PhotoMapper
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.Photo
 import com.carenote.app.domain.model.PhotoUploadStatus
 import com.carenote.app.fakes.FakeActiveCareRecipientProvider
+import com.carenote.app.testing.assertFailure
+import com.carenote.app.testing.assertSuccess
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -17,7 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDateTime
@@ -63,8 +63,8 @@ class PhotoRepositoryImplTest {
 
         val result = repository.addPhoto(photo)
 
-        assertTrue(result.isSuccess)
-        assertEquals(5L, (result as Result.Success).value)
+        val value = result.assertSuccess()
+        assertEquals(5L, value)
     }
 
     @Test
@@ -74,7 +74,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.addPhoto(photo)
 
-        assertTrue(result.isFailure)
+        result.assertFailure()
     }
 
     @Test
@@ -83,7 +83,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.deletePhoto(7)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { photoDao.deleteById(7) }
     }
 
@@ -93,7 +93,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.deletePhotosForParent("note", 10)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { photoDao.deleteByParent("note", 10) }
     }
 
@@ -107,9 +107,9 @@ class PhotoRepositoryImplTest {
 
         val result = repository.getPendingPhotos()
 
-        assertTrue(result.isSuccess)
-        assertEquals(1, (result as Result.Success).value.size)
-        assertEquals(PhotoUploadStatus.PENDING, result.value[0].uploadStatus)
+        val value = result.assertSuccess()
+        assertEquals(1, value.size)
+        assertEquals(PhotoUploadStatus.PENDING, value[0].uploadStatus)
     }
 
     @Test
@@ -118,7 +118,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.updateUploadStatus(1, PhotoUploadStatus.UPLOADED, "https://url.com")
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { photoDao.updateUploadStatus(1, "UPLOADED", "https://url.com", any()) }
     }
 
@@ -128,7 +128,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.updateUploadStatus(2, PhotoUploadStatus.FAILED)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify { photoDao.updateUploadStatus(2, "FAILED", null, any()) }
     }
 
@@ -138,7 +138,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.deletePhoto(1)
 
-        assertTrue(result.isFailure)
+        result.assertFailure()
     }
 
     @Test
@@ -147,7 +147,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.getPendingPhotos()
 
-        assertTrue(result.isFailure)
+        result.assertFailure()
     }
 
     @Test
@@ -156,7 +156,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.updatePhotosParentId(listOf(1L, 2L, 3L), 42L)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify(exactly = 3) { photoDao.updateParentId(any(), eq(42L), any()) }
         coVerify { photoDao.updateParentId(1L, 42L, any()) }
         coVerify { photoDao.updateParentId(2L, 42L, any()) }
@@ -167,7 +167,7 @@ class PhotoRepositoryImplTest {
     fun `updatePhotosParentId with empty list succeeds`() = runTest {
         val result = repository.updatePhotosParentId(emptyList(), 42L)
 
-        assertTrue(result.isSuccess)
+        result.assertSuccess()
         coVerify(exactly = 0) { photoDao.updateParentId(any(), any(), any()) }
     }
 
@@ -177,7 +177,7 @@ class PhotoRepositoryImplTest {
 
         val result = repository.updatePhotosParentId(listOf(1L), 42L)
 
-        assertTrue(result.isFailure)
+        result.assertFailure()
     }
 
     private fun createPhoto(id: Long = 0): Photo {

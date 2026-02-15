@@ -6,15 +6,12 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.ui.common.UiText
+import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.ui.util.SnackbarEvent
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,6 +19,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -32,15 +30,16 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class ForgotPasswordFormHandlerTest {
 
-    private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+    private lateinit var testScope: TestScope
     private lateinit var authRepository: FakeAuthRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var handler: ForgotPasswordFormHandler
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        testScope = TestScope(mainCoroutineRule.testDispatcher)
         authRepository = FakeAuthRepository()
         analyticsRepository = FakeAnalyticsRepository()
         handler = ForgotPasswordFormHandler(authRepository, analyticsRepository, scope = testScope)
@@ -48,12 +47,11 @@ class ForgotPasswordFormHandlerTest {
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
         authRepository.clear()
     }
 
     @Test
-    fun `initial state is empty`() = runTest(testDispatcher) {
+    fun `initial state is empty`() = runTest(mainCoroutineRule.testDispatcher) {
         val state = handler.formState.value
 
         assertEquals("", state.email)
@@ -63,7 +61,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `updateEmail updates state and clears error`() = runTest(testDispatcher) {
+    fun `updateEmail updates state and clears error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         advanceUntilIdle()
 
@@ -73,7 +71,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail with empty email sets error`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail with empty email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.sendPasswordResetEmail()
         advanceUntilIdle()
 
@@ -84,7 +82,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail with invalid email sets error`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail with invalid email sets error`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("invalid-email")
         handler.sendPasswordResetEmail()
         advanceUntilIdle()
@@ -96,7 +94,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail success sets emailSent true`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail success sets emailSent true`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         handler.sendPasswordResetEmail()
         advanceUntilIdle()
@@ -107,7 +105,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail success shows snackbar`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail success shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
 
         handler.snackbarController.events.test {
@@ -124,7 +122,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail failure shows snackbar`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail failure shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.NetworkError("Network error")
 
@@ -141,7 +139,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `sendPasswordResetEmail failure sets isLoading false`() = runTest(testDispatcher) {
+    fun `sendPasswordResetEmail failure sets isLoading false`() = runTest(mainCoroutineRule.testDispatcher) {
         authRepository.shouldFail = true
         authRepository.failureError = DomainError.UnauthorizedError("User not found")
 
@@ -155,7 +153,7 @@ class ForgotPasswordFormHandlerTest {
     }
 
     @Test
-    fun `resetState clears form`() = runTest(testDispatcher) {
+    fun `resetState clears form`() = runTest(mainCoroutineRule.testDispatcher) {
         handler.updateEmail("test@example.com")
         advanceUntilIdle()
 

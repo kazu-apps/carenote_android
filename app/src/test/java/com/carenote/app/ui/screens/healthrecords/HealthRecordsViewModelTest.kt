@@ -8,91 +8,63 @@ import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeHealthRecordRepository
+import com.carenote.app.fakes.FakeRootDetector
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aHealthRecord
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.ExportState
 import com.carenote.app.ui.viewmodel.UiState
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HealthRecordsViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var csvExporter: HealthRecordCsvExporterInterface
     private lateinit var pdfExporter: HealthRecordPdfExporterInterface
     private lateinit var analyticsRepository: FakeAnalyticsRepository
+    private lateinit var rootDetector: FakeRootDetector
     private lateinit var viewModel: HealthRecordsViewModel
     private val fakeUri = mockk<android.net.Uri>()
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeHealthRecordRepository()
         csvExporter = mockk()
         pdfExporter = mockk()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
+        rootDetector = FakeRootDetector()
     }
 
     private fun createViewModel(): HealthRecordsViewModel {
-        return HealthRecordsViewModel(repository, csvExporter, pdfExporter, analyticsRepository)
+        return HealthRecordsViewModel(repository, csvExporter, pdfExporter, analyticsRepository, rootDetector)
     }
 
-    private fun createRecord(
-        id: Long = 1L,
-        temperature: Double? = 36.5,
-        bloodPressureHigh: Int? = 120,
-        bloodPressureLow: Int? = 80,
-        pulse: Int? = 72,
-        weight: Double? = 60.0,
-        meal: MealAmount? = MealAmount.FULL,
-        conditionNote: String = "",
-        recordedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
-    ) = HealthRecord(
-        id = id,
-        temperature = temperature,
-        bloodPressureHigh = bloodPressureHigh,
-        bloodPressureLow = bloodPressureLow,
-        pulse = pulse,
-        weight = weight,
-        meal = meal,
-        conditionNote = conditionNote,
-        recordedAt = recordedAt,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
 
     @Test
-    fun `initial state is Loading`() = runTest(testDispatcher) {
+    fun `initial state is Loading`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         assertTrue(viewModel.records.value is UiState.Loading)
     }
 
     @Test
-    fun `records transitions from Loading to Success`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L, temperature = 36.5))
+    fun `records transitions from Loading to Success`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L, temperature = 36.5))
         repository.setRecords(records)
         viewModel = createViewModel()
 
@@ -107,10 +79,10 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `records are loaded as Success state`() = runTest(testDispatcher) {
+    fun `records are loaded as Success state`() = runTest(mainCoroutineRule.testDispatcher) {
         val records = listOf(
-            createRecord(id = 1L, temperature = 36.5),
-            createRecord(id = 2L, temperature = 37.0)
+            aHealthRecord(id = 1L, temperature = 36.5),
+            aHealthRecord(id = 2L, temperature = 37.0)
         )
         repository.setRecords(records)
         viewModel = createViewModel()
@@ -124,7 +96,7 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `empty records show Success with empty list`() = runTest(testDispatcher) {
+    fun `empty records show Success with empty list`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.records.test {
@@ -136,7 +108,7 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `records update reactively when repository changes`() = runTest(testDispatcher) {
+    fun `records update reactively when repository changes`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.records.test {
@@ -145,7 +117,7 @@ class HealthRecordsViewModelTest {
             assertTrue(initial is UiState.Success)
             assertEquals(0, (initial as UiState.Success).data.size)
 
-            repository.setRecords(listOf(createRecord(id = 1L)))
+            repository.setRecords(listOf(aHealthRecord(id = 1L)))
             advanceUntilIdle()
             val updated = expectMostRecentItem()
             assertTrue(updated is UiState.Success)
@@ -154,10 +126,10 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `deleteRecord removes record and shows snackbar`() = runTest(testDispatcher) {
+    fun `deleteRecord removes record and shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         val records = listOf(
-            createRecord(id = 1L),
-            createRecord(id = 2L)
+            aHealthRecord(id = 1L),
+            aHealthRecord(id = 2L)
         )
         repository.setRecords(records)
         viewModel = createViewModel()
@@ -173,8 +145,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `deleteRecord failure shows error snackbar`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `deleteRecord failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         repository.shouldFail = true
         viewModel = createViewModel()
@@ -190,17 +162,17 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `records sorted by recordedAt descending`() = runTest(testDispatcher) {
+    fun `records sorted by recordedAt descending`() = runTest(mainCoroutineRule.testDispatcher) {
         val records = listOf(
-            createRecord(
+            HealthRecord(
                 id = 1L,
                 recordedAt = LocalDateTime.of(2025, 3, 15, 8, 0)
             ),
-            createRecord(
+            HealthRecord(
                 id = 2L,
                 recordedAt = LocalDateTime.of(2025, 3, 15, 12, 0)
             ),
-            createRecord(
+            HealthRecord(
                 id = 3L,
                 recordedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
             )
@@ -221,8 +193,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `refresh triggers data reload`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `refresh triggers data reload`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         viewModel = createViewModel()
 
@@ -233,7 +205,7 @@ class HealthRecordsViewModelTest {
             assertEquals(1, (initial as UiState.Success).data.size)
 
             repository.setRecords(
-                listOf(createRecord(id = 1L), createRecord(id = 2L))
+                listOf(aHealthRecord(id = 1L), aHealthRecord(id = 2L))
             )
             viewModel.refresh()
             advanceUntilIdle()
@@ -261,11 +233,11 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `search filters records by conditionNote`() = runTest(testDispatcher) {
+    fun `search filters records by conditionNote`() = runTest(mainCoroutineRule.testDispatcher) {
         val records = listOf(
-            createRecord(id = 1L, conditionNote = "頭痛あり"),
-            createRecord(id = 2L, conditionNote = "食欲良好"),
-            createRecord(id = 3L, conditionNote = "頭痛と吐き気")
+            aHealthRecord(id = 1L, conditionNote = "頭痛あり"),
+            aHealthRecord(id = 2L, conditionNote = "食欲良好"),
+            aHealthRecord(id = 3L, conditionNote = "頭痛と吐き気")
         )
         repository.setRecords(records)
         viewModel = createViewModel()
@@ -288,8 +260,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `isRefreshing becomes false after data loads`() = runTest(testDispatcher) {
-        repository.setRecords(listOf(createRecord(id = 1L)))
+    fun `isRefreshing becomes false after data loads`() = runTest(mainCoroutineRule.testDispatcher) {
+        repository.setRecords(listOf(aHealthRecord(id = 1L)))
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -313,8 +285,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportCsv calls csvExporter and sets Success`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `exportCsv calls csvExporter and sets Success`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         coEvery { csvExporter.export(any()) } returns fakeUri
         viewModel = createViewModel()
@@ -333,8 +305,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportPdf calls pdfExporter and sets Success`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `exportPdf calls pdfExporter and sets Success`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         coEvery { pdfExporter.export(any()) } returns fakeUri
         viewModel = createViewModel()
@@ -353,7 +325,7 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportCsv with empty records shows snackbar`() = runTest(testDispatcher) {
+    fun `exportCsv with empty records shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.records.test {
@@ -374,7 +346,7 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportPdf with empty records shows snackbar`() = runTest(testDispatcher) {
+    fun `exportPdf with empty records shows snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.records.test {
@@ -395,8 +367,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportCsv failure sets Error state`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `exportCsv failure sets Error state`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         coEvery { csvExporter.export(any()) } throws RuntimeException("Export failed")
         viewModel = createViewModel()
@@ -414,8 +386,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportPdf failure sets Error state`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `exportPdf failure sets Error state`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         coEvery { pdfExporter.export(any()) } throws RuntimeException("Export failed")
         viewModel = createViewModel()
@@ -433,8 +405,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `exportState resets to Idle after Error`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `exportState resets to Idle after Error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         coEvery { csvExporter.export(any()) } throws RuntimeException("Export failed")
         viewModel = createViewModel()
@@ -453,8 +425,8 @@ class HealthRecordsViewModelTest {
     }
 
     @Test
-    fun `resetExportState sets Idle`() = runTest(testDispatcher) {
-        val records = listOf(createRecord(id = 1L))
+    fun `resetExportState sets Idle`() = runTest(mainCoroutineRule.testDispatcher) {
+        val records = listOf(aHealthRecord(id = 1L))
         repository.setRecords(records)
         coEvery { csvExporter.export(any()) } returns fakeUri
         viewModel = createViewModel()
@@ -470,5 +442,43 @@ class HealthRecordsViewModelTest {
 
         viewModel.resetExportState()
         assertTrue(viewModel.exportState.value is ExportState.Idle)
+    }
+
+    // --- Root Detection Export Block Tests ---
+
+    @Test
+    fun `exportCsv on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        repository.insertRecord(aHealthRecord())
+        rootDetector.isRooted = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportCsv()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.security_root_export_blocked, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `exportPdf on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        repository.insertRecord(aHealthRecord())
+        rootDetector.isRooted = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.exportPdf()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.security_root_export_blocked, (event as SnackbarEvent.WithResId).messageResId)
+        }
     }
 }

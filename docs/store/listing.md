@@ -8,12 +8,12 @@
 
 | 項目 | 値 |
 |------|-----|
-| パッケージ名 | `com.carenote.app` |
+| パッケージ名 | `com.carenote.original.app` |
 | バージョン名 | 1.0.0 |
 | バージョンコード | 1 |
-| compileSdk | 35 |
+| compileSdk | 36 |
 | minSdk | 26 (Android 8.0 Oreo) |
-| targetSdk | 35 |
+| targetSdk | 36 |
 | 必要なパーミッション | `POST_NOTIFICATIONS` (通知) |
 
 ---

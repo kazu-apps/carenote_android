@@ -27,6 +27,7 @@
     <string name="settings_notifications_enabled">通知を有効にする</string>
     <string name="settings_quiet_hours">おやすみ時間</string>
     <string name="settings_quiet_hours_format">%1$d:00 〜 %2$d:00</string>
+    <string name="settings_task_reminder_limit">タスクリマインダー制限</string>
     <string name="settings_health_thresholds">健康記録の異常値基準</string>
     <string name="settings_temperature_high">体温の異常値</string>
     <string name="settings_temperature_format">%1$.1f℃ 以上</string>
@@ -93,6 +94,9 @@
     <string name="security_root_detected_summary">このデバイスは Root 化されている可能性があります。データの安全性が低下する恐れがあります。</string>
     <string name="security_root_warning_dialog_title">セキュリティ警告</string>
     <string name="security_root_warning_dialog_message">このデバイスは Root 化されている可能性があります。Root 化されたデバイスでは、アプリのデータが第三者にアクセスされるリスクがあります。個人情報の取り扱いにご注意ください。</string>
+    <string name="security_root_warning_dialog_message_restricted">このデバイスは Root 化されている可能性があります。セキュリティ保護のため、データエクスポートおよび写真アップロード機能が制限されます。セッションタイムアウトも短縮されます。</string>
+    <string name="security_root_export_blocked">Root 端末ではデータエクスポート機能を利用できません</string>
+    <string name="security_root_upload_blocked">Root 端末では写真をアップロードできません</string>
 
     <!-- Account Settings -->
     <string name="settings_account">アカウント</string>
@@ -145,6 +149,7 @@
     <string name="care_recipient_memo_hint">特記事項・アレルギー・好みなど</string>
     <string name="care_recipient_save_success">プロフィールを保存しました</string>
     <string name="care_recipient_save_error">プロフィールの保存に失敗しました</string>
+    <string name="care_recipient_name_required">お名前を入力してください</string>
 
     <!-- Biometric Prompt -->
     <string name="biometric_prompt_title">本人確認</string>
@@ -472,6 +477,7 @@
     <string name="ui_error_network">ネットワークに接続できません</string>
     <string name="ui_error_unauthorized">認証が必要です</string>
     <string name="ui_error_unknown">予期しないエラーが発生しました</string>
+    <string name="ui_error_security">セキュリティエラーが発生しました</string>
     <string name="ui_empty_default">データがありません</string>
     <string name="ui_confirm_title">確認</string>
     <string name="ui_confirm_delete_title">削除の確認</string>

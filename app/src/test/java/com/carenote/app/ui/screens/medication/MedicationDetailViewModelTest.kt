@@ -4,35 +4,31 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.model.Medication
-import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
-import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationReminderScheduler
 import com.carenote.app.fakes.FakeMedicationRepository
+import com.carenote.app.testing.MainCoroutineRule
+import com.carenote.app.testing.aMedication
+import com.carenote.app.testing.aMedicationLog
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.UiState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
-import java.time.LocalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MedicationDetailViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
     private lateinit var reminderScheduler: FakeMedicationReminderScheduler
@@ -40,16 +36,10 @@ class MedicationDetailViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         medicationRepository = FakeMedicationRepository()
         medicationLogRepository = FakeMedicationLogRepository()
         reminderScheduler = FakeMedicationReminderScheduler()
         analyticsRepository = FakeAnalyticsRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(medicationId: Long = 1L): MedicationDetailViewModel {
@@ -63,43 +53,6 @@ class MedicationDetailViewModelTest {
         )
     }
 
-    private fun createMedication(
-        id: Long = 1L,
-        name: String = "テスト薬",
-        dosage: String = "1錠",
-        timings: List<MedicationTiming> = listOf(MedicationTiming.MORNING),
-        times: Map<MedicationTiming, LocalTime> = mapOf(
-            MedicationTiming.MORNING to LocalTime.of(8, 0)
-        ),
-        reminderEnabled: Boolean = true,
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
-    ) = Medication(
-        id = id,
-        name = name,
-        dosage = dosage,
-        timings = timings,
-        times = times,
-        reminderEnabled = reminderEnabled,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
-
-    private fun createMedicationLog(
-        id: Long = 1L,
-        medicationId: Long = 1L,
-        status: MedicationLogStatus = MedicationLogStatus.TAKEN,
-        scheduledAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 8, 0),
-        recordedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 8, 5),
-        memo: String = ""
-    ) = MedicationLog(
-        id = id,
-        medicationId = medicationId,
-        status = status,
-        scheduledAt = scheduledAt,
-        recordedAt = recordedAt,
-        memo = memo
-    )
 
     @Test
     fun `initial state is Loading`() {
@@ -109,8 +62,8 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `medication transitions from Loading to Success`() = runTest(testDispatcher) {
-        val medication = createMedication(id = 1L, name = "アスピリン")
+    fun `medication transitions from Loading to Success`() = runTest(mainCoroutineRule.testDispatcher) {
+        val medication = aMedication(id = 1L, name = "アスピリン")
         medicationRepository.setMedications(listOf(medication))
         val viewModel = createViewModel(medicationId = 1L)
 
@@ -125,8 +78,8 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `medication detail loaded successfully`() = runTest(testDispatcher) {
-        val medication = createMedication(id = 1L, name = "アスピリン")
+    fun `medication detail loaded successfully`() = runTest(mainCoroutineRule.testDispatcher) {
+        val medication = aMedication(id = 1L, name = "アスピリン")
         medicationRepository.setMedications(listOf(medication))
         val viewModel = createViewModel(medicationId = 1L)
 
@@ -141,7 +94,7 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `medication not found returns Error`() = runTest(testDispatcher) {
+    fun `medication not found returns Error`() = runTest(mainCoroutineRule.testDispatcher) {
         medicationRepository.setMedications(emptyList())
         val viewModel = createViewModel(medicationId = 999L)
 
@@ -155,11 +108,11 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `logs are loaded for medication`() = runTest(testDispatcher) {
+    fun `logs are loaded for medication`() = runTest(mainCoroutineRule.testDispatcher) {
         val logs = listOf(
-            createMedicationLog(id = 1L, medicationId = 1L, status = MedicationLogStatus.TAKEN),
-            createMedicationLog(id = 2L, medicationId = 1L, status = MedicationLogStatus.SKIPPED),
-            createMedicationLog(id = 3L, medicationId = 2L, status = MedicationLogStatus.TAKEN)
+            aMedicationLog(id = 1L, medicationId = 1L, status = MedicationLogStatus.TAKEN),
+            aMedicationLog(id = 2L, medicationId = 1L, status = MedicationLogStatus.SKIPPED),
+            aMedicationLog(id = 3L, medicationId = 2L, status = MedicationLogStatus.TAKEN)
         )
         medicationLogRepository.setLogs(logs)
         val viewModel = createViewModel(medicationId = 1L)
@@ -173,8 +126,8 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `delete success emits deletedEvent`() = runTest(testDispatcher) {
-        medicationRepository.setMedications(listOf(createMedication(id = 1L)))
+    fun `delete success emits deletedEvent`() = runTest(mainCoroutineRule.testDispatcher) {
+        medicationRepository.setMedications(listOf(aMedication(id = 1L)))
         val viewModel = createViewModel(medicationId = 1L)
         advanceUntilIdle()
 
@@ -187,8 +140,8 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `delete failure shows snackbar error`() = runTest(testDispatcher) {
-        medicationRepository.setMedications(listOf(createMedication(id = 1L)))
+    fun `delete failure shows snackbar error`() = runTest(mainCoroutineRule.testDispatcher) {
+        medicationRepository.setMedications(listOf(aMedication(id = 1L)))
         medicationRepository.shouldFail = true
         val viewModel = createViewModel(medicationId = 1L)
         advanceUntilIdle()
@@ -206,8 +159,8 @@ class MedicationDetailViewModelTest {
     }
 
     @Test
-    fun `delete success cancels reminders`() = runTest(testDispatcher) {
-        medicationRepository.setMedications(listOf(createMedication(id = 1L)))
+    fun `delete success cancels reminders`() = runTest(mainCoroutineRule.testDispatcher) {
+        medicationRepository.setMedications(listOf(aMedication(id = 1L)))
         val viewModel = createViewModel(medicationId = 1L)
         advanceUntilIdle()
 

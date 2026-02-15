@@ -21,11 +21,14 @@ import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.NoteCsvExporterInterface
 import com.carenote.app.domain.repository.NotePdfExporterInterface
+import com.carenote.app.domain.repository.BillingRepository
+import com.carenote.app.domain.repository.PremiumFeatureGuard
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.domain.repository.TaskCsvExporterInterface
 import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import com.carenote.app.ui.util.LocaleManager
+import com.carenote.app.ui.util.RootDetectionChecker
 import com.carenote.app.ui.util.SnackbarController
 import com.carenote.app.ui.viewmodel.ExportState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,7 +58,10 @@ class SettingsViewModel @Inject constructor(
     private val taskCsvExporter: TaskCsvExporterInterface,
     private val taskPdfExporter: TaskPdfExporterInterface,
     private val noteCsvExporter: NoteCsvExporterInterface,
-    private val notePdfExporter: NotePdfExporterInterface
+    private val notePdfExporter: NotePdfExporterInterface,
+    private val rootDetector: RootDetectionChecker,
+    private val billingRepository: BillingRepository,
+    private val premiumFeatureGuard: PremiumFeatureGuard
 ) : ViewModel() {
 
     val snackbarController = SnackbarController()
@@ -116,6 +122,26 @@ class SettingsViewModel @Inject constructor(
         .map { it?.name }
         .catch { e ->
             Timber.w("Failed to observe care recipient: $e")
+            emit(null)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
+            initialValue = null
+        )
+
+    val taskReminderLimitText: StateFlow<String?> = billingRepository.premiumStatus
+        .map { status ->
+            if (status.isActive) null
+            else {
+                val count = premiumFeatureGuard.getTaskReminderCountToday()
+                val limit = premiumFeatureGuard.getTaskReminderDailyLimit()
+                val remaining = (limit - count).coerceAtLeast(0)
+                "$remaining/$limit"
+            }
+        }
+        .catch { e ->
+            Timber.w("Failed to observe premium status: $e")
             emit(null)
         }
         .stateIn(
@@ -228,6 +254,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun exportTasksCsv(periodDays: Long? = null) {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {
@@ -250,6 +282,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun exportTasksPdf(periodDays: Long? = null) {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {
@@ -272,6 +310,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun exportNotesCsv(periodDays: Long? = null) {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {
@@ -294,6 +338,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun exportNotesPdf(periodDays: Long? = null) {
+        if (rootDetector.isDeviceRooted()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.security_root_export_blocked)
+            }
+            return
+        }
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {

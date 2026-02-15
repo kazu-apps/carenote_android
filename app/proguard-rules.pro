@@ -79,3 +79,31 @@
 # Coil image loader (OkHttp integration, decoder reflection)
 -keep class coil3.** { *; }
 -dontwarn coil3.**
+
+# ========== WorkManager + HiltWorker ==========
+
+# Keep HiltWorker-annotated classes
+-keep class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+
+# ========== Paging 3 ==========
+
+-keep class androidx.paging.** { *; }
+-dontwarn androidx.paging.**
+
+# ========== Security-Crypto ==========
+
+-keep class androidx.security.crypto.** { *; }
+-dontwarn androidx.security.crypto.**
+
+# ========== Biometric ==========
+
+-keep class androidx.biometric.** { *; }
+-dontwarn androidx.biometric.**
+
+# ========== Google Play Billing ==========
+
+-keep class com.android.vending.billing.** { *; }
+-keep class com.android.billingclient.** { *; }
+-dontwarn com.android.billingclient.**

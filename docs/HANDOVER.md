@@ -1,14 +1,22 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: v9.0 Phase 2 (PremiumFeatureGuard) 完了
 
-## 現在のタスク: v9.0-sec Phase 2A 完了
+## 現在のタスク: v9.0 Phase 2 完了。Phase 1B (Cloud Functions) or Phase 3 から実行可能
 
-Session タイムアウト user-configurable（1-60分、デフォルト5分）、PBKDF2WithHmacSHA256 derived key（100K iterations, 256-bit）、master passphrase ゼロクリア。テスト ~16 件追加。全ビルド・テスト通過。
+Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → architect 提案 (6 Phase Plan) → critic リスク分析 (6リスク指摘) → researcher 相互レビュー (誤認6点、見落とし3点指摘)。
+
+修正内容:
+- **DB version**: v20 ではなく v21 migration が必須（v20 は既に消費済み）
+- **EntitySyncer**: ConfigDrivenEntitySyncer では Member/Invitation 実装不可。手動 Syncer が必要
+- **Dynamic Links**: 廃止リスク過大評価（現在使用なし。App Links で代替可）
+- **User.isPremium**: User モデルと PremiumFeatureGuard の責務分離を明記
+- **実装順**: Billing → 家族招待 → 通知制限（critic 提案と逆順が最適）
+- **フェーズ分割**: 1-6 Phase に細分化。Phase 1B (Cloud Functions) は Claude Code 守備範囲外
 
 ## 次のアクション
 
-- セキュリティ改善 Phase 2B 実行（入力検証パターン統一）
+- v10.0-tdd 全 Phase 完了。テスト基盤整備は一区切り
 - v9.0 計画策定（家族招待フロー、Google Play Billing、通知制限）
 
 ## 既知の問題
@@ -24,6 +32,7 @@ Session タイムアウト user-configurable（1-60分、デフォルト5分）�
 |--------|------|------|
 | MEDIUM | v4.0 | Rate Limiting 未実装（API エンドポイント、バックエンド依存） |
 | LOW | v2.0 | FCM トークンのサーバー送信未実装（バックエンド前提） |
+| LOW | v10.0-tdd | SettingsViewModelTest 1170 行（Detekt 対象外だが可読性の観点で将来的に分割検討） |
 
 ## ロードマップ
 
@@ -38,34 +47,67 @@ Session タイムアウト user-configurable（1-60分、デフォルト5分）�
 - テスト: DatabasePassphraseManagerTest (8件) + SettingsRepositoryImplTest (5件) + SettingsViewModelTest (3件)
 - 依存: Phase 1
 
-### v9.0-sec Phase 2B: 入力検証パターン統一 - PENDING
+### v9.0-sec Phase 2B: 入力検証パターン統一 - DONE
 
-既存 FormValidator/AuthValidators を domain/validator/ に拡張。外部ライブラリ不要。6-8 AddEdit ViewModel の入力検証パターンを統一。
-- 対象: `domain/validator/` (新規), `ui/viewmodel/` (6-8 AddEdit ViewModel)
+domain/validator/ に InputValidator, HealthRecordValidator, MedicationValidator, RecurrenceValidator, SettingsValidator を新設。FormValidator/AuthValidators は UI ラッパーとして残し domain/validator に委譲。CareRecipientViewModel にバリデーション追加。SettingsRepositoryImpl/FakeSettingsRepository の検証ロジックを SettingsValidator に統一。テスト 58 件追加。全ビルド・テスト通過。
+- 対象: `domain/validator/` (新規 5 ファイル), `config/AppConfig.kt`, `ui/common/UiText.kt`, `ui/util/FormValidator.kt`, `ui/screens/auth/AuthValidators.kt`, `ui/screens/medication/AddEditMedicationViewModel.kt`, `ui/screens/calendar/AddEditCalendarEventViewModel.kt`, `ui/screens/tasks/AddEditTaskViewModel.kt`, `ui/screens/carerecipient/CareRecipientViewModel.kt`, `data/repository/SettingsRepositoryImpl.kt`, `fakes/FakeSettingsRepository.kt`, `res/values/strings.xml`, `res/values-en/strings.xml`
+- テスト: InputValidatorTest (22件) + HealthRecordValidatorTest (8件) + MedicationValidatorTest (6件) + RecurrenceValidatorTest (5件) + SettingsValidatorTest (14件) + CareRecipientViewModelTest (+3件)
 - 依存: Phase 2A
 
-### v9.0-sec Phase 3: バイナリ保護 + APPI 準拠 - PENDING
+### v9.0-sec Phase 3: バイナリ保護 + APPI 準拠 - DONE
 
-ProGuard/R8 難読化ルール強化、FileProvider grantUriPermissions 制限、Root 検出時の機密データアクセス制限オプション。APPI（個人情報保護法）準拠ドキュメント整備（SECURITY.md, DATA_RETENTION_POLICY.md）。
-- 対象: `app/proguard-rules.pro`, `app/src/main/res/xml/file_paths.xml`, `ui/util/RootDetector.kt`, `ui/MainActivity.kt`, `docs/SECURITY.md` (新規), `docs/DATA_RETENTION_POLICY.md` (新規)
+DomainError.SecurityError 新設 + SyncWorker/ErrorDisplay の when 式更新。RootDetectionChecker を DI 登録、3 ViewModel（Settings, HealthRecords, Medication）+ FirebaseStorageRepo のエクスポート/アップロードを Root 時ブロック。MainActivity Root 検出時セッションタイムアウト短縮 (60秒)。ProGuard ルール強化（WorkManager, Paging, Security-Crypto, Biometric）。strings.xml JP/EN 4文言追加（security_root_export_blocked, security_root_upload_blocked, security_root_warning_dialog_message_restricted, ui_error_security）。APPI 準拠ドキュメント（docs/SECURITY.md, docs/DATA_RETENTION_POLICY.md）。docs/RELEASE_CHECKLIST.md セキュリティ項目拡充。テスト 12 件追加（SettingsVM 8件, HealthRecordsVM 2件, MedicationVM 2件）+ DomainErrorTest SecurityError 対応。全ビルド・テスト通過。
+- 対象: `domain/common/DomainError.kt`, `data/worker/SyncWorker.kt`, `ui/components/ErrorDisplay.kt`, `config/AppConfig.kt`, `di/AppModule.kt`, `ui/screens/settings/SettingsViewModel.kt`, `ui/screens/healthrecords/HealthRecordsViewModel.kt`, `ui/screens/medication/MedicationViewModel.kt`, `data/repository/FirebaseStorageRepositoryImpl.kt`, `ui/MainActivity.kt`, `proguard-rules.pro`, `res/values/strings.xml`, `res/values-en/strings.xml`, `docs/SECURITY.md` (新規), `docs/DATA_RETENTION_POLICY.md` (新規), `docs/RELEASE_CHECKLIST.md`, `test/.../DomainErrorTest.kt`, 3 test files (SettingsVM, HealthRecordsVM, MedicationVM)
 - 依存: Phase 1, Phase 2A, Phase 2B
 
-### v9.0-test Phase 1: テストユーティリティ基盤構築 - PENDING
+### v9.0-test Phase 1: テストユーティリティ基盤構築 - DONE
 
-テストデータ生成の重複削減と品質向上のための共通ユーティリティを新設。Builder DSL（Medication/Note/Task/HealthRecord）、ResultMatchers、FlowAssertions（Turbine ラッパー）、TestDataFixtures（FakeClock 統合）を testing/ パッケージに配置。
-- 対象: `app/src/test/java/com/carenote/app/testing/` (新規 7-8 ファイル)
+testing/ パッケージに共通テストユーティリティ新設。TestDataFixtures（FakeClock統合定数）、TestBuilders（7モデルファクトリ関数: aMedication/aNote/aTask/aHealthRecord/aMedicationLog/aNoteComment/aCalendarEvent）、ResultMatchers（Result<T,E> extension function アサーション 10種）。テスト 26 件追加。全ビルド・テスト通過。
+- 対象: `app/src/test/java/com/carenote/app/testing/` (新規 5 ファイル: TestDataFixtures.kt, TestBuilders.kt, ResultMatchers.kt, TestBuildersTest.kt, ResultMatchersTest.kt)
 - 依存: なし
 
-### v9.0-test Phase 2: テストデータ統一 + E2E デバッグ改善 - PENDING
+### v9.0-test Phase 2: テストデータ統一 + E2E デバッグ改善 - DONE
 
-Mapper/Exporter テスト 16 件のハードコード日時を Phase 1 の Fixtures/FakeClock に統一。E2E テスト失敗時の Screenshot 自動保存機能を追加。ViewModel テストの Dispatcher セットアップ重複を ViewModelTestBase に抽出。
-- 対象: `app/src/test/` (変更 12-15 ファイル)、`app/src/androidTest/e2e/` (変更 2 ファイル)
+Mapper/Exporter テスト 16 ファイルのハードコード日時（"2025-03-15T10:00:00" / LocalDateTime.of(2025,3,15,10,0)）を TestDataFixtures.NOW / NOW_STRING に統一。E2E テスト失敗時の Screenshot 自動保存（TestWatcher）を E2eTestBase に追加。全ビルド・テスト通過。
+- 対象: TestDataFixtures.kt（NOW_STRING/TODAY_STRING 追加）、Local Mapper テスト 10 ファイル + Exporter テスト 1 ファイル（worker-impl）、Remote Mapper テスト 7 ファイル + FirestoreTimestampConverterTest + E2eTestBase（worker-test）
 - 依存: Phase 1
 
-### v9.0-test Phase 3: カバレッジ向上 + ドキュメント - PENDING
+### v9.0-test Phase 3: カバレッジ向上 + ドキュメント - DONE
 
-Syncer 具象テスト追加（MedicationSyncer/NoteSyncer 等）、PagingSource ユニットテスト追加、ViewModel エラーシナリオテスト追加。CLAUDE.md に落とし穴 #22（テスト開発 Best Practices）を追記。
-- 対象: `app/src/test/` (新規/変更 8-10 ファイル)、`CLAUDE.md`
+MedicationLogSyncerTest 新規作成（サブコレクション同期の専用テスト ~18件）。HomeViewModelTest にエラーシナリオ ~4件追加（Flow 例外の .catch ブロック検証）。CareRecipientViewModelTest にエラーシナリオ ~3件追加（save failure 時のフォーム保持検証）。CLAUDE.md 落とし穴 #22（テスト開発 Best Practices）追記。全ビルド・テスト通過。
+- 対象: `app/src/test/.../sync/MedicationLogSyncerTest.kt` (新規), `app/src/test/.../home/HomeViewModelTest.kt`, `app/src/test/.../carerecipient/CareRecipientViewModelTest.kt`, `CLAUDE.md`
+- 依存: Phase 2
+
+### v10.0-tdd Phase 1: MainCoroutineRule + TestBuilders 拡充 - DONE
+
+MainCoroutineRule（JUnit 4 TestWatcher, StandardTestDispatcher デフォルト）新設。TestBuilders に aUser/aCareRecipient/aEmergencyContact/aUserSettings 4 ビルダー追加。MainCoroutineRuleTest 6 件 + TestBuildersTest 12 件追加。全ビルド・テスト通過。
+- 対象: `testing/MainCoroutineRule.kt` (新規), `testing/MainCoroutineRuleTest.kt` (新規), `testing/TestBuilders.kt`, `testing/TestBuildersTest.kt`
+- 依存: なし
+
+### v10.0-tdd Phase 2: RepositoryImpl テスト修正 - DONE
+
+HealthRecordRepositoryImplTest, NoteRepositoryImplTest, TaskRepositoryImplTest の createEntity() に careRecipientId/createdBy 追加。TestDataFixtures.NOW_STRING 統一。Domain 直接作成→TestBuilders 置換。assertTrue→ResultMatchers 統一。全 46 テスト通過。
+- 対象: `data/repository/HealthRecordRepositoryImplTest.kt`, `data/repository/NoteRepositoryImplTest.kt`, `data/repository/TaskRepositoryImplTest.kt`
+- 依存: Phase 1
+
+### v10.0-tdd Phase 3A: ViewModel テスト移行（StandardTestDispatcher 16 ファイル） - DONE
+
+16 ViewModel テストを MainCoroutineRule に移行。@Before/@After の Dispatcher 手動管理を削除。7 ファイルで domain createXxx() ヘルパーを TestBuilders に置換。全テスト通過。
+- 対象: HomeViewModelTest, MedicationViewModelTest, MedicationDetailViewModelTest, AddEditMedicationViewModelTest, AddEditTaskViewModelTest, AddEditNoteViewModelTest, CalendarViewModelTest, AddEditCalendarEventViewModelTest, HealthRecordsViewModelTest, AddEditHealthRecordViewModelTest, HealthRecordGraphViewModelTest, CareRecipientViewModelTest, SettingsViewModelTest, SettingsViewModelUpdateTest, AuthViewModelTest, SearchViewModelTest
+- Group A (worker-impl): HomeViewModelTest, MedicationViewModelTest, MedicationDetailViewModelTest, AddEditMedicationViewModelTest, CalendarViewModelTest, AddEditCalendarEventViewModelTest, HealthRecordsViewModelTest, AddEditHealthRecordViewModelTest
+- Group B (worker-test): HealthRecordGraphViewModelTest, CareRecipientViewModelTest, SettingsViewModelTest, SettingsViewModelUpdateTest, AuthViewModelTest, SearchViewModelTest, AddEditTaskViewModelTest, AddEditNoteViewModelTest
+- 依存: Phase 1
+
+### v10.0-tdd Phase 3B: ViewModel テスト移行（UnconfinedTestDispatcher 5 ファイル + 残り） - DONE
+
+UnconfinedTestDispatcher 使用の 5 ファイルに MainCoroutineRule(UnconfinedTestDispatcher()) 適用。PhotoManagerTest, LoginFormHandlerTest, RegisterFormHandlerTest, ForgotPasswordFormHandlerTest にも MainCoroutineRule 適用。TestBuilders 採用。@Before/@After の Dispatcher 手動管理を削除。全 9 ファイル・全テスト通過。ビルド成功。
+- 対象: TasksViewModelTest, NotesViewModelTest, EmergencyContactListViewModelTest, AddEditEmergencyContactViewModelTest, TimelineViewModelTest, PhotoManagerTest, LoginFormHandlerTest, RegisterFormHandlerTest, ForgotPasswordFormHandlerTest
+- 依存: Phase 3A
+
+### v10.0-tdd Phase 4: ResultMatchers 全面採用 - DONE
+
+残り 8 RepositoryImpl テストに ResultMatchers 適用。assertTrue(result is Result.Success) → result.assertSuccess() パターンに統一。SyncResult 用 matchers 3関数追加（assertSyncSuccess/assertSyncFailure/assertSyncPartialSuccess）。全テスト通過。
+- 対象: ResultMatchers.kt, SettingsRepositoryImplTest, PhotoRepositoryImplTest, FirestoreSyncRepositoryImplTest, NoteCommentRepositoryImplTest, CalendarEventRepositoryImplTest, MedicationLogRepositoryImplTest, CareRecipientRepositoryImplTest, EmergencyContactRepositoryImplTest
 - 依存: Phase 2
 
 ### v7.0 Phase 1: リリース品質強化 - DONE
@@ -215,17 +257,29 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | v8.1 Ph6 | NoteComment 1:N（Entity+DAO+Mapper+RemoteMapper+Repository+UI）+ CalendarEvent recurrence（RecurrenceExpander+UI）。DB v19。DI/Sync 統合。テスト 44 件追加。全ビルド・テスト通過 | DONE |
 | v8.1 Ph7 | テスト強化（recurrence 12件 + comment 10件 + RecurrenceExpander 3件）+ CLAUDE.md Phase 4-6 同期。全ビルド・テスト通過 | DONE |
 | v9.0-sec Ph2A | Session タイムアウト user-configurable（1-60分）+ PBKDF2 derived key + master passphrase ゼロクリア。テスト 16 件追加。全テスト通過 | DONE |
+| v9.0-sec Ph2B | domain/validator/ 新設5ファイル + UI/Data 層委譲 + CareRecipientViewModel バリデーション + テスト 58 件。全テスト通過 | DONE |
+| v9.0-sec Ph3 | DomainError.SecurityError + RootDetectionChecker DI + 3VM Root ブロック + ProGuard 強化 + APPI ドキュメント + テスト 12 件。全テスト通過 | DONE |
 | task-driver v8 | SKILL.md + team-templates.md 全面書き換え（TeamCreate ハイブリッド）+ CLAUDE.md sub-agent-patterns 原則追加 + MEMORY.md 更新 | DONE |
 | task-driver v8 レビューラウンド | Plan モード Round 2 相互レビュー追加。SKILL.md（手順 Round 1/Round 2 構造化 + Rule #18）+ team-templates.md（レビューテンプレート 3 件） | DONE |
 | テスト機能リサーチ | テスト基盤調査（126 unit + 22 E2E + 31 Fakes + 56 Roborazzi）、Builder DSL 方針策定、リスク分析（Flaky LOW、E2E screenshot MEDIUM、日時統一 MEDIUM）、3 Phase ロードマップ作成 | DONE |
 | セキュリティ分析 | OWASP Mobile Top 10 + 攻撃ベクター + APPI 準拠評価。成熟度 93/100。CRITICAL 1 (Firestore Rules), HIGH 5 (Export PII, Sync PII, Session timeout, Input validation, Biometric memory dump), MEDIUM 5。総工数 107h。3 Phase ロードマップ作成 | DONE |
 | v9.0-sec Ph1 | データ保護 + Firestore Rules（ExceptionMasker/SecureFileDeleter、8 Exporter cache cleanup、Sync PII マスク、firestore.rules）。テスト 35 件追加。全テスト通過 | DONE |
+| v9.0-test Ph1 | testing/ パッケージ新設（TestDataFixtures + TestBuilders 7モデル + ResultMatchers 10種）+ テスト 26 件。全テスト通過 | DONE |
+| v9.0-test Ph2 | Mapper/Exporter テスト 16 ファイルのハードコード日時を TestDataFixtures に統一 + E2eTestBase Screenshot 自動保存。全テスト通過 | DONE |
+| v9.0-test Ph3 | MedicationLogSyncerTest 新規 + HomeVM/CareRecipientVM エラーテスト + CLAUDE.md #22 追記。全テスト通過 | DONE |
+| v10.0-tdd Ph1 | MainCoroutineRule + TestBuilders 拡充（aUser/aCareRecipient/aEmergencyContact/aUserSettings）+ テスト 18 件。全テスト通過 | DONE |
+| v10.0-tdd Ph2 | RepositoryImpl テスト 3 ファイル修正（careRecipientId/createdBy + TestBuilders + ResultMatchers）。46 テスト通過 | DONE |
+| v10.0-tdd Ph3A | 16 ViewModel テストを MainCoroutineRule に移行 + TestBuilders 置換。全テスト通過 | DONE |
+| v10.0-tdd Ph3B | 9 テストファイル（UnconfinedTestDispatcher 5 + 残り 4）を MainCoroutineRule に移行 + TestBuilders 採用。全テスト通過 | DONE |
+| v10.0-tdd Ph4 | 残り 8 RepositoryImpl テストに ResultMatchers 適用 + SyncResult matchers 3関数追加。全テスト通過 | DONE |
+| v9.0 Ph1 Billing | Google Play Billing 7.1.1 基盤（BillingRepository + NoOp + DI + PurchaseEntity v21 + Mapper + テスト 30件）。全テスト通過 | DONE |
+| v9.0 Ph2 PremiumGuard | PremiumFeatureGuard + NotificationCountDataSource + TaskReminderWorker 制限チェック + Settings 残り表示。テスト 22 件追加。全テスト通過 | DONE |
 
 ## アーキテクチャ参照
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v19 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 11 Entity |
+| Room DB | v21 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 12 Entity (PurchaseEntity 追加) |
 | Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
 | 同期 | ConfigDrivenEntitySyncer + Incremental Sync (updatedAt フィルター) |
 | Paging 3 | Task/Note/HealthRecord(LIST): PagingSource, Medication: DB検索のみ, Calendar: 対象外 |
@@ -241,12 +295,63 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | セキュリティ分析 | 成熟度 93/100。SQLCipher+EncryptedPrefs+Root検出+生体認証=業界標準超。CRITICAL: Firestore Rules 欠落。要改善: Export cache PII, Sync PII log, Session timeout, Validator pattern, Biometric memory dump. APPI 技術面 ~70% |
 | セキュリティ強化 (Ph1) | ExceptionMasker（PII ログマスク）、SecureFileDeleter（3-pass 上書き削除）、Firestore Rules（careRecipients/{uid} owner auth）、Export cache 1h TTL |
 | セキュリティ強化 (Ph2A) | Session timeout user-configurable (1-60min, default 5min), PBKDF2WithHmacSHA256 derived key (100K iter, 256-bit), master passphrase zero-clear |
+| 入力検証パターン | domain/validator/ (InputValidator, HealthRecordValidator, MedicationValidator, RecurrenceValidator, SettingsValidator) → UI 層 FormValidator/AuthValidators がラッパー |
+| セキュリティ強化 (Ph2B) | domain/validator/ 集約パターン（InputValidator が基本検証、専用 Validator が AppConfig 参照で委譲）。android.util.Patterns → 純 Kotlin 正規表現。UiText.DynamicString 追加 |
+| Billing | Google Play Billing 7.1.1 (billing-ktx), BillingAvailability + NoOpBillingRepository パターン (FirebaseAvailability 踏襲), PremiumStatus StateFlow, BillingModule DI 条件分岐 |
+| セキュリティ強化 (Ph3) | DomainError.SecurityError 新設。RootDetectionChecker DI 登録。Root 時エクスポート/アップロードブロック（Settings/HealthRecords/Medication VM + FirebaseStorageRepo）。Root セッションタイムアウト 60秒。ProGuard WorkManager/Paging/Security-Crypto/Biometric keep ルール。APPI 準拠ドキュメント（SECURITY.md, DATA_RETENTION_POLICY.md） |
 
-## v9.0 計画（v8.1 完了後）
+## ロードマップ (v9.0)
 
-- **家族招待フロー**: Member/Invitation データモデル、Firestore Security Rules、招待 UI（v8.1 Phase 7 から先送り。Firestore インテグレーション + バックエンド検証が複雑なため分離）
-- **Google Play Billing**: プレミアムサブスクリプション + 通知プレミアム制限（サーバーサイド検証必須）
-- **通知制限**: 無料/プレミアムの通知回数制限（Billing 実装と同時に PremiumFeatureGuard として一括実装）
+### Phase 1: Google Play Billing 基盤 - DONE
+
+Google Play Billing Library 7.1.1 基盤構築。BillingRepository + BillingRepositoryImpl + NoOpBillingRepository + BillingModule DI + PremiumStatus/ProductInfo/BillingConnectionState ドメインモデル + PurchaseEntity (Room v21) + PurchaseDao + PurchaseMapper + BillingAvailability（Google Play Services チェック）+ AppConfig.Billing + ProGuard keep ルール。FakeBillingRepository + テスト 30 件（BillingRepositoryImplTest 10件 + NoOpBillingRepositoryTest 7件 + PurchaseMapperTest 10件 + BillingAvailabilityTest 3件）。全ビルド・テスト通過。
+- 対象: `domain/model/PremiumStatus.kt`, `domain/model/ProductInfo.kt`, `domain/model/BillingConnectionState.kt`, `domain/repository/BillingRepository.kt`, `data/local/entity/PurchaseEntity.kt`, `data/local/dao/PurchaseDao.kt`, `data/mapper/PurchaseMapper.kt`, `data/repository/BillingRepositoryImpl.kt`, `data/repository/NoOpBillingRepository.kt`, `di/BillingAvailability.kt`, `di/BillingModule.kt`, `config/AppConfig.kt`, `data/local/CareNoteDatabase.kt` (v21), `di/DatabaseModule.kt`, `gradle/libs.versions.toml`, `app/build.gradle.kts`, `app/proguard-rules.pro`
+- 依存: なし
+
+### Phase 2: PremiumFeatureGuard + 通知制限 - DONE
+
+PremiumFeatureGuard インターフェース + PremiumFeatureGuardImpl（BillingRepository + NotificationCountDataSource + Clock 依存）。TaskReminderWorker に制限チェック追加（無料ユーザー 1日3回、プレミアム無制限、服薬リマインダーは制限対象外）。SettingsScreen に残り通知回数表示。DI 登録。テスト 22 件追加（PremiumFeatureGuardImplTest 12件 + TaskReminderWorkerTest 6件 + SettingsViewModelTest 4件）。全ビルド・テスト通過。
+- 対象: `domain/repository/PremiumFeatureGuard.kt` (新規), `data/local/NotificationCountDataSource.kt` (新規), `data/repository/PremiumFeatureGuardImpl.kt` (新規), `config/AppConfig.kt`, `di/AppModule.kt`, `data/worker/TaskReminderWorker.kt`, `ui/screens/settings/` (SettingsViewModel, SettingsScreen, NotificationSection), `res/values/strings.xml`, `res/values-en/strings.xml`
+- テスト: PremiumFeatureGuardImplTest (12件) + TaskReminderWorkerTest (+6件) + SettingsViewModelTest (+4件) + FakePremiumFeatureGuard (新規)
+- 依存: Phase 1
+
+### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
+Google Play Developer API 経由のレシート検証を Cloud Functions で実装。
+本番リリース前の必須要件。
+- 対象: Cloud Functions (Node.js), Firestore の purchaseTokens コレクション
+- 依存: Phase 1
+- 注意: **Claude Code の守備範囲外**。手動またはデスクトップ版で実装。Firebase CLI + Node.js 環境が必要
+- 手動作業: Firebase Functions デプロイ、サービスアカウント設定、Google Play Developer API 有効化
+
+### Phase 3: 家族招待 — Firestore 構造移行 - PENDING
+現在の `careRecipients/{uid}/` (uid ベース) を `careRecipients/{id}/` (ID ベース) に移行。
+Member サブコレクション (`members/{uid}`) を追加。
+既存の全 EntitySyncer の collectionPath にメンバー権限チェックを統合。
+- 対象: data/repository/sync/ (全 Syncer), di/SyncModule, Firestore Security Rules
+- 依存: なし（Billing と独立して実装可能だが、最大リスクのため慎重に）
+- 注意: 既存データの移行スクリプトが必要。fallbackToDestructiveMigration を proper migration に切り替え検討
+- 手動作業: Firestore Security Rules のデプロイ・テスト
+
+### Phase 4: 家族招待 — データモデル + Room - PENDING
+Member/Invitation ドメインモデル、Room Entity、DAO、Mapper の実装。
+InvitationRepository + MemberRepository の追加。
+- 対象: domain/model/Member, domain/model/Invitation, data/local/entity/MemberEntity, data/local/entity/InvitationEntity, data/local/dao/MemberDao, data/local/dao/InvitationDao, data/mapper/MemberMapper, data/mapper/InvitationMapper, domain/repository/MemberRepository, domain/repository/InvitationRepository, data/repository/MemberRepositoryImpl, data/repository/InvitationRepositoryImpl
+- 依存: Phase 3
+- 注意: Room v21 migration。テスト用 FakeMemberRepository + FakeInvitationRepository 作成
+
+### Phase 5: 家族招待 — 招待 UI + 招待フロー - PENDING
+招待画面 (InvitationScreen)、メンバー管理画面 (MemberManagementScreen) の実装。
+App Links で招待コード共有 → 受諾 → メンバー追加フロー。
+- 対象: ui/screens/invitation/, ui/screens/member/, ui/navigation/Screen.kt (新ルート追加), res/values/strings.xml (JP/EN), AndroidManifest.xml (App Links intent-filter)
+- 依存: Phase 4
+- 注意: Firebase Dynamic Links 廃止済み → App Links + Firebase Hosting 短縮 URL で代替
+- 手動作業: Firebase Hosting 設定、App Links assetlinks.json 配置、ドメイン検証
+
+### Phase 6: 統合テスト + E2E - PENDING
+全新機能の統合テスト、E2E テスト、セキュリティレビュー。
+- 対象: app/src/test/ (Unit), app/src/androidTest/ (E2E), Firestore Security Rules テスト
+- 依存: Phase 1, 2, 3, 4, 5
+- 注意: Billing テストは Google Play Console テスター設定が必要（実機テスト）。Security Rules テストは firebase-rules-unit-testing パッケージ
 
 ## スコープ外 / 将来
 

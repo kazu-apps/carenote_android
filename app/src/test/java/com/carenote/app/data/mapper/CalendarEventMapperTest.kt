@@ -4,6 +4,7 @@ import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,6 +14,7 @@ import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 class CalendarEventMapperTest {
 
@@ -44,8 +46,8 @@ class CalendarEventMapperTest {
         assertEquals(LocalTime.of(9, 0), result.startTime)
         assertEquals(LocalTime.of(10, 30), result.endTime)
         assertFalse(result.isAllDay)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 10, 0), result.createdAt)
-        assertEquals(LocalDateTime.of(2025, 3, 15, 11, 0), result.updatedAt)
+        assertEquals(TestDataFixtures.NOW, result.createdAt)
+        assertEquals(TestDataFixtures.NOW.plusHours(1), result.updatedAt)
     }
 
     @Test
@@ -94,8 +96,8 @@ class CalendarEventMapperTest {
         assertEquals("08:30:00", result.startTime)
         assertEquals("16:00:00", result.endTime)
         assertEquals(0, result.isAllDay)
-        assertEquals("2025-03-15T10:00:00", result.createdAt)
-        assertEquals("2025-03-15T10:00:00", result.updatedAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.createdAt)
+        assertEquals(TestDataFixtures.NOW_STRING, result.updatedAt)
     }
 
     @Test
@@ -329,8 +331,8 @@ class CalendarEventMapperTest {
             startTime = "09:00:00",
             endTime = "10:00:00",
             isAllDay = 0,
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T11:00:00",
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -351,8 +353,8 @@ class CalendarEventMapperTest {
         completed: Int = 0,
         recurrenceFrequency: String = "NONE",
         recurrenceInterval: Int = 1,
-        createdAt: String = "2025-03-15T10:00:00",
-        updatedAt: String = "2025-03-15T11:00:00"
+        createdAt: String = TestDataFixtures.NOW_STRING,
+        updatedAt: String = TestDataFixtures.NOW.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     ): CalendarEventEntity = CalendarEventEntity(
         id = id,
         title = title,
@@ -381,8 +383,8 @@ class CalendarEventMapperTest {
         completed: Boolean = false,
         recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
         recurrenceInterval: Int = 1,
-        createdAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0),
-        updatedAt: LocalDateTime = LocalDateTime.of(2025, 3, 15, 10, 0)
+        createdAt: LocalDateTime = TestDataFixtures.NOW,
+        updatedAt: LocalDateTime = TestDataFixtures.NOW
     ): CalendarEvent = CalendarEvent(
         id = id,
         title = title,

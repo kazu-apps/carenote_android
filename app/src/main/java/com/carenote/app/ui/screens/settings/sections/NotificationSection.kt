@@ -15,6 +15,7 @@ fun NotificationSection(
     onNotificationsEnabledChange: (Boolean) -> Unit,
     quietHoursText: String,
     onQuietHoursClick: () -> Unit,
+    taskReminderLimitText: String?,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -29,5 +30,12 @@ fun NotificationSection(
             summary = quietHoursText,
             onClick = onQuietHoursClick
         )
+        if (taskReminderLimitText != null) {
+            ClickablePreference(
+                title = stringResource(R.string.settings_task_reminder_limit),
+                summary = taskReminderLimitText,
+                onClick = {}
+            )
+        }
     }
 }

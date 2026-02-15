@@ -3,11 +3,11 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.MedicationEntity
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 class MedicationMapperTest {
@@ -28,8 +28,8 @@ class MedicationMapperTest {
             timings = "MORNING,NOON",
             times = "MORNING=08:00;NOON=12:00",
             reminderEnabled = true,
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val result = mapper.toDomain(entity)
@@ -49,8 +49,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = "",
             times = "",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val result = mapper.toDomain(entity)
@@ -66,8 +66,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = "MORNING",
             times = "MORNING=08:30",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val result = mapper.toDomain(entity)
@@ -87,8 +87,8 @@ class MedicationMapperTest {
                 MedicationTiming.EVENING to LocalTime.of(18, 0)
             ),
             reminderEnabled = true,
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+            createdAt = TestDataFixtures.NOW,
+            updatedAt = TestDataFixtures.NOW
         )
 
         val result = mapper.toEntity(domain)
@@ -109,8 +109,8 @@ class MedicationMapperTest {
             timings = "MORNING,NOON,EVENING",
             times = "MORNING=08:00;NOON=12:00;EVENING=18:00",
             reminderEnabled = false,
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val domain = mapper.toDomain(original)
@@ -127,11 +127,11 @@ class MedicationMapperTest {
         val entities = listOf(
             MedicationEntity(
                 id = 1L, name = "薬A", timings = "", times = "",
-                createdAt = "2025-03-15T10:00:00", updatedAt = "2025-03-15T10:00:00"
+                createdAt = TestDataFixtures.NOW_STRING, updatedAt = TestDataFixtures.NOW_STRING
             ),
             MedicationEntity(
                 id = 2L, name = "薬B", timings = "", times = "",
-                createdAt = "2025-03-15T10:00:00", updatedAt = "2025-03-15T10:00:00"
+                createdAt = TestDataFixtures.NOW_STRING, updatedAt = TestDataFixtures.NOW_STRING
             )
         )
 
@@ -149,8 +149,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = "MORNING,INVALID",
             times = "MORNING=08:00",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val result = mapper.toDomain(entity)
@@ -166,8 +166,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = "MORNING",
             times = "MORNING=08:00",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00",
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING,
             currentStock = 20,
             lowStockThreshold = 5
         )
@@ -185,8 +185,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = listOf(MedicationTiming.MORNING),
             times = mapOf(MedicationTiming.MORNING to LocalTime.of(8, 0)),
-            createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
-            updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+            createdAt = TestDataFixtures.NOW,
+            updatedAt = TestDataFixtures.NOW,
             currentStock = 15,
             lowStockThreshold = 3
         )
@@ -204,8 +204,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = "MORNING",
             times = "MORNING=08:00",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00",
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING,
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -221,8 +221,8 @@ class MedicationMapperTest {
             name = "テスト薬",
             timings = "MORNING",
             times = "MORNING=invalid",
-            createdAt = "2025-03-15T10:00:00",
-            updatedAt = "2025-03-15T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val result = mapper.toDomain(entity)

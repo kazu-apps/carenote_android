@@ -3,14 +3,17 @@ package com.carenote.app.data.mapper
 import com.carenote.app.data.local.entity.EmergencyContactEntity
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.RelationshipType
+import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class EmergencyContactMapperTest {
 
     private lateinit var mapper: EmergencyContactMapper
+
+    private val fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @Before
     fun setup() {
@@ -25,8 +28,8 @@ class EmergencyContactMapperTest {
             phoneNumber = "090-1234-5678",
             relationship = "FAMILY",
             memo = "父",
-            createdAt = "2026-01-01T10:00:00",
-            updatedAt = "2026-01-01T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
 
         val domain = mapper.toDomain(entity)
@@ -36,8 +39,8 @@ class EmergencyContactMapperTest {
         assertEquals("090-1234-5678", domain.phoneNumber)
         assertEquals(RelationshipType.FAMILY, domain.relationship)
         assertEquals("父", domain.memo)
-        assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0, 0), domain.createdAt)
-        assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0, 0), domain.updatedAt)
+        assertEquals(TestDataFixtures.NOW, domain.createdAt)
+        assertEquals(TestDataFixtures.NOW, domain.updatedAt)
     }
 
     @Test
@@ -48,8 +51,8 @@ class EmergencyContactMapperTest {
             phoneNumber = "080-9876-5432",
             relationship = RelationshipType.DOCTOR,
             memo = "かかりつけ医",
-            createdAt = LocalDateTime.of(2026, 2, 1, 9, 0, 0),
-            updatedAt = LocalDateTime.of(2026, 2, 1, 9, 0, 0)
+            createdAt = TestDataFixtures.NOW.withHour(9).withMinute(0),
+            updatedAt = TestDataFixtures.NOW.withHour(9).withMinute(0)
         )
 
         val entity = mapper.toEntity(domain)
@@ -59,8 +62,8 @@ class EmergencyContactMapperTest {
         assertEquals("080-9876-5432", entity.phoneNumber)
         assertEquals("DOCTOR", entity.relationship)
         assertEquals("かかりつけ医", entity.memo)
-        assertEquals("2026-02-01T09:00:00", entity.createdAt)
-        assertEquals("2026-02-01T09:00:00", entity.updatedAt)
+        assertEquals(TestDataFixtures.NOW.withHour(9).withMinute(0).format(fmt), entity.createdAt)
+        assertEquals(TestDataFixtures.NOW.withHour(9).withMinute(0).format(fmt), entity.updatedAt)
     }
 
     @Test
@@ -116,8 +119,8 @@ class EmergencyContactMapperTest {
             phoneNumber = "03-1234-5678",
             relationship = RelationshipType.HOSPITAL,
             memo = "A病院 外来",
-            createdAt = LocalDateTime.of(2026, 3, 15, 14, 30, 0),
-            updatedAt = LocalDateTime.of(2026, 3, 15, 14, 30, 0)
+            createdAt = TestDataFixtures.NOW.withHour(14).withMinute(30),
+            updatedAt = TestDataFixtures.NOW.withHour(14).withMinute(30)
         )
 
         val roundtripped = mapper.toDomain(mapper.toEntity(original))
@@ -133,8 +136,8 @@ class EmergencyContactMapperTest {
             phoneNumber = "090-1234-5678",
             relationship = "FAMILY",
             memo = "",
-            createdAt = "2026-01-01T10:00:00",
-            updatedAt = "2026-01-01T10:00:00",
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING,
             careRecipientId = 42L
         )
         val domain = mapper.toDomain(entity)
@@ -154,8 +157,8 @@ class EmergencyContactMapperTest {
             phoneNumber = "090-0000-0000",
             relationship = relationship,
             memo = "",
-            createdAt = "2026-01-01T10:00:00",
-            updatedAt = "2026-01-01T10:00:00"
+            createdAt = TestDataFixtures.NOW_STRING,
+            updatedAt = TestDataFixtures.NOW_STRING
         )
     }
 }

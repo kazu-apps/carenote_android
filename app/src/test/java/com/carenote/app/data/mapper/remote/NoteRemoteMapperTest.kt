@@ -3,6 +3,7 @@ package com.carenote.app.data.mapper.remote
 import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.testing.TestDataFixtures
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -17,7 +18,7 @@ class NoteRemoteMapperTest {
     private lateinit var timestampConverter: FirestoreTimestampConverter
     private lateinit var mapper: NoteRemoteMapper
 
-    private val testDateTime = LocalDateTime.of(2025, 3, 15, 10, 0, 0)
+    private val testDateTime = TestDataFixtures.NOW
 
     @Before
     fun setUp() {
@@ -304,7 +305,7 @@ class NoteRemoteMapperTest {
             createdAt = testDateTime,
             updatedAt = testDateTime
         )
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val syncMetadata = SyncMetadata(
             localId = 1L,
             syncedAt = testDateTime,
@@ -339,8 +340,8 @@ class NoteRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata extracts all fields correctly`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
-        val deletedAt = LocalDateTime.of(2025, 3, 17, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
+        val deletedAt = TestDataFixtures.NOW.plusDays(2)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),
@@ -356,7 +357,7 @@ class NoteRemoteMapperTest {
 
     @Test
     fun `extractSyncMetadata with null deletedAt`() {
-        val syncedAt = LocalDateTime.of(2025, 3, 16, 10, 0)
+        val syncedAt = TestDataFixtures.NOW.plusDays(1)
         val data = mapOf(
             "localId" to 1L,
             "syncedAt" to toTimestamp(syncedAt),

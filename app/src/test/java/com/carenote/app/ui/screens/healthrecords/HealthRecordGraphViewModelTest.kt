@@ -4,18 +4,15 @@ import app.cash.turbine.test
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeHealthRecordRepository
-import kotlinx.coroutines.Dispatchers
+import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,20 +20,16 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class HealthRecordGraphViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
     private val fakeClock = FakeClock()
     private lateinit var repository: FakeHealthRecordRepository
     private lateinit var viewModel: HealthRecordGraphViewModel
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
         repository = FakeHealthRecordRepository()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): HealthRecordGraphViewModel {
@@ -61,7 +54,7 @@ class HealthRecordGraphViewModelTest {
     )
 
     @Test
-    fun `initial state is loading with 7 day range`() = runTest(testDispatcher) {
+    fun `initial state is loading with 7 day range`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         val state = viewModel.graphState.value
@@ -70,7 +63,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `temperature data points extracted from records`() = runTest(testDispatcher) {
+    fun `temperature data points extracted from records`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, temperature = 36.5, recordedAt = now.minusDays(1)),
@@ -90,7 +83,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `blood pressure data points extracted from records`() = runTest(testDispatcher) {
+    fun `blood pressure data points extracted from records`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(
@@ -122,7 +115,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `null temperature values are filtered out`() = runTest(testDispatcher) {
+    fun `null temperature values are filtered out`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, temperature = 36.5, recordedAt = now.minusDays(2)),
@@ -140,7 +133,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `null blood pressure values are filtered out`() = runTest(testDispatcher) {
+    fun `null blood pressure values are filtered out`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(
@@ -168,7 +161,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `date range switch triggers data reload`() = runTest(testDispatcher) {
+    fun `date range switch triggers data reload`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, recordedAt = now.minusDays(20)),
@@ -193,7 +186,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `hasTemperatureData is true when temperature points exist`() = runTest(testDispatcher) {
+    fun `hasTemperatureData is true when temperature points exist`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(createRecord(id = 1L, temperature = 36.5, recordedAt = now))
@@ -208,7 +201,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `hasTemperatureData is false when no temperature points`() = runTest(testDispatcher) {
+    fun `hasTemperatureData is false when no temperature points`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(
@@ -231,7 +224,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `hasBloodPressureData is true when bp points exist`() = runTest(testDispatcher) {
+    fun `hasBloodPressureData is true when bp points exist`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(
@@ -253,7 +246,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `hasBloodPressureData is false when no bp points`() = runTest(testDispatcher) {
+    fun `hasBloodPressureData is false when no bp points`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         repository.setRecords(
             listOf(
@@ -276,7 +269,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `data points are sorted by date ascending`() = runTest(testDispatcher) {
+    fun `data points are sorted by date ascending`() = runTest(mainCoroutineRule.testDispatcher) {
         val now = LocalDateTime.of(2026, 1, 15, 10, 0, 0)
         val records = listOf(
             createRecord(id = 1L, temperature = 36.0, recordedAt = now),
@@ -297,7 +290,7 @@ class HealthRecordGraphViewModelTest {
     }
 
     @Test
-    fun `empty repository returns empty state`() = runTest(testDispatcher) {
+    fun `empty repository returns empty state`() = runTest(mainCoroutineRule.testDispatcher) {
         viewModel = createViewModel()
 
         viewModel.graphState.test {

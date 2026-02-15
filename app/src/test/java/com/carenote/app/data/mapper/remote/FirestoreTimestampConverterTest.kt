@@ -1,5 +1,6 @@
 package com.carenote.app.data.mapper.remote
 
+import com.carenote.app.testing.TestDataFixtures
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -23,7 +24,7 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDateTime converts Timestamp to LocalDateTime`() {
-        val dateTime = LocalDateTime.of(2025, 3, 15, 10, 30, 0, 0)
+        val dateTime = TestDataFixtures.NOW.withMinute(30)
         val instant = dateTime.atZone(ZoneId.systemDefault()).toInstant()
         val timestamp = Timestamp(instant.epochSecond, instant.nano)
 
@@ -34,7 +35,7 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toTimestamp converts LocalDateTime to Timestamp`() {
-        val dateTime = LocalDateTime.of(2025, 3, 15, 10, 30, 0, 0)
+        val dateTime = TestDataFixtures.NOW.withMinute(30)
 
         val result = converter.toTimestamp(dateTime)
 
@@ -45,7 +46,7 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `roundtrip LocalDateTime to Timestamp preserves data`() {
-        val original = LocalDateTime.of(2025, 3, 15, 10, 30, 45, 123000000)
+        val original = TestDataFixtures.NOW.withMinute(30).withSecond(45).withNano(123000000)
 
         val timestamp = converter.toTimestamp(original)
         val roundtrip = converter.toLocalDateTime(timestamp)
@@ -55,7 +56,7 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDateTimeFromAny converts Timestamp`() {
-        val dateTime = LocalDateTime.of(2025, 3, 15, 10, 30, 0, 0)
+        val dateTime = TestDataFixtures.NOW.withMinute(30)
         val instant = dateTime.atZone(ZoneId.systemDefault()).toInstant()
         val timestamp = Timestamp(instant.epochSecond, instant.nano)
 
@@ -66,7 +67,7 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDateTimeFromAny converts Long epoch millis`() {
-        val dateTime = LocalDateTime.of(2025, 3, 15, 10, 30, 0, 0)
+        val dateTime = TestDataFixtures.NOW.withMinute(30)
         val millis = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         val result = converter.toLocalDateTimeFromAny(millis)
@@ -93,7 +94,7 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDateTimeFromAnyOrNull converts valid Timestamp`() {
-        val dateTime = LocalDateTime.of(2025, 3, 15, 10, 30, 0, 0)
+        val dateTime = TestDataFixtures.NOW.withMinute(30)
         val instant = dateTime.atZone(ZoneId.systemDefault()).toInstant()
         val timestamp = Timestamp(instant.epochSecond, instant.nano)
 
@@ -108,20 +109,20 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDate parses ISO date string`() {
-        val dateString = "2025-03-15"
+        val dateString = TestDataFixtures.TODAY_STRING
 
         val result = converter.toLocalDate(dateString)
 
-        assertEquals(LocalDate.of(2025, 3, 15), result)
+        assertEquals(TestDataFixtures.TODAY, result)
     }
 
     @Test
     fun `toDateString formats LocalDate to ISO string`() {
-        val date = LocalDate.of(2025, 3, 15)
+        val date = TestDataFixtures.TODAY
 
         val result = converter.toDateString(date)
 
-        assertEquals("2025-03-15", result)
+        assertEquals(TestDataFixtures.TODAY_STRING, result)
     }
 
     @Test
@@ -136,9 +137,9 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDateFromAny converts String`() {
-        val result = converter.toLocalDateFromAny("2025-03-15")
+        val result = converter.toLocalDateFromAny(TestDataFixtures.TODAY_STRING)
 
-        assertEquals(LocalDate.of(2025, 3, 15), result)
+        assertEquals(TestDataFixtures.TODAY, result)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -160,9 +161,9 @@ class FirestoreTimestampConverterTest {
 
     @Test
     fun `toLocalDateFromAnyOrNull converts valid String`() {
-        val result = converter.toLocalDateFromAnyOrNull("2025-03-15")
+        val result = converter.toLocalDateFromAnyOrNull(TestDataFixtures.TODAY_STRING)
 
-        assertEquals(LocalDate.of(2025, 3, 15), result)
+        assertEquals(TestDataFixtures.TODAY, result)
     }
 
     // endregion
