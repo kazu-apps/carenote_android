@@ -1,8 +1,8 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: v9.0 Phase 3 (Firestore 構造移行) 完了
+## セッションステータス: v9.0 Phase 4 (家族招待データモデル + Room) 完了
 
-## 現在のタスク: v9.0 Phase 3 完了。Phase 1B (Cloud Functions) or Phase 4 から実行可能
+## 現在のタスク: v9.0 Phase 4 完了。Phase 5 (招待 UI + フロー) から実行可能
 
 Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → architect 提案 (6 Phase Plan) → critic リスク分析 (6リスク指摘) → researcher 相互レビュー (誤認6点、見落とし3点指摘)。
 
@@ -16,8 +16,9 @@ Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → archit
 
 ## 次のアクション
 
-- v10.0-tdd 全 Phase 完了。テスト基盤整備は一区切り
-- v9.0 計画策定（家族招待フロー、Google Play Billing、通知制限）
+- v9.0 Phase 5: 家族招待 — 招待 UI + 招待フロー（InvitationScreen, MemberManagementScreen, App Links）
+- v9.0 Phase 1B: Billing サーバーサイド検証 (Cloud Functions) — Claude Code 守備範囲外、手動作業
+- v9.0 Phase 6: 統合テスト + E2E（Phase 5 完了後）
 
 ## 既知の問題
 
@@ -275,12 +276,13 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | v9.0 Ph1 Billing | Google Play Billing 7.1.1 基盤（BillingRepository + NoOp + DI + PurchaseEntity v21 + Mapper + テスト 30件）。全テスト通過 | DONE |
 | v9.0 Ph2 PremiumGuard | PremiumFeatureGuard + NotificationCountDataSource + TaskReminderWorker 制限チェック + Settings 残り表示。テスト 22 件追加。全テスト通過 | DONE |
 | v9.0 Ph3 | CareRecipient firestoreId 追加 + SyncWorker 保存 + Firestore Rules isOwner/isMember + DB v22 + テスト 15 件。全テスト通過 | DONE |
+| v9.0 Ph4 | Member/Invitation ドメインモデル + Room Entity + DAO + Mapper + Repository + DI。DB v23（14 Entity）。テスト ~44 件追加。全テスト通過 | DONE |
 
 ## アーキテクチャ参照
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v22 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 12 Entity (PurchaseEntity 追加) |
+| Room DB | v23 baseline, SQLCipher 4.6.1, fallbackToDestructiveMigration, 14 Entity (MemberEntity + InvitationEntity 追加) |
 | Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
 | 同期 | ConfigDrivenEntitySyncer + Incremental Sync (updatedAt フィルター) |
 | Paging 3 | Task/Note/HealthRecord(LIST): PagingSource, Medication: DB検索のみ, Calendar: 対象外 |
@@ -331,12 +333,12 @@ CareRecipient に firestoreId: String? フィールド追加（Entity/Model/Mapp
 - テスト: CareRecipientMapperTest (新規10件) + CareRecipientRepositoryImplTest (+2件) + ActiveCareRecipientProviderImplTest (+3件) + FakeCareRecipientRepository更新 + FakeActiveCareRecipientProvider更新 + TestBuilders更新
 - 依存: Phase 2
 
-### Phase 4: 家族招待 — データモデル + Room - PENDING
-Member/Invitation ドメインモデル、Room Entity、DAO、Mapper の実装。
-InvitationRepository + MemberRepository の追加。
-- 対象: domain/model/Member, domain/model/Invitation, data/local/entity/MemberEntity, data/local/entity/InvitationEntity, data/local/dao/MemberDao, data/local/dao/InvitationDao, data/mapper/MemberMapper, data/mapper/InvitationMapper, domain/repository/MemberRepository, domain/repository/InvitationRepository, data/repository/MemberRepositoryImpl, data/repository/InvitationRepositoryImpl
+### Phase 4: 家族招待 — データモデル + Room - DONE
+
+Member/Invitation ドメインモデル、Room Entity、DAO、Mapper、Repository 実装。MemberRole (OWNER/MEMBER)、InvitationStatus (PENDING/ACCEPTED/REJECTED/EXPIRED)。DB v23。DI 統合（DatabaseModule + AppModule）。テスト ~44 件追加（MemberMapperTest、InvitationMapperTest、MemberRepositoryImplTest、InvitationRepositoryImplTest + FakeMemberRepository + FakeInvitationRepository + TestBuilders 拡張）。全ビルド・テスト通過。
+- 対象: `domain/model/Member.kt` (新規), `domain/model/Invitation.kt` (新規), `data/local/entity/MemberEntity.kt` (新規), `data/local/entity/InvitationEntity.kt` (新規), `data/local/dao/MemberDao.kt` (新規), `data/local/dao/InvitationDao.kt` (新規), `data/mapper/MemberMapper.kt` (新規), `data/mapper/InvitationMapper.kt` (新規), `domain/repository/MemberRepository.kt` (新規), `domain/repository/InvitationRepository.kt` (新規), `data/repository/MemberRepositoryImpl.kt` (新規), `data/repository/InvitationRepositoryImpl.kt` (新規), `data/local/CareNoteDatabase.kt` (v23), `di/DatabaseModule.kt`, `di/AppModule.kt`
+- テスト: MemberMapperTest + InvitationMapperTest + MemberRepositoryImplTest + InvitationRepositoryImplTest + FakeMemberRepository (新規) + FakeInvitationRepository (新規) + TestBuilders (aMember/aInvitation 追加)
 - 依存: Phase 3
-- 注意: Room v21 migration。テスト用 FakeMemberRepository + FakeInvitationRepository 作成
 
 ### Phase 5: 家族招待 — 招待 UI + 招待フロー - PENDING
 招待画面 (InvitationScreen)、メンバー管理画面 (MemberManagementScreen) の実装。

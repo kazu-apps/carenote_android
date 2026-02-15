@@ -9,11 +9,15 @@ import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.ExcretionType
 import com.carenote.app.domain.model.Gender
 import com.carenote.app.domain.model.HealthRecord
+import com.carenote.app.domain.model.Invitation
+import com.carenote.app.domain.model.InvitationStatus
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.domain.model.Member
+import com.carenote.app.domain.model.MemberRole
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteComment
 import com.carenote.app.domain.model.NoteTag
@@ -308,4 +312,38 @@ fun aUserSettings(
     biometricEnabled = biometricEnabled,
     sessionTimeoutMinutes = sessionTimeoutMinutes,
     useDynamicColor = useDynamicColor
+)
+
+fun aMember(
+    id: Long = 1L,
+    careRecipientId: Long = TestDataFixtures.DEFAULT_CARE_RECIPIENT_ID,
+    uid: String = "testUid",
+    role: MemberRole = MemberRole.MEMBER,
+    clock: Clock = TestDataFixtures.DEFAULT_CLOCK
+): Member = Member(
+    id = id,
+    careRecipientId = careRecipientId,
+    uid = uid,
+    role = role,
+    joinedAt = clock.now()
+)
+
+fun aInvitation(
+    id: Long = 1L,
+    careRecipientId: Long = TestDataFixtures.DEFAULT_CARE_RECIPIENT_ID,
+    inviterUid: String = "inviterUid",
+    inviteeEmail: String = "invitee@example.com",
+    status: InvitationStatus = InvitationStatus.PENDING,
+    token: String = "test-token-001",
+    expiresAt: LocalDateTime? = null,
+    clock: Clock = TestDataFixtures.DEFAULT_CLOCK
+): Invitation = Invitation(
+    id = id,
+    careRecipientId = careRecipientId,
+    inviterUid = inviterUid,
+    inviteeEmail = inviteeEmail,
+    status = status,
+    token = token,
+    expiresAt = expiresAt ?: clock.now().plusDays(7),
+    createdAt = clock.now()
 )

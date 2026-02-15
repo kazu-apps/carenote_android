@@ -16,6 +16,8 @@ import com.carenote.app.data.local.dao.EmergencyContactDao
 import com.carenote.app.data.local.dao.HealthRecordDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
+import com.carenote.app.data.local.dao.InvitationDao
+import com.carenote.app.data.local.dao.MemberDao
 import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.PhotoDao
@@ -26,6 +28,8 @@ import com.carenote.app.data.mapper.EmergencyContactMapper
 import com.carenote.app.data.mapper.HealthRecordMapper
 import com.carenote.app.data.mapper.MedicationLogMapper
 import com.carenote.app.data.mapper.MedicationMapper
+import com.carenote.app.data.mapper.InvitationMapper
+import com.carenote.app.data.mapper.MemberMapper
 import com.carenote.app.data.mapper.NoteCommentMapper
 import com.carenote.app.data.mapper.NoteMapper
 import com.carenote.app.data.mapper.PhotoMapper
@@ -37,6 +41,8 @@ import com.carenote.app.data.repository.EmergencyContactRepositoryImpl
 import com.carenote.app.data.repository.HealthRecordRepositoryImpl
 import com.carenote.app.data.repository.MedicationLogRepositoryImpl
 import com.carenote.app.data.repository.MedicationRepositoryImpl
+import com.carenote.app.data.repository.InvitationRepositoryImpl
+import com.carenote.app.data.repository.MemberRepositoryImpl
 import com.carenote.app.data.repository.NoteCommentRepositoryImpl
 import com.carenote.app.data.repository.NoteRepositoryImpl
 import com.carenote.app.data.repository.PhotoRepositoryImpl
@@ -70,6 +76,8 @@ import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
+import com.carenote.app.domain.repository.InvitationRepository
+import com.carenote.app.domain.repository.MemberRepository
 import com.carenote.app.domain.repository.NoteCommentRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.SearchRepository
@@ -285,6 +293,26 @@ object AppModule {
         pdfExporter: NotePdfExporter
     ): NotePdfExporterInterface {
         return pdfExporter
+    }
+
+    @Provides
+    @Singleton
+    fun provideMemberRepository(
+        dao: MemberDao,
+        mapper: MemberMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
+    ): MemberRepository {
+        return MemberRepositoryImpl(dao, mapper, activeRecipientProvider)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInvitationRepository(
+        dao: InvitationDao,
+        mapper: InvitationMapper,
+        activeRecipientProvider: ActiveCareRecipientProvider
+    ): InvitationRepository {
+        return InvitationRepositoryImpl(dao, mapper, activeRecipientProvider)
     }
 
     @Provides

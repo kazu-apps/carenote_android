@@ -11,6 +11,8 @@ import com.carenote.app.data.local.dao.CalendarEventDao
 import com.carenote.app.data.local.dao.EmergencyContactDao
 import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.HealthRecordDao
+import com.carenote.app.data.local.dao.InvitationDao
+import com.carenote.app.data.local.dao.MemberDao
 import com.carenote.app.data.local.dao.MedicationDao
 import com.carenote.app.data.local.dao.MedicationLogDao
 import com.carenote.app.data.local.dao.NoteCommentDao
@@ -128,5 +130,17 @@ object DatabaseModule {
     @Singleton
     fun providePurchaseDao(database: CareNoteDatabase): PurchaseDao {
         return database.purchaseDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMemberDao(database: CareNoteDatabase): MemberDao {
+        return database.memberDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideInvitationDao(database: CareNoteDatabase): InvitationDao {
+        return database.invitationDao()
     }
 }
