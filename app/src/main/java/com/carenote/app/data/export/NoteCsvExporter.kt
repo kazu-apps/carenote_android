@@ -62,7 +62,7 @@ class NoteCsvExporter @Inject constructor(
             context.getString(R.string.note_export_header_created_at),
             context.getString(R.string.note_export_header_updated_at)
         )
-        return headers.joinToString(",") { escapeCsv(it) }
+        return headers.joinToString(",") { it.escapeCsv() }
     }
 
     private fun buildDataRow(note: Note): String {
@@ -73,15 +73,7 @@ class NoteCsvExporter @Inject constructor(
             note.createdAt.format(dateFormatter),
             note.updatedAt.format(dateFormatter)
         )
-        return fields.joinToString(",") { escapeCsv(it) }
-    }
-
-    internal fun escapeCsv(value: String): String {
-        return if (value.contains(',') || value.contains('"') || value.contains('\n') || value.contains('\r')) {
-            "\"${value.replace("\"", "\"\"")}\""
-        } else {
-            value
-        }
+        return fields.joinToString(",") { it.escapeCsv() }
     }
 
     private fun localizeTag(tag: NoteTag): String = when (tag) {

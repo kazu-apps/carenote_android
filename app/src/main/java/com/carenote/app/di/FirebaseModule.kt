@@ -38,7 +38,7 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseFirestore(availability: FirebaseAvailability): FirebaseFirestore {
         if (!availability.isAvailable) {
-            throw IllegalStateException("Firebase is not available — this provider should only be called via dagger.Lazy")
+            error("Firebase is not available — use dagger.Lazy")
         }
         return FirebaseFirestore.getInstance()
     }
@@ -47,7 +47,7 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseMessaging(availability: FirebaseAvailability): FirebaseMessaging {
         if (!availability.isAvailable) {
-            throw IllegalStateException("Firebase is not available — this provider should only be called via dagger.Lazy")
+            error("Firebase is not available — use dagger.Lazy")
         }
         return FirebaseMessaging.getInstance()
     }
@@ -56,7 +56,7 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseStorage(availability: FirebaseAvailability): FirebaseStorage {
         if (!availability.isAvailable) {
-            throw IllegalStateException("Firebase is not available — this provider should only be called via dagger.Lazy")
+            error("Firebase is not available — use dagger.Lazy")
         }
         return FirebaseStorage.getInstance()
     }
@@ -89,7 +89,7 @@ object FirebaseModule {
         @ApplicationContext context: Context
     ): FirebaseAnalytics {
         if (!availability.isAvailable) {
-            throw IllegalStateException("Firebase is not available — this provider should only be called via dagger.Lazy")
+            error("Firebase is not available — use dagger.Lazy")
         }
         return FirebaseAnalytics.getInstance(context)
     }

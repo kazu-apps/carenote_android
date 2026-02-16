@@ -20,14 +20,15 @@ class MedicationLogMapper @Inject constructor() : Mapper<MedicationLogEntity, Me
             MedicationLogStatus.valueOf(entity.status)
         } catch (e: IllegalArgumentException) {
             throw IllegalArgumentException(
-                "Unknown MedicationLogStatus: '${entity.status}'. Expected one of: ${MedicationLogStatus.entries.joinToString()}",
+                "Unknown MedicationLogStatus: '${entity.status}'. " +
+                    "Expected one of: ${MedicationLogStatus.entries.joinToString()}",
                 e
             )
         }
         val timing = entity.timing?.let { timingStr ->
             try {
                 MedicationTiming.valueOf(timingStr)
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 Timber.w("Unknown MedicationTiming: '$timingStr', falling back to null")
                 null
             }

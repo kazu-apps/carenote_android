@@ -67,14 +67,50 @@ fun MedicationDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.deletedEvent.collect { deleted ->
-            if (deleted) {
-                onNavigateBack()
-            }
-        }
+    MedicationDetailEffects(viewModel, snackbarHostState, context, onNavigateBack)
+
+    Scaffold(
+        topBar = {
+            MedicationDetailTopBar(
+                onNavigateBack = onNavigateBack,
+                onEdit = {
+                    (medicationState as? UiState.Success)?.data?.id?.let { id ->
+                        onNavigateToEdit(id)
+                    }
+                },
+                onDelete = { showDeleteDialog = true }
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        MedicationDetailBody(
+            medicationState = medicationState,
+            logs = logs,
+            innerPadding = innerPadding
+        )
     }
 
+    if (showDeleteDialog) {
+        MedicationDeleteConfirmDialog(
+            medicationState = medicationState,
+            viewModel = viewModel,
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun MedicationDetailEffects(
+    viewModel: MedicationDetailViewModel,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context,
+    onNavigateBack: () -> Unit
+) {
+    LaunchedEffect(Unit) {
+        viewModel.deletedEvent.collect { deleted ->
+            if (deleted) onNavigateBack()
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
@@ -84,85 +120,98 @@ fun MedicationDetailScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
+}
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.medication_detail),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            (medicationState as? UiState.Success)?.data?.id?.let { id ->
-                                onNavigateToEdit(id)
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = stringResource(R.string.medication_edit)
-                        )
-                    }
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = stringResource(R.string.common_delete),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+@Composable
+private fun MedicationDetailBody(
+    medicationState: UiState<Medication>,
+    logs: List<MedicationLog>,
+    innerPadding: PaddingValues
+) {
+    when (val state = medicationState) {
+        is UiState.Loading -> {
+            LoadingIndicator(modifier = Modifier.padding(innerPadding))
+        }
+        is UiState.Error -> {
+            ErrorDisplay(
+                error = state.error,
+                modifier = Modifier.padding(innerPadding)
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        when (val state = medicationState) {
-            is UiState.Loading -> {
-                LoadingIndicator(modifier = Modifier.padding(innerPadding))
-            }
-            is UiState.Error -> {
-                ErrorDisplay(
-                    error = state.error,
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            is UiState.Success -> {
-                MedicationDetailContent(
-                    medication = state.data,
-                    logs = logs,
-                    contentPadding = innerPadding
-                )
-            }
+        }
+        is UiState.Success -> {
+            MedicationDetailContent(
+                medication = state.data,
+                logs = logs,
+                contentPadding = innerPadding
+            )
         }
     }
+}
 
-    if (showDeleteDialog) {
-        val medicationName = (medicationState as? UiState.Success)?.data?.name ?: ""
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_delete_title),
-            message = stringResource(R.string.medication_delete_confirm, medicationName),
-            onConfirm = {
-                viewModel.deleteMedication()
-                showDeleteDialog = false
-            },
-            onDismiss = { showDeleteDialog = false },
-            isDestructive = true
+@Composable
+private fun MedicationDeleteConfirmDialog(
+    medicationState: UiState<Medication>,
+    viewModel: MedicationDetailViewModel,
+    onDismiss: () -> Unit
+) {
+    val medicationName =
+        (medicationState as? UiState.Success)?.data?.name ?: ""
+    ConfirmDialog(
+        title = stringResource(R.string.ui_confirm_delete_title),
+        message = stringResource(
+            R.string.medication_delete_confirm,
+            medicationName
+        ),
+        onConfirm = {
+            viewModel.deleteMedication()
+            onDismiss()
+        },
+        onDismiss = onDismiss,
+        isDestructive = true
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MedicationDetailTopBar(
+    onNavigateBack: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.medication_detail),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.common_close)
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onEdit) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.medication_edit)
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.common_delete),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
         )
-    }
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -183,78 +232,7 @@ private fun MedicationDetailContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item(key = "info") {
-            CareNoteCard {
-                Text(
-                    text = medication.name,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                if (medication.dosage.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = medication.dosage,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    medication.timings.forEach { timing ->
-                        MedicationTimingChip(timing = timing)
-                    }
-                }
-                medication.times.forEach { (timing, time) ->
-                    val timingLabel = when (timing) {
-                        com.carenote.app.domain.model.MedicationTiming.MORNING ->
-                            stringResource(R.string.medication_morning)
-                        com.carenote.app.domain.model.MedicationTiming.NOON ->
-                            stringResource(R.string.medication_noon)
-                        com.carenote.app.domain.model.MedicationTiming.EVENING ->
-                            stringResource(R.string.medication_evening)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "$timingLabel: ${DateTimeFormatters.formatTime(time)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (medication.currentStock != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.medication_stock_section),
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    val threshold = medication.lowStockThreshold
-                        ?: com.carenote.app.config.AppConfig.Medication.DEFAULT_LOW_STOCK_THRESHOLD
-                    val isLow = medication.currentStock <= threshold
-                    Text(
-                        text = stringResource(
-                            R.string.medication_current_stock,
-                            medication.currentStock
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isLow) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                    if (medication.lowStockThreshold != null) {
-                        Text(
-                            text = stringResource(
-                                R.string.medication_low_stock_threshold,
-                                medication.lowStockThreshold
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            MedicationInfoCard(medication = medication)
         }
 
         item(key = "history_header") {
@@ -280,6 +258,93 @@ private fun MedicationDetailContent(
             ) { log ->
                 LogItem(log = log)
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MedicationInfoCard(medication: Medication) {
+    CareNoteCard {
+        Text(
+            text = medication.name,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        if (medication.dosage.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = medication.dosage,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            medication.timings.forEach { timing ->
+                MedicationTimingChip(timing = timing)
+            }
+        }
+        MedicationTimesDisplay(medication = medication)
+        MedicationStockDisplay(medication = medication)
+    }
+}
+
+@Composable
+private fun MedicationTimesDisplay(medication: Medication) {
+    medication.times.forEach { (timing, time) ->
+        val timingLabel = when (timing) {
+            com.carenote.app.domain.model.MedicationTiming.MORNING ->
+                stringResource(R.string.medication_morning)
+            com.carenote.app.domain.model.MedicationTiming.NOON ->
+                stringResource(R.string.medication_noon)
+            com.carenote.app.domain.model.MedicationTiming.EVENING ->
+                stringResource(R.string.medication_evening)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "$timingLabel: ${DateTimeFormatters.formatTime(time)}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun MedicationStockDisplay(medication: Medication) {
+    if (medication.currentStock != null) {
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.medication_stock_section),
+            style = MaterialTheme.typography.titleSmall
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        val threshold = medication.lowStockThreshold
+            ?: com.carenote.app.config.AppConfig.Medication.DEFAULT_LOW_STOCK_THRESHOLD
+        val isLow = medication.currentStock <= threshold
+        Text(
+            text = stringResource(
+                R.string.medication_current_stock,
+                medication.currentStock
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (isLow) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        )
+        if (medication.lowStockThreshold != null) {
+            Text(
+                text = stringResource(
+                    R.string.medication_low_stock_threshold,
+                    medication.lowStockThreshold
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

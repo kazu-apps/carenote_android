@@ -56,7 +56,7 @@ import com.carenote.app.ui.util.SnackbarEvent
 import java.time.LocalDate
 import java.time.LocalTime
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditCalendarEventScreen(
     onNavigateBack: () -> Unit = {},
@@ -67,16 +67,62 @@ fun AddEditCalendarEventScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    CalendarEventScreenEffects(viewModel, snackbarHostState, onNavigateBack)
+
+    val title = if (formState.isEditMode) {
+        stringResource(R.string.calendar_edit_event)
+    } else {
+        stringResource(R.string.calendar_add_event)
+    }
+
+    CalendarEventScreenScaffold(
+        title = title,
+        formState = formState,
+        viewModel = viewModel,
+        snackbarHostState = snackbarHostState,
+        onNavigateBack = onNavigateBack,
+        onShowDatePicker = { showDatePicker = true },
+        onShowStartTimePicker = { showStartTimePicker = true },
+        onShowEndTimePicker = { showEndTimePicker = true }
+    )
+
+    CalendarEventDateTimePickers(
+        formState = formState,
+        showDatePicker = showDatePicker,
+        showStartTimePicker = showStartTimePicker,
+        showEndTimePicker = showEndTimePicker,
+        onDateSelected = { date ->
+            viewModel.updateDate(date)
+            showDatePicker = false
+        },
+        onDismissDatePicker = { showDatePicker = false },
+        onStartTimeSelected = { time ->
+            viewModel.updateStartTime(time)
+            showStartTimePicker = false
+        },
+        onDismissStartTimePicker = { showStartTimePicker = false },
+        onEndTimeSelected = { time ->
+            viewModel.updateEndTime(time)
+            showEndTimePicker = false
+        },
+        onDismissEndTimePicker = { showEndTimePicker = false }
+    )
+}
+
+@Composable
+private fun CalendarEventScreenEffects(
+    viewModel: AddEditCalendarEventViewModel,
+    snackbarHostState: SnackbarHostState,
+    onNavigateBack: () -> Unit
+) {
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.savedEvent.collect { saved ->
-            if (saved) {
-                onNavigateBack()
-            }
+            if (saved) { onNavigateBack() }
         }
     }
-
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
@@ -86,144 +132,252 @@ fun AddEditCalendarEventScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
+}
 
-    val title = if (formState.isEditMode) {
-        stringResource(R.string.calendar_edit_event)
-    } else {
-        stringResource(R.string.calendar_add_event)
-    }
-
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarEventScreenScaffold(
+    title: String,
+    formState: AddEditCalendarEventFormState,
+    viewModel: AddEditCalendarEventViewModel,
+    snackbarHostState: SnackbarHostState,
+    onNavigateBack: () -> Unit,
+    onShowDatePicker: () -> Unit,
+    onShowStartTimePicker: () -> Unit,
+    onShowEndTimePicker: () -> Unit
+) {
     CareNoteAddEditScaffold(
         title = title,
         onNavigateBack = onNavigateBack,
         isDirty = viewModel.isDirty,
         snackbarHostState = snackbarHostState
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
+        CalendarEventFormBody(
+            formState = formState,
+            onTitleChange = viewModel::updateTitle,
+            onDescriptionChange = viewModel::updateDescription,
+            onTypeChange = viewModel::updateType,
+            onShowDatePicker = onShowDatePicker,
+            onToggleAllDay = viewModel::toggleAllDay,
+            onShowStartTimePicker = onShowStartTimePicker,
+            onShowEndTimePicker = onShowEndTimePicker,
+            onFrequencySelected = viewModel::updateRecurrenceFrequency,
+            onIntervalChanged = viewModel::updateRecurrenceInterval,
+            onCancel = onNavigateBack,
+            onSave = viewModel::saveEvent,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
 
-            CareNoteTextField(
-                value = formState.title,
-                onValueChange = viewModel::updateTitle,
-                label = stringResource(R.string.calendar_event_title),
-                placeholder = stringResource(R.string.calendar_event_title_placeholder),
-                errorMessage = formState.titleError,
-                singleLine = true
-            )
+@Suppress("LongParameterList")
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CalendarEventFormBody(
+    formState: AddEditCalendarEventFormState,
+    onTitleChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onTypeChange: (CalendarEventType) -> Unit,
+    onShowDatePicker: () -> Unit,
+    onToggleAllDay: () -> Unit,
+    onShowStartTimePicker: () -> Unit,
+    onShowEndTimePicker: () -> Unit,
+    onFrequencySelected: (RecurrenceFrequency) -> Unit,
+    onIntervalChanged: (Int) -> Unit,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
 
-            CareNoteTextField(
-                value = formState.description,
-                onValueChange = viewModel::updateDescription,
-                label = stringResource(R.string.calendar_event_description),
-                placeholder = stringResource(R.string.calendar_event_description_placeholder),
-                errorMessage = formState.descriptionError,
-                singleLine = false,
-                maxLines = AppConfig.Calendar.DESCRIPTION_PREVIEW_MAX_LINES + 2
-            )
+        CalendarEventTextFields(
+            formState = formState,
+            onTitleChange = onTitleChange,
+            onDescriptionChange = onDescriptionChange
+        )
 
-            // Event type selector
-            Text(
-                text = stringResource(R.string.calendar_event_type),
-                style = MaterialTheme.typography.titleMedium
-            )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CalendarEventType.entries.forEach { type ->
-                    FilterChip(
-                        selected = formState.type == type,
-                        onClick = { viewModel.updateType(type) },
-                        label = {
-                            Text(text = stringResource(type.labelResId()))
-                        }
-                    )
+        EventTypeSelector(
+            selectedType = formState.type,
+            onTypeChange = onTypeChange
+        )
+
+        CalendarEventDateTimeSection(
+            formState = formState,
+            onShowDatePicker = onShowDatePicker,
+            onToggleAllDay = onToggleAllDay,
+            onShowStartTimePicker = onShowStartTimePicker,
+            onShowEndTimePicker = onShowEndTimePicker
+        )
+
+        RecurrenceSection(
+            frequency = formState.recurrenceFrequency,
+            interval = formState.recurrenceInterval,
+            intervalError = formState.recurrenceIntervalError,
+            onFrequencySelected = onFrequencySelected,
+            onIntervalChanged = onIntervalChanged
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SaveCancelButtons(
+            isSaving = formState.isSaving,
+            onCancel = onCancel,
+            onSave = onSave
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun CalendarEventTextFields(
+    formState: AddEditCalendarEventFormState,
+    onTitleChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit
+) {
+    CareNoteTextField(
+        value = formState.title,
+        onValueChange = onTitleChange,
+        label = stringResource(R.string.calendar_event_title),
+        placeholder = stringResource(R.string.calendar_event_title_placeholder),
+        errorMessage = formState.titleError,
+        singleLine = true
+    )
+
+    CareNoteTextField(
+        value = formState.description,
+        onValueChange = onDescriptionChange,
+        label = stringResource(R.string.calendar_event_description),
+        placeholder = stringResource(R.string.calendar_event_description_placeholder),
+        errorMessage = formState.descriptionError,
+        singleLine = false,
+        maxLines = AppConfig.Calendar.DESCRIPTION_PREVIEW_MAX_LINES + 2
+    )
+}
+
+@Composable
+private fun CalendarEventDateTimeSection(
+    formState: AddEditCalendarEventFormState,
+    onShowDatePicker: () -> Unit,
+    onToggleAllDay: () -> Unit,
+    onShowStartTimePicker: () -> Unit,
+    onShowEndTimePicker: () -> Unit
+) {
+    DateSelector(
+        date = formState.date,
+        onClick = onShowDatePicker
+    )
+
+    AllDayToggle(
+        isAllDay = formState.isAllDay,
+        onToggle = onToggleAllDay
+    )
+
+    if (!formState.isAllDay) {
+        TimeSelector(
+            label = stringResource(R.string.calendar_event_start_time),
+            time = formState.startTime,
+            onClick = onShowStartTimePicker
+        )
+
+        TimeSelector(
+            label = stringResource(R.string.calendar_event_end_time),
+            time = formState.endTime,
+            onClick = onShowEndTimePicker
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EventTypeSelector(
+    selectedType: CalendarEventType,
+    onTypeChange: (CalendarEventType) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.calendar_event_type),
+        style = MaterialTheme.typography.titleMedium
+    )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CalendarEventType.entries.forEach { type ->
+            FilterChip(
+                selected = selectedType == type,
+                onClick = { onTypeChange(type) },
+                label = {
+                    Text(text = stringResource(type.labelResId()))
                 }
-            }
-
-            DateSelector(
-                date = formState.date,
-                onClick = { showDatePicker = true }
             )
-
-            AllDayToggle(
-                isAllDay = formState.isAllDay,
-                onToggle = viewModel::toggleAllDay
-            )
-
-            if (!formState.isAllDay) {
-                TimeSelector(
-                    label = stringResource(R.string.calendar_event_start_time),
-                    time = formState.startTime,
-                    onClick = { showStartTimePicker = true }
-                )
-
-                TimeSelector(
-                    label = stringResource(R.string.calendar_event_end_time),
-                    time = formState.endTime,
-                    onClick = { showEndTimePicker = true }
-                )
-            }
-
-            RecurrenceSection(
-                frequency = formState.recurrenceFrequency,
-                interval = formState.recurrenceInterval,
-                intervalError = formState.recurrenceIntervalError,
-                onFrequencySelected = viewModel::updateRecurrenceFrequency,
-                onIntervalChanged = viewModel::updateRecurrenceInterval
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape
-                ) {
-                    Text(text = stringResource(R.string.common_cancel))
-                }
-                Button(
-                    onClick = viewModel::saveEvent,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape,
-                    enabled = !formState.isSaving
-                ) {
-                    if (formState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .height(20.dp)
-                                .width(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(text = stringResource(R.string.common_save))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
 
+@Composable
+private fun SaveCancelButtons(
+    isSaving: Boolean,
+    onCancel: () -> Unit,
+    onSave: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape
+        ) {
+            Text(text = stringResource(R.string.common_cancel))
+        }
+        Button(
+            onClick = onSave,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape,
+            enabled = !isSaving
+        ) {
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(text = stringResource(R.string.common_save))
+            }
+        }
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun CalendarEventDateTimePickers(
+    formState: AddEditCalendarEventFormState,
+    showDatePicker: Boolean,
+    showStartTimePicker: Boolean,
+    showEndTimePicker: Boolean,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismissDatePicker: () -> Unit,
+    onStartTimeSelected: (LocalTime) -> Unit,
+    onDismissStartTimePicker: () -> Unit,
+    onEndTimeSelected: (LocalTime) -> Unit,
+    onDismissEndTimePicker: () -> Unit
+) {
     if (showDatePicker) {
         CareNoteDatePickerDialog(
             initialDate = formState.date,
-            onDateSelected = { date ->
-                viewModel.updateDate(date)
-                showDatePicker = false
-            },
-            onDismiss = { showDatePicker = false }
+            onDateSelected = onDateSelected,
+            onDismiss = onDismissDatePicker
         )
     }
 
@@ -233,11 +387,8 @@ fun AddEditCalendarEventScreen(
                 AppConfig.Calendar.DEFAULT_START_HOUR,
                 AppConfig.Calendar.DEFAULT_START_MINUTE
             ),
-            onTimeSelected = { time ->
-                viewModel.updateStartTime(time)
-                showStartTimePicker = false
-            },
-            onDismiss = { showStartTimePicker = false }
+            onTimeSelected = onStartTimeSelected,
+            onDismiss = onDismissStartTimePicker
         )
     }
 
@@ -247,11 +398,8 @@ fun AddEditCalendarEventScreen(
                 AppConfig.Calendar.DEFAULT_END_HOUR,
                 AppConfig.Calendar.DEFAULT_END_MINUTE
             ),
-            onTimeSelected = { time ->
-                viewModel.updateEndTime(time)
-                showEndTimePicker = false
-            },
-            onDismiss = { showEndTimePicker = false }
+            onTimeSelected = onEndTimeSelected,
+            onDismiss = onDismissEndTimePicker
         )
     }
 }
@@ -348,51 +496,73 @@ private fun RecurrenceSection(
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.NONE,
-                onClick = { onFrequencySelected(RecurrenceFrequency.NONE) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_none)) }
-            )
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.DAILY,
-                onClick = { onFrequencySelected(RecurrenceFrequency.DAILY) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_daily)) }
-            )
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.WEEKLY,
-                onClick = { onFrequencySelected(RecurrenceFrequency.WEEKLY) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_weekly)) }
-            )
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.MONTHLY,
-                onClick = { onFrequencySelected(RecurrenceFrequency.MONTHLY) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_monthly)) }
-            )
-        }
+        RecurrenceFrequencyChips(
+            frequency = frequency,
+            onFrequencySelected = onFrequencySelected
+        )
         if (frequency != RecurrenceFrequency.NONE) {
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = interval.toString(),
-                onValueChange = { text ->
-                    val parsed = text.filter { it.isDigit() }.toIntOrNull()
-                    if (parsed != null) {
-                        onIntervalChanged(parsed)
-                    }
-                },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_interval)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                isError = intervalError != null,
-                supportingText = intervalError?.let { error ->
-                    { Text(text = error.asString()) }
-                },
-                modifier = Modifier.width(120.dp)
+            RecurrenceIntervalField(
+                interval = interval,
+                intervalError = intervalError,
+                onIntervalChanged = onIntervalChanged
             )
         }
     }
+}
+
+@Composable
+private fun RecurrenceFrequencyChips(
+    frequency: RecurrenceFrequency,
+    onFrequencySelected: (RecurrenceFrequency) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.NONE,
+            onClick = { onFrequencySelected(RecurrenceFrequency.NONE) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_none)) }
+        )
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.DAILY,
+            onClick = { onFrequencySelected(RecurrenceFrequency.DAILY) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_daily)) }
+        )
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.WEEKLY,
+            onClick = { onFrequencySelected(RecurrenceFrequency.WEEKLY) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_weekly)) }
+        )
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.MONTHLY,
+            onClick = { onFrequencySelected(RecurrenceFrequency.MONTHLY) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_monthly)) }
+        )
+    }
+}
+
+@Composable
+private fun RecurrenceIntervalField(
+    interval: Int,
+    intervalError: com.carenote.app.ui.common.UiText?,
+    onIntervalChanged: (Int) -> Unit
+) {
+    OutlinedTextField(
+        value = interval.toString(),
+        onValueChange = { text ->
+            val parsed = text.filter { it.isDigit() }.toIntOrNull()
+            if (parsed != null) {
+                onIntervalChanged(parsed)
+            }
+        },
+        label = { Text(text = stringResource(R.string.tasks_recurrence_interval)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        isError = intervalError != null,
+        supportingText = intervalError?.let { error ->
+            { Text(text = error.asString()) }
+        },
+        modifier = Modifier.width(120.dp)
+    )
 }
 
 @LightDarkPreview

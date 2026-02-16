@@ -85,118 +85,173 @@ fun AddEditMedicationScreen(
         isDirty = viewModel.isDirty,
         snackbarHostState = snackbarHostState
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        MedicationFormBody(
+            formState = formState,
+            onUpdateName = viewModel::updateName,
+            onUpdateDosage = viewModel::updateDosage,
+            onToggleTiming = viewModel::toggleTiming,
+            onUpdateTime = viewModel::updateTime,
+            onToggleReminder = viewModel::toggleReminder,
+            onUpdateCurrentStock = viewModel::updateCurrentStock,
+            onUpdateLowStockThreshold = viewModel::updateLowStockThreshold,
+            onSave = viewModel::saveMedication,
+            onCancel = onNavigateBack,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun MedicationFormBody(
+    formState: AddEditMedicationFormState,
+    onUpdateName: (String) -> Unit,
+    onUpdateDosage: (String) -> Unit,
+    onToggleTiming: (MedicationTiming) -> Unit,
+    onUpdateTime: (MedicationTiming, java.time.LocalTime) -> Unit,
+    onToggleReminder: () -> Unit,
+    onUpdateCurrentStock: (String) -> Unit,
+    onUpdateLowStockThreshold: (String) -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+        MedicationNameAndDosage(formState, onUpdateName, onUpdateDosage)
+        MedicationTimingSection(formState, onToggleTiming, onUpdateTime, onToggleReminder)
+        MedicationStockSection(formState, onUpdateCurrentStock, onUpdateLowStockThreshold)
+        MedicationFormActions(formState.isSaving, onSave, onCancel)
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun MedicationNameAndDosage(
+    formState: AddEditMedicationFormState,
+    onUpdateName: (String) -> Unit,
+    onUpdateDosage: (String) -> Unit
+) {
+    CareNoteTextField(
+        value = formState.name,
+        onValueChange = onUpdateName,
+        label = stringResource(R.string.medication_name),
+        placeholder = stringResource(R.string.medication_name_placeholder),
+        errorMessage = formState.nameError
+    )
+    CareNoteTextField(
+        value = formState.dosage,
+        onValueChange = onUpdateDosage,
+        label = stringResource(R.string.medication_dosage),
+        placeholder = stringResource(R.string.medication_dosage_placeholder),
+        errorMessage = formState.dosageError
+    )
+}
+
+@Composable
+private fun MedicationTimingSection(
+    formState: AddEditMedicationFormState,
+    onToggleTiming: (MedicationTiming) -> Unit,
+    onUpdateTime: (MedicationTiming, java.time.LocalTime) -> Unit,
+    onToggleReminder: () -> Unit
+) {
+    Text(
+        text = stringResource(R.string.medication_timing),
+        style = MaterialTheme.typography.titleMedium
+    )
+    TimingSelector(
+        selectedTimings = formState.timings,
+        times = formState.times,
+        onToggleTiming = onToggleTiming,
+        onUpdateTime = onUpdateTime
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.common_reminder),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Switch(
+            checked = formState.reminderEnabled,
+            onCheckedChange = { onToggleReminder() }
+        )
+    }
+}
+
+@Composable
+private fun MedicationStockSection(
+    formState: AddEditMedicationFormState,
+    onUpdateCurrentStock: (String) -> Unit,
+    onUpdateLowStockThreshold: (String) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.medication_stock_section),
+        style = MaterialTheme.typography.titleMedium
+    )
+    OutlinedTextField(
+        value = formState.currentStock,
+        onValueChange = onUpdateCurrentStock,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(stringResource(R.string.medication_current_stock_label)) },
+        placeholder = { Text(stringResource(R.string.medication_current_stock_hint)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true
+    )
+    OutlinedTextField(
+        value = formState.lowStockThreshold,
+        onValueChange = onUpdateLowStockThreshold,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(stringResource(R.string.medication_low_stock_threshold_label)) },
+        placeholder = { Text(stringResource(R.string.medication_low_stock_threshold_hint)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true
+    )
+}
+
+@Composable
+private fun MedicationFormActions(
+    isSaving: Boolean,
+    onSave: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            CareNoteTextField(
-                value = formState.name,
-                onValueChange = viewModel::updateName,
-                label = stringResource(R.string.medication_name),
-                placeholder = stringResource(R.string.medication_name_placeholder),
-                errorMessage = formState.nameError
-            )
-
-            CareNoteTextField(
-                value = formState.dosage,
-                onValueChange = viewModel::updateDosage,
-                label = stringResource(R.string.medication_dosage),
-                placeholder = stringResource(R.string.medication_dosage_placeholder),
-                errorMessage = formState.dosageError
-            )
-
-            Text(
-                text = stringResource(R.string.medication_timing),
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            TimingSelector(
-                selectedTimings = formState.timings,
-                times = formState.times,
-                onToggleTiming = viewModel::toggleTiming,
-                onUpdateTime = viewModel::updateTime
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.common_reminder),
-                    style = MaterialTheme.typography.bodyLarge
+            Text(text = stringResource(R.string.common_cancel))
+        }
+        Button(
+            onClick = onSave,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape,
+            enabled = !isSaving
+        ) {
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
-                Switch(
-                    checked = formState.reminderEnabled,
-                    onCheckedChange = { viewModel.toggleReminder() }
-                )
+            } else {
+                Text(text = stringResource(R.string.common_save))
             }
-
-            Text(
-                text = stringResource(R.string.medication_stock_section),
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            OutlinedTextField(
-                value = formState.currentStock,
-                onValueChange = viewModel::updateCurrentStock,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.medication_current_stock_label)) },
-                placeholder = { Text(stringResource(R.string.medication_current_stock_hint)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = formState.lowStockThreshold,
-                onValueChange = viewModel::updateLowStockThreshold,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.medication_low_stock_threshold_label)) },
-                placeholder = { Text(stringResource(R.string.medication_low_stock_threshold_hint)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape
-                ) {
-                    Text(text = stringResource(R.string.common_cancel))
-                }
-                Button(
-                    onClick = viewModel::saveMedication,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape,
-                    enabled = !formState.isSaving
-                ) {
-                    if (formState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .height(20.dp)
-                                .width(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(text = stringResource(R.string.common_save))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

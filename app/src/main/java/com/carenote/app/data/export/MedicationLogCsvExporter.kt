@@ -67,7 +67,7 @@ class MedicationLogCsvExporter @Inject constructor(
             context.getString(R.string.medication_log_export_header_timing),
             context.getString(R.string.medication_log_export_header_memo)
         )
-        return headers.joinToString(",") { escapeCsv(it) }
+        return headers.joinToString(",") { it.escapeCsv() }
     }
 
     private fun buildDataRow(log: MedicationLog, medicationNames: Map<Long, String>): String {
@@ -79,15 +79,7 @@ class MedicationLogCsvExporter @Inject constructor(
             log.timing?.let { localizeTiming(it) } ?: "",
             log.memo
         )
-        return fields.joinToString(",") { escapeCsv(it) }
-    }
-
-    internal fun escapeCsv(value: String): String {
-        return if (value.contains(',') || value.contains('"') || value.contains('\n') || value.contains('\r')) {
-            "\"${value.replace("\"", "\"\"")}\""
-        } else {
-            value
-        }
+        return fields.joinToString(",") { it.escapeCsv() }
     }
 
     private fun localizeStatus(status: MedicationLogStatus): String = when (status) {

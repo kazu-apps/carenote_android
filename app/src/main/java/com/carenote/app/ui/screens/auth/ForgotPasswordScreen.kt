@@ -75,53 +75,75 @@ fun ForgotPasswordScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.auth_forgot_password_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
+            ForgotPasswordTopBar(onNavigateBack = onNavigateBack)
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
+        ForgotPasswordBody(
+            formState = formState,
+            onNavigateBack = onNavigateBack,
+            onEmailChange = viewModel::updateForgotPasswordEmail,
+            onSendResetEmail = {
+                focusManager.clearFocus()
+                viewModel.sendPasswordResetEmail()
+            },
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
 
-            if (formState.emailSent) {
-                EmailSentContent(onNavigateBack = onNavigateBack)
-            } else {
-                ResetFormContent(
-                    formState = formState,
-                    onEmailChange = viewModel::updateForgotPasswordEmail,
-                    onSendResetEmail = {
-                        focusManager.clearFocus()
-                        viewModel.sendPasswordResetEmail()
-                    }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ForgotPasswordTopBar(onNavigateBack: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.auth_forgot_password_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.common_close)
                 )
             }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
 
-            Spacer(modifier = Modifier.height(24.dp))
+@Composable
+private fun ForgotPasswordBody(
+    formState: ForgotPasswordFormState,
+    onNavigateBack: () -> Unit,
+    onEmailChange: (String) -> Unit,
+    onSendResetEmail: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (formState.emailSent) {
+            EmailSentContent(onNavigateBack = onNavigateBack)
+        } else {
+            ResetFormContent(
+                formState = formState,
+                onEmailChange = onEmailChange,
+                onSendResetEmail = onSendResetEmail
+            )
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -131,8 +153,6 @@ private fun ResetFormContent(
     onEmailChange: (String) -> Unit,
     onSendResetEmail: () -> Unit
 ) {
-    val focusManager = LocalFocusManager.current
-
     Text(
         text = stringResource(R.string.auth_password_reset_description),
         style = MaterialTheme.typography.bodyLarge,
@@ -141,6 +161,28 @@ private fun ResetFormContent(
     )
 
     Spacer(modifier = Modifier.height(16.dp))
+
+    ResetEmailField(
+        formState = formState,
+        onEmailChange = onEmailChange,
+        onSendResetEmail = onSendResetEmail
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    ResetSubmitButton(
+        isLoading = formState.isLoading,
+        onSendResetEmail = onSendResetEmail
+    )
+}
+
+@Composable
+private fun ResetEmailField(
+    formState: ForgotPasswordFormState,
+    onEmailChange: (String) -> Unit,
+    onSendResetEmail: () -> Unit
+) {
+    val focusManager = LocalFocusManager.current
 
     CareNoteTextField(
         value = formState.email,
@@ -160,18 +202,22 @@ private fun ResetFormContent(
             }
         )
     )
+}
 
-    Spacer(modifier = Modifier.height(16.dp))
-
+@Composable
+private fun ResetSubmitButton(
+    isLoading: Boolean,
+    onSendResetEmail: () -> Unit
+) {
     Button(
         onClick = onSendResetEmail,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
         shape = ButtonShape,
-        enabled = !formState.isLoading
+        enabled = !isLoading
     ) {
-        if (formState.isLoading) {
+        if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(24.dp),
                 strokeWidth = 2.dp,

@@ -181,11 +181,17 @@ class AddEditCalendarEventViewModel @Inject constructor(
         val descriptionError = validateMaxLength(
             current.description, AppConfig.Calendar.DESCRIPTION_MAX_LENGTH
         )
-        val recurrenceIntervalError = if (current.recurrenceFrequency != RecurrenceFrequency.NONE) {
-            if (RecurrenceValidator.validateInterval(current.recurrenceInterval, AppConfig.Task.MAX_RECURRENCE_INTERVAL) != null) {
-                UiText.Resource(R.string.tasks_recurrence_interval_error)
-            } else null
-        } else null
+        val maxInterval = AppConfig.Task.MAX_RECURRENCE_INTERVAL
+        val recurrenceIntervalError = if (
+            current.recurrenceFrequency != RecurrenceFrequency.NONE
+        ) {
+            val invalid = RecurrenceValidator.validateInterval(
+                current.recurrenceInterval, maxInterval
+            ) != null
+            if (invalid) UiText.Resource(R.string.tasks_recurrence_interval_error) else null
+        } else {
+            null
+        }
 
         if (titleError != null || descriptionError != null || recurrenceIntervalError != null) {
             _formState.value = current.copy(
@@ -197,61 +203,81 @@ class AddEditCalendarEventViewModel @Inject constructor(
         }
 
         _formState.value = current.copy(isSaving = true)
+        viewModelScope.launch { persistEvent(current) }
+    }
 
-        viewModelScope.launch {
-            val now = clock.now()
-            val original = originalEvent
-            if (eventId != null && original != null) {
-                val updatedEvent = original.copy(
-                    title = current.title.trim(),
-                    description = current.description.trim(),
-                    date = current.date,
-                    startTime = current.startTime,
-                    endTime = current.endTime,
-                    isAllDay = current.isAllDay,
-                    type = current.type,
-                    recurrenceFrequency = current.recurrenceFrequency,
-                    recurrenceInterval = current.recurrenceInterval,
-                    updatedAt = now
-                )
-                calendarEventRepository.updateEvent(updatedEvent)
-                    .onSuccess {
-                        Timber.d("Calendar event updated: id=$eventId")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CALENDAR_EVENT_UPDATED)
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to update calendar event: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.calendar_event_save_failed)
-                    }
-            } else {
-                val newEvent = CalendarEvent(
-                    title = current.title.trim(),
-                    description = current.description.trim(),
-                    date = current.date,
-                    startTime = current.startTime,
-                    endTime = current.endTime,
-                    isAllDay = current.isAllDay,
-                    type = current.type,
-                    recurrenceFrequency = current.recurrenceFrequency,
-                    recurrenceInterval = current.recurrenceInterval,
-                    createdAt = now,
-                    updatedAt = now
-                )
-                calendarEventRepository.insertEvent(newEvent)
-                    .onSuccess { id ->
-                        Timber.d("Calendar event saved: id=$id")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CALENDAR_EVENT_CREATED)
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to save calendar event: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.calendar_event_save_failed)
-                    }
-            }
+    private suspend fun persistEvent(current: AddEditCalendarEventFormState) {
+        val now = clock.now()
+        val original = originalEvent
+        if (eventId != null && original != null) {
+            updateExistingEvent(original, current, now)
+        } else {
+            createNewEvent(current, now)
         }
+    }
+
+    private suspend fun updateExistingEvent(
+        original: CalendarEvent,
+        current: AddEditCalendarEventFormState,
+        now: LocalDateTime
+    ) {
+        val updatedEvent = original.copy(
+            title = current.title.trim(),
+            description = current.description.trim(),
+            date = current.date,
+            startTime = current.startTime,
+            endTime = current.endTime,
+            isAllDay = current.isAllDay,
+            type = current.type,
+            recurrenceFrequency = current.recurrenceFrequency,
+            recurrenceInterval = current.recurrenceInterval,
+            updatedAt = now
+        )
+        calendarEventRepository.updateEvent(updatedEvent)
+            .onSuccess {
+                Timber.d("Calendar event updated: id=$eventId")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_CALENDAR_EVENT_UPDATED
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update calendar event: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.calendar_event_save_failed)
+            }
+    }
+
+    private suspend fun createNewEvent(
+        current: AddEditCalendarEventFormState,
+        now: LocalDateTime
+    ) {
+        val newEvent = CalendarEvent(
+            title = current.title.trim(),
+            description = current.description.trim(),
+            date = current.date,
+            startTime = current.startTime,
+            endTime = current.endTime,
+            isAllDay = current.isAllDay,
+            type = current.type,
+            recurrenceFrequency = current.recurrenceFrequency,
+            recurrenceInterval = current.recurrenceInterval,
+            createdAt = now,
+            updatedAt = now
+        )
+        calendarEventRepository.insertEvent(newEvent)
+            .onSuccess { id ->
+                Timber.d("Calendar event saved: id=$id")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_CALENDAR_EVENT_CREATED
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to save calendar event: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.calendar_event_save_failed)
+            }
     }
 
 }

@@ -31,9 +31,6 @@ fun TemperatureChart(
     val yMin = AppConfig.Graph.TEMPERATURE_Y_MIN
     val yMax = AppConfig.Graph.TEMPERATURE_Y_MAX
     val threshold = AppConfig.HealthThresholds.TEMPERATURE_HIGH
-    val chartHeight = AppConfig.Graph.CHART_HEIGHT_DP
-    val yAxisWidth = AppConfig.Graph.Y_AXIS_LABEL_WIDTH_DP
-    val xAxisHeight = AppConfig.Graph.X_AXIS_LABEL_HEIGHT_DP
 
     val colors = CareNoteColors.current
     val chartLabelColor = colors.chartLabelColor
@@ -42,9 +39,14 @@ fun TemperatureChart(
 
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = remember(chartLabelColor) {
-        TextStyle(fontSize = AppConfig.Graph.AXIS_LABEL_FONT_SIZE_SP.sp, color = chartLabelColor)
+        TextStyle(
+            fontSize = AppConfig.Graph.AXIS_LABEL_FONT_SIZE_SP.sp,
+            color = chartLabelColor
+        )
     }
     val gridColor = chartLabelColor.copy(alpha = 0.2f)
+
+    val graphDescription = temperatureDescription(points, threshold)
 
     CareNoteCard(modifier = modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -53,95 +55,103 @@ fun TemperatureChart(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
-            val abnormalCount = remember(points) {
-                points.count { it.value >= threshold }
-            }
-            val graphDescription = if (abnormalCount > 0) {
-                stringResource(
-                    R.string.a11y_graph_temperature_summary,
-                    points.size,
-                    points.minOf { it.value },
-                    points.maxOf { it.value },
-                    abnormalCount
-                )
-            } else {
-                stringResource(
-                    R.string.a11y_graph_temperature_summary_no_abnormal,
-                    points.size,
-                    points.minOf { it.value },
-                    points.maxOf { it.value }
-                )
-            }
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(chartHeight.dp)
-                    .semantics { contentDescription = graphDescription }
-            ) {
-                val chartLeft = yAxisWidth.dp.toPx()
-                val chartRight = size.width - 8.dp.toPx()
-                val chartTop = 8.dp.toPx()
-                val chartBottom = size.height - xAxisHeight.dp.toPx()
-
-                drawGridLines(
-                    yMin = yMin,
-                    yMax = yMax,
-                    step = AppConfig.Graph.TEMPERATURE_GRID_STEP,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    gridColor = gridColor
-                )
-
-                drawThresholdLine(
-                    value = threshold,
-                    yMin = yMin,
-                    yMax = yMax,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    color = accentError.copy(alpha = 0.7f)
-                )
-
-                drawYAxisLabels(
-                    textMeasurer = textMeasurer,
-                    yMin = yMin,
-                    yMax = yMax,
-                    step = AppConfig.Graph.TEMPERATURE_GRID_STEP,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    labelStyle = labelStyle,
-                    labelColor = chartLabelColor
-                )
-
-                drawXAxisLabels(
-                    textMeasurer = textMeasurer,
-                    points = points,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartBottom = chartBottom,
-                    labelStyle = labelStyle,
-                    labelColor = chartLabelColor
-                )
-
-                drawDataLine(
-                    points = points,
-                    yMin = yMin,
-                    yMax = yMax,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    lineColor = chartLineColor,
-                    pointColor = chartLineColor,
-                    abnormalColor = accentError,
-                    abnormalThreshold = threshold
-                )
-            }
+            TemperatureCanvas(
+                points = points,
+                yMin = yMin,
+                yMax = yMax,
+                threshold = threshold,
+                graphDescription = graphDescription,
+                textMeasurer = textMeasurer,
+                labelStyle = labelStyle,
+                gridColor = gridColor,
+                chartLabelColor = chartLabelColor,
+                chartLineColor = chartLineColor,
+                accentError = accentError
+            )
         }
+    }
+}
+
+@Composable
+private fun temperatureDescription(
+    points: List<GraphDataPoint>,
+    threshold: Double
+): String {
+    val abnormalCount = remember(points) {
+        points.count { it.value >= threshold }
+    }
+    return if (abnormalCount > 0) {
+        stringResource(
+            R.string.a11y_graph_temperature_summary,
+            points.size,
+            points.minOf { it.value },
+            points.maxOf { it.value },
+            abnormalCount
+        )
+    } else {
+        stringResource(
+            R.string.a11y_graph_temperature_summary_no_abnormal,
+            points.size,
+            points.minOf { it.value },
+            points.maxOf { it.value }
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun TemperatureCanvas(
+    points: List<GraphDataPoint>,
+    yMin: Double,
+    yMax: Double,
+    threshold: Double,
+    graphDescription: String,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    labelStyle: TextStyle,
+    gridColor: androidx.compose.ui.graphics.Color,
+    chartLabelColor: androidx.compose.ui.graphics.Color,
+    chartLineColor: androidx.compose.ui.graphics.Color,
+    accentError: androidx.compose.ui.graphics.Color
+) {
+    val chartHeight = AppConfig.Graph.CHART_HEIGHT_DP
+    val yAxisWidth = AppConfig.Graph.Y_AXIS_LABEL_WIDTH_DP
+    val xAxisHeight = AppConfig.Graph.X_AXIS_LABEL_HEIGHT_DP
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(chartHeight.dp)
+            .semantics { contentDescription = graphDescription }
+    ) {
+        val chartLeft = yAxisWidth.dp.toPx()
+        val chartRight = size.width - 8.dp.toPx()
+        val chartTop = 8.dp.toPx()
+        val chartBottom = size.height - xAxisHeight.dp.toPx()
+
+        drawGridLines(
+            yMin, yMax, AppConfig.Graph.TEMPERATURE_GRID_STEP,
+            chartLeft, chartRight, chartTop, chartBottom, gridColor
+        )
+        drawThresholdLine(
+            threshold, yMin, yMax,
+            chartLeft, chartRight, chartTop, chartBottom,
+            accentError.copy(alpha = 0.7f)
+        )
+        drawYAxisLabels(
+            textMeasurer, yMin, yMax,
+            AppConfig.Graph.TEMPERATURE_GRID_STEP,
+            chartTop, chartBottom, labelStyle, chartLabelColor
+        )
+        drawXAxisLabels(
+            textMeasurer, points,
+            chartLeft, chartRight, chartBottom,
+            labelStyle, chartLabelColor
+        )
+        drawDataLine(
+            points, yMin, yMax,
+            chartLeft, chartRight, chartTop, chartBottom,
+            chartLineColor, chartLineColor,
+            accentError, threshold
+        )
     }
 }

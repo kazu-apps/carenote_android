@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -78,105 +79,20 @@ fun MedicationScreen(
         onPauseOrDispose {}
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.snackbarController.events.collect { event ->
-            val message = when (event) {
-                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
-                is SnackbarEvent.WithString -> event.message
-            }
-            snackbarHostState.showSnackbar(message)
-        }
-    }
+    MedicationSnackbarEffect(viewModel, snackbarHostState, context)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.medication_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddMedication,
-                modifier = Modifier.testTag(TestTags.MEDICATION_FAB),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.medication_add)
-                )
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        when (val state = uiState) {
-            is UiState.Loading -> {
-                LoadingIndicator(modifier = Modifier.padding(innerPadding))
-            }
-            is UiState.Error -> {
-                ErrorDisplay(
-                    error = state.error,
-                    onRetry = { viewModel.refresh() },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            is UiState.Success -> {
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.fillMaxSize().padding(innerPadding)
-                ) {
-                    if (state.data.isEmpty()) {
-                        EmptyState(
-                            icon = Icons.Filled.Medication,
-                            message = stringResource(R.string.medication_empty),
-                            actionLabel = stringResource(R.string.medication_empty_action),
-                            onAction = onNavigateToAddMedication
-                        )
-                    } else {
-                        val todayLogsMap = remember(todayLogs) {
-                            todayLogs.associate {
-                                (it.medicationId to it.timing?.name) to it.status
-                            }
-                        }
-                        MedicationList(
-                            medications = state.data,
-                            todayLogs = todayLogsMap,
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = viewModel::updateSearchQuery,
-                            onTaken = { id, timing ->
-                                viewModel.recordMedication(id, MedicationLogStatus.TAKEN, timing)
-                            },
-                            onSkipped = { id, timing ->
-                                viewModel.recordMedication(id, MedicationLogStatus.SKIPPED, timing)
-                            },
-                            onPostponed = { id, timing ->
-                                viewModel.recordMedication(id, MedicationLogStatus.POSTPONED, timing)
-                            },
-                            onCardClick = onNavigateToDetail,
-                            onDelete = { deleteMedication = it },
-                            contentPadding = PaddingValues(bottom = 80.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
+    MedicationScaffold(
+        uiState = uiState,
+        todayLogs = todayLogs,
+        searchQuery = searchQuery,
+        isRefreshing = isRefreshing,
+        viewModel = viewModel,
+        onNavigateToSearch = onNavigateToSearch,
+        onNavigateToAddMedication = onNavigateToAddMedication,
+        onNavigateToDetail = onNavigateToDetail,
+        snackbarHostState = snackbarHostState,
+        onDeleteRequest = { deleteMedication = it }
+    )
 
     deleteMedication?.let { medication ->
         ConfirmDialog(
@@ -193,6 +109,190 @@ fun MedicationScreen(
 }
 
 @Composable
+private fun MedicationSnackbarEffect(
+    viewModel: MedicationViewModel,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context
+) {
+    LaunchedEffect(Unit) {
+        viewModel.snackbarController.events.collect { event ->
+            val message = when (event) {
+                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+}
+
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MedicationScaffold(
+    uiState: UiState<List<Medication>>,
+    todayLogs: List<com.carenote.app.domain.model.MedicationLog>,
+    searchQuery: String,
+    isRefreshing: Boolean,
+    viewModel: MedicationViewModel,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToAddMedication: () -> Unit,
+    onNavigateToDetail: (Long) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onDeleteRequest: (Medication) -> Unit
+) {
+    Scaffold(
+        topBar = {
+            MedicationTopBar(onNavigateToSearch = onNavigateToSearch)
+        },
+        floatingActionButton = {
+            MedicationFab(onClick = onNavigateToAddMedication)
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        MedicationBody(
+            uiState = uiState,
+            todayLogs = todayLogs,
+            searchQuery = searchQuery,
+            isRefreshing = isRefreshing,
+            viewModel = viewModel,
+            onNavigateToAddMedication = onNavigateToAddMedication,
+            onNavigateToDetail = onNavigateToDetail,
+            onDeleteRequest = onDeleteRequest,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MedicationBody(
+    uiState: UiState<List<Medication>>,
+    todayLogs: List<com.carenote.app.domain.model.MedicationLog>,
+    searchQuery: String,
+    isRefreshing: Boolean,
+    viewModel: MedicationViewModel,
+    onNavigateToAddMedication: () -> Unit,
+    onNavigateToDetail: (Long) -> Unit,
+    onDeleteRequest: (Medication) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (val state = uiState) {
+        is UiState.Loading -> {
+            LoadingIndicator(modifier = modifier)
+        }
+        is UiState.Error -> {
+            ErrorDisplay(
+                error = state.error,
+                onRetry = { viewModel.refresh() },
+                modifier = modifier
+            )
+        }
+        is UiState.Success -> {
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = modifier.fillMaxSize()
+            ) {
+                MedicationSuccessContent(
+                    medications = state.data,
+                    todayLogs = todayLogs,
+                    searchQuery = searchQuery,
+                    viewModel = viewModel,
+                    onNavigateToAddMedication = onNavigateToAddMedication,
+                    onNavigateToDetail = onNavigateToDetail,
+                    onDeleteRequest = onDeleteRequest
+                )
+            }
+        }
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun MedicationSuccessContent(
+    medications: List<Medication>,
+    todayLogs: List<com.carenote.app.domain.model.MedicationLog>,
+    searchQuery: String,
+    viewModel: MedicationViewModel,
+    onNavigateToAddMedication: () -> Unit,
+    onNavigateToDetail: (Long) -> Unit,
+    onDeleteRequest: (Medication) -> Unit
+) {
+    if (medications.isEmpty()) {
+        EmptyState(
+            icon = Icons.Filled.Medication,
+            message = stringResource(R.string.medication_empty),
+            actionLabel = stringResource(R.string.medication_empty_action),
+            onAction = onNavigateToAddMedication
+        )
+    } else {
+        val todayLogsMap = remember(todayLogs) {
+            todayLogs.associate {
+                (it.medicationId to it.timing?.name) to it.status
+            }
+        }
+        MedicationList(
+            medications = medications,
+            todayLogs = todayLogsMap,
+            searchQuery = searchQuery,
+            onSearchQueryChange = viewModel::updateSearchQuery,
+            onTaken = { id, timing ->
+                viewModel.recordMedication(id, MedicationLogStatus.TAKEN, timing)
+            },
+            onSkipped = { id, timing ->
+                viewModel.recordMedication(id, MedicationLogStatus.SKIPPED, timing)
+            },
+            onPostponed = { id, timing ->
+                viewModel.recordMedication(id, MedicationLogStatus.POSTPONED, timing)
+            },
+            onCardClick = onNavigateToDetail,
+            onDelete = onDeleteRequest,
+            contentPadding = PaddingValues(bottom = 80.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MedicationTopBar(onNavigateToSearch: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.medication_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        actions = {
+            IconButton(onClick = onNavigateToSearch) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Composable
+private fun MedicationFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.testTag(TestTags.MEDICATION_FAB),
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = stringResource(R.string.medication_add)
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
 private fun MedicationList(
     medications: List<Medication>,
     todayLogs: Map<Pair<Long, String?>, MedicationLogStatus>,
@@ -205,7 +305,13 @@ private fun MedicationList(
     onDelete: (Medication) -> Unit,
     contentPadding: PaddingValues
 ) {
-    val timingOrder = remember { listOf(MedicationTiming.MORNING, MedicationTiming.NOON, MedicationTiming.EVENING) }
+    val timingOrder = remember {
+        listOf(
+            MedicationTiming.MORNING,
+            MedicationTiming.NOON,
+            MedicationTiming.EVENING
+        )
+    }
     val groupedMedications = remember(medications) {
         timingOrder.associateWith { timing ->
             medications.filter { it.timings.contains(timing) }
@@ -218,65 +324,72 @@ private fun MedicationList(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = 8.dp,
+            start = 16.dp, end = 16.dp, top = 8.dp,
             bottom = contentPadding.calculateBottomPadding()
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item(key = "search_bar") {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text(text = stringResource(R.string.common_search))
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null
-                    )
-                },
-                singleLine = true
+            MedicationSearchBar(
+                searchQuery = searchQuery,
+                onSearchQueryChange = onSearchQueryChange
             )
         }
-        timingOrder.forEach { timing ->
-            val medsForTiming = groupedMedications[timing] ?: emptyList()
-            if (medsForTiming.isNotEmpty()) {
-                item(key = "header_${timing.name}") {
-                    TimingHeader(timing = timing)
-                }
-                items(
-                    items = medsForTiming,
-                    key = { "${timing.name}_${it.id}" },
-                    contentType = { "MedicationCard" }
-                ) { medication ->
-                    SwipeToDismissItem(
-                        item = medication,
-                        onDelete = onDelete
-                    ) {
-                        MedicationCard(
-                            medication = medication,
-                            status = todayLogs[medication.id to timing.name],
-                            onTaken = { onTaken(medication.id, timing) },
-                            onSkipped = { onSkipped(medication.id, timing) },
-                            onPostponed = { onPostponed(medication.id, timing) },
-                            onClick = { onCardClick(medication.id) }
-                        )
-                    }
-                }
-                item(key = "spacer_${timing.name}") {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
-        }
+        medicationTimingGroups(
+            timingOrder, groupedMedications, todayLogs,
+            onTaken, onSkipped, onPostponed,
+            onCardClick, onDelete
+        )
+        medicationNoTimingItems(
+            noTimingMeds, todayLogs,
+            onTaken, onSkipped, onPostponed,
+            onCardClick, onDelete
+        )
+    }
+}
 
-        if (noTimingMeds.isNotEmpty()) {
+@Composable
+private fun MedicationSearchBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = {
+            Text(text = stringResource(R.string.common_search))
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null
+            )
+        },
+        singleLine = true
+    )
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.medicationTimingGroups(
+    timingOrder: List<MedicationTiming>,
+    groupedMedications: Map<MedicationTiming, List<Medication>>,
+    todayLogs: Map<Pair<Long, String?>, MedicationLogStatus>,
+    onTaken: (Long, MedicationTiming?) -> Unit,
+    onSkipped: (Long, MedicationTiming?) -> Unit,
+    onPostponed: (Long, MedicationTiming?) -> Unit,
+    onCardClick: (Long) -> Unit,
+    onDelete: (Medication) -> Unit
+) {
+    timingOrder.forEach { timing ->
+        val medsForTiming = groupedMedications[timing] ?: emptyList()
+        if (medsForTiming.isNotEmpty()) {
+            item(key = "header_${timing.name}") {
+                TimingHeader(timing = timing)
+            }
             items(
-                items = noTimingMeds,
-                key = { "other_${it.id}" },
+                items = medsForTiming,
+                key = { "${timing.name}_${it.id}" },
                 contentType = { "MedicationCard" }
             ) { medication ->
                 SwipeToDismissItem(
@@ -285,13 +398,49 @@ private fun MedicationList(
                 ) {
                     MedicationCard(
                         medication = medication,
-                        status = todayLogs[medication.id to null],
-                        onTaken = { onTaken(medication.id, null) },
-                        onSkipped = { onSkipped(medication.id, null) },
-                        onPostponed = { onPostponed(medication.id, null) },
+                        status = todayLogs[medication.id to timing.name],
+                        onTaken = { onTaken(medication.id, timing) },
+                        onSkipped = { onSkipped(medication.id, timing) },
+                        onPostponed = { onPostponed(medication.id, timing) },
                         onClick = { onCardClick(medication.id) }
                     )
                 }
+            }
+            item(key = "spacer_${timing.name}") {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.medicationNoTimingItems(
+    noTimingMeds: List<Medication>,
+    todayLogs: Map<Pair<Long, String?>, MedicationLogStatus>,
+    onTaken: (Long, MedicationTiming?) -> Unit,
+    onSkipped: (Long, MedicationTiming?) -> Unit,
+    onPostponed: (Long, MedicationTiming?) -> Unit,
+    onCardClick: (Long) -> Unit,
+    onDelete: (Medication) -> Unit
+) {
+    if (noTimingMeds.isNotEmpty()) {
+        items(
+            items = noTimingMeds,
+            key = { "other_${it.id}" },
+            contentType = { "MedicationCard" }
+        ) { medication ->
+            SwipeToDismissItem(
+                item = medication,
+                onDelete = onDelete
+            ) {
+                MedicationCard(
+                    medication = medication,
+                    status = todayLogs[medication.id to null],
+                    onTaken = { onTaken(medication.id, null) },
+                    onSkipped = { onSkipped(medication.id, null) },
+                    onPostponed = { onPostponed(medication.id, null) },
+                    onClick = { onCardClick(medication.id) }
+                )
             }
         }
     }

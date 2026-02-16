@@ -85,56 +85,94 @@ class SendInvitationViewModel @Inject constructor(
         }
 
         val currentUser = authRepository.getCurrentUser()
-        if (currentUser != null && current.email.trim().equals(currentUser.email, ignoreCase = true)) {
+        val isSelfInvite = currentUser != null &&
+            current.email.trim().equals(
+                currentUser.email, ignoreCase = true
+            )
+        if (isSelfInvite) {
             _formState.value = current.copy(
-                emailError = UiText.Resource(R.string.send_invitation_self_error)
+                emailError = UiText.Resource(
+                    R.string.send_invitation_self_error
+                )
             )
             return
         }
 
         viewModelScope.launch {
-            // Check for existing PENDING invitation
-            val existingPending = invitationRepository.getInvitationsByEmail(
-                current.email.trim(), InvitationStatus.PENDING
-            ).firstOrNull() ?: emptyList()
-            if (existingPending.isNotEmpty()) {
-                _formState.value = current.copy(
-                    emailError = UiText.Resource(R.string.send_invitation_duplicate_error)
-                )
-                return@launch
-            }
+            val hasDuplicate = checkDuplicateInvitation(current)
+            if (hasDuplicate) return@launch
 
             _formState.value = current.copy(isSending = true)
-
-            val token = generateToken()
-            val now = clock.now()
-            val expiresAt = now.plusDays(AppConfig.Member.INVITATION_VALID_DAYS)
-            val careRecipientId = activeCareRecipientProvider.getActiveCareRecipientId()
-            val inviterUid = currentUser?.uid ?: ""
-
-            val invitation = Invitation(
-                careRecipientId = careRecipientId,
-                inviterUid = inviterUid,
-                inviteeEmail = current.email.trim(),
-                status = InvitationStatus.PENDING,
-                token = token,
-                expiresAt = expiresAt,
-                createdAt = now
-            )
-
-            invitationRepository.insertInvitation(invitation)
-                .onSuccess {
-                    Timber.d("Invitation sent successfully")
-                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_INVITATION_SENT)
-                    val inviteLink = "https://${AppConfig.Member.DEEP_LINK_HOST}${AppConfig.Member.DEEP_LINK_PATH_PREFIX}/$token"
-                    _savedEvent.send(InvitationSavedResult(token = token, inviteLink = inviteLink))
-                }
-                .onFailure { error ->
-                    Timber.w("Failed to send invitation: $error")
-                    _formState.value = _formState.value.copy(isSending = false)
-                    snackbarController.showMessage(R.string.send_invitation_failed)
-                }
+            createAndSendInvitation(current, currentUser)
         }
+    }
+
+    private suspend fun checkDuplicateInvitation(
+        current: SendInvitationFormState
+    ): Boolean {
+        val existingPending =
+            invitationRepository.getInvitationsByEmail(
+                current.email.trim(), InvitationStatus.PENDING
+            ).firstOrNull() ?: emptyList()
+        if (existingPending.isNotEmpty()) {
+            _formState.value = current.copy(
+                emailError = UiText.Resource(
+                    R.string.send_invitation_duplicate_error
+                )
+            )
+            return true
+        }
+        return false
+    }
+
+    private suspend fun createAndSendInvitation(
+        current: SendInvitationFormState,
+        currentUser: com.carenote.app.domain.model.User?
+    ) {
+        val token = generateToken()
+        val now = clock.now()
+        val expiresAt = now.plusDays(
+            AppConfig.Member.INVITATION_VALID_DAYS
+        )
+        val careRecipientId =
+            activeCareRecipientProvider.getActiveCareRecipientId()
+        val inviterUid = currentUser?.uid ?: ""
+
+        val invitation = Invitation(
+            careRecipientId = careRecipientId,
+            inviterUid = inviterUid,
+            inviteeEmail = current.email.trim(),
+            status = InvitationStatus.PENDING,
+            token = token,
+            expiresAt = expiresAt,
+            createdAt = now
+        )
+
+        invitationRepository.insertInvitation(invitation)
+            .onSuccess {
+                Timber.d("Invitation sent successfully")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_INVITATION_SENT
+                )
+                val inviteLink = "https://" +
+                    AppConfig.Member.DEEP_LINK_HOST +
+                    AppConfig.Member.DEEP_LINK_PATH_PREFIX +
+                    "/$token"
+                _savedEvent.send(
+                    InvitationSavedResult(
+                        token = token,
+                        inviteLink = inviteLink
+                    )
+                )
+            }
+            .onFailure { error ->
+                Timber.w("Failed to send invitation: $error")
+                _formState.value =
+                    _formState.value.copy(isSending = false)
+                snackbarController.showMessage(
+                    R.string.send_invitation_failed
+                )
+            }
     }
 
     private fun validateEmail(email: String): UiText? {

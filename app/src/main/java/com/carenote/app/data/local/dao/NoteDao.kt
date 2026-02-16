@@ -70,10 +70,16 @@ interface NoteDao {
 
     @Query(
         "SELECT * FROM notes " +
-            "WHERE care_recipient_id = :careRecipientId AND created_at >= :startOfDay AND created_at < :startOfNextDay " +
+            "WHERE care_recipient_id = :careRecipientId " +
+            "AND created_at >= :startOfDay " +
+            "AND created_at < :startOfNextDay " +
             "ORDER BY created_at DESC"
     )
-    fun getNotesByDateRange(startOfDay: String, startOfNextDay: String, careRecipientId: Long): Flow<List<NoteEntity>>
+    fun getNotesByDateRange(
+        startOfDay: String,
+        startOfNextDay: String,
+        careRecipientId: Long
+    ): Flow<List<NoteEntity>>
 
     @Query("SELECT * FROM notes WHERE updated_at > :lastSyncTime")
     suspend fun getModifiedSince(lastSyncTime: String): List<NoteEntity>

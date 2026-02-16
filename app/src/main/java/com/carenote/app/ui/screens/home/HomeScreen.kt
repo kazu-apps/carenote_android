@@ -71,30 +71,9 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
-                        )
-                    }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = stringResource(R.string.settings_title)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+            HomeTopBar(
+                onNavigateToSearch = onNavigateToSearch,
+                onNavigateToSettings = onNavigateToSettings
             )
         }
     ) { innerPadding ->
@@ -102,26 +81,28 @@ fun HomeScreen(
             uiState = uiState,
             isRefreshing = isRefreshing,
             onRefresh = { viewModel.refresh() },
-            onNavigateToMedication = {
-                viewModel.logSeeAllClicked("medication")
-                onNavigateToMedication()
-            },
-            onNavigateToCalendar = {
-                viewModel.logSeeAllClicked("calendar")
-                onNavigateToCalendar()
-            },
-            onNavigateToTasks = {
-                viewModel.logSeeAllClicked("tasks")
-                onNavigateToTasks()
-            },
-            onNavigateToHealthRecords = {
-                viewModel.logSeeAllClicked("health_records")
-                onNavigateToHealthRecords()
-            },
-            onNavigateToNotes = {
-                viewModel.logSeeAllClicked("notes")
-                onNavigateToNotes()
-            },
+            navigation = HomeNavigationCallbacks(
+                onNavigateToMedication = {
+                    viewModel.logSeeAllClicked("medication")
+                    onNavigateToMedication()
+                },
+                onNavigateToCalendar = {
+                    viewModel.logSeeAllClicked("calendar")
+                    onNavigateToCalendar()
+                },
+                onNavigateToTasks = {
+                    viewModel.logSeeAllClicked("tasks")
+                    onNavigateToTasks()
+                },
+                onNavigateToHealthRecords = {
+                    viewModel.logSeeAllClicked("health_records")
+                    onNavigateToHealthRecords()
+                },
+                onNavigateToNotes = {
+                    viewModel.logSeeAllClicked("notes")
+                    onNavigateToNotes()
+                }
+            ),
             modifier = Modifier.padding(innerPadding)
         )
     }
@@ -129,15 +110,52 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun HomeTopBar(
+    onNavigateToSearch: () -> Unit,
+    onNavigateToSettings: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.home_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        actions = {
+            IconButton(onClick = onNavigateToSearch) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                )
+            }
+            IconButton(onClick = onNavigateToSettings) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = stringResource(R.string.settings_title)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+internal data class HomeNavigationCallbacks(
+    val onNavigateToMedication: () -> Unit,
+    val onNavigateToCalendar: () -> Unit,
+    val onNavigateToTasks: () -> Unit,
+    val onNavigateToHealthRecords: () -> Unit,
+    val onNavigateToNotes: () -> Unit
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 internal fun HomeContent(
     uiState: HomeUiState,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onNavigateToMedication: () -> Unit,
-    onNavigateToCalendar: () -> Unit,
-    onNavigateToTasks: () -> Unit,
-    onNavigateToHealthRecords: () -> Unit,
-    onNavigateToNotes: () -> Unit,
+    navigation: HomeNavigationCallbacks,
     modifier: Modifier = Modifier
 ) {
     if (uiState.isLoading) {
@@ -150,51 +168,53 @@ internal fun HomeContent(
         onRefresh = onRefresh,
         modifier = modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-            verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
-        ) {
-            item { Spacer(modifier = Modifier.height(AppConfig.UI.SMALL_SPACING_DP.dp)) }
+        HomeSectionList(uiState = uiState, navigation = navigation)
+    }
+}
 
-            item {
-                MedicationSection(
-                    medications = uiState.todayMedications,
-                    onSeeAll = onNavigateToMedication
-                )
-            }
-
-            item {
-                TaskSection(
-                    tasks = uiState.upcomingTasks,
-                    onSeeAll = onNavigateToTasks
-                )
-            }
-
-            item {
-                HealthRecordSection(
-                    record = uiState.latestHealthRecord,
-                    onSeeAll = onNavigateToHealthRecords
-                )
-            }
-
-            item {
-                NoteSection(
-                    notes = uiState.recentNotes,
-                    onSeeAll = onNavigateToNotes
-                )
-            }
-
-            item {
-                CalendarSection(
-                    events = uiState.todayEvents,
-                    onSeeAll = onNavigateToCalendar
-                )
-            }
-
-            item { Spacer(modifier = Modifier.height(AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp)) }
+@Composable
+private fun HomeSectionList(
+    uiState: HomeUiState,
+    navigation: HomeNavigationCallbacks
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
+        verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
+    ) {
+        item { Spacer(modifier = Modifier.height(AppConfig.UI.SMALL_SPACING_DP.dp)) }
+        item {
+            MedicationSection(
+                medications = uiState.todayMedications,
+                onSeeAll = navigation.onNavigateToMedication
+            )
         }
+        item {
+            TaskSection(
+                tasks = uiState.upcomingTasks,
+                onSeeAll = navigation.onNavigateToTasks
+            )
+        }
+        item {
+            HealthRecordSection(
+                record = uiState.latestHealthRecord,
+                onSeeAll = navigation.onNavigateToHealthRecords
+            )
+        }
+        item {
+            NoteSection(
+                notes = uiState.recentNotes,
+                onSeeAll = navigation.onNavigateToNotes
+            )
+        }
+        item {
+            CalendarSection(
+                events = uiState.todayEvents,
+                onSeeAll = navigation.onNavigateToCalendar
+            )
+        }
+        item { Spacer(modifier = Modifier.height(AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp)) }
     }
 }
 
@@ -370,8 +390,10 @@ private fun HealthRecordItem(record: HealthRecord) {
             horizontalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
         ) {
             record.temperature?.let { temp ->
+                val tempLabel = stringResource(R.string.health_records_temperature)
+                val tempUnit = stringResource(R.string.health_records_temperature_unit)
                 Text(
-                    text = "${stringResource(R.string.health_records_temperature)}: ${"%.1f".format(temp)}${stringResource(R.string.health_records_temperature_unit)}",
+                    text = "$tempLabel: ${"%.1f".format(temp)}$tempUnit",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -530,11 +552,13 @@ private fun HomeContentPreview() {
             uiState = PreviewData.homeUiState,
             isRefreshing = false,
             onRefresh = {},
-            onNavigateToMedication = {},
-            onNavigateToCalendar = {},
-            onNavigateToTasks = {},
-            onNavigateToHealthRecords = {},
-            onNavigateToNotes = {}
+            navigation = HomeNavigationCallbacks(
+                onNavigateToMedication = {},
+                onNavigateToCalendar = {},
+                onNavigateToTasks = {},
+                onNavigateToHealthRecords = {},
+                onNavigateToNotes = {}
+            )
         )
     }
 }

@@ -81,94 +81,136 @@ fun EmergencyContactListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.emergency_contact_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
+            EmergencyContactTopBar(onNavigateBack = onNavigateBack)
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAdd,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.emergency_contact_add)
-                )
-            }
+            EmergencyContactFab(onClick = onNavigateToAdd)
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        if (contacts.isEmpty()) {
-            EmptyState(
-                icon = Icons.Filled.Contacts,
-                message = stringResource(R.string.emergency_contact_empty),
-                actionLabel = stringResource(R.string.emergency_contact_empty_action),
-                onAction = onNavigateToAdd,
-                modifier = Modifier.padding(innerPadding)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 8.dp,
-                    bottom = AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(
-                    items = contacts,
-                    key = { it.id }
-                ) { contact ->
-                    SwipeToDismissItem(
-                        item = contact,
-                        onDelete = { deleteContact = it }
-                    ) {
-                        EmergencyContactCard(
-                            contact = contact,
-                            onClick = { onNavigateToEdit(contact.id) },
-                            onCallClick = {
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:${contact.phoneNumber}")
-                                }
-                                context.startActivity(intent)
-                            }
-                        )
-                    }
-                }
-            }
-        }
+        EmergencyContactBody(
+            contacts = contacts,
+            onNavigateToAdd = onNavigateToAdd,
+            onNavigateToEdit = onNavigateToEdit,
+            onDelete = { deleteContact = it },
+            context = context,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 
     deleteContact?.let { contact ->
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_delete_title),
-            message = stringResource(R.string.emergency_contact_delete_confirm),
+        EmergencyContactDeleteDialog(
+            contact = contact,
             onConfirm = {
                 viewModel.deleteContact(contact.id)
                 deleteContact = null
             },
-            onDismiss = { deleteContact = null },
-            isDestructive = true
+            onDismiss = { deleteContact = null }
+        )
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun EmergencyContactBody(
+    contacts: List<EmergencyContact>,
+    onNavigateToAdd: () -> Unit,
+    onNavigateToEdit: (Long) -> Unit,
+    onDelete: (EmergencyContact) -> Unit,
+    context: android.content.Context,
+    modifier: Modifier = Modifier
+) {
+    if (contacts.isEmpty()) {
+        EmptyState(
+            icon = Icons.Filled.Contacts,
+            message = stringResource(R.string.emergency_contact_empty),
+            actionLabel = stringResource(R.string.emergency_contact_empty_action),
+            onAction = onNavigateToAdd,
+            modifier = modifier
+        )
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(
+                items = contacts,
+                key = { it.id }
+            ) { contact ->
+                SwipeToDismissItem(
+                    item = contact,
+                    onDelete = onDelete
+                ) {
+                    EmergencyContactCard(
+                        contact = contact,
+                        onClick = { onNavigateToEdit(contact.id) },
+                        onCallClick = {
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:${contact.phoneNumber}")
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmergencyContactDeleteDialog(
+    contact: EmergencyContact,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ConfirmDialog(
+        title = stringResource(R.string.ui_confirm_delete_title),
+        message = stringResource(R.string.emergency_contact_delete_confirm),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        isDestructive = true
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EmergencyContactTopBar(onNavigateBack: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.emergency_contact_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.common_close)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Composable
+private fun EmergencyContactFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = stringResource(R.string.emergency_contact_add)
         )
     }
 }
@@ -194,42 +236,55 @@ private fun EmergencyContactCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = contact.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = relationshipLabel(contact.relationship),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = contact.phoneNumber,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (contact.memo.isNotBlank()) {
-                    Text(
-                        text = contact.memo,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
+            ContactInfoColumn(
+                contact = contact,
+                modifier = Modifier.weight(1f)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(onClick = onCallClick) {
                 Icon(
                     imageVector = Icons.Filled.Call,
-                    contentDescription = stringResource(R.string.emergency_contact_call),
+                    contentDescription = stringResource(
+                        R.string.emergency_contact_call
+                    ),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ContactInfoColumn(
+    contact: EmergencyContact,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = contact.name,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = relationshipLabel(contact.relationship),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = contact.phoneNumber,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (contact.memo.isNotBlank()) {
+            Text(
+                text = contact.memo,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

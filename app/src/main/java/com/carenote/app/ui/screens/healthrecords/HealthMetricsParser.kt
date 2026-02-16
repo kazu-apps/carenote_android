@@ -43,70 +43,87 @@ object HealthMetricsParser {
         state: AddEditHealthRecordFormState,
         parsed: ParsedFields
     ): ValidationErrors? {
-        val tempErr = validateRange(
-            state.temperature, parsed.temperature,
-            AppConfig.HealthRecord.TEMPERATURE_MIN, AppConfig.HealthRecord.TEMPERATURE_MAX,
-            UiText.ResourceWithArgs(
-                R.string.health_records_temperature_range_error,
-                listOf(AppConfig.HealthRecord.TEMPERATURE_MIN, AppConfig.HealthRecord.TEMPERATURE_MAX)
-            )
-        )
-        val bpHighErr = validateRange(
-            state.bloodPressureHigh, parsed.bpHigh?.toDouble(),
-            AppConfig.HealthRecord.BLOOD_PRESSURE_MIN.toDouble(),
-            AppConfig.HealthRecord.BLOOD_PRESSURE_MAX.toDouble(),
-            UiText.ResourceWithArgs(
-                R.string.health_records_blood_pressure_range_error,
-                listOf(AppConfig.HealthRecord.BLOOD_PRESSURE_MIN, AppConfig.HealthRecord.BLOOD_PRESSURE_MAX)
-            )
-        )
-        val bpLowErr = if (bpHighErr == null) {
-            validateRange(
-                state.bloodPressureLow, parsed.bpLow?.toDouble(),
-                AppConfig.HealthRecord.BLOOD_PRESSURE_MIN.toDouble(),
-                AppConfig.HealthRecord.BLOOD_PRESSURE_MAX.toDouble(),
-                UiText.ResourceWithArgs(
-                    R.string.health_records_blood_pressure_range_error,
-                    listOf(AppConfig.HealthRecord.BLOOD_PRESSURE_MIN, AppConfig.HealthRecord.BLOOD_PRESSURE_MAX)
-                )
-            )
-        } else {
-            null
-        }
-        val bpErr = bpHighErr ?: bpLowErr
-        val pulseErr = validateRange(
-            state.pulse, parsed.pulse?.toDouble(),
-            AppConfig.HealthRecord.PULSE_MIN.toDouble(),
-            AppConfig.HealthRecord.PULSE_MAX.toDouble(),
-            UiText.ResourceWithArgs(
-                R.string.health_records_pulse_range_error,
-                listOf(AppConfig.HealthRecord.PULSE_MIN, AppConfig.HealthRecord.PULSE_MAX)
-            )
-        )
-        val weightErr = validateRange(
-            state.weight, parsed.weight,
-            AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX,
-            UiText.ResourceWithArgs(
-                R.string.health_records_weight_range_error,
-                listOf(AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX)
-            )
-        )
-        val conditionNoteErr = if (
-            parsed.trimmedNote.length > AppConfig.HealthRecord.CONDITION_NOTE_MAX_LENGTH
-        ) {
-            UiText.ResourceWithArgs(
-                R.string.ui_validation_too_long,
-                listOf(AppConfig.HealthRecord.CONDITION_NOTE_MAX_LENGTH)
-            )
-        } else {
-            null
-        }
+        val tempErr = validateTemperature(state, parsed)
+        val bpErr = validateBloodPressure(state, parsed)
+        val pulseErr = validatePulse(state, parsed)
+        val weightErr = validateWeight(state, parsed)
+        val conditionNoteErr = validateConditionNote(parsed)
 
-        return if (
-            tempErr != null || bpErr != null || pulseErr != null ||
-            weightErr != null || conditionNoteErr != null
-        ) {
+        val hasError = tempErr != null || bpErr != null ||
+            pulseErr != null || weightErr != null || conditionNoteErr != null
+        return if (hasError) {
             ValidationErrors(tempErr, bpErr, pulseErr, weightErr, conditionNoteErr)
+        } else {
+            null
+        }
+    }
+
+    private fun validateTemperature(
+        state: AddEditHealthRecordFormState,
+        parsed: ParsedFields
+    ): UiText? = validateRange(
+        state.temperature, parsed.temperature,
+        AppConfig.HealthRecord.TEMPERATURE_MIN,
+        AppConfig.HealthRecord.TEMPERATURE_MAX,
+        UiText.ResourceWithArgs(
+            R.string.health_records_temperature_range_error,
+            listOf(AppConfig.HealthRecord.TEMPERATURE_MIN, AppConfig.HealthRecord.TEMPERATURE_MAX)
+        )
+    )
+
+    private fun validateBloodPressure(
+        state: AddEditHealthRecordFormState,
+        parsed: ParsedFields
+    ): UiText? {
+        val bpError = UiText.ResourceWithArgs(
+            R.string.health_records_blood_pressure_range_error,
+            listOf(AppConfig.HealthRecord.BLOOD_PRESSURE_MIN, AppConfig.HealthRecord.BLOOD_PRESSURE_MAX)
+        )
+        val bpMin = AppConfig.HealthRecord.BLOOD_PRESSURE_MIN.toDouble()
+        val bpMax = AppConfig.HealthRecord.BLOOD_PRESSURE_MAX.toDouble()
+        val highErr = validateRange(
+            state.bloodPressureHigh, parsed.bpHigh?.toDouble(), bpMin, bpMax, bpError
+        )
+        val lowErr = if (highErr == null) {
+            validateRange(
+                state.bloodPressureLow, parsed.bpLow?.toDouble(), bpMin, bpMax, bpError
+            )
+        } else {
+            null
+        }
+        return highErr ?: lowErr
+    }
+
+    private fun validatePulse(
+        state: AddEditHealthRecordFormState,
+        parsed: ParsedFields
+    ): UiText? = validateRange(
+        state.pulse, parsed.pulse?.toDouble(),
+        AppConfig.HealthRecord.PULSE_MIN.toDouble(),
+        AppConfig.HealthRecord.PULSE_MAX.toDouble(),
+        UiText.ResourceWithArgs(
+            R.string.health_records_pulse_range_error,
+            listOf(AppConfig.HealthRecord.PULSE_MIN, AppConfig.HealthRecord.PULSE_MAX)
+        )
+    )
+
+    private fun validateWeight(
+        state: AddEditHealthRecordFormState,
+        parsed: ParsedFields
+    ): UiText? = validateRange(
+        state.weight, parsed.weight,
+        AppConfig.HealthRecord.WEIGHT_MIN,
+        AppConfig.HealthRecord.WEIGHT_MAX,
+        UiText.ResourceWithArgs(
+            R.string.health_records_weight_range_error,
+            listOf(AppConfig.HealthRecord.WEIGHT_MIN, AppConfig.HealthRecord.WEIGHT_MAX)
+        )
+    )
+
+    private fun validateConditionNote(parsed: ParsedFields): UiText? {
+        val maxLength = AppConfig.HealthRecord.CONDITION_NOTE_MAX_LENGTH
+        return if (parsed.trimmedNote.length > maxLength) {
+            UiText.ResourceWithArgs(R.string.ui_validation_too_long, listOf(maxLength))
         } else {
             null
         }

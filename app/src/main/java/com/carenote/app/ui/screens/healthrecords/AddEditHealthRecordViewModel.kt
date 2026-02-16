@@ -250,58 +250,74 @@ class AddEditHealthRecordViewModel @Inject constructor(
     ) {
         val now = clock.now()
         val original = originalRecord
-
         if (recordId != null && original != null) {
-            val updatedRecord = original.copy(
-                temperature = parsed.temperature,
-                bloodPressureHigh = parsed.bpHigh,
-                bloodPressureLow = parsed.bpLow,
-                pulse = parsed.pulse,
-                weight = parsed.weight,
-                meal = current.meal,
-                excretion = current.excretion,
-                conditionNote = parsed.trimmedNote,
-                recordedAt = current.recordedAt,
-                updatedAt = now
-            )
-            healthRecordRepository.updateRecord(updatedRecord)
-                .onSuccess {
-                    Timber.d("Health record updated: id=$recordId")
-                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_UPDATED)
-                    _savedEvent.send(true)
-                }
-                .onFailure { error ->
-                    Timber.w("Failed to update health record: $error")
-                    _formState.value = _formState.value.copy(isSaving = false)
-                    snackbarController.showMessage(R.string.health_records_save_failed)
-                }
+            updateExistingRecord(original, current, parsed, now)
         } else {
-            val newRecord = HealthRecord(
-                temperature = parsed.temperature,
-                bloodPressureHigh = parsed.bpHigh,
-                bloodPressureLow = parsed.bpLow,
-                pulse = parsed.pulse,
-                weight = parsed.weight,
-                meal = current.meal,
-                excretion = current.excretion,
-                conditionNote = parsed.trimmedNote,
-                recordedAt = current.recordedAt,
-                createdAt = now,
-                updatedAt = now
-            )
-            healthRecordRepository.insertRecord(newRecord)
-                .onSuccess { id ->
-                    Timber.d("Health record saved: id=$id")
-                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_CREATED)
-                    photoManager.updateParentId(id)
-                    _savedEvent.send(true)
-                }
-                .onFailure { error ->
-                    Timber.w("Failed to save health record: $error")
-                    _formState.value = _formState.value.copy(isSaving = false)
-                    snackbarController.showMessage(R.string.health_records_save_failed)
-                }
+            insertNewRecord(current, parsed, now)
         }
+    }
+
+    private suspend fun updateExistingRecord(
+        original: HealthRecord,
+        current: AddEditHealthRecordFormState,
+        parsed: HealthMetricsParser.ParsedFields,
+        now: LocalDateTime
+    ) {
+        val updatedRecord = original.copy(
+            temperature = parsed.temperature,
+            bloodPressureHigh = parsed.bpHigh,
+            bloodPressureLow = parsed.bpLow,
+            pulse = parsed.pulse,
+            weight = parsed.weight,
+            meal = current.meal,
+            excretion = current.excretion,
+            conditionNote = parsed.trimmedNote,
+            recordedAt = current.recordedAt,
+            updatedAt = now
+        )
+        healthRecordRepository.updateRecord(updatedRecord)
+            .onSuccess {
+                Timber.d("Health record updated: id=$recordId")
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_UPDATED)
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update health record: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.health_records_save_failed)
+            }
+    }
+
+    private suspend fun insertNewRecord(
+        current: AddEditHealthRecordFormState,
+        parsed: HealthMetricsParser.ParsedFields,
+        now: LocalDateTime
+    ) {
+        val newRecord = HealthRecord(
+            temperature = parsed.temperature,
+            bloodPressureHigh = parsed.bpHigh,
+            bloodPressureLow = parsed.bpLow,
+            pulse = parsed.pulse,
+            weight = parsed.weight,
+            meal = current.meal,
+            excretion = current.excretion,
+            conditionNote = parsed.trimmedNote,
+            recordedAt = current.recordedAt,
+            createdAt = now,
+            updatedAt = now
+        )
+        healthRecordRepository.insertRecord(newRecord)
+            .onSuccess { id ->
+                Timber.d("Health record saved: id=$id")
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_HEALTH_RECORD_CREATED)
+                photoManager.updateParentId(id)
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to save health record: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.health_records_save_failed)
+            }
     }
 
 }

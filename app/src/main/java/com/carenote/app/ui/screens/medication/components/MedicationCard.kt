@@ -57,58 +57,12 @@ fun MedicationCard(
         onClick = onClick,
         modifier = modifier
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = medication.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                if (medication.dosage.isNotBlank()) {
-                    Text(
-                        text = medication.dosage,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (medication.currentStock != null) {
-                    val threshold = medication.lowStockThreshold
-                        ?: com.carenote.app.config.AppConfig.Medication.DEFAULT_LOW_STOCK_THRESHOLD
-                    val isLow = medication.currentStock <= threshold
-                    Text(
-                        text = stringResource(
-                            R.string.medication_stock_info,
-                            medication.currentStock
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isLow) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-
-            if (status != null) {
-                StatusBadge(status = status)
-            }
-        }
-
+        MedicationCardHeader(
+            medication = medication,
+            status = status
+        )
         Spacer(modifier = Modifier.height(8.dp))
-
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            medication.timings.forEach { timing ->
-                MedicationTimingChip(timing = timing)
-            }
-        }
-
+        MedicationTimingChips(timings = medication.timings)
         if (status == null) {
             Spacer(modifier = Modifier.height(12.dp))
             ActionButtons(
@@ -121,11 +75,83 @@ fun MedicationCard(
 }
 
 @Composable
+private fun MedicationCardHeader(
+    medication: Medication,
+    status: MedicationLogStatus?
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = medication.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+            if (medication.dosage.isNotBlank()) {
+                Text(
+                    text = medication.dosage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            MedicationStockInfo(medication = medication)
+        }
+        if (status != null) {
+            StatusBadge(status = status)
+        }
+    }
+}
+
+@Composable
+private fun MedicationStockInfo(medication: Medication) {
+    if (medication.currentStock != null) {
+        val threshold = medication.lowStockThreshold
+            ?: com.carenote.app.config.AppConfig.Medication.DEFAULT_LOW_STOCK_THRESHOLD
+        val isLow = medication.currentStock <= threshold
+        Text(
+            text = stringResource(
+                R.string.medication_stock_info,
+                medication.currentStock
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isLow) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MedicationTimingChips(
+    timings: List<com.carenote.app.domain.model.MedicationTiming>
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        timings.forEach { timing ->
+            MedicationTimingChip(timing = timing)
+        }
+    }
+}
+
+@Composable
 private fun StatusBadge(status: MedicationLogStatus) {
     val (text, color) = when (status) {
-        MedicationLogStatus.TAKEN -> stringResource(R.string.medication_status_taken) to CareNoteColors.current.accentSuccess
-        MedicationLogStatus.SKIPPED -> stringResource(R.string.medication_status_skipped) to MaterialTheme.colorScheme.error
-        MedicationLogStatus.POSTPONED -> stringResource(R.string.medication_status_postponed) to MaterialTheme.colorScheme.tertiary
+        MedicationLogStatus.TAKEN ->
+            stringResource(R.string.medication_status_taken) to
+                CareNoteColors.current.accentSuccess
+        MedicationLogStatus.SKIPPED ->
+            stringResource(R.string.medication_status_skipped) to
+                MaterialTheme.colorScheme.error
+        MedicationLogStatus.POSTPONED ->
+            stringResource(R.string.medication_status_postponed) to
+                MaterialTheme.colorScheme.tertiary
     }
 
     Text(
@@ -145,50 +171,56 @@ private fun ActionButtons(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        FilledTonalButton(
-            onClick = onTaken,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = stringResource(R.string.medication_taken),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = stringResource(R.string.medication_taken),
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-        OutlinedButton(
-            onClick = onSkipped,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = stringResource(R.string.medication_skipped),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = stringResource(R.string.medication_skipped),
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-        OutlinedButton(
-            onClick = onPostponed,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Schedule,
-                contentDescription = stringResource(R.string.medication_postponed),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = stringResource(R.string.medication_postponed),
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
+        TakenButton(onClick = onTaken, modifier = Modifier.weight(1f))
+        SkippedButton(onClick = onSkipped, modifier = Modifier.weight(1f))
+        PostponedButton(onClick = onPostponed, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun TakenButton(onClick: () -> Unit, modifier: Modifier) {
+    FilledTonalButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            imageVector = Icons.Filled.Check,
+            contentDescription = stringResource(R.string.medication_taken),
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = stringResource(R.string.medication_taken),
+            style = MaterialTheme.typography.labelMedium
+        )
+    }
+}
+
+@Composable
+private fun SkippedButton(onClick: () -> Unit, modifier: Modifier) {
+    OutlinedButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            imageVector = Icons.Filled.Close,
+            contentDescription = stringResource(R.string.medication_skipped),
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = stringResource(R.string.medication_skipped),
+            style = MaterialTheme.typography.labelMedium
+        )
+    }
+}
+
+@Composable
+private fun PostponedButton(onClick: () -> Unit, modifier: Modifier) {
+    OutlinedButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            imageVector = Icons.Filled.Schedule,
+            contentDescription = stringResource(R.string.medication_postponed),
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = stringResource(R.string.medication_postponed),
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }

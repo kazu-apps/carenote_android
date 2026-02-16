@@ -37,6 +37,7 @@ fun indexToX(
     return chartLeft + step * index
 }
 
+@Suppress("LongParameterList")
 fun DrawScope.drawGridLines(
     yMin: Double,
     yMax: Double,
@@ -61,6 +62,7 @@ fun DrawScope.drawGridLines(
     }
 }
 
+@Suppress("LongParameterList")
 fun DrawScope.drawThresholdLine(
     value: Double,
     yMin: Double,
@@ -84,6 +86,7 @@ fun DrawScope.drawThresholdLine(
     )
 }
 
+@Suppress("LongParameterList")
 fun DrawScope.drawYAxisLabels(
     textMeasurer: TextMeasurer,
     yMin: Double,
@@ -112,6 +115,7 @@ fun DrawScope.drawYAxisLabels(
     }
 }
 
+@Suppress("LongParameterList")
 fun DrawScope.drawXAxisLabels(
     textMeasurer: TextMeasurer,
     points: List<GraphDataPoint>,
@@ -139,6 +143,7 @@ fun DrawScope.drawXAxisLabels(
     }
 }
 
+@Suppress("LongParameterList")
 fun DrawScope.drawDataLine(
     points: List<GraphDataPoint>,
     yMin: Double,
@@ -173,6 +178,7 @@ fun DrawScope.drawDataLine(
     )
 }
 
+@Suppress("LongParameterList")
 private fun DrawScope.drawSinglePoint(
     points: List<GraphDataPoint>,
     yMin: Double,
@@ -192,6 +198,7 @@ private fun DrawScope.drawSinglePoint(
     )
 }
 
+@Suppress("LongParameterList")
 private fun DrawScope.drawDataPoints(
     points: List<GraphDataPoint>,
     yMin: Double,

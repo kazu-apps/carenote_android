@@ -37,7 +37,7 @@ class MedicationLogRemoteMapper @Inject constructor(
         val timing = (data["timing"] as? String)?.let { timingStr ->
             try {
                 MedicationTiming.valueOf(timingStr)
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 Timber.w("Unknown MedicationTiming from remote: '$timingStr', falling back to null")
                 null
             }

@@ -134,8 +134,14 @@ class AddEditEmergencyContactViewModel @Inject constructor(
             validateMaxLength(current.name, AppConfig.EmergencyContact.NAME_MAX_LENGTH)
         )
         val phoneNumberError = combineValidations(
-            validateRequired(current.phoneNumber, R.string.emergency_contact_phone_required),
-            validateMaxLength(current.phoneNumber, AppConfig.EmergencyContact.PHONE_MAX_LENGTH)
+            validateRequired(
+                current.phoneNumber,
+                R.string.emergency_contact_phone_required
+            ),
+            validateMaxLength(
+                current.phoneNumber,
+                AppConfig.EmergencyContact.PHONE_MAX_LENGTH
+            )
         )
 
         if (nameError != null || phoneNumberError != null) {
@@ -147,50 +153,66 @@ class AddEditEmergencyContactViewModel @Inject constructor(
         }
 
         _formState.value = current.copy(isSaving = true)
+        viewModelScope.launch { persistContact(current) }
+    }
 
-        viewModelScope.launch {
-            val now = clock.now()
-            val original = originalContact
-            if (contactId != null && original != null) {
-                val updatedContact = original.copy(
-                    name = current.name.trim(),
-                    phoneNumber = current.phoneNumber.trim(),
-                    relationship = current.relationship,
-                    memo = current.memo.trim(),
-                    updatedAt = now
-                )
-                repository.updateContact(updatedContact)
-                    .onSuccess {
-                        Timber.d("Emergency contact updated: id=$contactId")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_UPDATED)
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to update emergency contact: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.emergency_contact_save_failed)
-                    }
-            } else {
-                val newContact = EmergencyContact(
-                    name = current.name.trim(),
-                    phoneNumber = current.phoneNumber.trim(),
-                    relationship = current.relationship,
-                    memo = current.memo.trim(),
-                    createdAt = now,
-                    updatedAt = now
-                )
-                repository.insertContact(newContact)
-                    .onSuccess { id ->
-                        Timber.d("Emergency contact saved: id=$id")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_CREATED)
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to save emergency contact: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.emergency_contact_save_failed)
-                    }
-            }
+    private suspend fun persistContact(current: EmergencyContactFormState) {
+        val original = originalContact
+        if (contactId != null && original != null) {
+            updateExistingContact(original, current)
+        } else {
+            createNewContact(current)
         }
+    }
+
+    private suspend fun updateExistingContact(
+        original: EmergencyContact,
+        current: EmergencyContactFormState
+    ) {
+        val updatedContact = original.copy(
+            name = current.name.trim(),
+            phoneNumber = current.phoneNumber.trim(),
+            relationship = current.relationship,
+            memo = current.memo.trim(),
+            updatedAt = clock.now()
+        )
+        repository.updateContact(updatedContact)
+            .onSuccess {
+                Timber.d("Emergency contact updated: id=$contactId")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_UPDATED
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update emergency contact: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.emergency_contact_save_failed)
+            }
+    }
+
+    private suspend fun createNewContact(current: EmergencyContactFormState) {
+        val now = clock.now()
+        val newContact = EmergencyContact(
+            name = current.name.trim(),
+            phoneNumber = current.phoneNumber.trim(),
+            relationship = current.relationship,
+            memo = current.memo.trim(),
+            createdAt = now,
+            updatedAt = now
+        )
+        repository.insertContact(newContact)
+            .onSuccess { id ->
+                Timber.d("Emergency contact saved: id=$id")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_EMERGENCY_CONTACT_CREATED
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to save emergency contact: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.emergency_contact_save_failed)
+            }
     }
 }

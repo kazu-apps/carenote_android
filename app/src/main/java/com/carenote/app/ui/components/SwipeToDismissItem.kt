@@ -60,9 +60,6 @@ fun <T> SwipeToDismissItem(
         }
     }
 
-    var showContextMenu by remember { mutableStateOf(false) }
-    val deleteLabel = stringResource(R.string.common_delete)
-
     SwipeToDismissBox(
         state = dismissState,
         modifier = modifier,
@@ -71,42 +68,61 @@ fun <T> SwipeToDismissItem(
             DismissBackground(dismissState)
         }
     ) {
-        Box(
-            modifier = Modifier
-                .semantics {
-                    customActions = listOf(
-                        CustomAccessibilityAction(deleteLabel) {
-                            onDelete(item)
-                            true
-                        }
-                    )
-                }
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = { showContextMenu = true },
-                    onLongClickLabel = stringResource(R.string.a11y_long_press_for_options)
-                )
-        ) {
-            content()
+        DismissableContent(
+            item = item,
+            onDelete = onDelete,
+            content = content
+        )
+    }
+}
 
-            DropdownMenu(
-                expanded = showContextMenu,
-                onDismissRequest = { showContextMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(deleteLabel) },
-                    onClick = {
-                        showContextMenu = false
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun <T> DismissableContent(
+    item: T,
+    onDelete: (T) -> Unit,
+    content: @Composable () -> Unit
+) {
+    var showContextMenu by remember { mutableStateOf(false) }
+    val deleteLabel = stringResource(R.string.common_delete)
+
+    Box(
+        modifier = Modifier
+            .semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(deleteLabel) {
                         onDelete(item)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = null
-                        )
+                        true
                     }
                 )
             }
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { showContextMenu = true },
+                onLongClickLabel = stringResource(
+                    R.string.a11y_long_press_for_options
+                )
+            )
+    ) {
+        content()
+
+        DropdownMenu(
+            expanded = showContextMenu,
+            onDismissRequest = { showContextMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(deleteLabel) },
+                onClick = {
+                    showContextMenu = false
+                    onDelete(item)
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = null
+                    )
+                }
+            )
         }
     }
 }

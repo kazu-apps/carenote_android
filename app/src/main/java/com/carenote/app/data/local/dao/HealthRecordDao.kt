@@ -27,7 +27,8 @@ interface HealthRecordDao {
 
     @Query(
         "SELECT * FROM health_records " +
-            "WHERE care_recipient_id = :careRecipientId AND (:query = '' OR condition_note LIKE '%' || :query || '%') " +
+            "WHERE care_recipient_id = :careRecipientId " +
+            "AND (:query = '' OR condition_note LIKE '%' || :query || '%') " +
             "ORDER BY recorded_at DESC"
     )
     fun getPagedRecords(query: String, careRecipientId: Long): PagingSource<Int, HealthRecordEntity>

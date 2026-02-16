@@ -15,10 +15,17 @@ interface MedicationLogDao {
     fun getLogsForMedication(medicationId: Long): Flow<List<MedicationLogEntity>>
 
     @Query(
-        "SELECT * FROM medication_logs WHERE care_recipient_id = :careRecipientId AND scheduled_at >= :startOfDay AND scheduled_at < :endOfDay " +
+        "SELECT * FROM medication_logs " +
+            "WHERE care_recipient_id = :careRecipientId " +
+            "AND scheduled_at >= :startOfDay " +
+            "AND scheduled_at < :endOfDay " +
             "ORDER BY scheduled_at ASC"
     )
-    fun getLogsForDateRange(startOfDay: String, endOfDay: String, careRecipientId: Long): Flow<List<MedicationLogEntity>>
+    fun getLogsForDateRange(
+        startOfDay: String,
+        endOfDay: String,
+        careRecipientId: Long
+    ): Flow<List<MedicationLogEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLog(log: MedicationLogEntity): Long

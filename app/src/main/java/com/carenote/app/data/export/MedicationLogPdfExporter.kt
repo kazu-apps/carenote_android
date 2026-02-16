@@ -51,7 +51,8 @@ class MedicationLogPdfExporter @Inject constructor(
             yPos = drawTableHeader(canvas, yPos)
 
             for (log in logs) {
-                if (yPos + AppConfig.Export.PDF_LINE_HEIGHT > AppConfig.Export.PDF_PAGE_HEIGHT - AppConfig.Export.PDF_MARGIN) {
+                val maxY = AppConfig.Export.PDF_PAGE_HEIGHT - AppConfig.Export.PDF_MARGIN
+                if (yPos + AppConfig.Export.PDF_LINE_HEIGHT > maxY) {
                     document.finishPage(page)
                     pageNumber++
                     page = startNewPage(document, pageNumber)
@@ -148,7 +149,10 @@ class MedicationLogPdfExporter @Inject constructor(
         val margin = AppConfig.Export.PDF_MARGIN.toFloat()
         val totalWidth = columnWidths.sum().toFloat()
 
-        canvas.drawLine(margin, yPos + AppConfig.Export.PDF_LINE_HEIGHT, margin + totalWidth, yPos + AppConfig.Export.PDF_LINE_HEIGHT, linePaint)
+        val lineY = yPos + AppConfig.Export.PDF_LINE_HEIGHT
+        canvas.drawLine(
+            margin, lineY, margin + totalWidth, lineY, linePaint
+        )
 
         val fields = listOf(
             log.recordedAt.format(dateFormatter),

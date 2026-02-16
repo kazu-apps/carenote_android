@@ -48,7 +48,8 @@ class HealthRecordPdfExporter @Inject constructor(
             yPos = drawTableHeader(canvas, yPos)
 
             for (record in records) {
-                if (yPos + AppConfig.Export.PDF_LINE_HEIGHT > AppConfig.Export.PDF_PAGE_HEIGHT - AppConfig.Export.PDF_MARGIN) {
+                val maxY = AppConfig.Export.PDF_PAGE_HEIGHT - AppConfig.Export.PDF_MARGIN
+                if (yPos + AppConfig.Export.PDF_LINE_HEIGHT > maxY) {
                     document.finishPage(page)
                     pageNumber++
                     page = startNewPage(document, pageNumber)
@@ -140,19 +141,10 @@ class HealthRecordPdfExporter @Inject constructor(
         val margin = AppConfig.Export.PDF_MARGIN.toFloat()
         val totalWidth = columnWidths.sum().toFloat()
 
-        canvas.drawLine(margin, yPos + AppConfig.Export.PDF_LINE_HEIGHT, margin + totalWidth, yPos + AppConfig.Export.PDF_LINE_HEIGHT, linePaint)
+        val lineY = yPos + AppConfig.Export.PDF_LINE_HEIGHT
+        canvas.drawLine(margin, lineY, margin + totalWidth, lineY, linePaint)
 
-        val fields = listOf(
-            record.recordedAt.format(dateFormatter),
-            record.temperature?.let { "%.1f".format(it) } ?: "",
-            record.bloodPressureHigh?.toString() ?: "",
-            record.bloodPressureLow?.toString() ?: "",
-            record.pulse?.toString() ?: "",
-            record.weight?.let { "%.1f".format(it) } ?: "",
-            record.meal?.let { localizeMealAmount(it) } ?: "",
-            record.excretion?.let { localizeExcretionType(it) } ?: "",
-            record.conditionNote
-        )
+        val fields = buildDataRowFields(record)
         var xPos = margin + 4f
         for (i in fields.indices) {
             canvas.drawText(
@@ -165,6 +157,18 @@ class HealthRecordPdfExporter @Inject constructor(
         }
         return yPos + AppConfig.Export.PDF_LINE_HEIGHT
     }
+
+    private fun buildDataRowFields(record: HealthRecord): List<String> = listOf(
+        record.recordedAt.format(dateFormatter),
+        record.temperature?.let { "%.1f".format(it) } ?: "",
+        record.bloodPressureHigh?.toString() ?: "",
+        record.bloodPressureLow?.toString() ?: "",
+        record.pulse?.toString() ?: "",
+        record.weight?.let { "%.1f".format(it) } ?: "",
+        record.meal?.let { localizeMealAmount(it) } ?: "",
+        record.excretion?.let { localizeExcretionType(it) } ?: "",
+        record.conditionNote
+    )
 
     private fun truncateText(text: String, maxWidth: Int, paint: Paint): String {
         if (paint.measureText(text) <= maxWidth) return text

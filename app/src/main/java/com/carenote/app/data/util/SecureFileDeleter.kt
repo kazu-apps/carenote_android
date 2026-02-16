@@ -13,24 +13,27 @@ object SecureFileDeleter {
     fun delete(file: File): Boolean {
         if (!file.exists()) return true
         return try {
-            val length = file.length().toInt()
-            if (length > 0) {
-                RandomAccessFile(file, "rw").use { raf ->
-                    val buffer = ByteArray(length)
-                    Random.nextBytes(buffer)
-                    raf.seek(0)
-                    raf.write(buffer)
-                    for (i in buffer.indices) { buffer[i] = 0xFF.toByte() }
-                    raf.seek(0)
-                    raf.write(buffer)
-                    for (i in buffer.indices) { buffer[i] = 0x00 }
-                    raf.seek(0)
-                    raf.write(buffer)
-                }
-            }
+            overwriteContents(file)
             file.delete()
         } catch (_: Exception) {
             file.delete()
+        }
+    }
+
+    private fun overwriteContents(file: File) {
+        val length = file.length().toInt()
+        if (length <= 0) return
+        RandomAccessFile(file, "rw").use { raf ->
+            val buffer = ByteArray(length)
+            Random.nextBytes(buffer)
+            raf.seek(0)
+            raf.write(buffer)
+            buffer.fill(0xFF.toByte())
+            raf.seek(0)
+            raf.write(buffer)
+            buffer.fill(0x00)
+            raf.seek(0)
+            raf.write(buffer)
         }
     }
 

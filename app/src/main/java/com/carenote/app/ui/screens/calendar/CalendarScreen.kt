@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -77,8 +78,40 @@ fun CalendarScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteEvent by remember { mutableStateOf<CalendarEvent?>(null) }
-    val context = LocalContext.current
 
+    CalendarScreenSnackbarEffect(viewModel, snackbarHostState)
+
+    CalendarScaffold(
+        currentMonth = currentMonth,
+        selectedDate = selectedDate,
+        eventsForMonth = eventsForMonth,
+        eventsUiState = eventsUiState,
+        isRefreshing = isRefreshing,
+        snackbarHostState = snackbarHostState,
+        viewModel = viewModel,
+        onNavigateToAddEvent = onNavigateToAddEvent,
+        onNavigateToEditEvent = onNavigateToEditEvent,
+        onNavigateToTimeline = onNavigateToTimeline,
+        onNavigateToSearch = onNavigateToSearch,
+        onDeleteRequest = { deleteEvent = it }
+    )
+
+    CalendarDeleteDialog(
+        deleteEvent = deleteEvent,
+        onConfirmDelete = { event ->
+            viewModel.deleteEvent(event.id)
+            deleteEvent = null
+        },
+        onDismiss = { deleteEvent = null }
+    )
+}
+
+@Composable
+private fun CalendarScreenSnackbarEffect(
+    viewModel: CalendarViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
@@ -88,56 +121,60 @@ fun CalendarScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
+}
 
+@Composable
+private fun CalendarDeleteDialog(
+    deleteEvent: CalendarEvent?,
+    onConfirmDelete: (CalendarEvent) -> Unit,
+    onDismiss: () -> Unit
+) {
+    deleteEvent?.let { event ->
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_delete_title),
+            message = stringResource(R.string.calendar_event_delete_confirm),
+            onConfirm = { onConfirmDelete(event) },
+            onDismiss = onDismiss,
+            isDestructive = true
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarScaffold(
+    currentMonth: YearMonth,
+    selectedDate: LocalDate,
+    eventsForMonth: Map<LocalDate, List<CalendarEvent>>,
+    eventsUiState: UiState<List<CalendarEvent>>,
+    isRefreshing: Boolean,
+    snackbarHostState: SnackbarHostState,
+    viewModel: CalendarViewModel,
+    onNavigateToAddEvent: () -> Unit,
+    onNavigateToEditEvent: (Long) -> Unit,
+    onNavigateToTimeline: () -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onDeleteRequest: (CalendarEvent) -> Unit
+) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    MonthNavigationBar(
-                        currentMonth = currentMonth,
-                        onPreviousMonth = {
-                            viewModel.changeMonth(currentMonth.minusMonths(1))
-                        },
-                        onNextMonth = {
-                            viewModel.changeMonth(currentMonth.plusMonths(1))
-                        },
-                        onToday = {
-                            val today = LocalDate.now()
-                            viewModel.changeMonth(YearMonth.from(today))
-                            viewModel.selectDate(today)
-                        }
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
-                        )
-                    }
-                    IconButton(onClick = onNavigateToTimeline) {
-                        Icon(
-                            imageVector = Icons.Filled.History,
-                            contentDescription = stringResource(R.string.a11y_timeline_icon)
-                        )
+            CalendarTopBar(
+                currentMonth = currentMonth,
+                onPreviousMonth = { viewModel.changeMonth(currentMonth.minusMonths(1)) },
+                onNextMonth = { viewModel.changeMonth(currentMonth.plusMonths(1)) },
+                onToday = {
+                    LocalDate.now().let { today ->
+                        viewModel.changeMonth(YearMonth.from(today))
+                        viewModel.selectDate(today)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                onNavigateToSearch = onNavigateToSearch,
+                onNavigateToTimeline = onNavigateToTimeline
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddEvent,
-                modifier = Modifier.testTag(TestTags.CALENDAR_FAB),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.calendar_add_event)
-                )
-            }
+            CalendarFab(onClick = onNavigateToAddEvent)
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
@@ -146,95 +183,189 @@ fun CalendarScreen(
             onRefresh = { viewModel.refresh() },
             modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 80.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item(key = "calendar_grid") {
-                MonthCalendarGrid(
-                    yearMonth = currentMonth,
-                    selectedDate = selectedDate,
-                    eventsForMonth = eventsForMonth,
-                    onDateClick = { date ->
-                        viewModel.selectDate(date)
-                        if (YearMonth.from(date) != currentMonth) {
-                            viewModel.changeMonth(YearMonth.from(date))
-                        }
+            CalendarContent(
+                currentMonth = currentMonth,
+                selectedDate = selectedDate,
+                eventsForMonth = eventsForMonth,
+                eventsUiState = eventsUiState,
+                onDateClick = { date ->
+                    viewModel.selectDate(date)
+                    if (YearMonth.from(date) != currentMonth) {
+                        viewModel.changeMonth(YearMonth.from(date))
                     }
-                )
-            }
-
-            item(key = "selected_date_header") {
-                Text(
-                    text = DateTimeFormatters.formatDate(selectedDate),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
-            when (val state = eventsUiState) {
-                is UiState.Loading -> {
-                    item(key = "loading") {
-                        LoadingIndicator()
-                    }
-                }
-                is UiState.Error -> {
-                    item(key = "error") {
-                        ErrorDisplay(
-                            error = state.error,
-                            onRetry = { viewModel.refresh() }
-                        )
-                    }
-                }
-                is UiState.Success -> {
-                    if (state.data.isEmpty()) {
-                        item(key = "empty_state") {
-                            EmptyState(
-                                icon = Icons.Filled.CalendarMonth,
-                                message = stringResource(R.string.calendar_empty),
-                                actionLabel = stringResource(R.string.calendar_empty_action),
-                                onAction = onNavigateToAddEvent
-                            )
-                        }
-                    } else {
-                        items(
-                            items = state.data,
-                            key = { it.id }
-                        ) { event ->
-                            SwipeToDismissItem(
-                                item = event,
-                                onDelete = { deleteEvent = it }
-                            ) {
-                                CalendarEventCard(
-                                    event = event,
-                                    onClick = { onNavigateToEditEvent(event.id) },
-                                    onToggleCompleted = { viewModel.toggleCompleted(it) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                },
+                onNavigateToAddEvent = onNavigateToAddEvent,
+                onNavigateToEditEvent = onNavigateToEditEvent,
+                onDelete = onDeleteRequest,
+                onToggleCompleted = { viewModel.toggleCompleted(it) },
+                onRefresh = { viewModel.refresh() }
+            )
         }
     }
+}
 
-    deleteEvent?.let { event ->
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_delete_title),
-            message = stringResource(R.string.calendar_event_delete_confirm),
-            onConfirm = {
-                viewModel.deleteEvent(event.id)
-                deleteEvent = null
-            },
-            onDismiss = { deleteEvent = null },
-            isDestructive = true
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarTopBar(
+    currentMonth: YearMonth,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onToday: () -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToTimeline: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            MonthNavigationBar(
+                currentMonth = currentMonth,
+                onPreviousMonth = onPreviousMonth,
+                onNextMonth = onNextMonth,
+                onToday = onToday
+            )
+        },
+        actions = {
+            IconButton(onClick = onNavigateToSearch) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                )
+            }
+            IconButton(onClick = onNavigateToTimeline) {
+                Icon(
+                    imageVector = Icons.Filled.History,
+                    contentDescription = stringResource(R.string.a11y_timeline_icon)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun CalendarContent(
+    currentMonth: YearMonth,
+    selectedDate: LocalDate,
+    eventsForMonth: Map<LocalDate, List<CalendarEvent>>,
+    eventsUiState: UiState<List<CalendarEvent>>,
+    onDateClick: (LocalDate) -> Unit,
+    onNavigateToAddEvent: () -> Unit,
+    onNavigateToEditEvent: (Long) -> Unit,
+    onDelete: (CalendarEvent) -> Unit,
+    onToggleCompleted: (CalendarEvent) -> Unit,
+    onRefresh: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp, end = 16.dp,
+            top = 8.dp, bottom = 80.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item(key = "calendar_grid") {
+            MonthCalendarGrid(
+                yearMonth = currentMonth,
+                selectedDate = selectedDate,
+                eventsForMonth = eventsForMonth,
+                onDateClick = onDateClick
+            )
+        }
+
+        item(key = "selected_date_header") {
+            Text(
+                text = DateTimeFormatters.formatDate(selectedDate),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        calendarEventsList(
+            eventsUiState = eventsUiState,
+            onNavigateToAddEvent = onNavigateToAddEvent,
+            onNavigateToEditEvent = onNavigateToEditEvent,
+            onDelete = onDelete,
+            onToggleCompleted = onToggleCompleted,
+            onRefresh = onRefresh
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.calendarEventsList(
+    eventsUiState: UiState<List<CalendarEvent>>,
+    onNavigateToAddEvent: () -> Unit,
+    onNavigateToEditEvent: (Long) -> Unit,
+    onDelete: (CalendarEvent) -> Unit,
+    onToggleCompleted: (CalendarEvent) -> Unit,
+    onRefresh: () -> Unit
+) {
+    when (val state = eventsUiState) {
+        is UiState.Loading -> {
+            item(key = "loading") { LoadingIndicator() }
+        }
+        is UiState.Error -> {
+            item(key = "error") {
+                ErrorDisplay(error = state.error, onRetry = onRefresh)
+            }
+        }
+        is UiState.Success -> {
+            calendarEventsSuccessItems(
+                events = state.data,
+                onNavigateToAddEvent = onNavigateToAddEvent,
+                onNavigateToEditEvent = onNavigateToEditEvent,
+                onDelete = onDelete,
+                onToggleCompleted = onToggleCompleted
+            )
+        }
+    }
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.calendarEventsSuccessItems(
+    events: List<CalendarEvent>,
+    onNavigateToAddEvent: () -> Unit,
+    onNavigateToEditEvent: (Long) -> Unit,
+    onDelete: (CalendarEvent) -> Unit,
+    onToggleCompleted: (CalendarEvent) -> Unit
+) {
+    if (events.isEmpty()) {
+        item(key = "empty_state") {
+            EmptyState(
+                icon = Icons.Filled.CalendarMonth,
+                message = stringResource(R.string.calendar_empty),
+                actionLabel = stringResource(R.string.calendar_empty_action),
+                onAction = onNavigateToAddEvent
+            )
+        }
+    } else {
+        items(items = events, key = { it.id }) { event ->
+            SwipeToDismissItem(
+                item = event,
+                onDelete = onDelete
+            ) {
+                CalendarEventCard(
+                    event = event,
+                    onClick = { onNavigateToEditEvent(event.id) },
+                    onToggleCompleted = onToggleCompleted
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.testTag(TestTags.CALENDAR_FAB),
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = stringResource(R.string.calendar_add_event)
         )
     }
 }

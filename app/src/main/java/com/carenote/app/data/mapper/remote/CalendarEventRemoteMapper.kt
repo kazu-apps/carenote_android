@@ -15,6 +15,7 @@ class CalendarEventRemoteMapper @Inject constructor(
     private val timestampConverter: FirestoreTimestampConverter
 ) : RemoteMapper<CalendarEvent> {
 
+    @Suppress("CyclomaticComplexMethod")
     override fun toDomain(data: Map<String, Any?>): CalendarEvent {
         val localId = (data["localId"] as? Number)?.toLong()
             ?: throw IllegalArgumentException("localId is required")

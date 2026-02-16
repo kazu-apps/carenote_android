@@ -43,37 +43,84 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
     override suspend fun syncAll(careRecipientId: String): SyncResult {
         Timber.d("Starting full sync for careRecipientId=$careRecipientId")
         val startTime = LocalDateTime.now()
+        val accumulator = SyncAccumulator()
 
-        var totalUploaded = 0
-        var totalDownloaded = 0
-        var totalConflicts = 0
-        val allFailedEntities = mutableListOf<Long>()
-        val allErrors = mutableListOf<DomainError>()
+        val entitySyncResult = syncAllEntities(careRecipientId, accumulator)
+        if (entitySyncResult != null) return entitySyncResult
 
-        // Sync each entity type in sequence
+        val medLogResult = syncMedicationLogsPhase(careRecipientId, accumulator)
+        if (medLogResult != null) return medLogResult
+
+        settingsDataSource.updateLastSyncTime(startTime)
+
+        val finalResult = accumulator.toFinalResult()
+        _syncState.value = SyncState.Success(startTime)
+        Timber.d("Full sync completed: $finalResult")
+        return finalResult
+    }
+
+    private suspend fun syncAllEntities(
+        careRecipientId: String,
+        accumulator: SyncAccumulator
+    ): SyncResult? {
         val entityNames = listOf(
-            "medications",
-            "notes",
-            "healthRecords",
-            "calendarEvents",
-            "tasks",
-            "noteComments"
+            "medications", "notes", "healthRecords",
+            "calendarEvents", "tasks", "noteComments"
         )
 
         entityNames.forEachIndexed { index, entityName ->
             val progress = index.toFloat() / AppConfig.Sync.ENTITY_TYPE_COUNT
             _syncState.value = SyncState.Syncing(progress, entityName)
 
-            val result = when (entityName) {
-                "medications" -> syncMedications(careRecipientId)
-                "notes" -> syncNotes(careRecipientId)
-                "healthRecords" -> syncHealthRecords(careRecipientId)
-                "calendarEvents" -> syncCalendarEvents(careRecipientId)
-                "tasks" -> syncTasks(careRecipientId)
-                "noteComments" -> syncNoteComments(careRecipientId)
-                else -> SyncResult.Success(0, 0)
+            val result = syncEntityByName(careRecipientId, entityName)
+            val failure = accumulator.accumulate(result)
+            if (failure != null) {
+                _syncState.value = SyncState.Error(failure.error, isRetryable = true)
+                return failure
             }
+        }
+        return null
+    }
 
+    private suspend fun syncEntityByName(
+        careRecipientId: String,
+        entityName: String
+    ): SyncResult = when (entityName) {
+        "medications" -> syncMedications(careRecipientId)
+        "notes" -> syncNotes(careRecipientId)
+        "healthRecords" -> syncHealthRecords(careRecipientId)
+        "calendarEvents" -> syncCalendarEvents(careRecipientId)
+        "tasks" -> syncTasks(careRecipientId)
+        "noteComments" -> syncNoteComments(careRecipientId)
+        else -> SyncResult.Success(0, 0)
+    }
+
+    private suspend fun syncMedicationLogsPhase(
+        careRecipientId: String,
+        accumulator: SyncAccumulator
+    ): SyncResult? {
+        _syncState.value = SyncState.Syncing(
+            AppConfig.Sync.ENTITY_TYPE_COUNT.toFloat() / (AppConfig.Sync.ENTITY_TYPE_COUNT + 1),
+            "medicationLogs"
+        )
+        val lastSyncTime = getLastSyncTime()
+        val result = syncAllMedicationLogs(careRecipientId, lastSyncTime)
+        val failure = accumulator.accumulate(result)
+        if (failure != null) {
+            _syncState.value = SyncState.Error(failure.error, isRetryable = true)
+            return failure
+        }
+        return null
+    }
+
+    private class SyncAccumulator {
+        var totalUploaded = 0
+        var totalDownloaded = 0
+        var totalConflicts = 0
+        val allFailedEntities = mutableListOf<Long>()
+        val allErrors = mutableListOf<DomainError>()
+
+        fun accumulate(result: SyncResult): SyncResult.Failure? {
             when (result) {
                 is SyncResult.Success -> {
                     totalUploaded += result.uploadedCount
@@ -84,40 +131,12 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
                     allFailedEntities.addAll(result.failedEntities)
                     allErrors.addAll(result.errors)
                 }
-                is SyncResult.Failure -> {
-                    _syncState.value = SyncState.Error(result.error, isRetryable = true)
-                    return result
-                }
+                is SyncResult.Failure -> return result
             }
+            return null
         }
 
-        val lastSyncTime = getLastSyncTime()
-
-        // MedicationLogs 同期 (medications の後に実行)
-        _syncState.value = SyncState.Syncing(
-            (entityNames.size.toFloat()) / AppConfig.Sync.ENTITY_TYPE_COUNT,
-            "medicationLogs"
-        )
-        syncAllMedicationLogs(careRecipientId, lastSyncTime).let { result ->
-            when (result) {
-                is SyncResult.Success -> {
-                    totalUploaded += result.uploadedCount
-                    totalDownloaded += result.downloadedCount
-                }
-                is SyncResult.PartialSuccess -> {
-                    allFailedEntities.addAll(result.failedEntities)
-                    allErrors.addAll(result.errors)
-                }
-                is SyncResult.Failure -> {
-                    _syncState.value = SyncState.Error(result.error, isRetryable = true)
-                    return result
-                }
-            }
-        }
-
-        settingsDataSource.updateLastSyncTime(startTime)
-
-        val finalResult = if (allFailedEntities.isEmpty()) {
+        fun toFinalResult(): SyncResult = if (allFailedEntities.isEmpty()) {
             SyncResult.Success(
                 uploadedCount = totalUploaded,
                 downloadedCount = totalDownloaded,
@@ -130,10 +149,6 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
                 errors = allErrors
             )
         }
-
-        _syncState.value = SyncState.Success(startTime)
-        Timber.d("Full sync completed: $finalResult")
-        return finalResult
     }
 
     override suspend fun syncMedications(careRecipientId: String): SyncResult {
@@ -198,7 +213,10 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         val allFailedEntities = mutableListOf<Long>()
         val allErrors = mutableListOf<DomainError>()
 
-        val syncers = listOf(medicationSyncer, noteSyncer, healthRecordSyncer, calendarEventSyncer, taskSyncer, noteCommentSyncer)
+        val syncers = listOf(
+            medicationSyncer, noteSyncer, healthRecordSyncer,
+            calendarEventSyncer, taskSyncer, noteCommentSyncer
+        )
 
         syncers.forEachIndexed { index, syncer ->
             val progress = (index + 1).toFloat() / syncers.size
@@ -241,7 +259,10 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         val allFailedEntities = mutableListOf<Long>()
         val allErrors = mutableListOf<DomainError>()
 
-        val syncers = listOf(medicationSyncer, noteSyncer, healthRecordSyncer, calendarEventSyncer, taskSyncer, noteCommentSyncer)
+        val syncers = listOf(
+            medicationSyncer, noteSyncer, healthRecordSyncer,
+            calendarEventSyncer, taskSyncer, noteCommentSyncer
+        )
 
         syncers.forEachIndexed { index, syncer ->
             val progress = (index + 1).toFloat() / syncers.size

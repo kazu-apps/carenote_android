@@ -38,9 +38,6 @@ fun BloodPressureChart(
     val yMax = AppConfig.Graph.BLOOD_PRESSURE_Y_MAX.toDouble()
     val thresholdHigh = AppConfig.HealthThresholds.BLOOD_PRESSURE_HIGH_UPPER.toDouble()
     val thresholdLow = AppConfig.HealthThresholds.BLOOD_PRESSURE_HIGH_LOWER.toDouble()
-    val chartHeight = AppConfig.Graph.CHART_HEIGHT_DP
-    val yAxisWidth = AppConfig.Graph.Y_AXIS_LABEL_WIDTH_DP
-    val xAxisHeight = AppConfig.Graph.X_AXIS_LABEL_HEIGHT_DP
 
     val colors = CareNoteColors.current
     val chartLabelColor = colors.chartLabelColor
@@ -50,9 +47,16 @@ fun BloodPressureChart(
 
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = remember(chartLabelColor) {
-        TextStyle(fontSize = AppConfig.Graph.AXIS_LABEL_FONT_SIZE_SP.sp, color = chartLabelColor)
+        TextStyle(
+            fontSize = AppConfig.Graph.AXIS_LABEL_FONT_SIZE_SP.sp,
+            color = chartLabelColor
+        )
     }
     val gridColor = chartLabelColor.copy(alpha = 0.2f)
+
+    val graphDescription = bloodPressureDescription(
+        highPoints, lowPoints, thresholdHigh, thresholdLow
+    )
 
     CareNoteCard(modifier = modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -61,129 +65,183 @@ fun BloodPressureChart(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
-
             BloodPressureLegend()
-
-            val abnormalCount = remember(highPoints, lowPoints) {
-                highPoints.count { it.value >= thresholdHigh } +
-                    lowPoints.count { it.value >= thresholdLow }
-            }
-            val graphDescription = if (abnormalCount > 0) {
-                stringResource(
-                    R.string.a11y_graph_bp_summary,
-                    highPoints.size,
-                    highPoints.minOf { it.value }.toInt(),
-                    highPoints.maxOf { it.value }.toInt(),
-                    lowPoints.minOf { it.value }.toInt(),
-                    lowPoints.maxOf { it.value }.toInt(),
-                    abnormalCount
-                )
-            } else {
-                stringResource(
-                    R.string.a11y_graph_bp_summary_no_abnormal,
-                    highPoints.size,
-                    highPoints.minOf { it.value }.toInt(),
-                    highPoints.maxOf { it.value }.toInt(),
-                    lowPoints.minOf { it.value }.toInt(),
-                    lowPoints.maxOf { it.value }.toInt()
-                )
-            }
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(chartHeight.dp)
-                    .semantics { contentDescription = graphDescription }
-            ) {
-                val chartLeft = yAxisWidth.dp.toPx()
-                val chartRight = size.width - 8.dp.toPx()
-                val chartTop = 8.dp.toPx()
-                val chartBottom = size.height - xAxisHeight.dp.toPx()
-
-                drawGridLines(
-                    yMin = yMin,
-                    yMax = yMax,
-                    step = AppConfig.Graph.BLOOD_PRESSURE_GRID_STEP,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    gridColor = gridColor
-                )
-
-                drawThresholdLine(
-                    value = thresholdHigh,
-                    yMin = yMin,
-                    yMax = yMax,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    color = accentError.copy(alpha = 0.7f)
-                )
-
-                drawThresholdLine(
-                    value = thresholdLow,
-                    yMin = yMin,
-                    yMax = yMax,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    color = accentError.copy(alpha = 0.5f)
-                )
-
-                drawYAxisLabels(
-                    textMeasurer = textMeasurer,
-                    yMin = yMin,
-                    yMax = yMax,
-                    step = AppConfig.Graph.BLOOD_PRESSURE_GRID_STEP,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    labelStyle = labelStyle,
-                    labelColor = chartLabelColor
-                )
-
-                drawXAxisLabels(
-                    textMeasurer = textMeasurer,
-                    points = highPoints,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartBottom = chartBottom,
-                    labelStyle = labelStyle,
-                    labelColor = chartLabelColor
-                )
-
-                drawDataLine(
-                    points = highPoints,
-                    yMin = yMin,
-                    yMax = yMax,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    lineColor = chartLineColor,
-                    pointColor = chartLineColor,
-                    abnormalColor = accentError,
-                    abnormalThreshold = thresholdHigh
-                )
-
-                drawDataLine(
-                    points = lowPoints,
-                    yMin = yMin,
-                    yMax = yMax,
-                    chartLeft = chartLeft,
-                    chartRight = chartRight,
-                    chartTop = chartTop,
-                    chartBottom = chartBottom,
-                    lineColor = chartSecondaryLineColor,
-                    pointColor = chartSecondaryLineColor,
-                    abnormalColor = accentError,
-                    abnormalThreshold = thresholdLow
-                )
-            }
+            BloodPressureCanvas(
+                highPoints = highPoints,
+                lowPoints = lowPoints,
+                yMin = yMin,
+                yMax = yMax,
+                thresholdHigh = thresholdHigh,
+                thresholdLow = thresholdLow,
+                graphDescription = graphDescription,
+                textMeasurer = textMeasurer,
+                labelStyle = labelStyle,
+                gridColor = gridColor,
+                chartLabelColor = chartLabelColor,
+                chartLineColor = chartLineColor,
+                chartSecondaryLineColor = chartSecondaryLineColor,
+                accentError = accentError
+            )
         }
     }
+}
+
+@Composable
+private fun bloodPressureDescription(
+    highPoints: List<GraphDataPoint>,
+    lowPoints: List<GraphDataPoint>,
+    thresholdHigh: Double,
+    thresholdLow: Double
+): String {
+    val abnormalCount = remember(highPoints, lowPoints) {
+        highPoints.count { it.value >= thresholdHigh } +
+            lowPoints.count { it.value >= thresholdLow }
+    }
+    return if (abnormalCount > 0) {
+        stringResource(
+            R.string.a11y_graph_bp_summary,
+            highPoints.size,
+            highPoints.minOf { it.value }.toInt(),
+            highPoints.maxOf { it.value }.toInt(),
+            lowPoints.minOf { it.value }.toInt(),
+            lowPoints.maxOf { it.value }.toInt(),
+            abnormalCount
+        )
+    } else {
+        stringResource(
+            R.string.a11y_graph_bp_summary_no_abnormal,
+            highPoints.size,
+            highPoints.minOf { it.value }.toInt(),
+            highPoints.maxOf { it.value }.toInt(),
+            lowPoints.minOf { it.value }.toInt(),
+            lowPoints.maxOf { it.value }.toInt()
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun BloodPressureCanvas(
+    highPoints: List<GraphDataPoint>,
+    lowPoints: List<GraphDataPoint>,
+    yMin: Double,
+    yMax: Double,
+    thresholdHigh: Double,
+    thresholdLow: Double,
+    graphDescription: String,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    labelStyle: TextStyle,
+    gridColor: androidx.compose.ui.graphics.Color,
+    chartLabelColor: androidx.compose.ui.graphics.Color,
+    chartLineColor: androidx.compose.ui.graphics.Color,
+    chartSecondaryLineColor: androidx.compose.ui.graphics.Color,
+    accentError: androidx.compose.ui.graphics.Color
+) {
+    val chartHeight = AppConfig.Graph.CHART_HEIGHT_DP
+    val yAxisWidth = AppConfig.Graph.Y_AXIS_LABEL_WIDTH_DP
+    val xAxisHeight = AppConfig.Graph.X_AXIS_LABEL_HEIGHT_DP
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(chartHeight.dp)
+            .semantics { contentDescription = graphDescription }
+    ) {
+        val chartLeft = yAxisWidth.dp.toPx()
+        val chartRight = size.width - 8.dp.toPx()
+        val chartTop = 8.dp.toPx()
+        val chartBottom = size.height - xAxisHeight.dp.toPx()
+
+        drawBpGridAndThresholds(
+            yMin, yMax, thresholdHigh, thresholdLow,
+            chartLeft, chartRight, chartTop, chartBottom,
+            gridColor, accentError
+        )
+        drawBpAxisLabels(
+            textMeasurer, highPoints, yMin, yMax,
+            chartLeft, chartRight, chartTop, chartBottom,
+            labelStyle, chartLabelColor
+        )
+        drawBpDataLines(
+            highPoints, lowPoints, yMin, yMax,
+            chartLeft, chartRight, chartTop, chartBottom,
+            chartLineColor, chartSecondaryLineColor,
+            accentError, thresholdHigh, thresholdLow
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBpGridAndThresholds(
+    yMin: Double, yMax: Double,
+    thresholdHigh: Double, thresholdLow: Double,
+    chartLeft: Float, chartRight: Float,
+    chartTop: Float, chartBottom: Float,
+    gridColor: androidx.compose.ui.graphics.Color,
+    accentError: androidx.compose.ui.graphics.Color
+) {
+    drawGridLines(
+        yMin, yMax, AppConfig.Graph.BLOOD_PRESSURE_GRID_STEP,
+        chartLeft, chartRight, chartTop, chartBottom, gridColor
+    )
+    drawThresholdLine(
+        thresholdHigh, yMin, yMax,
+        chartLeft, chartRight, chartTop, chartBottom,
+        accentError.copy(alpha = 0.7f)
+    )
+    drawThresholdLine(
+        thresholdLow, yMin, yMax,
+        chartLeft, chartRight, chartTop, chartBottom,
+        accentError.copy(alpha = 0.5f)
+    )
+}
+
+@Suppress("LongParameterList")
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBpAxisLabels(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    highPoints: List<GraphDataPoint>,
+    yMin: Double, yMax: Double,
+    chartLeft: Float, chartRight: Float,
+    chartTop: Float, chartBottom: Float,
+    labelStyle: TextStyle,
+    chartLabelColor: androidx.compose.ui.graphics.Color
+) {
+    drawYAxisLabels(
+        textMeasurer, yMin, yMax,
+        AppConfig.Graph.BLOOD_PRESSURE_GRID_STEP,
+        chartTop, chartBottom, labelStyle, chartLabelColor
+    )
+    drawXAxisLabels(
+        textMeasurer, highPoints,
+        chartLeft, chartRight, chartBottom,
+        labelStyle, chartLabelColor
+    )
+}
+
+@Suppress("LongParameterList")
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBpDataLines(
+    highPoints: List<GraphDataPoint>,
+    lowPoints: List<GraphDataPoint>,
+    yMin: Double, yMax: Double,
+    chartLeft: Float, chartRight: Float,
+    chartTop: Float, chartBottom: Float,
+    chartLineColor: androidx.compose.ui.graphics.Color,
+    chartSecondaryLineColor: androidx.compose.ui.graphics.Color,
+    accentError: androidx.compose.ui.graphics.Color,
+    thresholdHigh: Double, thresholdLow: Double
+) {
+    drawDataLine(
+        highPoints, yMin, yMax,
+        chartLeft, chartRight, chartTop, chartBottom,
+        chartLineColor, chartLineColor,
+        accentError, thresholdHigh
+    )
+    drawDataLine(
+        lowPoints, yMin, yMax,
+        chartLeft, chartRight, chartTop, chartBottom,
+        chartSecondaryLineColor, chartSecondaryLineColor,
+        accentError, thresholdLow
+    )
 }
 
 @Composable

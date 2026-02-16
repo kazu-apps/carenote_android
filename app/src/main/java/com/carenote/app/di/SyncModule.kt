@@ -255,6 +255,7 @@ object SyncModule {
 
     @Provides
     @Singleton
+    @Suppress("LongParameterList")
     fun provideSyncRepository(
         availability: FirebaseAvailability,
         settingsDataSource: SettingsDataSource,

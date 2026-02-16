@@ -36,64 +36,29 @@ fun DataExportDialog(
     onDismiss: () -> Unit
 ) {
     var selectedFormat by remember { mutableStateOf(ExportFormat.CSV) }
-    var selectedPeriodDays by remember { mutableStateOf<Long?>(null) } // null = all time
+    var selectedPeriodDays by remember {
+        mutableStateOf<Long?>(null)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.data_export_dialog_title)) },
+        title = {
+            Text(stringResource(R.string.data_export_dialog_title))
+        },
         text = {
-            Column {
-                // Format selection
-                Text(
-                    text = stringResource(R.string.data_export_format_label),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Column(modifier = Modifier.selectableGroup()) {
-                    FormatOption(
-                        text = stringResource(R.string.data_export_format_csv),
-                        selected = selectedFormat == ExportFormat.CSV,
-                        onClick = { selectedFormat = ExportFormat.CSV }
-                    )
-                    FormatOption(
-                        text = stringResource(R.string.data_export_format_pdf),
-                        selected = selectedFormat == ExportFormat.PDF,
-                        onClick = { selectedFormat = ExportFormat.PDF }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Period selection
-                Text(
-                    text = stringResource(R.string.data_export_period_label),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Column(modifier = Modifier.selectableGroup()) {
-                    PeriodOption(
-                        text = stringResource(R.string.data_export_period_all),
-                        selected = selectedPeriodDays == null,
-                        onClick = { selectedPeriodDays = null }
-                    )
-                    PeriodOption(
-                        text = stringResource(R.string.data_export_period_30_days),
-                        selected = selectedPeriodDays == 30L,
-                        onClick = { selectedPeriodDays = 30L }
-                    )
-                    PeriodOption(
-                        text = stringResource(R.string.data_export_period_90_days),
-                        selected = selectedPeriodDays == 90L,
-                        onClick = { selectedPeriodDays = 90L }
-                    )
-                    PeriodOption(
-                        text = stringResource(R.string.data_export_period_1_year),
-                        selected = selectedPeriodDays == 365L,
-                        onClick = { selectedPeriodDays = 365L }
-                    )
-                }
-            }
+            ExportDialogContent(
+                selectedFormat = selectedFormat,
+                onFormatSelected = { selectedFormat = it },
+                selectedPeriodDays = selectedPeriodDays,
+                onPeriodSelected = { selectedPeriodDays = it }
+            )
         },
         confirmButton = {
-            TextButton(onClick = { onExport(selectedFormat, selectedPeriodDays) }) {
+            TextButton(
+                onClick = {
+                    onExport(selectedFormat, selectedPeriodDays)
+                }
+            ) {
                 Text(stringResource(R.string.data_export_button))
             }
         },
@@ -103,6 +68,82 @@ fun DataExportDialog(
             }
         }
     )
+}
+
+@Composable
+private fun ExportDialogContent(
+    selectedFormat: ExportFormat,
+    onFormatSelected: (ExportFormat) -> Unit,
+    selectedPeriodDays: Long?,
+    onPeriodSelected: (Long?) -> Unit
+) {
+    Column {
+        ExportFormatSelector(
+            selectedFormat = selectedFormat,
+            onFormatSelected = onFormatSelected
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        ExportPeriodSelector(
+            selectedPeriodDays = selectedPeriodDays,
+            onPeriodSelected = onPeriodSelected
+        )
+    }
+}
+
+@Composable
+private fun ExportFormatSelector(
+    selectedFormat: ExportFormat,
+    onFormatSelected: (ExportFormat) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.data_export_format_label),
+        style = MaterialTheme.typography.labelLarge
+    )
+    Column(modifier = Modifier.selectableGroup()) {
+        FormatOption(
+            text = stringResource(R.string.data_export_format_csv),
+            selected = selectedFormat == ExportFormat.CSV,
+            onClick = { onFormatSelected(ExportFormat.CSV) }
+        )
+        FormatOption(
+            text = stringResource(R.string.data_export_format_pdf),
+            selected = selectedFormat == ExportFormat.PDF,
+            onClick = { onFormatSelected(ExportFormat.PDF) }
+        )
+    }
+}
+
+@Composable
+private fun ExportPeriodSelector(
+    selectedPeriodDays: Long?,
+    onPeriodSelected: (Long?) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.data_export_period_label),
+        style = MaterialTheme.typography.labelLarge
+    )
+    Column(modifier = Modifier.selectableGroup()) {
+        PeriodOption(
+            text = stringResource(R.string.data_export_period_all),
+            selected = selectedPeriodDays == null,
+            onClick = { onPeriodSelected(null) }
+        )
+        PeriodOption(
+            text = stringResource(R.string.data_export_period_30_days),
+            selected = selectedPeriodDays == 30L,
+            onClick = { onPeriodSelected(30L) }
+        )
+        PeriodOption(
+            text = stringResource(R.string.data_export_period_90_days),
+            selected = selectedPeriodDays == 90L,
+            onClick = { onPeriodSelected(90L) }
+        )
+        PeriodOption(
+            text = stringResource(R.string.data_export_period_1_year),
+            selected = selectedPeriodDays == 365L,
+            onClick = { onPeriodSelected(365L) }
+        )
+    }
 }
 
 @Composable

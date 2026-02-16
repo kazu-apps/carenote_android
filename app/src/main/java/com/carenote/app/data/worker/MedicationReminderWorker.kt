@@ -51,51 +51,15 @@ class MedicationReminderWorker @AssistedInject constructor(
         val timingName = inputData.getString(KEY_TIMING)
         val followUpAttempt = inputData.getInt(KEY_FOLLOW_UP_ATTEMPT, 0)
 
-        val timing = timingName?.let {
-            try {
-                MedicationTiming.valueOf(it)
-            } catch (_: IllegalArgumentException) {
-                null
-            }
-        }
+        val timing = parseTiming(timingName)
 
         Timber.d(
             "MedicationReminderWorker started: id=$medicationId, " +
                 "timing=$timing, attempt=$followUpAttempt"
         )
 
-        if (medicationId == INVALID_MEDICATION_ID) {
-            Timber.w("MedicationReminderWorker: Invalid medication ID")
-            return Result.failure()
-        }
-
-        if (medicationName.isBlank()) {
-            Timber.w("MedicationReminderWorker: Empty medication name")
-            return Result.failure()
-        }
-
-        // 服薬済みチェック
-        val alreadyTaken = medicationLogRepository.hasLogForMedicationToday(
-            medicationId,
-            timing
-        )
-        if (alreadyTaken) {
-            Timber.d("MedicationReminderWorker: Already taken, skipping notification")
-            return Result.success()
-        }
-
-        // 設定で通知が有効か確認
-        val settings = settingsRepository.getSettings().first()
-        if (!settings.notificationsEnabled) {
-            Timber.d("MedicationReminderWorker: Notifications disabled in settings")
-            return Result.success()
-        }
-
-        // おやすみ時間チェック
-        if (isQuietHours(settings)) {
-            Timber.d("MedicationReminderWorker: Quiet hours active, skipping notification")
-            return Result.success()
-        }
+        val skipReason = getSkipReason(medicationId, medicationName, timing)
+        if (skipReason != null) return skipReason
 
         // 通知表示
         notificationHelper.showMedicationReminder(medicationId, medicationName)
@@ -109,6 +73,53 @@ class MedicationReminderWorker @AssistedInject constructor(
         )
 
         return Result.success()
+    }
+
+    private fun parseTiming(timingName: String?): MedicationTiming? {
+        return timingName?.let {
+            try {
+                MedicationTiming.valueOf(it)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
+        }
+    }
+
+    private suspend fun getSkipReason(
+        medicationId: Long,
+        medicationName: String,
+        timing: MedicationTiming?
+    ): Result? {
+        if (medicationId == INVALID_MEDICATION_ID) {
+            Timber.w("MedicationReminderWorker: Invalid medication ID")
+            return Result.failure()
+        }
+
+        if (medicationName.isBlank()) {
+            Timber.w("MedicationReminderWorker: Empty medication name")
+            return Result.failure()
+        }
+
+        val alreadyTaken = medicationLogRepository.hasLogForMedicationToday(
+            medicationId, timing
+        )
+        if (alreadyTaken) {
+            Timber.d("MedicationReminderWorker: Already taken, skipping")
+            return Result.success()
+        }
+
+        val settings = settingsRepository.getSettings().first()
+        if (!settings.notificationsEnabled) {
+            Timber.d("MedicationReminderWorker: Notifications disabled")
+            return Result.success()
+        }
+
+        if (isQuietHours(settings)) {
+            Timber.d("MedicationReminderWorker: Quiet hours active")
+            return Result.success()
+        }
+
+        return null
     }
 
     private fun isQuietHours(settings: UserSettings): Boolean {

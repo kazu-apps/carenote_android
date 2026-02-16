@@ -176,7 +176,9 @@ class AddEditMedicationViewModel @Inject constructor(
             validateRequired(current.name, R.string.medication_name_required),
             validateMaxLength(current.name, AppConfig.Medication.NAME_MAX_LENGTH)
         )
-        val dosageError = validateMaxLength(current.dosage, AppConfig.Medication.DOSAGE_MAX_LENGTH)
+        val dosageError = validateMaxLength(
+            current.dosage, AppConfig.Medication.DOSAGE_MAX_LENGTH
+        )
 
         if (nameError != null || dosageError != null) {
             _formState.value = current.copy(
@@ -186,85 +188,121 @@ class AddEditMedicationViewModel @Inject constructor(
             return
         }
 
-        val parsedStock = parseStockValue(current.currentStock)
-        val parsedThreshold = parseStockValue(current.lowStockThreshold)
-        if (parsedStock != null && MedicationValidator.validateStock(parsedStock) != null) {
-            viewModelScope.launch {
-                snackbarController.showMessage(R.string.medication_stock_validation_range)
-            }
-            return
-        }
-        if (parsedThreshold != null && MedicationValidator.validateLowStockThreshold(parsedThreshold) != null) {
-            viewModelScope.launch {
-                snackbarController.showMessage(R.string.medication_stock_validation_range)
-            }
-            return
-        }
+        if (!validateStockFields(current)) return
 
         _formState.value = current.copy(isSaving = true)
+        viewModelScope.launch { persistMedication(current) }
+    }
 
-        viewModelScope.launch {
-            val original = originalMedication
-            if (medicationId != null && original != null) {
-                val now = clock.now()
-                val updatedMedication = original.copy(
-                    name = current.name.trim(),
-                    dosage = current.dosage.trim(),
-                    timings = current.timings,
-                    times = current.times,
-                    reminderEnabled = current.reminderEnabled,
-                    currentStock = parsedStock,
-                    lowStockThreshold = parsedThreshold,
-                    updatedAt = now
+    private fun validateStockFields(
+        current: AddEditMedicationFormState
+    ): Boolean {
+        val parsedStock = parseStockValue(current.currentStock)
+        val parsedThreshold = parseStockValue(current.lowStockThreshold)
+        val stockInvalid = parsedStock != null &&
+            MedicationValidator.validateStock(parsedStock) != null
+        val thresholdInvalid = parsedThreshold != null &&
+            MedicationValidator.validateLowStockThreshold(parsedThreshold) != null
+        if (stockInvalid || thresholdInvalid) {
+            viewModelScope.launch {
+                snackbarController.showMessage(
+                    R.string.medication_stock_validation_range
                 )
-                medicationRepository.updateMedication(updatedMedication)
-                    .onSuccess {
-                        Timber.d("Medication updated: id=$medicationId")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_UPDATED)
-                        reminderScheduler.cancelReminders(medicationId)
-                        if (current.reminderEnabled && current.times.isNotEmpty()) {
-                            reminderScheduler.scheduleAllReminders(
-                                medicationId = medicationId,
-                                medicationName = current.name.trim(),
-                                times = current.times
-                            )
-                        }
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to update medication: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.medication_save_failed)
-                    }
-            } else {
-                val medication = Medication(
-                    name = current.name.trim(),
-                    dosage = current.dosage.trim(),
-                    timings = current.timings,
-                    times = current.times,
-                    reminderEnabled = current.reminderEnabled,
-                    currentStock = parsedStock,
-                    lowStockThreshold = parsedThreshold
-                )
-                medicationRepository.insertMedication(medication)
-                    .onSuccess { id ->
-                        Timber.d("Medication saved: id=$id")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_MEDICATION_CREATED)
-                        if (current.reminderEnabled && current.times.isNotEmpty()) {
-                            reminderScheduler.scheduleAllReminders(
-                                medicationId = id,
-                                medicationName = current.name.trim(),
-                                times = current.times
-                            )
-                        }
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to save medication: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.medication_save_failed)
-                    }
             }
+            return false
+        }
+        return true
+    }
+
+    private suspend fun persistMedication(
+        current: AddEditMedicationFormState
+    ) {
+        val parsedStock = parseStockValue(current.currentStock)
+        val parsedThreshold = parseStockValue(current.lowStockThreshold)
+        val original = originalMedication
+
+        if (medicationId != null && original != null) {
+            updateExistingMedication(
+                original, current, parsedStock, parsedThreshold
+            )
+        } else {
+            createNewMedication(current, parsedStock, parsedThreshold)
+        }
+    }
+
+    private suspend fun updateExistingMedication(
+        original: Medication,
+        current: AddEditMedicationFormState,
+        parsedStock: Int?,
+        parsedThreshold: Int?
+    ) {
+        val updatedMedication = original.copy(
+            name = current.name.trim(),
+            dosage = current.dosage.trim(),
+            timings = current.timings,
+            times = current.times,
+            reminderEnabled = current.reminderEnabled,
+            currentStock = parsedStock,
+            lowStockThreshold = parsedThreshold,
+            updatedAt = clock.now()
+        )
+        medicationRepository.updateMedication(updatedMedication)
+            .onSuccess {
+                Timber.d("Medication updated: id=$medicationId")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_MEDICATION_UPDATED
+                )
+                scheduleRemindersIfEnabled(medicationId!!, current)
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update medication: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.medication_save_failed)
+            }
+    }
+
+    private suspend fun createNewMedication(
+        current: AddEditMedicationFormState,
+        parsedStock: Int?,
+        parsedThreshold: Int?
+    ) {
+        val medication = Medication(
+            name = current.name.trim(),
+            dosage = current.dosage.trim(),
+            timings = current.timings,
+            times = current.times,
+            reminderEnabled = current.reminderEnabled,
+            currentStock = parsedStock,
+            lowStockThreshold = parsedThreshold
+        )
+        medicationRepository.insertMedication(medication)
+            .onSuccess { id ->
+                Timber.d("Medication saved: id=$id")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_MEDICATION_CREATED
+                )
+                scheduleRemindersIfEnabled(id, current)
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to save medication: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.medication_save_failed)
+            }
+    }
+
+    private suspend fun scheduleRemindersIfEnabled(
+        id: Long,
+        current: AddEditMedicationFormState
+    ) {
+        reminderScheduler.cancelReminders(id)
+        if (current.reminderEnabled && current.times.isNotEmpty()) {
+            reminderScheduler.scheduleAllReminders(
+                medicationId = id,
+                medicationName = current.name.trim(),
+                times = current.times
+            )
         }
     }
 
