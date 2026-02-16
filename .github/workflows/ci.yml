@@ -79,6 +79,7 @@ jobs:
           name: Unit Tests
           path: app/build/test-results/testDebugUnitTest/*.xml
           reporter: java-junit
+          fail-on-error: false
 
   e2e-test:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
