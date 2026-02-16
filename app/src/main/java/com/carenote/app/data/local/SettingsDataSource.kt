@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Suppress("TooManyFunctions")
 @Singleton
 class SettingsDataSource @Inject constructor(
     @ApplicationContext private val context: Context
@@ -72,24 +73,54 @@ class SettingsDataSource @Inject constructor(
     }
 
     private fun readCurrentSettings(): UserSettings {
+        return buildBaseSettings().copy(
+            morningHour = prefs.getInt(
+                PreferencesKeys.MORNING_HOUR,
+                AppConfig.Medication.DEFAULT_MORNING_HOUR
+            ),
+            morningMinute = prefs.getInt(
+                PreferencesKeys.MORNING_MINUTE,
+                AppConfig.Medication.DEFAULT_MORNING_MINUTE
+            ),
+            noonHour = prefs.getInt(
+                PreferencesKeys.NOON_HOUR,
+                AppConfig.Medication.DEFAULT_NOON_HOUR
+            ),
+            noonMinute = prefs.getInt(
+                PreferencesKeys.NOON_MINUTE,
+                AppConfig.Medication.DEFAULT_NOON_MINUTE
+            ),
+            eveningHour = prefs.getInt(
+                PreferencesKeys.EVENING_HOUR,
+                AppConfig.Medication.DEFAULT_EVENING_HOUR
+            ),
+            eveningMinute = prefs.getInt(
+                PreferencesKeys.EVENING_MINUTE,
+                AppConfig.Medication.DEFAULT_EVENING_MINUTE
+            ),
+            syncEnabled = prefs.getBoolean(
+                PreferencesKeys.SYNC_ENABLED, true
+            ),
+            lastSyncTime = getLastSyncTime(),
+            biometricEnabled = prefs.getBoolean(
+                PreferencesKeys.BIOMETRIC_ENABLED, false
+            ),
+            sessionTimeoutMinutes = prefs.getInt(
+                PreferencesKeys.SESSION_TIMEOUT_MINUTES,
+                AppConfig.Session.DEFAULT_TIMEOUT_MINUTES
+            ),
+            useDynamicColor = prefs.getBoolean(
+                PreferencesKeys.DYNAMIC_COLOR, false
+            )
+        )
+    }
+
+    private fun buildBaseSettings(): UserSettings {
         return UserSettings(
-            themeMode = prefs.getString(PreferencesKeys.THEME_MODE, null)?.let { value ->
-                try {
-                    ThemeMode.valueOf(value)
-                } catch (_: IllegalArgumentException) {
-                    ThemeMode.SYSTEM
-                }
-            } ?: ThemeMode.SYSTEM,
-            appLanguage = prefs.getString(PreferencesKeys.APP_LANGUAGE, null)?.let { value ->
-                try {
-                    AppLanguage.valueOf(value)
-                } catch (_: IllegalArgumentException) {
-                    AppLanguage.SYSTEM
-                }
-            } ?: AppLanguage.SYSTEM,
+            themeMode = readThemeMode(),
+            appLanguage = readAppLanguage(),
             notificationsEnabled = prefs.getBoolean(
-                PreferencesKeys.NOTIFICATIONS_ENABLED,
-                true
+                PreferencesKeys.NOTIFICATIONS_ENABLED, true
             ),
             quietHoursStart = prefs.getInt(
                 PreferencesKeys.QUIET_HOURS_START,
@@ -118,49 +149,26 @@ class SettingsDataSource @Inject constructor(
             pulseLow = prefs.getInt(
                 PreferencesKeys.PULSE_LOW,
                 AppConfig.HealthThresholds.PULSE_LOW
-            ),
-            morningHour = prefs.getInt(
-                PreferencesKeys.MORNING_HOUR,
-                AppConfig.Medication.DEFAULT_MORNING_HOUR
-            ),
-            morningMinute = prefs.getInt(
-                PreferencesKeys.MORNING_MINUTE,
-                AppConfig.Medication.DEFAULT_MORNING_MINUTE
-            ),
-            noonHour = prefs.getInt(
-                PreferencesKeys.NOON_HOUR,
-                AppConfig.Medication.DEFAULT_NOON_HOUR
-            ),
-            noonMinute = prefs.getInt(
-                PreferencesKeys.NOON_MINUTE,
-                AppConfig.Medication.DEFAULT_NOON_MINUTE
-            ),
-            eveningHour = prefs.getInt(
-                PreferencesKeys.EVENING_HOUR,
-                AppConfig.Medication.DEFAULT_EVENING_HOUR
-            ),
-            eveningMinute = prefs.getInt(
-                PreferencesKeys.EVENING_MINUTE,
-                AppConfig.Medication.DEFAULT_EVENING_MINUTE
-            ),
-            syncEnabled = prefs.getBoolean(
-                PreferencesKeys.SYNC_ENABLED,
-                true
-            ),
-            lastSyncTime = getLastSyncTime(),
-            biometricEnabled = prefs.getBoolean(
-                PreferencesKeys.BIOMETRIC_ENABLED,
-                false
-            ),
-            sessionTimeoutMinutes = prefs.getInt(
-                PreferencesKeys.SESSION_TIMEOUT_MINUTES,
-                AppConfig.Session.DEFAULT_TIMEOUT_MINUTES
-            ),
-            useDynamicColor = prefs.getBoolean(
-                PreferencesKeys.DYNAMIC_COLOR,
-                false
             )
         )
+    }
+
+    private fun readThemeMode(): ThemeMode {
+        val value = prefs.getString(PreferencesKeys.THEME_MODE, null) ?: return ThemeMode.SYSTEM
+        return try {
+            ThemeMode.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            ThemeMode.SYSTEM
+        }
+    }
+
+    private fun readAppLanguage(): AppLanguage {
+        val value = prefs.getString(PreferencesKeys.APP_LANGUAGE, null) ?: return AppLanguage.SYSTEM
+        return try {
+            AppLanguage.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            AppLanguage.SYSTEM
+        }
     }
 
     suspend fun updateNotifications(enabled: Boolean) {

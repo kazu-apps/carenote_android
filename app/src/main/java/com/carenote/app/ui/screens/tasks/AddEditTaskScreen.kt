@@ -66,23 +66,8 @@ fun AddEditTaskScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.savedEvent.collect { saved ->
-            if (saved) {
-                onNavigateBack()
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.snackbarController.events.collect { event ->
-            val message = when (event) {
-                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
-                is SnackbarEvent.WithString -> event.message
-            }
-            snackbarHostState.showSnackbar(message)
-        }
-    }
+    SavedEventEffect(viewModel, onNavigateBack)
+    SnackbarCollectEffect(viewModel, snackbarHostState, context)
 
     val title = if (formState.isEditMode) {
         stringResource(R.string.tasks_edit)
@@ -96,117 +81,233 @@ fun AddEditTaskScreen(
         isDirty = viewModel.isDirty,
         snackbarHostState = snackbarHostState
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            CareNoteTextField(
-                value = formState.title,
-                onValueChange = viewModel::updateTitle,
-                label = stringResource(R.string.tasks_task_title),
-                placeholder = stringResource(R.string.tasks_task_title_placeholder),
-                errorMessage = formState.titleError,
-                singleLine = true
-            )
-
-            CareNoteTextField(
-                value = formState.description,
-                onValueChange = viewModel::updateDescription,
-                label = stringResource(R.string.tasks_task_description),
-                placeholder = stringResource(R.string.tasks_task_description_placeholder),
-                errorMessage = formState.descriptionError,
-                singleLine = false,
-                maxLines = AppConfig.Task.DESCRIPTION_PREVIEW_MAX_LINES + 2
-            )
-
-            DueDateSelector(
-                dueDate = formState.dueDate,
-                onClickDate = { showDatePicker = true },
-                onClearDate = { viewModel.updateDueDate(null) }
-            )
-
-            PrioritySelector(
-                selectedPriority = formState.priority,
-                onPrioritySelected = viewModel::updatePriority
-            )
-
-            RecurrenceSection(
-                frequency = formState.recurrenceFrequency,
-                interval = formState.recurrenceInterval,
-                intervalError = formState.recurrenceIntervalError,
-                onFrequencySelected = viewModel::updateRecurrenceFrequency,
-                onIntervalChanged = viewModel::updateRecurrenceInterval
-            )
-
-            ReminderSection(
-                enabled = formState.reminderEnabled,
-                time = formState.reminderTime,
-                onToggle = viewModel::toggleReminder,
-                onClickTime = { showTimePicker = true }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape
-                ) {
-                    Text(text = stringResource(R.string.common_cancel))
-                }
-                Button(
-                    onClick = viewModel::saveTask,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape,
-                    enabled = !formState.isSaving
-                ) {
-                    if (formState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .height(20.dp)
-                                .width(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(text = stringResource(R.string.common_save))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-
-    if (showDatePicker) {
-        CareNoteDatePickerDialog(
-            initialDate = formState.dueDate ?: LocalDate.now(),
-            onDateSelected = { date ->
-                viewModel.updateDueDate(date)
-                showDatePicker = false
-            },
-            onDismiss = { showDatePicker = false }
+        TaskFormContent(
+            formState = formState,
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack,
+            onShowDatePicker = { showDatePicker = true },
+            onShowTimePicker = { showTimePicker = true },
+            modifier = Modifier.padding(innerPadding)
         )
     }
 
+    TaskDatePickerDialog(
+        showDatePicker = showDatePicker,
+        dueDate = formState.dueDate,
+        onDateSelected = { date ->
+            viewModel.updateDueDate(date)
+            showDatePicker = false
+        },
+        onDismiss = { showDatePicker = false }
+    )
+
+    TaskTimePickerDialog(
+        showTimePicker = showTimePicker,
+        reminderTime = formState.reminderTime,
+        onTimeSelected = { time ->
+            viewModel.updateReminderTime(time)
+            showTimePicker = false
+        },
+        onDismiss = { showTimePicker = false }
+    )
+}
+
+@Composable
+private fun SavedEventEffect(
+    viewModel: AddEditTaskViewModel,
+    onNavigateBack: () -> Unit
+) {
+    LaunchedEffect(Unit) {
+        viewModel.savedEvent.collect { saved ->
+            if (saved) onNavigateBack()
+        }
+    }
+}
+
+@Composable
+private fun SnackbarCollectEffect(
+    viewModel: AddEditTaskViewModel,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context
+) {
+    LaunchedEffect(Unit) {
+        viewModel.snackbarController.events.collect { event ->
+            val message = when (event) {
+                is SnackbarEvent.WithResId ->
+                    context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+}
+
+@Composable
+private fun TaskFormContent(
+    formState: AddEditTaskFormState,
+    viewModel: AddEditTaskViewModel,
+    onNavigateBack: () -> Unit,
+    onShowDatePicker: () -> Unit,
+    onShowTimePicker: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TaskFormFields(formState = formState, viewModel = viewModel)
+
+        TaskFormSelectors(
+            formState = formState,
+            viewModel = viewModel,
+            onShowDatePicker = onShowDatePicker,
+            onShowTimePicker = onShowTimePicker
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TaskFormButtons(
+            onNavigateBack = onNavigateBack,
+            onSave = viewModel::saveTask,
+            isSaving = formState.isSaving
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun TaskFormFields(
+    formState: AddEditTaskFormState,
+    viewModel: AddEditTaskViewModel
+) {
+    CareNoteTextField(
+        value = formState.title,
+        onValueChange = viewModel::updateTitle,
+        label = stringResource(R.string.tasks_task_title),
+        placeholder = stringResource(R.string.tasks_task_title_placeholder),
+        errorMessage = formState.titleError,
+        singleLine = true
+    )
+
+    CareNoteTextField(
+        value = formState.description,
+        onValueChange = viewModel::updateDescription,
+        label = stringResource(R.string.tasks_task_description),
+        placeholder = stringResource(R.string.tasks_task_description_placeholder),
+        errorMessage = formState.descriptionError,
+        singleLine = false,
+        maxLines = AppConfig.Task.DESCRIPTION_PREVIEW_MAX_LINES + 2
+    )
+}
+
+@Composable
+private fun TaskFormSelectors(
+    formState: AddEditTaskFormState,
+    viewModel: AddEditTaskViewModel,
+    onShowDatePicker: () -> Unit,
+    onShowTimePicker: () -> Unit
+) {
+    DueDateSelector(
+        dueDate = formState.dueDate,
+        onClickDate = onShowDatePicker,
+        onClearDate = { viewModel.updateDueDate(null) }
+    )
+
+    PrioritySelector(
+        selectedPriority = formState.priority,
+        onPrioritySelected = viewModel::updatePriority
+    )
+
+    RecurrenceSection(
+        frequency = formState.recurrenceFrequency,
+        interval = formState.recurrenceInterval,
+        intervalError = formState.recurrenceIntervalError,
+        onFrequencySelected = viewModel::updateRecurrenceFrequency,
+        onIntervalChanged = viewModel::updateRecurrenceInterval
+    )
+
+    ReminderSection(
+        enabled = formState.reminderEnabled,
+        time = formState.reminderTime,
+        onToggle = viewModel::toggleReminder,
+        onClickTime = onShowTimePicker
+    )
+}
+
+@Composable
+private fun TaskFormButtons(
+    onNavigateBack: () -> Unit,
+    onSave: () -> Unit,
+    isSaving: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedButton(
+            onClick = onNavigateBack,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape
+        ) {
+            Text(text = stringResource(R.string.common_cancel))
+        }
+        Button(
+            onClick = onSave,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape,
+            enabled = !isSaving
+        ) {
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(text = stringResource(R.string.common_save))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TaskDatePickerDialog(
+    showDatePicker: Boolean,
+    dueDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (showDatePicker) {
+        CareNoteDatePickerDialog(
+            initialDate = dueDate ?: LocalDate.now(),
+            onDateSelected = onDateSelected,
+            onDismiss = onDismiss
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TaskTimePickerDialog(
+    showTimePicker: Boolean,
+    reminderTime: LocalTime?,
+    onTimeSelected: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) {
     if (showTimePicker) {
         CareNoteTimePickerDialog(
-            initialTime = formState.reminderTime ?: LocalTime.of(9, 0),
-            onTimeSelected = { time ->
-                viewModel.updateReminderTime(time)
-                showTimePicker = false
-            },
-            onDismiss = { showTimePicker = false }
+            initialTime = reminderTime ?: LocalTime.of(9, 0),
+            onTimeSelected = onTimeSelected,
+            onDismiss = onDismiss
         )
     }
 }
@@ -296,51 +397,76 @@ private fun RecurrenceSection(
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.NONE,
-                onClick = { onFrequencySelected(RecurrenceFrequency.NONE) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_none)) }
-            )
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.DAILY,
-                onClick = { onFrequencySelected(RecurrenceFrequency.DAILY) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_daily)) }
-            )
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.WEEKLY,
-                onClick = { onFrequencySelected(RecurrenceFrequency.WEEKLY) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_weekly)) }
-            )
-            FilterChip(
-                selected = frequency == RecurrenceFrequency.MONTHLY,
-                onClick = { onFrequencySelected(RecurrenceFrequency.MONTHLY) },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_monthly)) }
-            )
-        }
+        RecurrenceFrequencyChips(
+            frequency = frequency,
+            onFrequencySelected = onFrequencySelected
+        )
         if (frequency != RecurrenceFrequency.NONE) {
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = interval.toString(),
-                onValueChange = { text ->
-                    val parsed = text.filter { it.isDigit() }.toIntOrNull()
-                    if (parsed != null) {
-                        onIntervalChanged(parsed)
-                    }
-                },
-                label = { Text(text = stringResource(R.string.tasks_recurrence_interval)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                isError = intervalError != null,
-                supportingText = intervalError?.let { error ->
-                    { Text(text = error.asString()) }
-                },
-                modifier = Modifier.width(120.dp)
+            RecurrenceIntervalField(
+                interval = interval,
+                intervalError = intervalError,
+                onIntervalChanged = onIntervalChanged
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RecurrenceFrequencyChips(
+    frequency: RecurrenceFrequency,
+    onFrequencySelected: (RecurrenceFrequency) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.NONE,
+            onClick = { onFrequencySelected(RecurrenceFrequency.NONE) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_none)) }
+        )
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.DAILY,
+            onClick = { onFrequencySelected(RecurrenceFrequency.DAILY) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_daily)) }
+        )
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.WEEKLY,
+            onClick = { onFrequencySelected(RecurrenceFrequency.WEEKLY) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_weekly)) }
+        )
+        FilterChip(
+            selected = frequency == RecurrenceFrequency.MONTHLY,
+            onClick = { onFrequencySelected(RecurrenceFrequency.MONTHLY) },
+            label = { Text(text = stringResource(R.string.tasks_recurrence_monthly)) }
+        )
+    }
+}
+
+@Composable
+private fun RecurrenceIntervalField(
+    interval: Int,
+    intervalError: com.carenote.app.ui.common.UiText?,
+    onIntervalChanged: (Int) -> Unit
+) {
+    OutlinedTextField(
+        value = interval.toString(),
+        onValueChange = { text ->
+            val parsed = text.filter { it.isDigit() }.toIntOrNull()
+            if (parsed != null) {
+                onIntervalChanged(parsed)
+            }
+        },
+        label = { Text(text = stringResource(R.string.tasks_recurrence_interval)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        isError = intervalError != null,
+        supportingText = intervalError?.let { error ->
+            { Text(text = error.asString()) }
+        },
+        modifier = Modifier.width(120.dp)
+    )
 }
 
 @Composable

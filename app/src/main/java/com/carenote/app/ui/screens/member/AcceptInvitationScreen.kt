@@ -52,22 +52,57 @@ fun AcceptInvitationScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
+    AcceptSnackbarEffect(viewModel, snackbarHostState, context)
+
+    AcceptInvitationScaffold(
+        onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState
+    ) { innerPadding ->
+        AcceptInvitationBody(
+            uiState = uiState,
+            innerPadding = innerPadding,
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack,
+            onNavigateToHome = onNavigateToHome
+        )
+    }
+}
+
+@Composable
+private fun AcceptSnackbarEffect(
+    viewModel: AcceptInvitationViewModel,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context
+) {
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
-                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
+                is SnackbarEvent.WithResId ->
+                    context.getString(event.messageResId)
                 is SnackbarEvent.WithString -> event.message
             }
             snackbarHostState.showSnackbar(message)
         }
     }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AcceptInvitationScaffold(
+    onNavigateBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    content: @Composable (
+        androidx.compose.foundation.layout.PaddingValues
+    ) -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.accept_invitation_title),
+                        text = stringResource(
+                            R.string.accept_invitation_title
+                        ),
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
@@ -75,7 +110,9 @@ fun AcceptInvitationScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
+                            contentDescription = stringResource(
+                                R.string.common_close
+                            )
                         )
                     }
                 },
@@ -84,124 +121,190 @@ fun AcceptInvitationScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        when (val state = uiState) {
-            is AcceptInvitationUiState.Loading -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
-                    Text(
-                        text = stringResource(R.string.accept_invitation_loading),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        content = content
+    )
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun AcceptInvitationBody(
+    uiState: AcceptInvitationUiState,
+    innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    viewModel: AcceptInvitationViewModel,
+    onNavigateBack: () -> Unit,
+    onNavigateToHome: () -> Unit
+) {
+    when (val state = uiState) {
+        is AcceptInvitationUiState.Loading ->
+            AcceptLoadingContent(innerPadding)
+        is AcceptInvitationUiState.Content ->
+            AcceptContentContent(
+                innerPadding = innerPadding,
+                state = state,
+                onAccept = viewModel::accept,
+                onDecline = {
+                    viewModel.decline()
+                    onNavigateBack()
                 }
-            }
+            )
+        is AcceptInvitationUiState.Error ->
+            AcceptErrorContent(
+                innerPadding = innerPadding,
+                state = state,
+                onNavigateBack = onNavigateBack
+            )
+        is AcceptInvitationUiState.Success ->
+            AcceptSuccessContent(
+                innerPadding = innerPadding,
+                onNavigateToHome = onNavigateToHome
+            )
+    }
+}
 
-            is AcceptInvitationUiState.Content -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.accept_invitation_description),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
+@Composable
+private fun AcceptLoadingContent(
+    innerPadding: androidx.compose.foundation.layout.PaddingValues
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator()
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp)
+        )
+        Text(
+            text = stringResource(R.string.accept_invitation_loading),
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
 
-                    Spacer(modifier = Modifier.height(AppConfig.UI.SECTION_SPACING_DP.dp))
+@Composable
+private fun AcceptContentContent(
+    innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    state: AcceptInvitationUiState.Content,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(
+                horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = stringResource(R.string.accept_invitation_description),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.SECTION_SPACING_DP.dp)
+        )
+        Button(
+            onClick = onAccept,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !state.isAccepting
+        ) {
+            Text(stringResource(R.string.accept_invitation_accept))
+        }
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.ITEM_SPACING_DP.dp)
+        )
+        OutlinedButton(
+            onClick = onDecline,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !state.isAccepting
+        ) {
+            Text(stringResource(R.string.accept_invitation_decline))
+        }
+    }
+}
 
-                    Button(
-                        onClick = viewModel::accept,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isAccepting
-                    ) {
-                        Text(stringResource(R.string.accept_invitation_accept))
-                    }
+@Composable
+private fun AcceptErrorContent(
+    innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    state: AcceptInvitationUiState.Error,
+    onNavigateBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(
+                horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Error,
+            contentDescription = null,
+            modifier = Modifier.size(AppConfig.UI.ICON_SIZE_LARGE_DP.dp),
+            tint = MaterialTheme.colorScheme.error
+        )
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp)
+        )
+        Text(
+            text = state.message.asString(),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp)
+        )
+        OutlinedButton(onClick = onNavigateBack) {
+            Text(stringResource(R.string.common_close))
+        }
+    }
+}
 
-                    Spacer(modifier = Modifier.height(AppConfig.UI.ITEM_SPACING_DP.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            viewModel.decline()
-                            onNavigateBack()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isAccepting
-                    ) {
-                        Text(stringResource(R.string.accept_invitation_decline))
-                    }
-                }
-            }
-
-            is AcceptInvitationUiState.Error -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Error,
-                        contentDescription = null,
-                        modifier = Modifier.size(AppConfig.UI.ICON_SIZE_LARGE_DP.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
-                    Text(
-                        text = state.message.asString(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
-                    OutlinedButton(onClick = onNavigateBack) {
-                        Text(stringResource(R.string.common_close))
-                    }
-                }
-            }
-
-            is AcceptInvitationUiState.Success -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(AppConfig.UI.ICON_SIZE_XLARGE_DP.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp))
-                    Text(
-                        text = stringResource(R.string.accept_invitation_success),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(AppConfig.UI.SECTION_SPACING_DP.dp))
-                    Button(
-                        onClick = onNavigateToHome,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.nav_home))
-                    }
-                }
-            }
+@Composable
+private fun AcceptSuccessContent(
+    innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    onNavigateToHome: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(
+                horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            modifier = Modifier.size(AppConfig.UI.ICON_SIZE_XLARGE_DP.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.CONTENT_SPACING_DP.dp)
+        )
+        Text(
+            text = stringResource(R.string.accept_invitation_success),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        Spacer(
+            modifier = Modifier.height(AppConfig.UI.SECTION_SPACING_DP.dp)
+        )
+        Button(
+            onClick = onNavigateToHome,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.nav_home))
         }
     }
 }

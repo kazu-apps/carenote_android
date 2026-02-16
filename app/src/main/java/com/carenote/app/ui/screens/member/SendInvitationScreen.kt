@@ -42,28 +42,8 @@ fun SendInvitationScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.savedEvent.collect { result ->
-            val shareText = context.getString(R.string.send_invitation_share_text, result.inviteLink)
-            val shareTitle = context.getString(R.string.send_invitation_share_title)
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, shareTitle)
-                putExtra(Intent.EXTRA_TEXT, shareText)
-            }
-            context.startActivity(Intent.createChooser(shareIntent, shareTitle))
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.snackbarController.events.collect { event ->
-            val message = when (event) {
-                is SnackbarEvent.WithResId -> context.getString(event.messageResId)
-                is SnackbarEvent.WithString -> event.message
-            }
-            snackbarHostState.showSnackbar(message)
-        }
-    }
+    ShareInvitationEffect(viewModel, context)
+    SendSnackbarEffect(viewModel, snackbarHostState, context)
 
     CareNoteAddEditScaffold(
         title = stringResource(R.string.send_invitation_title),
@@ -71,55 +51,176 @@ fun SendInvitationScreen(
         isDirty = viewModel.isDirty,
         snackbarHostState = snackbarHostState
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
-        ) {
-            OutlinedTextField(
-                value = formState.email,
-                onValueChange = viewModel::updateEmail,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.send_invitation_email_label)) },
-                placeholder = { Text(stringResource(R.string.send_invitation_email_placeholder)) },
-                isError = formState.emailError != null,
-                supportingText = formState.emailError?.let { error ->
-                    { Text(error.asString()) }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-            )
+        SendInvitationFormContent(
+            formState = formState,
+            viewModel = viewModel,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
 
-            OutlinedTextField(
-                value = formState.message,
-                onValueChange = viewModel::updateMessage,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.send_invitation_message_label)) },
-                placeholder = { Text(stringResource(R.string.send_invitation_message_placeholder)) },
-                minLines = 3,
-                maxLines = 5
+@Composable
+private fun ShareInvitationEffect(
+    viewModel: SendInvitationViewModel,
+    context: android.content.Context
+) {
+    LaunchedEffect(Unit) {
+        viewModel.savedEvent.collect { result ->
+            val shareText = context.getString(
+                R.string.send_invitation_share_text,
+                result.inviteLink
             )
-
-            Button(
-                onClick = viewModel::send,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = AppConfig.UI.ITEM_SPACING_DP.dp),
-                enabled = !formState.isSending
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Share,
-                        contentDescription = null
-                    )
-                    Text(stringResource(R.string.send_invitation_send))
-                }
+            val shareTitle = context.getString(
+                R.string.send_invitation_share_title
+            )
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, shareTitle)
+                putExtra(Intent.EXTRA_TEXT, shareText)
             }
+            context.startActivity(
+                Intent.createChooser(shareIntent, shareTitle)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SendSnackbarEffect(
+    viewModel: SendInvitationViewModel,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context
+) {
+    LaunchedEffect(Unit) {
+        viewModel.snackbarController.events.collect { event ->
+            val message = when (event) {
+                is SnackbarEvent.WithResId ->
+                    context.getString(event.messageResId)
+                is SnackbarEvent.WithString -> event.message
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+}
+
+@Composable
+private fun SendInvitationFormContent(
+    formState: SendInvitationFormState,
+    viewModel: SendInvitationViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(
+                horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp
+            )
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(
+            AppConfig.UI.CONTENT_SPACING_DP.dp
+        )
+    ) {
+        InvitationEmailField(
+            email = formState.email,
+            emailError = formState.emailError,
+            onEmailChange = viewModel::updateEmail
+        )
+        InvitationMessageField(
+            message = formState.message,
+            onMessageChange = viewModel::updateMessage
+        )
+        InvitationSendButton(
+            isSending = formState.isSending,
+            onSend = viewModel::send
+        )
+    }
+}
+
+@Composable
+private fun InvitationEmailField(
+    email: String,
+    emailError: com.carenote.app.ui.common.UiText?,
+    onEmailChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        modifier = Modifier.fillMaxWidth(),
+        label = {
+            Text(stringResource(R.string.send_invitation_email_label))
+        },
+        placeholder = {
+            Text(
+                stringResource(
+                    R.string.send_invitation_email_placeholder
+                )
+            )
+        },
+        isError = emailError != null,
+        supportingText = emailError?.let { error ->
+            { Text(error.asString()) }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email
+        )
+    )
+}
+
+@Composable
+private fun InvitationMessageField(
+    message: String,
+    onMessageChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = message,
+        onValueChange = onMessageChange,
+        modifier = Modifier.fillMaxWidth(),
+        label = {
+            Text(
+                stringResource(
+                    R.string.send_invitation_message_label
+                )
+            )
+        },
+        placeholder = {
+            Text(
+                stringResource(
+                    R.string.send_invitation_message_placeholder
+                )
+            )
+        },
+        minLines = 3,
+        maxLines = 5
+    )
+}
+
+@Composable
+private fun InvitationSendButton(
+    isSending: Boolean,
+    onSend: () -> Unit
+) {
+    Button(
+        onClick = onSend,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                vertical = AppConfig.UI.ITEM_SPACING_DP.dp
+            ),
+        enabled = !isSending
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(
+                AppConfig.UI.ITEM_SPACING_DP.dp
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Share,
+                contentDescription = null
+            )
+            Text(
+                stringResource(R.string.send_invitation_send)
+            )
         }
     }
 }

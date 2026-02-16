@@ -101,6 +101,7 @@ fun LoginScreen(
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun LoginContent(
     formState: LoginFormState,
@@ -113,8 +114,6 @@ private fun LoginContent(
     onNavigateToRegister: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val focusManager = LocalFocusManager.current
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -123,137 +122,186 @@ private fun LoginContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary
+        LoginHeader()
+        LoginFormFields(
+            formState = formState,
+            passwordVisible = passwordVisible,
+            onEmailChange = onEmailChange,
+            onPasswordChange = onPasswordChange,
+            onTogglePasswordVisibility = onTogglePasswordVisibility,
+            onForgotPassword = onForgotPassword,
+            onSignIn = onSignIn
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = stringResource(R.string.auth_login_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        LoginActions(
+            isLoading = formState.isLoading,
+            onSignIn = onSignIn,
+            onNavigateToRegister = onNavigateToRegister
         )
-
         Spacer(modifier = Modifier.height(48.dp))
+    }
+}
 
-        CareNoteTextField(
-            value = formState.email,
-            onValueChange = onEmailChange,
-            label = stringResource(R.string.auth_email),
-            placeholder = stringResource(R.string.auth_email_placeholder),
-            errorMessage = formState.emailError,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+@Composable
+private fun LoginHeader() {
+    Spacer(modifier = Modifier.height(48.dp))
+    Text(
+        text = stringResource(R.string.app_name),
+        style = MaterialTheme.typography.headlineLarge,
+        color = MaterialTheme.colorScheme.primary
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = stringResource(R.string.auth_login_subtitle),
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(modifier = Modifier.height(48.dp))
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun LoginFormFields(
+    formState: LoginFormState,
+    passwordVisible: Boolean,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onTogglePasswordVisibility: () -> Unit,
+    onForgotPassword: () -> Unit,
+    onSignIn: () -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+    CareNoteTextField(
+        value = formState.email,
+        onValueChange = onEmailChange,
+        label = stringResource(R.string.auth_email),
+        placeholder = stringResource(R.string.auth_email_placeholder),
+        errorMessage = formState.emailError,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+        )
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    LoginPasswordField(
+        formState = formState,
+        passwordVisible = passwordVisible,
+        onPasswordChange = onPasswordChange,
+        onTogglePasswordVisibility = onTogglePasswordVisibility,
+        onSignIn = onSignIn
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    TextButton(onClick = onForgotPassword) {
+        Text(
+            text = stringResource(R.string.auth_forgot_password),
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+    Spacer(modifier = Modifier.height(24.dp))
+}
+
+@Composable
+private fun LoginPasswordField(
+    formState: LoginFormState,
+    passwordVisible: Boolean,
+    onPasswordChange: (String) -> Unit,
+    onTogglePasswordVisibility: () -> Unit,
+    onSignIn: () -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+    CareNoteTextField(
+        value = formState.password,
+        onValueChange = onPasswordChange,
+        label = stringResource(R.string.auth_password),
+        placeholder = stringResource(R.string.auth_password_placeholder),
+        errorMessage = formState.passwordError,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                focusManager.clearFocus()
+                onSignIn()
+            }
+        ),
+        visualTransformation = if (passwordVisible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        },
+        trailingIcon = {
+            PasswordVisibilityIcon(
+                passwordVisible = passwordVisible,
+                onClick = onTogglePasswordVisibility
             )
-        )
+        }
+    )
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CareNoteTextField(
-            value = formState.password,
-            onValueChange = onPasswordChange,
-            label = stringResource(R.string.auth_password),
-            placeholder = stringResource(R.string.auth_password_placeholder),
-            errorMessage = formState.passwordError,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    focusManager.clearFocus()
-                    onSignIn()
-                }
-            ),
-            visualTransformation = if (passwordVisible) {
-                VisualTransformation.None
+@Composable
+private fun PasswordVisibilityIcon(
+    passwordVisible: Boolean,
+    onClick: () -> Unit
+) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = if (passwordVisible) {
+                Icons.Filled.VisibilityOff
             } else {
-                PasswordVisualTransformation()
+                Icons.Filled.Visibility
             },
-            trailingIcon = {
-                IconButton(onClick = onTogglePasswordVisibility) {
-                    Icon(
-                        imageVector = if (passwordVisible) {
-                            Icons.Filled.VisibilityOff
-                        } else {
-                            Icons.Filled.Visibility
-                        },
-                        contentDescription = if (passwordVisible) {
-                            stringResource(R.string.auth_hide_password)
-                        } else {
-                            stringResource(R.string.auth_show_password)
-                        }
-                    )
-                }
+            contentDescription = if (passwordVisible) {
+                stringResource(R.string.auth_hide_password)
+            } else {
+                stringResource(R.string.auth_show_password)
             }
         )
+    }
+}
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(
-            onClick = onForgotPassword,
-            modifier = Modifier.align(Alignment.End)
-        ) {
+@Composable
+private fun LoginActions(
+    isLoading: Boolean,
+    onSignIn: () -> Unit,
+    onNavigateToRegister: () -> Unit
+) {
+    Button(
+        onClick = onSignIn,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = ButtonShape,
+        enabled = !isLoading
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        } else {
             Text(
-                text = stringResource(R.string.auth_forgot_password),
+                text = stringResource(R.string.auth_sign_in),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(24.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.auth_no_account),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        TextButton(onClick = onNavigateToRegister) {
+            Text(
+                text = stringResource(R.string.auth_sign_up_link),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onSignIn,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = ButtonShape,
-            enabled = !formState.isLoading
-        ) {
-            if (formState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.auth_sign_in),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.auth_no_account),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            TextButton(onClick = onNavigateToRegister) {
-                Text(
-                    text = stringResource(R.string.auth_sign_up_link),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(48.dp))
     }
 }
 

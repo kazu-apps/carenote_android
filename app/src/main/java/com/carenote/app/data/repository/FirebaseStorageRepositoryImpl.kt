@@ -26,7 +26,10 @@ class FirebaseStorageRepositoryImpl @Inject constructor(
             return Result.Failure(DomainError.SecurityError("Photo upload is not available on rooted devices"))
         }
         return Result.catchingSuspend(
-            errorTransform = { DomainError.NetworkError("Failed to upload photo: ${ExceptionMasker.mask(it as Exception)}", it) }
+            errorTransform = {
+                val msg = ExceptionMasker.mask(it as Exception)
+                DomainError.NetworkError("Failed to upload photo: $msg", it)
+            }
         ) {
             val ref = storage.get().reference.child(remotePath)
             ref.putFile(Uri.parse(localUri)).await()
@@ -38,7 +41,10 @@ class FirebaseStorageRepositoryImpl @Inject constructor(
 
     override suspend fun deletePhoto(remotePath: String): Result<Unit, DomainError> {
         return Result.catchingSuspend(
-            errorTransform = { DomainError.NetworkError("Failed to delete photo: ${ExceptionMasker.mask(it as Exception)}", it) }
+            errorTransform = {
+                val msg = ExceptionMasker.mask(it as Exception)
+                DomainError.NetworkError("Failed to delete photo: $msg", it)
+            }
         ) {
             storage.get().reference.child(remotePath).delete().await()
             Timber.d("Photo deleted successfully")

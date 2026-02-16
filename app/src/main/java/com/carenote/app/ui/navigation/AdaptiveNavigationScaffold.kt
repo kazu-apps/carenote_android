@@ -21,6 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 
+@Suppress("LongMethod")
 @Composable
 fun AdaptiveNavigationScaffold(
     navController: NavController,

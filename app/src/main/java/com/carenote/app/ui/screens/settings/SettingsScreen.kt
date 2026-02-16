@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -43,6 +44,8 @@ import com.carenote.app.ui.screens.settings.sections.SyncSection
 import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetector
 import com.carenote.app.ui.screens.settings.sections.ThemeSection
+import com.carenote.app.domain.model.User
+import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.ExportState
 import java.time.format.DateTimeFormatter
@@ -66,10 +69,35 @@ fun SettingsScreen(
     val taskReminderLimitText by viewModel.taskReminderLimitText.collectAsStateWithLifecycle()
     val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
     var dialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
-    val context = LocalContext.current
 
+    SettingsEffects(viewModel, snackbarHostState, exportState)
+    SettingsScaffold(
+        settings = settings,
+        isLoggedIn = isLoggedIn,
+        currentUser = currentUser,
+        isSyncing = isSyncing,
+        careRecipientName = careRecipientName,
+        taskReminderLimitText = taskReminderLimitText,
+        snackbarHostState = snackbarHostState,
+        dialogState = dialogState,
+        onDialogStateChange = { dialogState = it },
+        onNavigateToPrivacyPolicy = onNavigateToPrivacyPolicy,
+        onNavigateToTermsOfService = onNavigateToTermsOfService,
+        onNavigateToCareRecipient = onNavigateToCareRecipient,
+        onNavigateToEmergencyContacts = onNavigateToEmergencyContacts,
+        onNavigateToMemberManagement = onNavigateToMemberManagement,
+        viewModel = viewModel
+    )
+}
+
+@Composable
+private fun SettingsEffects(
+    viewModel: SettingsViewModel,
+    snackbarHostState: SnackbarHostState,
+    exportState: ExportState
+) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
@@ -79,7 +107,6 @@ fun SettingsScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
-
     LaunchedEffect(exportState) {
         val state = exportState
         if (state is ExportState.Success) {
@@ -92,198 +119,442 @@ fun SettingsScreen(
             viewModel.resetExportState()
         }
     }
+}
 
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsScaffold(
+    settings: UserSettings,
+    isLoggedIn: Boolean,
+    currentUser: User?,
+    isSyncing: Boolean,
+    careRecipientName: String?,
+    taskReminderLimitText: String?,
+    snackbarHostState: SnackbarHostState,
+    dialogState: SettingsDialogState,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTermsOfService: () -> Unit,
+    onNavigateToCareRecipient: () -> Unit,
+    onNavigateToEmergencyContacts: () -> Unit,
+    onNavigateToMemberManagement: () -> Unit,
+    viewModel: SettingsViewModel
+) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.settings_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
+        topBar = { SettingsTopBar() },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        LazyColumn(modifier = Modifier.padding(innerPadding)) {
-            item(key = "care_recipient") {
-                CareRecipientSection(
-                    careRecipientName = careRecipientName,
-                    onProfileClick = onNavigateToCareRecipient
-                )
-            }
-            item(key = "emergency_contact") {
-                EmergencyContactSection(
-                    onEmergencyContactClick = onNavigateToEmergencyContacts
-                )
-            }
-            item(key = "member_management") {
-                MemberManagementSection(
-                    onMemberManagementClick = onNavigateToMemberManagement
-                )
-            }
-            item(key = "theme") {
-                val isDynamicColorAvailable = remember {
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                }
-                ThemeSection(
-                    themeMode = settings.themeMode,
-                    onThemeModeSelected = { viewModel.updateThemeMode(it) },
-                    useDynamicColor = settings.useDynamicColor,
-                    onDynamicColorChange = { viewModel.toggleDynamicColor(it) },
-                    isDynamicColorAvailable = isDynamicColorAvailable
-                )
-            }
-            item(key = "language") {
-                LanguageSection(
-                    appLanguage = settings.appLanguage,
-                    onLanguageSelected = { viewModel.updateAppLanguage(it) }
-                )
-            }
-            item(key = "sync") {
-                val dateTimeFormatter = remember {
-                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-                }
-                val lastSyncText = settings.lastSyncTime?.let { time ->
-                    dateTimeFormatter.format(time)
-                } ?: stringResource(R.string.settings_last_sync_never)
-                SyncSection(
-                    syncEnabled = settings.syncEnabled,
-                    onSyncEnabledChange = { viewModel.toggleSyncEnabled(it) },
-                    isSyncing = isSyncing,
-                    isLoggedIn = isLoggedIn,
-                    lastSyncText = lastSyncText,
-                    onSyncNowClick = { viewModel.triggerManualSync() }
-                )
-            }
-            item(key = "security") {
-                val isBiometricAvailable = remember {
-                    BiometricHelper().canAuthenticate(context)
-                }
-                val isDeviceRooted = remember {
-                    RootDetector().isDeviceRooted()
-                }
-                SecuritySection(
-                    biometricEnabled = settings.biometricEnabled,
-                    onBiometricEnabledChange = { viewModel.toggleBiometricEnabled(it) },
-                    isBiometricAvailable = isBiometricAvailable,
-                    isDeviceRooted = isDeviceRooted
-                )
-            }
-            item(key = "account") {
-                AccountSection(
-                    isLoggedIn = isLoggedIn,
-                    currentUser = currentUser,
-                    onChangePasswordClick = {
-                        dialogState = SettingsDialogState.ChangePassword
-                    },
-                    onSendEmailVerificationClick = {
-                        viewModel.sendEmailVerification()
-                    },
-                    onSignOutClick = {
-                        dialogState = SettingsDialogState.SignOutConfirm
-                    },
-                    onDeleteAccountClick = {
-                        dialogState = SettingsDialogState.DeleteAccountConfirm
-                    }
-                )
-            }
-            item(key = "notification") {
-                NotificationSection(
-                    notificationsEnabled = settings.notificationsEnabled,
-                    onNotificationsEnabledChange = { viewModel.toggleNotifications(it) },
-                    quietHoursText = stringResource(
-                        R.string.settings_quiet_hours_format,
-                        settings.quietHoursStart,
-                        settings.quietHoursEnd
-                    ),
-                    onQuietHoursClick = { dialogState = SettingsDialogState.QuietHoursStart },
-                    taskReminderLimitText = taskReminderLimitText
-                )
-            }
-            item(key = "health_threshold") {
-                HealthThresholdSection(
-                    temperatureText = stringResource(
-                        R.string.settings_temperature_format,
-                        settings.temperatureHigh
-                    ),
-                    onTemperatureClick = { dialogState = SettingsDialogState.Temperature },
-                    bpUpperText = stringResource(
-                        R.string.settings_bp_upper_format,
-                        settings.bloodPressureHighUpper
-                    ),
-                    onBpUpperClick = { dialogState = SettingsDialogState.BpUpper },
-                    bpLowerText = stringResource(
-                        R.string.settings_bp_lower_format,
-                        settings.bloodPressureHighLower
-                    ),
-                    onBpLowerClick = { dialogState = SettingsDialogState.BpLower },
-                    pulseHighText = stringResource(
-                        R.string.settings_pulse_high_format,
-                        settings.pulseHigh
-                    ),
-                    onPulseHighClick = { dialogState = SettingsDialogState.PulseHigh },
-                    pulseLowText = stringResource(
-                        R.string.settings_pulse_low_format,
-                        settings.pulseLow
-                    ),
-                    onPulseLowClick = { dialogState = SettingsDialogState.PulseLow }
-                )
-            }
-            item(key = "medication_time") {
-                MedicationTimeSection(
-                    morningTimeText = stringResource(
-                        R.string.settings_time_format,
-                        settings.morningHour,
-                        settings.morningMinute
-                    ),
-                    onMorningClick = { dialogState = SettingsDialogState.MorningTime },
-                    noonTimeText = stringResource(
-                        R.string.settings_time_format,
-                        settings.noonHour,
-                        settings.noonMinute
-                    ),
-                    onNoonClick = { dialogState = SettingsDialogState.NoonTime },
-                    eveningTimeText = stringResource(
-                        R.string.settings_time_format,
-                        settings.eveningHour,
-                        settings.eveningMinute
-                    ),
-                    onEveningClick = { dialogState = SettingsDialogState.EveningTime }
-                )
-            }
-            item(key = "data_export") {
-                DataExportSection(
-                    onExportTasksClick = { dialogState = SettingsDialogState.DataExportTasks },
-                    onExportNotesClick = { dialogState = SettingsDialogState.DataExportNotes }
-                )
-            }
-            item(key = "app_info") {
-                AppInfoSection(
-                    versionName = BuildConfig.VERSION_NAME,
-                    onPrivacyPolicyClick = onNavigateToPrivacyPolicy,
-                    onTermsOfServiceClick = onNavigateToTermsOfService,
-                    onContactClick = {
-                        val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:${AppConfig.Support.CONTACT_EMAIL}")
-                        }
-                        context.startActivity(intent)
-                    },
-                    onResetClick = { dialogState = SettingsDialogState.ResetConfirm }
-                )
-            }
-        }
+        SettingsContent(
+            settings = settings,
+            isLoggedIn = isLoggedIn,
+            currentUser = currentUser,
+            isSyncing = isSyncing,
+            careRecipientName = careRecipientName,
+            taskReminderLimitText = taskReminderLimitText,
+            onDialogStateChange = onDialogStateChange,
+            onNavigateToPrivacyPolicy = onNavigateToPrivacyPolicy,
+            onNavigateToTermsOfService = onNavigateToTermsOfService,
+            onNavigateToCareRecipient = onNavigateToCareRecipient,
+            onNavigateToEmergencyContacts = onNavigateToEmergencyContacts,
+            onNavigateToMemberManagement = onNavigateToMemberManagement,
+            viewModel = viewModel,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
-
     SettingsDialogs(
         dialogState = dialogState,
         settings = settings,
-        onDismiss = { dialogState = SettingsDialogState.None },
-        onDialogStateChange = { dialogState = it },
+        onDismiss = { onDialogStateChange(SettingsDialogState.None) },
+        onDialogStateChange = onDialogStateChange,
         viewModel = viewModel
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsTopBar() {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.settings_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun SettingsContent(
+    settings: UserSettings,
+    isLoggedIn: Boolean,
+    currentUser: User?,
+    isSyncing: Boolean,
+    careRecipientName: String?,
+    taskReminderLimitText: String?,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTermsOfService: () -> Unit,
+    onNavigateToCareRecipient: () -> Unit,
+    onNavigateToEmergencyContacts: () -> Unit,
+    onNavigateToMemberManagement: () -> Unit,
+    viewModel: SettingsViewModel,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier) {
+        settingsNavigationItems(
+            careRecipientName, onNavigateToCareRecipient,
+            onNavigateToEmergencyContacts, onNavigateToMemberManagement
+        )
+        settingsPreferenceItems(
+            settings, isLoggedIn, currentUser, isSyncing,
+            taskReminderLimitText, onDialogStateChange,
+            onNavigateToPrivacyPolicy, onNavigateToTermsOfService,
+            viewModel
+        )
+    }
+}
+
+private fun LazyListScope.settingsNavigationItems(
+    careRecipientName: String?,
+    onNavigateToCareRecipient: () -> Unit,
+    onNavigateToEmergencyContacts: () -> Unit,
+    onNavigateToMemberManagement: () -> Unit
+) {
+    item(key = "care_recipient") {
+        CareRecipientSection(
+            careRecipientName = careRecipientName,
+            onProfileClick = onNavigateToCareRecipient
+        )
+    }
+    item(key = "emergency_contact") {
+        EmergencyContactSection(
+            onEmergencyContactClick = onNavigateToEmergencyContacts
+        )
+    }
+    item(key = "member_management") {
+        MemberManagementSection(
+            onMemberManagementClick = onNavigateToMemberManagement
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.settingsPreferenceItems(
+    settings: UserSettings,
+    isLoggedIn: Boolean,
+    currentUser: User?,
+    isSyncing: Boolean,
+    taskReminderLimitText: String?,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTermsOfService: () -> Unit,
+    viewModel: SettingsViewModel
+) {
+    settingsAppearanceItems(settings, viewModel)
+    settingsAccountAndNotificationItems(
+        settings, isLoggedIn, currentUser, isSyncing,
+        taskReminderLimitText, onDialogStateChange, viewModel
+    )
+    settingsDataAndInfoItems(
+        settings, onDialogStateChange,
+        onNavigateToPrivacyPolicy, onNavigateToTermsOfService
+    )
+}
+
+private fun LazyListScope.settingsAppearanceItems(
+    settings: UserSettings,
+    viewModel: SettingsViewModel
+) {
+    item(key = "theme") {
+        SettingsThemeItem(settings = settings, viewModel = viewModel)
+    }
+    item(key = "language") {
+        LanguageSection(
+            appLanguage = settings.appLanguage,
+            onLanguageSelected = { viewModel.updateAppLanguage(it) }
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.settingsAccountAndNotificationItems(
+    settings: UserSettings,
+    isLoggedIn: Boolean,
+    currentUser: User?,
+    isSyncing: Boolean,
+    taskReminderLimitText: String?,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    viewModel: SettingsViewModel
+) {
+    item(key = "sync") {
+        SettingsSyncItem(
+            settings = settings, isSyncing = isSyncing,
+            isLoggedIn = isLoggedIn, viewModel = viewModel
+        )
+    }
+    item(key = "security") {
+        SettingsSecurityItem(settings = settings, viewModel = viewModel)
+    }
+    item(key = "account") {
+        SettingsAccountItem(
+            isLoggedIn = isLoggedIn, currentUser = currentUser,
+            onDialogStateChange = onDialogStateChange,
+            viewModel = viewModel
+        )
+    }
+    item(key = "notification") {
+        SettingsNotificationItem(
+            settings = settings,
+            taskReminderLimitText = taskReminderLimitText,
+            onDialogStateChange = onDialogStateChange,
+            viewModel = viewModel
+        )
+    }
+}
+
+private fun LazyListScope.settingsDataAndInfoItems(
+    settings: UserSettings,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTermsOfService: () -> Unit
+) {
+    item(key = "health_threshold") {
+        SettingsHealthThresholdItem(
+            settings = settings,
+            onDialogStateChange = onDialogStateChange
+        )
+    }
+    item(key = "medication_time") {
+        SettingsMedicationTimeItem(
+            settings = settings,
+            onDialogStateChange = onDialogStateChange
+        )
+    }
+    item(key = "data_export") {
+        DataExportSection(
+            onExportTasksClick = {
+                onDialogStateChange(SettingsDialogState.DataExportTasks)
+            },
+            onExportNotesClick = {
+                onDialogStateChange(SettingsDialogState.DataExportNotes)
+            }
+        )
+    }
+    item(key = "app_info") {
+        SettingsAppInfoItem(
+            onNavigateToPrivacyPolicy = onNavigateToPrivacyPolicy,
+            onNavigateToTermsOfService = onNavigateToTermsOfService,
+            onDialogStateChange = onDialogStateChange
+        )
+    }
+}
+
+@Composable
+private fun SettingsThemeItem(
+    settings: UserSettings,
+    viewModel: SettingsViewModel
+) {
+    val isDynamicColorAvailable = remember {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    }
+    ThemeSection(
+        themeMode = settings.themeMode,
+        onThemeModeSelected = { viewModel.updateThemeMode(it) },
+        useDynamicColor = settings.useDynamicColor,
+        onDynamicColorChange = { viewModel.toggleDynamicColor(it) },
+        isDynamicColorAvailable = isDynamicColorAvailable
+    )
+}
+
+@Composable
+private fun SettingsSyncItem(
+    settings: UserSettings,
+    isSyncing: Boolean,
+    isLoggedIn: Boolean,
+    viewModel: SettingsViewModel
+) {
+    val dateTimeFormatter = remember {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+    }
+    val lastSyncText = settings.lastSyncTime?.let { time ->
+        dateTimeFormatter.format(time)
+    } ?: stringResource(R.string.settings_last_sync_never)
+    SyncSection(
+        syncEnabled = settings.syncEnabled,
+        onSyncEnabledChange = { viewModel.toggleSyncEnabled(it) },
+        isSyncing = isSyncing,
+        isLoggedIn = isLoggedIn,
+        lastSyncText = lastSyncText,
+        onSyncNowClick = { viewModel.triggerManualSync() }
+    )
+}
+
+@Composable
+private fun SettingsSecurityItem(
+    settings: UserSettings,
+    viewModel: SettingsViewModel
+) {
+    val context = LocalContext.current
+    val isBiometricAvailable = remember {
+        BiometricHelper().canAuthenticate(context)
+    }
+    val isDeviceRooted = remember { RootDetector().isDeviceRooted() }
+    SecuritySection(
+        biometricEnabled = settings.biometricEnabled,
+        onBiometricEnabledChange = { viewModel.toggleBiometricEnabled(it) },
+        isBiometricAvailable = isBiometricAvailable,
+        isDeviceRooted = isDeviceRooted
+    )
+}
+
+@Composable
+private fun SettingsAccountItem(
+    isLoggedIn: Boolean,
+    currentUser: User?,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    viewModel: SettingsViewModel
+) {
+    AccountSection(
+        isLoggedIn = isLoggedIn,
+        currentUser = currentUser,
+        onChangePasswordClick = {
+            onDialogStateChange(SettingsDialogState.ChangePassword)
+        },
+        onSendEmailVerificationClick = { viewModel.sendEmailVerification() },
+        onSignOutClick = {
+            onDialogStateChange(SettingsDialogState.SignOutConfirm)
+        },
+        onDeleteAccountClick = {
+            onDialogStateChange(SettingsDialogState.DeleteAccountConfirm)
+        }
+    )
+}
+
+@Composable
+private fun SettingsNotificationItem(
+    settings: UserSettings,
+    taskReminderLimitText: String?,
+    onDialogStateChange: (SettingsDialogState) -> Unit,
+    viewModel: SettingsViewModel
+) {
+    NotificationSection(
+        notificationsEnabled = settings.notificationsEnabled,
+        onNotificationsEnabledChange = { viewModel.toggleNotifications(it) },
+        quietHoursText = stringResource(
+            R.string.settings_quiet_hours_format,
+            settings.quietHoursStart,
+            settings.quietHoursEnd
+        ),
+        onQuietHoursClick = {
+            onDialogStateChange(SettingsDialogState.QuietHoursStart)
+        },
+        taskReminderLimitText = taskReminderLimitText
+    )
+}
+
+@Composable
+private fun SettingsHealthThresholdItem(
+    settings: UserSettings,
+    onDialogStateChange: (SettingsDialogState) -> Unit
+) {
+    HealthThresholdSection(
+        temperatureText = stringResource(
+            R.string.settings_temperature_format,
+            settings.temperatureHigh
+        ),
+        onTemperatureClick = {
+            onDialogStateChange(SettingsDialogState.Temperature)
+        },
+        bpUpperText = stringResource(
+            R.string.settings_bp_upper_format,
+            settings.bloodPressureHighUpper
+        ),
+        onBpUpperClick = {
+            onDialogStateChange(SettingsDialogState.BpUpper)
+        },
+        bpLowerText = stringResource(
+            R.string.settings_bp_lower_format,
+            settings.bloodPressureHighLower
+        ),
+        onBpLowerClick = {
+            onDialogStateChange(SettingsDialogState.BpLower)
+        },
+        pulseHighText = stringResource(
+            R.string.settings_pulse_high_format,
+            settings.pulseHigh
+        ),
+        onPulseHighClick = {
+            onDialogStateChange(SettingsDialogState.PulseHigh)
+        },
+        pulseLowText = stringResource(
+            R.string.settings_pulse_low_format,
+            settings.pulseLow
+        ),
+        onPulseLowClick = {
+            onDialogStateChange(SettingsDialogState.PulseLow)
+        }
+    )
+}
+
+@Composable
+private fun SettingsMedicationTimeItem(
+    settings: UserSettings,
+    onDialogStateChange: (SettingsDialogState) -> Unit
+) {
+    MedicationTimeSection(
+        morningTimeText = stringResource(
+            R.string.settings_time_format,
+            settings.morningHour,
+            settings.morningMinute
+        ),
+        onMorningClick = {
+            onDialogStateChange(SettingsDialogState.MorningTime)
+        },
+        noonTimeText = stringResource(
+            R.string.settings_time_format,
+            settings.noonHour,
+            settings.noonMinute
+        ),
+        onNoonClick = {
+            onDialogStateChange(SettingsDialogState.NoonTime)
+        },
+        eveningTimeText = stringResource(
+            R.string.settings_time_format,
+            settings.eveningHour,
+            settings.eveningMinute
+        ),
+        onEveningClick = {
+            onDialogStateChange(SettingsDialogState.EveningTime)
+        }
+    )
+}
+
+@Composable
+private fun SettingsAppInfoItem(
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTermsOfService: () -> Unit,
+    onDialogStateChange: (SettingsDialogState) -> Unit
+) {
+    val context = LocalContext.current
+    AppInfoSection(
+        versionName = BuildConfig.VERSION_NAME,
+        onPrivacyPolicyClick = onNavigateToPrivacyPolicy,
+        onTermsOfServiceClick = onNavigateToTermsOfService,
+        onContactClick = {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse(
+                    "mailto:${AppConfig.Support.CONTACT_EMAIL}"
+                )
+            }
+            context.startActivity(intent)
+        },
+        onResetClick = {
+            onDialogStateChange(SettingsDialogState.ResetConfirm)
+        }
     )
 }

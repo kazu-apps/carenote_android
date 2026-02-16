@@ -106,61 +106,104 @@ private fun SearchContent(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp),
-            placeholder = {
-                Text(text = stringResource(R.string.search_placeholder))
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = null
-                )
-            },
-            singleLine = true
+        SearchTextField(
+            searchQuery = searchQuery,
+            onSearchQueryChange = onSearchQueryChange
         )
+        SearchResultsBody(
+            uiState = uiState,
+            searchQuery = searchQuery,
+            onResultClick = onResultClick
+        )
+    }
+}
 
-        when (val state = uiState) {
-            is UiState.Loading -> {
-                LoadingIndicator()
-            }
-            is UiState.Error -> {
-                ErrorDisplay(error = state.error)
-            }
-            is UiState.Success -> {
-                if (searchQuery.isBlank()) {
-                    EmptyState(
-                        icon = Icons.Filled.Search,
-                        message = stringResource(R.string.search_empty_hint)
-                    )
-                } else if (state.data.isEmpty()) {
-                    EmptyState(
-                        icon = Icons.Filled.Search,
-                        message = stringResource(R.string.search_empty)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            top = AppConfig.UI.ITEM_SPACING_DP.dp
-                        )
-                    ) {
-                        items(
-                            items = state.data,
-                            key = { "${it::class.simpleName}_${it.id}" }
-                        ) { result ->
-                            SearchResultItem(
-                                result = result,
-                                onClick = { onResultClick(result) }
-                            )
-                            HorizontalDivider()
-                        }
-                    }
+@Composable
+private fun SearchTextField(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = AppConfig.UI
+                    .SCREEN_HORIZONTAL_PADDING_DP.dp
+            ),
+        placeholder = {
+            Text(
+                text = stringResource(R.string.search_placeholder)
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null
+            )
+        },
+        singleLine = true
+    )
+}
+
+@Composable
+private fun SearchResultsBody(
+    uiState: UiState<List<SearchResult>>,
+    searchQuery: String,
+    onResultClick: (SearchResult) -> Unit
+) {
+    when (val state = uiState) {
+        is UiState.Loading -> {
+            LoadingIndicator()
+        }
+        is UiState.Error -> {
+            ErrorDisplay(error = state.error)
+        }
+        is UiState.Success -> {
+            SearchSuccessContent(
+                data = state.data,
+                searchQuery = searchQuery,
+                onResultClick = onResultClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchSuccessContent(
+    data: List<SearchResult>,
+    searchQuery: String,
+    onResultClick: (SearchResult) -> Unit
+) {
+    if (searchQuery.isBlank()) {
+        EmptyState(
+            icon = Icons.Filled.Search,
+            message = stringResource(R.string.search_empty_hint)
+        )
+    } else if (data.isEmpty()) {
+        EmptyState(
+            icon = Icons.Filled.Search,
+            message = stringResource(R.string.search_empty)
+        )
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = AppConfig.UI.ITEM_SPACING_DP.dp
+            )
+        ) {
+            items(
+                items = data,
+                key = {
+                    "${it::class.simpleName}_${it.id}"
                 }
+            ) { result ->
+                SearchResultItem(
+                    result = result,
+                    onClick = { onResultClick(result) }
+                )
+                HorizontalDivider()
             }
         }
     }
@@ -218,12 +261,24 @@ private fun SearchResultItem(
 @Composable
 private fun resultIconAndLabel(result: SearchResult): Pair<ImageVector, String> {
     return when (result) {
-        is SearchResult.MedicationResult -> Icons.Filled.Medication to stringResource(R.string.search_result_medication)
-        is SearchResult.NoteResult -> Icons.AutoMirrored.Filled.StickyNote2 to stringResource(R.string.search_result_note)
-        is SearchResult.TaskResult -> Icons.Filled.CheckCircle to stringResource(R.string.search_result_task)
-        is SearchResult.HealthRecordResult -> Icons.Filled.MonitorHeart to stringResource(R.string.search_result_health_record)
-        is SearchResult.CalendarEventResult -> Icons.Filled.CalendarMonth to stringResource(R.string.search_result_calendar_event)
-        is SearchResult.EmergencyContactResult -> Icons.Filled.Contacts to stringResource(R.string.search_result_emergency_contact)
+        is SearchResult.MedicationResult ->
+            Icons.Filled.Medication to
+                stringResource(R.string.search_result_medication)
+        is SearchResult.NoteResult ->
+            Icons.AutoMirrored.Filled.StickyNote2 to
+                stringResource(R.string.search_result_note)
+        is SearchResult.TaskResult ->
+            Icons.Filled.CheckCircle to
+                stringResource(R.string.search_result_task)
+        is SearchResult.HealthRecordResult ->
+            Icons.Filled.MonitorHeart to
+                stringResource(R.string.search_result_health_record)
+        is SearchResult.CalendarEventResult ->
+            Icons.Filled.CalendarMonth to
+                stringResource(R.string.search_result_calendar_event)
+        is SearchResult.EmergencyContactResult ->
+            Icons.Filled.Contacts to
+                stringResource(R.string.search_result_emergency_contact)
     }
 }
 

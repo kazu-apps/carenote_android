@@ -127,7 +127,8 @@ class SyncWorker @AssistedInject constructor(
         val pendingPhotos = pendingResult.getOrNull() ?: return
 
         for (photo in pendingPhotos) {
-            val remotePath = "${AppConfig.Photo.STORAGE_PATH_PREFIX}/$careRecipientId/${photo.parentType}/${photo.parentId}/${photo.id}.jpg"
+            val remotePath = "${AppConfig.Photo.STORAGE_PATH_PREFIX}/" +
+                "$careRecipientId/${photo.parentType}/${photo.parentId}/${photo.id}.jpg"
             photoRepository.updateUploadStatus(photo.id, PhotoUploadStatus.UPLOADING)
             storageRepository.uploadPhoto(photo.localUri, remotePath)
                 .onSuccess { downloadUrl ->

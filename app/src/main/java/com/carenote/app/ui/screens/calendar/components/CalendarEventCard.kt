@@ -42,59 +42,7 @@ fun CalendarEventCard(
         onClick = onClick,
         modifier = modifier
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = event.type.icon(),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = if (event.completed) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = event.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        textDecoration = if (event.completed) TextDecoration.LineThrough else TextDecoration.None
-                    ),
-                    color = if (event.completed) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                    maxLines = AppConfig.Calendar.TITLE_MAX_LINES,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val timeText = if (event.isAllDay) {
-                    stringResource(R.string.calendar_all_day_label)
-                } else {
-                    event.startTime?.let { DateTimeFormatters.formatTime(it) } ?: ""
-                }
-                Text(
-                    text = timeText,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Checkbox(
-                    checked = event.completed,
-                    onCheckedChange = { onToggleCompleted(event) }
-                )
-            }
-        }
+        EventCardHeader(event = event, onToggleCompleted = onToggleCompleted)
 
         if (event.description.isNotBlank()) {
             Spacer(modifier = Modifier.height(4.dp))
@@ -107,6 +55,85 @@ fun CalendarEventCard(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+@Composable
+private fun EventCardHeader(
+    event: CalendarEvent,
+    onToggleCompleted: (CalendarEvent) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        EventTitleRow(event = event, modifier = Modifier.weight(1f))
+        EventTimeAndCheckbox(event = event, onToggleCompleted = onToggleCompleted)
+    }
+}
+
+@Composable
+private fun EventTitleRow(
+    event: CalendarEvent,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = event.type.icon(),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = if (event.completed) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.primary
+            }
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = event.title,
+            style = MaterialTheme.typography.titleMedium.copy(
+                textDecoration = if (event.completed) {
+                    TextDecoration.LineThrough
+                } else {
+                    TextDecoration.None
+                }
+            ),
+            color = if (event.completed) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            maxLines = AppConfig.Calendar.TITLE_MAX_LINES,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun EventTimeAndCheckbox(
+    event: CalendarEvent,
+    onToggleCompleted: (CalendarEvent) -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val timeText = if (event.isAllDay) {
+            stringResource(R.string.calendar_all_day_label)
+        } else {
+            event.startTime?.let { DateTimeFormatters.formatTime(it) } ?: ""
+        }
+        Text(
+            text = timeText,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Checkbox(
+            checked = event.completed,
+            onCheckedChange = { onToggleCompleted(event) }
+        )
     }
 }
 

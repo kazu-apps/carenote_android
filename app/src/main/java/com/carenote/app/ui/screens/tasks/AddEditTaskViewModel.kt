@@ -169,31 +169,7 @@ class AddEditTaskViewModel @Inject constructor(
 
     fun saveTask() {
         val current = _formState.value
-
-        val titleError = combineValidations(
-            validateRequired(current.title, R.string.tasks_task_title_required),
-            validateMaxLength(current.title, AppConfig.Task.TITLE_MAX_LENGTH)
-        )
-        val descriptionError = validateMaxLength(
-            current.description, AppConfig.Task.DESCRIPTION_MAX_LENGTH
-        )
-        val recurrenceIntervalError = if (
-            current.recurrenceFrequency != RecurrenceFrequency.NONE &&
-            RecurrenceValidator.validateInterval(current.recurrenceInterval, AppConfig.Task.MAX_RECURRENCE_INTERVAL) != null
-        ) {
-            UiText.Resource(R.string.tasks_recurrence_interval_error)
-        } else {
-            null
-        }
-
-        if (titleError != null || descriptionError != null || recurrenceIntervalError != null) {
-            _formState.value = current.copy(
-                titleError = titleError,
-                descriptionError = descriptionError,
-                recurrenceIntervalError = recurrenceIntervalError
-            )
-            return
-        }
+        if (!validateForm(current)) return
 
         _formState.value = current.copy(isSaving = true)
 
@@ -201,66 +177,118 @@ class AddEditTaskViewModel @Inject constructor(
             val now = clock.now()
             val original = originalTask
             if (taskId != null && original != null) {
-                val updatedTask = original.copy(
-                    title = current.title.trim(),
-                    description = current.description.trim(),
-                    dueDate = current.dueDate,
-                    priority = current.priority,
-                    recurrenceFrequency = current.recurrenceFrequency,
-                    recurrenceInterval = current.recurrenceInterval,
-                    reminderEnabled = current.reminderEnabled,
-                    reminderTime = current.reminderTime,
-                    updatedAt = now
-                )
-                taskRepository.updateTask(updatedTask)
-                    .onSuccess {
-                        Timber.d("Task updated: id=$taskId")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_UPDATED)
-                        scheduleOrCancelReminder(
-                            taskId,
-                            current.title.trim(),
-                            current.reminderEnabled,
-                            current.reminderTime
-                        )
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to update task: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.tasks_save_failed)
-                    }
+                updateExistingTask(current, original, now)
             } else {
-                val newTask = Task(
-                    title = current.title.trim(),
-                    description = current.description.trim(),
-                    dueDate = current.dueDate,
-                    priority = current.priority,
-                    recurrenceFrequency = current.recurrenceFrequency,
-                    recurrenceInterval = current.recurrenceInterval,
-                    reminderEnabled = current.reminderEnabled,
-                    reminderTime = current.reminderTime,
-                    createdAt = now,
-                    updatedAt = now
-                )
-                taskRepository.insertTask(newTask)
-                    .onSuccess { id ->
-                        Timber.d("Task saved: id=$id")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_TASK_CREATED)
-                        scheduleOrCancelReminder(
-                            id,
-                            current.title.trim(),
-                            current.reminderEnabled,
-                            current.reminderTime
-                        )
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to save task: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.tasks_save_failed)
-                    }
+                createNewTask(current, now)
             }
         }
+    }
+
+    private fun validateForm(current: AddEditTaskFormState): Boolean {
+        val titleError = combineValidations(
+            validateRequired(current.title, R.string.tasks_task_title_required),
+            validateMaxLength(current.title, AppConfig.Task.TITLE_MAX_LENGTH)
+        )
+        val descriptionError = validateMaxLength(
+            current.description, AppConfig.Task.DESCRIPTION_MAX_LENGTH
+        )
+        val hasIntervalError =
+            current.recurrenceFrequency != RecurrenceFrequency.NONE &&
+                RecurrenceValidator.validateInterval(
+                    current.recurrenceInterval,
+                    AppConfig.Task.MAX_RECURRENCE_INTERVAL
+                ) != null
+        val recurrenceIntervalError = if (hasIntervalError) {
+            UiText.Resource(R.string.tasks_recurrence_interval_error)
+        } else {
+            null
+        }
+
+        if (titleError != null || descriptionError != null ||
+            recurrenceIntervalError != null
+        ) {
+            _formState.value = current.copy(
+                titleError = titleError,
+                descriptionError = descriptionError,
+                recurrenceIntervalError = recurrenceIntervalError
+            )
+            return false
+        }
+        return true
+    }
+
+    private suspend fun updateExistingTask(
+        current: AddEditTaskFormState,
+        original: Task,
+        now: LocalDateTime
+    ) {
+        val updatedTask = original.copy(
+            title = current.title.trim(),
+            description = current.description.trim(),
+            dueDate = current.dueDate,
+            priority = current.priority,
+            recurrenceFrequency = current.recurrenceFrequency,
+            recurrenceInterval = current.recurrenceInterval,
+            reminderEnabled = current.reminderEnabled,
+            reminderTime = current.reminderTime,
+            updatedAt = now
+        )
+        taskRepository.updateTask(updatedTask)
+            .onSuccess {
+                Timber.d("Task updated: id=$taskId")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_TASK_UPDATED
+                )
+                scheduleOrCancelReminder(
+                    taskId!!,
+                    current.title.trim(),
+                    current.reminderEnabled,
+                    current.reminderTime
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update task: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.tasks_save_failed)
+            }
+    }
+
+    private suspend fun createNewTask(
+        current: AddEditTaskFormState,
+        now: LocalDateTime
+    ) {
+        val newTask = Task(
+            title = current.title.trim(),
+            description = current.description.trim(),
+            dueDate = current.dueDate,
+            priority = current.priority,
+            recurrenceFrequency = current.recurrenceFrequency,
+            recurrenceInterval = current.recurrenceInterval,
+            reminderEnabled = current.reminderEnabled,
+            reminderTime = current.reminderTime,
+            createdAt = now,
+            updatedAt = now
+        )
+        taskRepository.insertTask(newTask)
+            .onSuccess { id ->
+                Timber.d("Task saved: id=$id")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_TASK_CREATED
+                )
+                scheduleOrCancelReminder(
+                    id,
+                    current.title.trim(),
+                    current.reminderEnabled,
+                    current.reminderTime
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to save task: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.tasks_save_failed)
+            }
     }
 
     private fun scheduleOrCancelReminder(

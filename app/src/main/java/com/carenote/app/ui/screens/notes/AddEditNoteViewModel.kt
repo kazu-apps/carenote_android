@@ -226,50 +226,70 @@ class AddEditNoteViewModel @Inject constructor(
         }
 
         _formState.value = current.copy(isSaving = true)
+        viewModelScope.launch { persistNote(current) }
+    }
 
-        viewModelScope.launch {
-            val now = clock.now()
-            val original = originalNote
-            if (noteId != null && original != null) {
-                val updatedNote = original.copy(
-                    title = current.title.trim(),
-                    content = current.content.trim(),
-                    tag = current.tag,
-                    updatedAt = now
-                )
-                noteRepository.updateNote(updatedNote)
-                    .onSuccess {
-                        Timber.d("Note updated: id=$noteId")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_UPDATED)
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to update note: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.notes_save_failed)
-                    }
-            } else {
-                val newNote = Note(
-                    title = current.title.trim(),
-                    content = current.content.trim(),
-                    tag = current.tag,
-                    createdAt = now,
-                    updatedAt = now
-                )
-                noteRepository.insertNote(newNote)
-                    .onSuccess { id ->
-                        Timber.d("Note saved: id=$id")
-                        analyticsRepository.logEvent(AppConfig.Analytics.EVENT_NOTE_CREATED)
-                        photoManager.updateParentId(id)
-                        _savedEvent.send(true)
-                    }
-                    .onFailure { error ->
-                        Timber.w("Failed to save note: $error")
-                        _formState.value = _formState.value.copy(isSaving = false)
-                        snackbarController.showMessage(R.string.notes_save_failed)
-                    }
-            }
+    private suspend fun persistNote(current: AddEditNoteFormState) {
+        val now = clock.now()
+        val original = originalNote
+        if (noteId != null && original != null) {
+            updateExistingNote(original, current, now)
+        } else {
+            createNewNote(current, now)
         }
+    }
+
+    private suspend fun updateExistingNote(
+        original: Note,
+        current: AddEditNoteFormState,
+        now: java.time.LocalDateTime
+    ) {
+        val updatedNote = original.copy(
+            title = current.title.trim(),
+            content = current.content.trim(),
+            tag = current.tag,
+            updatedAt = now
+        )
+        noteRepository.updateNote(updatedNote)
+            .onSuccess {
+                Timber.d("Note updated: id=$noteId")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_NOTE_UPDATED
+                )
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update note: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.notes_save_failed)
+            }
+    }
+
+    private suspend fun createNewNote(
+        current: AddEditNoteFormState,
+        now: java.time.LocalDateTime
+    ) {
+        val newNote = Note(
+            title = current.title.trim(),
+            content = current.content.trim(),
+            tag = current.tag,
+            createdAt = now,
+            updatedAt = now
+        )
+        noteRepository.insertNote(newNote)
+            .onSuccess { id ->
+                Timber.d("Note saved: id=$id")
+                analyticsRepository.logEvent(
+                    AppConfig.Analytics.EVENT_NOTE_CREATED
+                )
+                photoManager.updateParentId(id)
+                _savedEvent.send(true)
+            }
+            .onFailure { error ->
+                Timber.w("Failed to save note: $error")
+                _formState.value = _formState.value.copy(isSaving = false)
+                snackbarController.showMessage(R.string.notes_save_failed)
+            }
     }
 
 }

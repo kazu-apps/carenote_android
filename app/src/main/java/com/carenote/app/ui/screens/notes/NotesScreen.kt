@@ -73,8 +73,48 @@ fun NotesScreen(
     val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteNote by remember { mutableStateOf<Note?>(null) }
-    val context = LocalContext.current
 
+    NotesSnackbarEffect(viewModel, snackbarHostState)
+
+    Scaffold(
+        topBar = {
+            NotesTopBar(onNavigateToSearch = onNavigateToSearch)
+        },
+        floatingActionButton = {
+            NotesFab(onClick = onNavigateToAddNote)
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        NotesBody(
+            lazyPagingItems = lazyPagingItems,
+            searchQuery = searchQuery,
+            selectedTag = selectedTag,
+            isRefreshing = isRefreshing,
+            onSearchQueryChange = viewModel::updateSearchQuery,
+            onTagSelect = viewModel::selectTag,
+            onNavigateToAddNote = onNavigateToAddNote,
+            onNavigateToEditNote = onNavigateToEditNote,
+            onDelete = { deleteNote = it },
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+
+    NoteDeleteDialog(
+        deleteNote = deleteNote,
+        onConfirmDelete = { note ->
+            viewModel.deleteNote(note.id)
+            deleteNote = null
+        },
+        onDismiss = { deleteNote = null }
+    )
+}
+
+@Composable
+private fun NotesSnackbarEffect(
+    viewModel: NotesViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
@@ -84,146 +124,230 @@ fun NotesScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
+}
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.notes_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddNote,
-                modifier = Modifier.testTag(TestTags.NOTES_FAB),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.notes_add)
-                )
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = { lazyPagingItems.refresh() },
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 8.dp,
-                    bottom = 80.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item(key = "search_bar") {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = viewModel::updateSearchQuery,
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = {
-                            Text(text = stringResource(R.string.notes_search))
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-                }
-
-                item(key = "tag_filter") {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    TagFilterRow(
-                        selectedTag = selectedTag,
-                        onTagSelect = viewModel::selectTag
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                when (val refreshState = lazyPagingItems.loadState.refresh) {
-                    is LoadState.Loading -> {
-                        item(key = "loading") {
-                            LoadingIndicator()
-                        }
-                    }
-                    is LoadState.Error -> {
-                        item(key = "error") {
-                            ErrorDisplay(
-                                error = DomainError.DatabaseError(
-                                    refreshState.error.message ?: "Unknown error"
-                                ),
-                                onRetry = { lazyPagingItems.refresh() }
-                            )
-                        }
-                    }
-                    is LoadState.NotLoading -> {
-                        if (lazyPagingItems.itemCount == 0) {
-                            item(key = "empty_state") {
-                                EmptyState(
-                                    icon = Icons.Filled.NoteAlt,
-                                    message = stringResource(R.string.notes_empty),
-                                    actionLabel = stringResource(R.string.notes_empty_action),
-                                    onAction = onNavigateToAddNote
-                                )
-                            }
-                        } else {
-                            items(
-                                count = lazyPagingItems.itemCount,
-                                key = { index -> lazyPagingItems.peek(index)?.id ?: index },
-                                contentType = { "NoteCard" }
-                            ) { index ->
-                                lazyPagingItems[index]?.let { note ->
-                                    SwipeToDismissItem(
-                                        item = note,
-                                        onDelete = { deleteNote = it }
-                                    ) {
-                                        NoteCard(
-                                            note = note,
-                                            onClick = { onNavigateToEditNote(note.id) }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+@Composable
+private fun NoteDeleteDialog(
+    deleteNote: Note?,
+    onConfirmDelete: (Note) -> Unit,
+    onDismiss: () -> Unit
+) {
     deleteNote?.let { note ->
         ConfirmDialog(
             title = stringResource(R.string.ui_confirm_delete_title),
             message = stringResource(R.string.notes_delete_confirm),
-            onConfirm = {
-                viewModel.deleteNote(note.id)
-                deleteNote = null
-            },
-            onDismiss = { deleteNote = null },
+            onConfirm = { onConfirmDelete(note) },
+            onDismiss = onDismiss,
             isDestructive = true
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+@Suppress("LongParameterList")
+private fun NotesBody(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<Note>,
+    searchQuery: String,
+    selectedTag: NoteTag?,
+    isRefreshing: Boolean,
+    onSearchQueryChange: (String) -> Unit,
+    onTagSelect: (NoteTag?) -> Unit,
+    onNavigateToAddNote: () -> Unit,
+    onNavigateToEditNote: (Long) -> Unit,
+    onDelete: (Note) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = { lazyPagingItems.refresh() },
+        modifier = modifier.fillMaxSize()
+    ) {
+        NotesLazyColumn(
+            lazyPagingItems = lazyPagingItems,
+            searchQuery = searchQuery,
+            selectedTag = selectedTag,
+            onSearchQueryChange = onSearchQueryChange,
+            onTagSelect = onTagSelect,
+            onNavigateToAddNote = onNavigateToAddNote,
+            onNavigateToEditNote = onNavigateToEditNote,
+            onDelete = onDelete
+        )
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun NotesLazyColumn(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<Note>,
+    searchQuery: String,
+    selectedTag: NoteTag?,
+    onSearchQueryChange: (String) -> Unit,
+    onTagSelect: (NoteTag?) -> Unit,
+    onNavigateToAddNote: () -> Unit,
+    onNavigateToEditNote: (Long) -> Unit,
+    onDelete: (Note) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 80.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item(key = "search_bar") {
+            NotesSearchBar(
+                searchQuery = searchQuery,
+                onSearchQueryChange = onSearchQueryChange
+            )
+        }
+
+        item(key = "tag_filter") {
+            Spacer(modifier = Modifier.height(4.dp))
+            TagFilterRow(
+                selectedTag = selectedTag,
+                onTagSelect = onTagSelect
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        noteListBody(
+            lazyPagingItems = lazyPagingItems,
+            onNavigateToAddNote = onNavigateToAddNote,
+            onNavigateToEditNote = onNavigateToEditNote,
+            onDelete = onDelete
+        )
+    }
+}
+
+@Composable
+private fun NotesSearchBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = {
+            Text(text = stringResource(R.string.notes_search))
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null
+            )
+        },
+        singleLine = true
+    )
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.noteListBody(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<Note>,
+    onNavigateToAddNote: () -> Unit,
+    onNavigateToEditNote: (Long) -> Unit,
+    onDelete: (Note) -> Unit
+) {
+    when (val refreshState = lazyPagingItems.loadState.refresh) {
+        is LoadState.Loading -> {
+            item(key = "loading") { LoadingIndicator() }
+        }
+        is LoadState.Error -> {
+            item(key = "error") {
+                ErrorDisplay(
+                    error = DomainError.DatabaseError(
+                        refreshState.error.message ?: "Unknown error"
+                    ),
+                    onRetry = { lazyPagingItems.refresh() }
+                )
+            }
+        }
+        is LoadState.NotLoading -> {
+            noteListItems(
+                lazyPagingItems = lazyPagingItems,
+                onNavigateToAddNote = onNavigateToAddNote,
+                onNavigateToEditNote = onNavigateToEditNote,
+                onDelete = onDelete
+            )
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.noteListItems(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<Note>,
+    onNavigateToAddNote: () -> Unit,
+    onNavigateToEditNote: (Long) -> Unit,
+    onDelete: (Note) -> Unit
+) {
+    if (lazyPagingItems.itemCount == 0) {
+        item(key = "empty_state") {
+            EmptyState(
+                icon = Icons.Filled.NoteAlt,
+                message = stringResource(R.string.notes_empty),
+                actionLabel = stringResource(R.string.notes_empty_action),
+                onAction = onNavigateToAddNote
+            )
+        }
+    } else {
+        items(
+            count = lazyPagingItems.itemCount,
+            key = { index ->
+                lazyPagingItems.peek(index)?.id ?: index
+            },
+            contentType = { "NoteCard" }
+        ) { index ->
+            lazyPagingItems[index]?.let { note ->
+                SwipeToDismissItem(
+                    item = note,
+                    onDelete = onDelete
+                ) {
+                    NoteCard(
+                        note = note,
+                        onClick = { onNavigateToEditNote(note.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotesTopBar(onNavigateToSearch: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.notes_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        actions = {
+            IconButton(onClick = onNavigateToSearch) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Composable
+private fun NotesFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.testTag(TestTags.NOTES_FAB),
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = stringResource(R.string.notes_add)
         )
     }
 }

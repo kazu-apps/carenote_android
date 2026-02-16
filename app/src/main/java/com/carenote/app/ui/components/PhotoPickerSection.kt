@@ -61,45 +61,66 @@ fun PhotoPickerSection(
             style = MaterialTheme.typography.titleMedium
         )
 
-        if (photos.isNotEmpty()) {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp)
-            ) {
-                items(photos, key = { it.id }) { photo ->
-                    PhotoThumbnail(
-                        photo = photo,
-                        onRemove = { onRemovePhoto(photo) }
+        PhotoList(photos = photos, onRemovePhoto = onRemovePhoto)
+
+        PhotoAddButton(
+            canAdd = photos.size < maxPhotos,
+            maxPhotos = maxPhotos,
+            onAddClick = {
+                pickMultipleMedia.launch(
+                    PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly
                     )
-                }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun PhotoList(
+    photos: List<Photo>,
+    onRemovePhoto: (Photo) -> Unit
+) {
+    if (photos.isNotEmpty()) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
+        ) {
+            items(photos, key = { it.id }) { photo ->
+                PhotoThumbnail(
+                    photo = photo,
+                    onRemove = { onRemovePhoto(photo) }
+                )
             }
         }
+    }
+}
 
-        if (photos.size < maxPhotos) {
-            OutlinedButton(
-                onClick = {
-                    pickMultipleMedia.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.AddAPhoto,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = stringResource(R.string.photo_add),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-        } else {
+@Composable
+private fun PhotoAddButton(
+    canAdd: Boolean,
+    maxPhotos: Int,
+    onAddClick: () -> Unit
+) {
+    if (canAdd) {
+        OutlinedButton(onClick = onAddClick) {
+            Icon(
+                imageVector = Icons.Filled.AddAPhoto,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
             Text(
-                text = stringResource(R.string.photo_max_reached, maxPhotos),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = stringResource(R.string.photo_add),
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
+    } else {
+        Text(
+            text = stringResource(R.string.photo_max_reached, maxPhotos),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

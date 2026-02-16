@@ -39,7 +39,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.NoteTag
-import com.carenote.app.config.AppConfig.Photo
+import com.carenote.app.domain.model.Photo
+import com.carenote.app.config.AppConfig.Photo as PhotoConfig
 import com.carenote.app.domain.model.NoteComment
 import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.components.CareNoteTextField
@@ -95,112 +96,153 @@ fun AddEditNoteScreen(
         isDirty = viewModel.isDirty,
         snackbarHostState = snackbarHostState
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
+        NoteFormBody(
+            formState = formState,
+            photos = photos,
+            comments = comments,
+            commentText = commentText,
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
 
-            CareNoteTextField(
-                value = formState.title,
-                onValueChange = viewModel::updateTitle,
-                label = stringResource(R.string.notes_title_label),
-                placeholder = stringResource(R.string.notes_title_placeholder),
-                errorMessage = formState.titleError,
-                singleLine = true
+@Suppress("LongParameterList")
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NoteFormBody(
+    formState: AddEditNoteFormState,
+    photos: List<Photo>,
+    comments: List<NoteComment>,
+    commentText: String,
+    viewModel: AddEditNoteViewModel,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+        NoteTextFields(formState, viewModel::updateTitle, viewModel::updateContent)
+        NoteTagSelector(formState, viewModel::updateTag)
+        PhotoPickerSection(
+            photos = photos,
+            onAddPhotos = viewModel::addPhotos,
+            onRemovePhoto = viewModel::removePhoto,
+            maxPhotos = PhotoConfig.MAX_PHOTOS_PER_PARENT
+        )
+        if (formState.isEditMode) {
+            HorizontalDivider()
+            NoteCommentSection(
+                comments = comments,
+                commentText = commentText,
+                onCommentTextChanged = viewModel::updateCommentText,
+                onAddComment = viewModel::addComment,
+                onDeleteComment = viewModel::deleteComment
             )
+        }
+        NoteFormActions(formState.isSaving, viewModel::saveNote, onNavigateBack)
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
 
-            CareNoteTextField(
-                value = formState.content,
-                onValueChange = viewModel::updateContent,
-                label = stringResource(R.string.notes_content_label),
-                placeholder = stringResource(R.string.notes_content_placeholder),
-                errorMessage = formState.contentError,
-                singleLine = false,
-                maxLines = Int.MAX_VALUE,
-                modifier = Modifier.height(
-                    (AppConfig.Note.CONTENT_MIN_LINES * 28).dp
-                )
+@Composable
+private fun NoteTextFields(
+    formState: AddEditNoteFormState,
+    onUpdateTitle: (String) -> Unit,
+    onUpdateContent: (String) -> Unit
+) {
+    CareNoteTextField(
+        value = formState.title,
+        onValueChange = onUpdateTitle,
+        label = stringResource(R.string.notes_title_label),
+        placeholder = stringResource(R.string.notes_title_placeholder),
+        errorMessage = formState.titleError,
+        singleLine = true
+    )
+    CareNoteTextField(
+        value = formState.content,
+        onValueChange = onUpdateContent,
+        label = stringResource(R.string.notes_content_label),
+        placeholder = stringResource(R.string.notes_content_placeholder),
+        errorMessage = formState.contentError,
+        singleLine = false,
+        maxLines = Int.MAX_VALUE,
+        modifier = Modifier.height(
+            (AppConfig.Note.CONTENT_MIN_LINES * 28).dp
+        )
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NoteTagSelector(
+    formState: AddEditNoteFormState,
+    onUpdateTag: (NoteTag) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.notes_tag_label),
+        style = MaterialTheme.typography.titleMedium
+    )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        NoteTag.entries.forEach { tag ->
+            NoteTagChip(
+                tag = tag,
+                selected = formState.tag == tag,
+                onClick = { onUpdateTag(tag) }
             )
-
-            Text(
-                text = stringResource(R.string.notes_tag_label),
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                NoteTag.entries.forEach { tag ->
-                    NoteTagChip(
-                        tag = tag,
-                        selected = formState.tag == tag,
-                        onClick = { viewModel.updateTag(tag) }
-                    )
-                }
-            }
-
-            PhotoPickerSection(
-                photos = photos,
-                onAddPhotos = viewModel::addPhotos,
-                onRemovePhoto = viewModel::removePhoto,
-                maxPhotos = Photo.MAX_PHOTOS_PER_PARENT
-            )
-
-            if (formState.isEditMode) {
-                HorizontalDivider()
-                NoteCommentSection(
-                    comments = comments,
-                    commentText = commentText,
-                    onCommentTextChanged = viewModel::updateCommentText,
-                    onAddComment = viewModel::addComment,
-                    onDeleteComment = viewModel::deleteComment
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape
-                ) {
-                    Text(text = stringResource(R.string.common_cancel))
-                }
-                Button(
-                    onClick = viewModel::saveNote,
-                    modifier = Modifier.weight(1f),
-                    shape = ButtonShape,
-                    enabled = !formState.isSaving
-                ) {
-                    if (formState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .height(20.dp)
-                                .width(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(text = stringResource(R.string.common_save))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
+@Composable
+private fun NoteFormActions(
+    isSaving: Boolean,
+    onSave: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape
+        ) {
+            Text(text = stringResource(R.string.common_cancel))
+        }
+        Button(
+            onClick = onSave,
+            modifier = Modifier.weight(1f),
+            shape = ButtonShape,
+            enabled = !isSaving
+        ) {
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .height(20.dp)
+                        .width(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(text = stringResource(R.string.common_save))
+            }
+        }
+    }
+}
+
+@Suppress("LongParameterList")
 @Composable
 private fun NoteCommentSection(
     comments: List<NoteComment>,
@@ -209,66 +251,86 @@ private fun NoteCommentSection(
     onAddComment: () -> Unit,
     onDeleteComment: (Long) -> Unit
 ) {
-    val dateTimeFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm") }
-
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.note_comment_section_title),
             style = MaterialTheme.typography.titleMedium
         )
+        CommentList(comments = comments, onDeleteComment = onDeleteComment)
+        CommentInput(
+            commentText = commentText,
+            onCommentTextChanged = onCommentTextChanged,
+            onAddComment = onAddComment
+        )
+    }
+}
 
-        if (comments.isEmpty()) {
-            Text(
-                text = stringResource(R.string.note_comment_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            comments.forEach { comment ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = comment.content,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            text = comment.createdAt.format(dateTimeFormatter),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    IconButton(onClick = { onDeleteComment(comment.id) }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+@Composable
+private fun CommentList(
+    comments: List<NoteComment>,
+    onDeleteComment: (Long) -> Unit
+) {
+    val dateTimeFormatter = remember {
+        DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")
+    }
+    if (comments.isEmpty()) {
+        Text(
+            text = stringResource(R.string.note_comment_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    } else {
+        comments.forEach { comment ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = comment.content,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = comment.createdAt.format(dateTimeFormatter),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { onDeleteComment(comment.id) }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
+    }
+}
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+@Composable
+private fun CommentInput(
+    commentText: String,
+    onCommentTextChanged: (String) -> Unit,
+    onAddComment: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedTextField(
+            value = commentText,
+            onValueChange = onCommentTextChanged,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text(stringResource(R.string.note_comment_placeholder)) },
+            singleLine = true
+        )
+        Button(
+            onClick = onAddComment,
+            enabled = commentText.isNotBlank(),
+            shape = ButtonShape
         ) {
-            OutlinedTextField(
-                value = commentText,
-                onValueChange = onCommentTextChanged,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text(stringResource(R.string.note_comment_placeholder)) },
-                singleLine = true
-            )
-            Button(
-                onClick = onAddComment,
-                enabled = commentText.isNotBlank(),
-                shape = ButtonShape
-            ) {
-                Text(stringResource(R.string.note_comment_add))
-            }
+            Text(stringResource(R.string.note_comment_add))
         }
     }
 }

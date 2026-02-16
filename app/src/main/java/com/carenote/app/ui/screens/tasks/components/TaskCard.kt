@@ -3,6 +3,7 @@ package com.carenote.app.ui.screens.tasks.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,50 +49,51 @@ fun TaskCard(
                 checked = task.isCompleted,
                 onCheckedChange = { onToggleCompletion() }
             )
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        textDecoration = if (task.isCompleted) {
-                            TextDecoration.LineThrough
-                        } else {
-                            TextDecoration.None
-                        }
-                    ),
-                    color = if (task.isCompleted) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                    maxLines = AppConfig.Task.TITLE_MAX_LINES,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                if (task.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = task.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = AppConfig.Task.DESCRIPTION_PREVIEW_MAX_LINES,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                if (task.dueDate != null) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = DateTimeFormatters.formatDate(task.dueDate),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
+            TaskCardContent(task = task)
             PriorityBadge(priority = task.priority)
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TaskCardContent(task: Task) {
+    Column(modifier = Modifier.weight(1f)) {
+        Text(
+            text = task.title,
+            style = MaterialTheme.typography.titleMedium.copy(
+                textDecoration = if (task.isCompleted) {
+                    TextDecoration.LineThrough
+                } else {
+                    TextDecoration.None
+                }
+            ),
+            color = if (task.isCompleted) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            maxLines = AppConfig.Task.TITLE_MAX_LINES,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        if (task.description.isNotBlank()) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = task.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = AppConfig.Task.DESCRIPTION_PREVIEW_MAX_LINES,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        if (task.dueDate != null) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = DateTimeFormatters.formatDate(task.dueDate),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

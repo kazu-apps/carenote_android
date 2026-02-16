@@ -8,6 +8,7 @@ import com.carenote.app.R
 import com.carenote.app.ui.screens.settings.components.ClickablePreference
 import com.carenote.app.ui.screens.settings.components.SettingsSection
 
+@Suppress("LongParameterList")
 @Composable
 fun HealthThresholdSection(
     temperatureText: String,

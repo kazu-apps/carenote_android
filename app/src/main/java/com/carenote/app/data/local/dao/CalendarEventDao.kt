@@ -17,7 +17,11 @@ interface CalendarEventDao {
     @Query("SELECT * FROM calendar_events WHERE id = :id")
     fun getEventById(id: Long): Flow<CalendarEventEntity?>
 
-    @Query("SELECT * FROM calendar_events WHERE care_recipient_id = :careRecipientId AND date = :date ORDER BY start_time ASC")
+    @Query(
+        "SELECT * FROM calendar_events " +
+            "WHERE care_recipient_id = :careRecipientId AND date = :date " +
+            "ORDER BY start_time ASC"
+    )
     fun getEventsByDate(date: String, careRecipientId: Long): Flow<List<CalendarEventEntity>>
 
     @Query(

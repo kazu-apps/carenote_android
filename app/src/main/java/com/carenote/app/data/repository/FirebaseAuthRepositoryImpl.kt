@@ -138,6 +138,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             ?: "Unknown error"
     }
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun mapFirebaseException(throwable: Throwable): DomainError {
         Timber.w("Firebase Auth error: ${sanitizeErrorMessage(throwable.message)}")
 

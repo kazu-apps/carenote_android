@@ -75,7 +75,9 @@ class HealthRecordRepositoryImpl @Inject constructor(
         ) {
             val recipientId = activeRecipientProvider.getActiveCareRecipientId()
             val createdBy = authRepository.getCurrentUser()?.uid ?: ""
-            healthRecordDao.insertRecord(mapper.toEntity(record).copy(careRecipientId = recipientId, createdBy = createdBy))
+            val entity = mapper.toEntity(record)
+                .copy(careRecipientId = recipientId, createdBy = createdBy)
+            healthRecordDao.insertRecord(entity)
         }
     }
 

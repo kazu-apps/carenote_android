@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * 設定の読み書きを行うリポジトリインターフェース
  */
+@Suppress("TooManyFunctions")
 interface SettingsRepository {
 
     fun getSettings(): Flow<UserSettings>

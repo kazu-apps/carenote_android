@@ -67,7 +67,7 @@ class HealthRecordCsvExporter @Inject constructor(
             context.getString(R.string.export_header_excretion),
             context.getString(R.string.export_header_condition_note)
         )
-        return headers.joinToString(",") { escapeCsv(it) }
+        return headers.joinToString(",") { it.escapeCsv() }
     }
 
     private fun buildDataRow(record: HealthRecord): String {
@@ -82,15 +82,7 @@ class HealthRecordCsvExporter @Inject constructor(
             record.excretion?.let { localizeExcretionType(it) } ?: "",
             record.conditionNote
         )
-        return fields.joinToString(",") { escapeCsv(it) }
-    }
-
-    internal fun escapeCsv(value: String): String {
-        return if (value.contains(',') || value.contains('"') || value.contains('\n') || value.contains('\r')) {
-            "\"${value.replace("\"", "\"\"")}\""
-        } else {
-            value
-        }
+        return fields.joinToString(",") { it.escapeCsv() }
     }
 
     private fun localizeMealAmount(meal: MealAmount): String = when (meal) {

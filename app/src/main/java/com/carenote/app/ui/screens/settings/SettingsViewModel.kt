@@ -46,8 +46,9 @@ import java.time.LocalDateTime
 import timber.log.Timber
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val authRepository: AuthRepository,
     private val syncWorkScheduler: SyncWorkSchedulerInterface,

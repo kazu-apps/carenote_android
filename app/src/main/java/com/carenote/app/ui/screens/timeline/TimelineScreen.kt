@@ -38,6 +38,7 @@ import com.carenote.app.ui.components.ErrorDisplay
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.screens.timeline.components.TimelineItemCard
 import com.carenote.app.ui.util.DateTimeFormatters
+import com.carenote.app.domain.model.TimelineItem
 import com.carenote.app.ui.viewmodel.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,19 +47,26 @@ fun TimelineScreen(
     onNavigateBack: () -> Unit = {},
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
-    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
-    val timelineUiState by viewModel.timelineItems.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val selectedDate by viewModel.selectedDate
+        .collectAsStateWithLifecycle()
+    val timelineUiState by viewModel.timelineItems
+        .collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing
+        .collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.timeline_title)) },
+                title = {
+                    Text(stringResource(R.string.timeline_title))
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_close)
+                            contentDescription = stringResource(
+                                R.string.common_close
+                            )
                         )
                     }
                 },
@@ -68,63 +76,108 @@ fun TimelineScreen(
             )
         }
     ) { innerPadding ->
-        PullToRefreshBox(
+        TimelineContent(
+            selectedDate = selectedDate,
+            timelineUiState = timelineUiState,
             isRefreshing = isRefreshing,
-            onRefresh = { viewModel.refresh() },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
-                    end = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
-                    top = AppConfig.UI.ITEM_SPACING_DP.dp,
-                    bottom = AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp
+            viewModel = viewModel,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimelineContent(
+    selectedDate: java.time.LocalDate,
+    timelineUiState: UiState<List<TimelineItem>>,
+    isRefreshing: Boolean,
+    viewModel: TimelineViewModel,
+    modifier: Modifier = Modifier
+) {
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.refresh() },
+        modifier = modifier.fillMaxSize()
+    ) {
+        TimelineList(
+            selectedDate = selectedDate,
+            timelineUiState = timelineUiState,
+            viewModel = viewModel
+        )
+    }
+}
+
+@Composable
+private fun TimelineList(
+    selectedDate: java.time.LocalDate,
+    timelineUiState: UiState<List<TimelineItem>>,
+    viewModel: TimelineViewModel
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
+            end = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
+            top = AppConfig.UI.ITEM_SPACING_DP.dp,
+            bottom = AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(
+            AppConfig.UI.ITEM_SPACING_DP.dp
+        )
+    ) {
+        item(key = "date_navigator") {
+            DateNavigationBar(
+                dateText = DateTimeFormatters.formatDate(
+                    selectedDate
                 ),
-                verticalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp)
-            ) {
-                item(key = "date_navigator") {
-                    DateNavigationBar(
-                        dateText = DateTimeFormatters.formatDate(selectedDate),
-                        onPreviousDay = { viewModel.goToPreviousDay() },
-                        onNextDay = { viewModel.goToNextDay() },
-                        onToday = { viewModel.goToToday() }
+                onPreviousDay = { viewModel.goToPreviousDay() },
+                onNextDay = { viewModel.goToNextDay() },
+                onToday = { viewModel.goToToday() }
+            )
+        }
+
+        timelineStateItems(timelineUiState, viewModel)
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope
+    .timelineStateItems(
+        timelineUiState: UiState<List<TimelineItem>>,
+        viewModel: TimelineViewModel
+    ) {
+    when (val state = timelineUiState) {
+        is UiState.Loading -> {
+            item(key = "loading") {
+                LoadingIndicator()
+            }
+        }
+        is UiState.Error -> {
+            item(key = "error") {
+                ErrorDisplay(
+                    error = state.error,
+                    onRetry = { viewModel.refresh() }
+                )
+            }
+        }
+        is UiState.Success -> {
+            if (state.data.isEmpty()) {
+                item(key = "empty_state") {
+                    EmptyState(
+                        icon = Icons.Filled.History,
+                        message = stringResource(
+                            R.string.timeline_empty
+                        )
                     )
                 }
-
-                when (val state = timelineUiState) {
-                    is UiState.Loading -> {
-                        item(key = "loading") {
-                            LoadingIndicator()
-                        }
+            } else {
+                items(
+                    items = state.data,
+                    key = {
+                        "${it::class.simpleName}_${it.timestamp}"
                     }
-                    is UiState.Error -> {
-                        item(key = "error") {
-                            ErrorDisplay(
-                                error = state.error,
-                                onRetry = { viewModel.refresh() }
-                            )
-                        }
-                    }
-                    is UiState.Success -> {
-                        if (state.data.isEmpty()) {
-                            item(key = "empty_state") {
-                                EmptyState(
-                                    icon = Icons.Filled.History,
-                                    message = stringResource(R.string.timeline_empty)
-                                )
-                            }
-                        } else {
-                            items(
-                                items = state.data,
-                                key = { "${it::class.simpleName}_${it.timestamp}" }
-                            ) { item ->
-                                TimelineItemCard(item = item)
-                            }
-                        }
-                    }
+                ) { item ->
+                    TimelineItemCard(item = item)
                 }
             }
         }

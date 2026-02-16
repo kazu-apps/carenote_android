@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -75,9 +76,7 @@ fun HealthRecordsScreen(
     viewModel: HealthRecordsViewModel = hiltViewModel()
 ) {
     val lazyPagingItems = viewModel.pagedRecords.collectAsLazyPagingItems()
-    val uiState by viewModel.records.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val exportState by viewModel.exportState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var deleteRecord by remember { mutableStateOf<HealthRecord?>(null) }
@@ -85,6 +84,47 @@ fun HealthRecordsScreen(
     var showExportMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    HealthRecordsSnackbarEffect(viewModel, snackbarHostState, context)
+    HealthRecordsExportEffect(exportState, context, viewModel)
+
+    HealthRecordsScaffold(
+        viewMode = viewMode,
+        onNavigateToSearch = onNavigateToSearch,
+        showExportMenu = showExportMenu,
+        onShowExportMenu = { showExportMenu = true },
+        onDismissExportMenu = { showExportMenu = false },
+        onExportCsv = { showExportMenu = false; viewModel.exportCsv() },
+        onExportPdf = { showExportMenu = false; viewModel.exportPdf() },
+        onNavigateToAddRecord = onNavigateToAddRecord,
+        snackbarHostState = snackbarHostState,
+        onViewModeChanged = { viewMode = it },
+        lazyPagingItems = lazyPagingItems,
+        searchQuery = searchQuery,
+        onSearchQueryChange = viewModel::updateSearchQuery,
+        onNavigateToEditRecord = onNavigateToEditRecord,
+        onDeleteRequest = { deleteRecord = it }
+    )
+
+    deleteRecord?.let { record ->
+        ConfirmDialog(
+            title = stringResource(R.string.ui_confirm_delete_title),
+            message = stringResource(R.string.health_records_delete_confirm),
+            onConfirm = {
+                viewModel.deleteRecord(record.id)
+                deleteRecord = null
+            },
+            onDismiss = { deleteRecord = null },
+            isDestructive = true
+        )
+    }
+}
+
+@Composable
+private fun HealthRecordsSnackbarEffect(
+    viewModel: HealthRecordsViewModel,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context
+) {
     LaunchedEffect(Unit) {
         viewModel.snackbarController.events.collect { event ->
             val message = when (event) {
@@ -94,7 +134,14 @@ fun HealthRecordsScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
+}
 
+@Composable
+private fun HealthRecordsExportEffect(
+    exportState: ExportState,
+    context: android.content.Context,
+    viewModel: HealthRecordsViewModel
+) {
     LaunchedEffect(exportState) {
         val state = exportState
         when (state) {
@@ -118,71 +165,42 @@ fun HealthRecordsScreen(
             else -> { /* Idle, Exporting — no action needed */ }
         }
     }
+}
 
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HealthRecordsScaffold(
+    viewMode: ViewMode,
+    onNavigateToSearch: () -> Unit,
+    showExportMenu: Boolean,
+    onShowExportMenu: () -> Unit,
+    onDismissExportMenu: () -> Unit,
+    onExportCsv: () -> Unit,
+    onExportPdf: () -> Unit,
+    onNavigateToAddRecord: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onViewModeChanged: (ViewMode) -> Unit,
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<HealthRecord>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onNavigateToEditRecord: (Long) -> Unit,
+    onDeleteRequest: (HealthRecord) -> Unit
+) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.health_records_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.a11y_navigate_to_search)
-                        )
-                    }
-                    IconButton(
-                        onClick = { showExportMenu = true },
-                        modifier = Modifier.testTag(TestTags.EXPORT_BUTTON)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.FileDownload,
-                            contentDescription = stringResource(R.string.health_records_export)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showExportMenu,
-                        onDismissRequest = { showExportMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.health_records_export_csv)) },
-                            onClick = {
-                                showExportMenu = false
-                                viewModel.exportCsv()
-                            },
-                            modifier = Modifier.testTag(TestTags.EXPORT_CSV_ITEM)
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.health_records_export_pdf)) },
-                            onClick = {
-                                showExportMenu = false
-                                viewModel.exportPdf()
-                            },
-                            modifier = Modifier.testTag(TestTags.EXPORT_PDF_ITEM)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+            HealthRecordsTopBar(
+                onNavigateToSearch = onNavigateToSearch,
+                showExportMenu = showExportMenu,
+                onShowExportMenu = onShowExportMenu,
+                onDismissExportMenu = onDismissExportMenu,
+                onExportCsv = onExportCsv,
+                onExportPdf = onExportPdf
             )
         },
         floatingActionButton = {
             if (viewMode == ViewMode.LIST) {
-                FloatingActionButton(
-                    onClick = onNavigateToAddRecord,
-                    modifier = Modifier.testTag(TestTags.HEALTH_RECORDS_FAB),
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = stringResource(R.string.health_records_add)
-                    )
-                }
+                HealthRecordsFab(onClick = onNavigateToAddRecord)
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -190,121 +208,244 @@ fun HealthRecordsScreen(
         Column(modifier = Modifier.padding(top = innerPadding.calculateTopPadding())) {
             ViewModeSelector(
                 viewMode = viewMode,
-                onViewModeChanged = { viewMode = it }
+                onViewModeChanged = onViewModeChanged
             )
-
             val contentPadding = PaddingValues(
                 bottom = innerPadding.calculateBottomPadding()
             )
-
             when (viewMode) {
-                ViewMode.LIST -> {
-                    val listIsRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
-                    PullToRefreshBox(
-                        isRefreshing = listIsRefreshing,
-                        onRefresh = { lazyPagingItems.refresh() },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 8.dp,
-                                bottom = contentPadding.calculateBottomPadding() + 80.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            item(key = "search_bar") {
-                                OutlinedTextField(
-                                    value = searchQuery,
-                                    onValueChange = viewModel::updateSearchQuery,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = {
-                                        Text(text = stringResource(R.string.common_search))
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Filled.Search,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    singleLine = true
-                                )
-                            }
+                ViewMode.LIST -> HealthRecordListView(
+                    lazyPagingItems = lazyPagingItems,
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = onSearchQueryChange,
+                    contentPadding = contentPadding,
+                    onNavigateToAddRecord = onNavigateToAddRecord,
+                    onNavigateToEditRecord = onNavigateToEditRecord,
+                    onDeleteRequest = onDeleteRequest
+                )
+                ViewMode.GRAPH -> HealthRecordGraphView(
+                    contentPadding = contentPadding
+                )
+            }
+        }
+    }
+}
 
-                            when (val refreshState = lazyPagingItems.loadState.refresh) {
-                                is LoadState.Loading -> {
-                                    item(key = "loading") {
-                                        LoadingIndicator()
-                                    }
-                                }
-                                is LoadState.Error -> {
-                                    item(key = "error") {
-                                        ErrorDisplay(
-                                            error = DomainError.DatabaseError(
-                                                refreshState.error.message ?: "Unknown error"
-                                            ),
-                                            onRetry = { lazyPagingItems.refresh() }
-                                        )
-                                    }
-                                }
-                                is LoadState.NotLoading -> {
-                                    if (lazyPagingItems.itemCount == 0) {
-                                        item(key = "empty_state") {
-                                            EmptyState(
-                                                icon = Icons.Filled.MonitorHeart,
-                                                message = stringResource(R.string.health_records_empty),
-                                                actionLabel = stringResource(R.string.health_records_empty_action),
-                                                onAction = onNavigateToAddRecord
-                                            )
-                                        }
-                                    } else {
-                                        items(
-                                            count = lazyPagingItems.itemCount,
-                                            key = { index -> lazyPagingItems.peek(index)?.id ?: index }
-                                        ) { index ->
-                                            lazyPagingItems[index]?.let { record ->
-                                                SwipeToDismissItem(
-                                                    item = record,
-                                                    onDelete = { deleteRecord = it }
-                                                ) {
-                                                    HealthRecordCard(
-                                                        record = record,
-                                                        onClick = { onNavigateToEditRecord(record.id) }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HealthRecordListView(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<HealthRecord>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    contentPadding: PaddingValues,
+    onNavigateToAddRecord: () -> Unit,
+    onNavigateToEditRecord: (Long) -> Unit,
+    onDeleteRequest: (HealthRecord) -> Unit
+) {
+    val listIsRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
+    PullToRefreshBox(
+        isRefreshing = listIsRefreshing,
+        onRefresh = { lazyPagingItems.refresh() },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 16.dp, top = 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 80.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item(key = "search_bar") {
+                HealthRecordSearchBar(
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = onSearchQueryChange
+                )
+            }
+            healthRecordPagingContent(
+                lazyPagingItems = lazyPagingItems,
+                onNavigateToAddRecord = onNavigateToAddRecord,
+                onNavigateToEditRecord = onNavigateToEditRecord,
+                onDeleteRequest = onDeleteRequest
+            )
+        }
+    }
+}
+
+@Composable
+private fun HealthRecordSearchBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = {
+            Text(text = stringResource(R.string.common_search))
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null
+            )
+        },
+        singleLine = true
+    )
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.healthRecordPagingContent(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<HealthRecord>,
+    onNavigateToAddRecord: () -> Unit,
+    onNavigateToEditRecord: (Long) -> Unit,
+    onDeleteRequest: (HealthRecord) -> Unit
+) {
+    when (val refreshState = lazyPagingItems.loadState.refresh) {
+        is LoadState.Loading -> {
+            item(key = "loading") { LoadingIndicator() }
+        }
+        is LoadState.Error -> {
+            item(key = "error") {
+                ErrorDisplay(
+                    error = DomainError.DatabaseError(
+                        refreshState.error.message ?: "Unknown error"
+                    ),
+                    onRetry = { lazyPagingItems.refresh() }
+                )
+            }
+        }
+        is LoadState.NotLoading -> {
+            healthRecordNotLoadingContent(
+                lazyPagingItems = lazyPagingItems,
+                onNavigateToAddRecord = onNavigateToAddRecord,
+                onNavigateToEditRecord = onNavigateToEditRecord,
+                onDeleteRequest = onDeleteRequest
+            )
+        }
+    }
+}
+
+@Suppress("LongParameterList")
+private fun LazyListScope.healthRecordNotLoadingContent(
+    lazyPagingItems: androidx.paging.compose.LazyPagingItems<HealthRecord>,
+    onNavigateToAddRecord: () -> Unit,
+    onNavigateToEditRecord: (Long) -> Unit,
+    onDeleteRequest: (HealthRecord) -> Unit
+) {
+    if (lazyPagingItems.itemCount == 0) {
+        item(key = "empty_state") {
+            EmptyState(
+                icon = Icons.Filled.MonitorHeart,
+                message = stringResource(R.string.health_records_empty),
+                actionLabel = stringResource(
+                    R.string.health_records_empty_action
+                ),
+                onAction = onNavigateToAddRecord
+            )
+        }
+    } else {
+        items(
+            count = lazyPagingItems.itemCount,
+            key = { index ->
+                lazyPagingItems.peek(index)?.id ?: index
+            }
+        ) { index ->
+            lazyPagingItems[index]?.let { record ->
+                SwipeToDismissItem(
+                    item = record,
+                    onDelete = { onDeleteRequest(it) }
+                ) {
+                    HealthRecordCard(
+                        record = record,
+                        onClick = {
+                            onNavigateToEditRecord(record.id)
                         }
-                    }
-                }
-                ViewMode.GRAPH -> {
-                    val graphViewModel: HealthRecordGraphViewModel = hiltViewModel()
-                    val graphState by graphViewModel.graphState.collectAsStateWithLifecycle()
-                    HealthRecordGraphContent(
-                        state = graphState,
-                        onDateRangeSelected = graphViewModel::setDateRange,
-                        contentPadding = contentPadding
                     )
                 }
             }
         }
     }
+}
 
-    deleteRecord?.let { record ->
-        ConfirmDialog(
-            title = stringResource(R.string.ui_confirm_delete_title),
-            message = stringResource(R.string.health_records_delete_confirm),
-            onConfirm = {
-                viewModel.deleteRecord(record.id)
-                deleteRecord = null
-            },
-            onDismiss = { deleteRecord = null },
-            isDestructive = true
+@Composable
+private fun HealthRecordGraphView(contentPadding: PaddingValues) {
+    val graphViewModel: HealthRecordGraphViewModel = hiltViewModel()
+    val graphState by graphViewModel.graphState.collectAsStateWithLifecycle()
+    HealthRecordGraphContent(
+        state = graphState,
+        onDateRangeSelected = graphViewModel::setDateRange,
+        contentPadding = contentPadding
+    )
+}
+
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HealthRecordsTopBar(
+    onNavigateToSearch: () -> Unit,
+    showExportMenu: Boolean,
+    onShowExportMenu: () -> Unit,
+    onDismissExportMenu: () -> Unit,
+    onExportCsv: () -> Unit,
+    onExportPdf: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.health_records_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        actions = {
+            IconButton(onClick = onNavigateToSearch) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = stringResource(R.string.a11y_navigate_to_search)
+                )
+            }
+            IconButton(
+                onClick = onShowExportMenu,
+                modifier = Modifier.testTag(TestTags.EXPORT_BUTTON)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.FileDownload,
+                    contentDescription = stringResource(R.string.health_records_export)
+                )
+            }
+            DropdownMenu(
+                expanded = showExportMenu,
+                onDismissRequest = onDismissExportMenu
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.health_records_export_csv)) },
+                    onClick = onExportCsv,
+                    modifier = Modifier.testTag(TestTags.EXPORT_CSV_ITEM)
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.health_records_export_pdf)) },
+                    onClick = onExportPdf,
+                    modifier = Modifier.testTag(TestTags.EXPORT_PDF_ITEM)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Composable
+private fun HealthRecordsFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.testTag(TestTags.HEALTH_RECORDS_FAB),
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = stringResource(R.string.health_records_add)
         )
     }
 }

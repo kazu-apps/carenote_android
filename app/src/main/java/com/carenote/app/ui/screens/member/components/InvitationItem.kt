@@ -45,40 +45,62 @@ fun InvitationItem(
                 .padding(AppConfig.UI.CONTENT_SPACING_DP.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(AppConfig.UI.SMALL_SPACING_DP.dp)
-            ) {
-                Text(
-                    text = maskEmail(invitation.inviteeEmail),
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    StatusChip(status = invitation.status)
-                    Text(
-                        text = stringResource(
-                            R.string.invitation_expires_at,
-                            DateTimeFormatters.formatDate(invitation.expiresAt.toLocalDate())
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            if (invitation.status == InvitationStatus.PENDING) {
-                IconButton(onClick = onCancelClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.common_cancel),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+            InvitationItemDetails(
+                invitation = invitation,
+                modifier = Modifier.weight(1f)
+            )
+            InvitationCancelButton(
+                status = invitation.status,
+                onCancelClick = onCancelClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun InvitationItemDetails(
+    invitation: Invitation,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(AppConfig.UI.SMALL_SPACING_DP.dp)
+    ) {
+        Text(
+            text = maskEmail(invitation.inviteeEmail),
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            StatusChip(status = invitation.status)
+            Text(
+                text = stringResource(
+                    R.string.invitation_expires_at,
+                    DateTimeFormatters.formatDate(invitation.expiresAt.toLocalDate())
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun InvitationCancelButton(
+    status: InvitationStatus,
+    onCancelClick: () -> Unit
+) {
+    if (status == InvitationStatus.PENDING) {
+        IconButton(onClick = onCancelClick) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(R.string.common_cancel),
+                tint = MaterialTheme.colorScheme.error
+            )
         }
     }
 }
@@ -97,10 +119,18 @@ private fun StatusChip(
     modifier: Modifier = Modifier
 ) {
     val (label, color) = when (status) {
-        InvitationStatus.PENDING -> stringResource(R.string.invitation_status_pending) to MaterialTheme.colorScheme.tertiary
-        InvitationStatus.ACCEPTED -> stringResource(R.string.invitation_status_accepted) to MaterialTheme.colorScheme.primary
-        InvitationStatus.REJECTED -> stringResource(R.string.invitation_status_rejected) to MaterialTheme.colorScheme.error
-        InvitationStatus.EXPIRED -> stringResource(R.string.invitation_status_expired) to MaterialTheme.colorScheme.outline
+        InvitationStatus.PENDING ->
+            stringResource(R.string.invitation_status_pending) to
+                MaterialTheme.colorScheme.tertiary
+        InvitationStatus.ACCEPTED ->
+            stringResource(R.string.invitation_status_accepted) to
+                MaterialTheme.colorScheme.primary
+        InvitationStatus.REJECTED ->
+            stringResource(R.string.invitation_status_rejected) to
+                MaterialTheme.colorScheme.error
+        InvitationStatus.EXPIRED ->
+            stringResource(R.string.invitation_status_expired) to
+                MaterialTheme.colorScheme.outline
     }
 
     SuggestionChip(

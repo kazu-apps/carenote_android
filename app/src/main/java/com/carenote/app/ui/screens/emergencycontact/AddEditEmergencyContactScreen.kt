@@ -71,76 +71,105 @@ fun AddEditEmergencyContactScreen(
         isDirty = viewModel.isDirty,
         snackbarHostState = snackbarHostState
     ) { innerPadding ->
-        Column(
+        EmergencyContactFormContent(
+            formState = formState,
+            viewModel = viewModel,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EmergencyContactFormContent(
+    formState: EmergencyContactFormState,
+    viewModel: AddEditEmergencyContactViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
+    ) {
+        EmergencyContactFormFields(formState = formState, viewModel = viewModel)
+        RelationshipSelector(
+            selectedRelationship = formState.relationship,
+            onRelationshipSelect = viewModel::updateRelationship
+        )
+        OutlinedTextField(
+            value = formState.memo,
+            onValueChange = viewModel::updateMemo,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.emergency_contact_memo_label)) },
+            placeholder = { Text(stringResource(R.string.emergency_contact_memo_placeholder)) },
+            minLines = 2,
+            maxLines = 4
+        )
+        Button(
+            onClick = viewModel::save,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(AppConfig.UI.CONTENT_SPACING_DP.dp)
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            enabled = !formState.isSaving
         ) {
-            OutlinedTextField(
-                value = formState.name,
-                onValueChange = viewModel::updateName,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.emergency_contact_name_label)) },
-                placeholder = { Text(stringResource(R.string.emergency_contact_name_placeholder)) },
-                isError = formState.nameError != null,
-                supportingText = formState.nameError?.let { error ->
-                    { Text(error.asString()) }
-                },
-                singleLine = true
-            )
+            Text(stringResource(R.string.common_save))
+        }
+    }
+}
 
-            OutlinedTextField(
-                value = formState.phoneNumber,
-                onValueChange = viewModel::updatePhoneNumber,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.emergency_contact_phone_label)) },
-                placeholder = { Text(stringResource(R.string.emergency_contact_phone_placeholder)) },
-                isError = formState.phoneNumberError != null,
-                supportingText = formState.phoneNumberError?.let { error ->
-                    { Text(error.asString()) }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-            )
+@Composable
+private fun EmergencyContactFormFields(
+    formState: EmergencyContactFormState,
+    viewModel: AddEditEmergencyContactViewModel
+) {
+    OutlinedTextField(
+        value = formState.name,
+        onValueChange = viewModel::updateName,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(stringResource(R.string.emergency_contact_name_label)) },
+        placeholder = { Text(stringResource(R.string.emergency_contact_name_placeholder)) },
+        isError = formState.nameError != null,
+        supportingText = formState.nameError?.let { error ->
+            { Text(error.asString()) }
+        },
+        singleLine = true
+    )
+    OutlinedTextField(
+        value = formState.phoneNumber,
+        onValueChange = viewModel::updatePhoneNumber,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(stringResource(R.string.emergency_contact_phone_label)) },
+        placeholder = { Text(stringResource(R.string.emergency_contact_phone_placeholder)) },
+        isError = formState.phoneNumberError != null,
+        supportingText = formState.phoneNumberError?.let { error ->
+            { Text(error.asString()) }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+    )
+}
 
-            Text(
-                text = stringResource(R.string.emergency_contact_relationship_label),
-                style = MaterialTheme.typography.titleSmall
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RelationshipSelector(
+    selectedRelationship: RelationshipType,
+    onRelationshipSelect: (RelationshipType) -> Unit
+) {
+    Text(
+        text = stringResource(R.string.emergency_contact_relationship_label),
+        style = MaterialTheme.typography.titleSmall
+    )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        RelationshipType.entries.forEach { type ->
+            FilterChip(
+                selected = selectedRelationship == type,
+                onClick = { onRelationshipSelect(type) },
+                label = { Text(relationshipChipLabel(type)) }
             )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                RelationshipType.entries.forEach { type ->
-                    FilterChip(
-                        selected = formState.relationship == type,
-                        onClick = { viewModel.updateRelationship(type) },
-                        label = { Text(relationshipChipLabel(type)) }
-                    )
-                }
-            }
-
-            OutlinedTextField(
-                value = formState.memo,
-                onValueChange = viewModel::updateMemo,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.emergency_contact_memo_label)) },
-                placeholder = { Text(stringResource(R.string.emergency_contact_memo_placeholder)) },
-                minLines = 2,
-                maxLines = 4
-            )
-
-            Button(
-                onClick = viewModel::save,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                enabled = !formState.isSaving
-            ) {
-                Text(stringResource(R.string.common_save))
-            }
         }
     }
 }

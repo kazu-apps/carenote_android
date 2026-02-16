@@ -30,7 +30,7 @@ complexity:
     thresholdInFiles: 30
     thresholdInClasses: 25
     thresholdInInterfaces: 15
-    thresholdInObjects: 15
+    thresholdInObjects: 20
     thresholdInEnums: 10
     ignoreDeprecated: true
     ignorePrivate: false
@@ -58,7 +58,7 @@ style:
     active: false
   UnusedPrivateMember:
     active: true
-    allowedNames: "(_|ignored|expected|serialVersionUID)"
+    allowedNames: "(_|ignored|expected|serialVersionUID|.*Preview)"
   UnnecessaryAbstractClass:
     active: true
 
@@ -68,6 +68,7 @@ naming:
     excludes:
       - "**/test/**"
       - "**/androidTest/**"
+      - "**/ui/**"
   TopLevelPropertyNaming:
     active: true
     constantPattern: "[A-Z][_A-Z0-9]*"

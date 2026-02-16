@@ -26,7 +26,13 @@ interface MedicationDao {
     @Query("DELETE FROM medications WHERE id = :id")
     suspend fun deleteMedication(id: Long)
 
-    @Query("SELECT * FROM medications WHERE care_recipient_id = :careRecipientId AND (name LIKE '%' || :query || '%' OR dosage LIKE '%' || :query || '%') ORDER BY name ASC")
+    @Query(
+        "SELECT * FROM medications " +
+            "WHERE care_recipient_id = :careRecipientId " +
+            "AND (name LIKE '%' || :query || '%' " +
+            "OR dosage LIKE '%' || :query || '%') " +
+            "ORDER BY name ASC"
+    )
     fun searchMedications(query: String, careRecipientId: Long): Flow<List<MedicationEntity>>
 
     @Query("SELECT * FROM medications WHERE updated_at > :lastSyncTime")

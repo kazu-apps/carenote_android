@@ -55,45 +55,8 @@ class TaskReminderWorker @AssistedInject constructor(
                 "title=$taskTitle, attempt=$followUpAttempt"
         )
 
-        if (taskId == INVALID_TASK_ID) {
-            Timber.w("TaskReminderWorker: Invalid task ID")
-            return Result.failure()
-        }
-
-        if (taskTitle.isBlank()) {
-            Timber.w("TaskReminderWorker: Empty task title")
-            return Result.failure()
-        }
-
-        // タスク完了チェック
-        val task = taskRepository.getTaskById(taskId).first()
-        if (task == null) {
-            Timber.d("TaskReminderWorker: Task not found, skipping notification")
-            return Result.success()
-        }
-        if (task.isCompleted) {
-            Timber.d("TaskReminderWorker: Task already completed, skipping notification")
-            return Result.success()
-        }
-
-        // 設定で通知が有効か確認
-        val settings = settingsRepository.getSettings().first()
-        if (!settings.notificationsEnabled) {
-            Timber.d("TaskReminderWorker: Notifications disabled in settings")
-            return Result.success()
-        }
-
-        // おやすみ時間チェック
-        if (isQuietHours(settings)) {
-            Timber.d("TaskReminderWorker: Quiet hours active, skipping notification")
-            return Result.success()
-        }
-
-        // プレミアム通知制限チェック
-        if (!premiumFeatureGuard.canSendTaskReminder()) {
-            Timber.d("TaskReminderWorker: Daily task reminder limit reached, skipping")
-            return Result.success()
-        }
+        val skipReason = getSkipReason(taskId, taskTitle)
+        if (skipReason != null) return skipReason
 
         // 通知表示
         notificationHelper.showTaskReminder(taskId, taskTitle)
@@ -107,6 +70,32 @@ class TaskReminderWorker @AssistedInject constructor(
         )
 
         return Result.success()
+    }
+
+    private suspend fun getSkipReason(taskId: Long, taskTitle: String): Result? {
+        if (taskId == INVALID_TASK_ID || taskTitle.isBlank()) {
+            Timber.w("TaskReminderWorker: Invalid input (id=$taskId)")
+            return Result.failure()
+        }
+
+        val task = taskRepository.getTaskById(taskId).first()
+        if (task == null || task.isCompleted) {
+            Timber.d("TaskReminderWorker: Task not found or completed")
+            return Result.success()
+        }
+
+        val settings = settingsRepository.getSettings().first()
+        if (!settings.notificationsEnabled || isQuietHours(settings)) {
+            Timber.d("TaskReminderWorker: Notifications disabled or quiet hours")
+            return Result.success()
+        }
+
+        if (!premiumFeatureGuard.canSendTaskReminder()) {
+            Timber.d("TaskReminderWorker: Daily limit reached")
+            return Result.success()
+        }
+
+        return null
     }
 
     private fun isQuietHours(settings: UserSettings): Boolean {

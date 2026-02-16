@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -40,40 +41,43 @@ fun HealthRecordGraphContent(
                 onRangeSelected = onDateRangeSelected
             )
         }
+        graphChartItems(state)
+    }
+}
 
-        if (!state.hasTemperatureData && !state.hasBloodPressureData) {
-            item(key = "empty_state") {
-                GraphEmptyState(
-                    message = stringResource(R.string.health_records_graph_no_data)
-                )
-            }
+private fun LazyListScope.graphChartItems(state: HealthRecordGraphState) {
+    if (!state.hasTemperatureData && !state.hasBloodPressureData) {
+        item(key = "empty_state") {
+            GraphEmptyState(
+                message = stringResource(R.string.health_records_graph_no_data)
+            )
         }
+    }
 
-        if (state.hasTemperatureData) {
-            item(key = "temperature_chart") {
-                TemperatureChart(points = state.temperaturePoints)
-            }
-        } else if (state.hasBloodPressureData) {
-            item(key = "no_temperature") {
-                GraphEmptyState(
-                    message = stringResource(R.string.health_records_graph_no_temperature)
-                )
-            }
+    if (state.hasTemperatureData) {
+        item(key = "temperature_chart") {
+            TemperatureChart(points = state.temperaturePoints)
         }
+    } else if (state.hasBloodPressureData) {
+        item(key = "no_temperature") {
+            GraphEmptyState(
+                message = stringResource(R.string.health_records_graph_no_temperature)
+            )
+        }
+    }
 
-        if (state.hasBloodPressureData) {
-            item(key = "bp_chart") {
-                BloodPressureChart(
-                    highPoints = state.bpHighPoints,
-                    lowPoints = state.bpLowPoints
-                )
-            }
-        } else if (state.hasTemperatureData) {
-            item(key = "no_bp") {
-                GraphEmptyState(
-                    message = stringResource(R.string.health_records_graph_no_bp)
-                )
-            }
+    if (state.hasBloodPressureData) {
+        item(key = "bp_chart") {
+            BloodPressureChart(
+                highPoints = state.bpHighPoints,
+                lowPoints = state.bpLowPoints
+            )
+        }
+    } else if (state.hasTemperatureData) {
+        item(key = "no_bp") {
+            GraphEmptyState(
+                message = stringResource(R.string.health_records_graph_no_bp)
+            )
         }
     }
 }

@@ -77,7 +77,10 @@ interface SyncMappingDao {
      * @param localId Room のローカル ID
      * @param syncedAt 同期日時 (ISO 8601 形式)
      */
-    @Query("UPDATE sync_mappings SET is_deleted = 1, last_synced_at = :syncedAt WHERE entity_type = :entityType AND local_id = :localId")
+    @Query(
+        "UPDATE sync_mappings SET is_deleted = 1, last_synced_at = :syncedAt " +
+            "WHERE entity_type = :entityType AND local_id = :localId"
+    )
     suspend fun markDeleted(entityType: String, localId: Long, syncedAt: String)
 
     /**

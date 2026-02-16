@@ -87,56 +87,69 @@ private fun WidgetContent(
             .padding(12.dp)
             .clickable(actionStartActivity<MainActivity>())
     ) {
-        // Medication section
-        Text(
-            text = context.getString(R.string.widget_medication_title),
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = GlanceTheme.colors.onBackground
-            )
-        )
-        Spacer(modifier = GlanceModifier.height(4.dp))
-
-        if (medications.isEmpty()) {
-            Text(
-                text = context.getString(R.string.widget_no_medications),
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    color = GlanceTheme.colors.onSurfaceVariant
-                )
-            )
-        } else {
-            medications.forEach { medication ->
-                MedicationRow(context, medication, todayLogs)
-            }
-        }
-
+        MedicationSection(context, medications, todayLogs)
         Spacer(modifier = GlanceModifier.height(8.dp))
+        TaskSection(context, tasks)
+    }
+}
 
-        // Task section
+@Composable
+private fun MedicationSection(
+    context: Context,
+    medications: List<Medication>,
+    todayLogs: List<MedicationLog>
+) {
+    Text(
+        text = context.getString(R.string.widget_medication_title),
+        style = TextStyle(
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = GlanceTheme.colors.onBackground
+        )
+    )
+    Spacer(modifier = GlanceModifier.height(4.dp))
+
+    if (medications.isEmpty()) {
         Text(
-            text = context.getString(R.string.widget_tasks_title),
+            text = context.getString(R.string.widget_no_medications),
             style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = GlanceTheme.colors.onBackground
+                fontSize = 12.sp,
+                color = GlanceTheme.colors.onSurfaceVariant
             )
         )
-        Spacer(modifier = GlanceModifier.height(4.dp))
+    } else {
+        medications.forEach { medication ->
+            MedicationRow(context, medication, todayLogs)
+        }
+    }
+}
 
-        if (tasks.isEmpty()) {
-            Text(
-                text = context.getString(R.string.widget_no_tasks),
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    color = GlanceTheme.colors.onSurfaceVariant
-                )
+@Composable
+private fun TaskSection(
+    context: Context,
+    tasks: List<Task>
+) {
+    Text(
+        text = context.getString(R.string.widget_tasks_title),
+        style = TextStyle(
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = GlanceTheme.colors.onBackground
+        )
+    )
+    Spacer(modifier = GlanceModifier.height(4.dp))
+
+    if (tasks.isEmpty()) {
+        Text(
+            text = context.getString(R.string.widget_no_tasks),
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = GlanceTheme.colors.onSurfaceVariant
             )
-        } else {
-            tasks.forEach { task ->
-                TaskRow(context, task)
-            }
+        )
+    } else {
+        tasks.forEach { task ->
+            TaskRow(context, task)
         }
     }
 }
