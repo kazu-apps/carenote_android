@@ -56,12 +56,11 @@ jobs:
 
       - name: Install Detekt
         run: |
-          DETEKT_VERSION=2.0.0-alpha.2
-          curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}.zip" -o detekt.zip
-          unzip detekt.zip -d detekt-cli
+          DETEKT_VERSION=1.23.7
+          curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}-all.jar" -o detekt-cli.jar
 
       - name: Run Detekt
-        run: ./detekt-cli/detekt-cli-*/bin/detekt-cli --config detekt.yml --input app/src/main/java
+        run: java -jar detekt-cli.jar --config detekt.yml --input app/src/main/java
 
       - name: Upload test results
         if: always()
