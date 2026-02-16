@@ -79,7 +79,7 @@ jobs:
 
       - name: Install Detekt
         run: |
-          DETEKT_VERSION=2.0.0-alpha.2
+          DETEKT_VERSION=1.23.7
           curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}.zip" -o detekt.zip
           unzip detekt.zip -d detekt-cli
 
