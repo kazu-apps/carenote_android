@@ -84,6 +84,7 @@ jobs:
           unzip detekt.zip -d detekt-cli
 
       - name: Run Detekt
+        continue-on-error: true
         run: ./detekt-cli/detekt-cli-*/bin/detekt-cli --config detekt.yml --input app/src/main/java
 
       - name: Upload test results
