@@ -261,7 +261,7 @@ Google Play Console の「コンテンツのレーティング」質問票への
 
 | 項目 | 値 |
 |------|-----|
-| メールアドレス | carenote.app.support@gmail.com |
+| メールアドレス | support-carenote@ks-apps.org |
 | ウェブサイト | https://kazu-apps.github.io/carenote_android/ |
 | 電話番号 | (任意: 個人開発の場合は不要) |
 

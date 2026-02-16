@@ -313,7 +313,7 @@ object AppConfig {
      * サポート関連の設定値
      */
     object Support {
-        const val CONTACT_EMAIL = "support@carenote.app"
+        const val CONTACT_EMAIL = "support-carenote@ks-apps.org"
     }
 
     /**

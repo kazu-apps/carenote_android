@@ -50,7 +50,7 @@
 
 ### データの削除
 
-アプリをアンインストールすると、端末内に保存されたすべてのデータが削除されます。アプリ内の設定画面からアカウントを削除すると、Firebase Authentication のアカウント（認証情報）が削除されます。Cloud Firestore および Firebase Storage に保存された同期データの自動削除機能は現在開発中です。クラウドデータの削除をご希望の場合は、carenote.app.support@gmail.com までお問い合わせください。
+アプリをアンインストールすると、端末内に保存されたすべてのデータが削除されます。アプリ内の設定画面からアカウントを削除すると、Firebase Authentication のアカウント（認証情報）が削除されます。Cloud Firestore および Firebase Storage に保存された同期データの自動削除機能は現在開発中です。クラウドデータの削除をご希望の場合は、support-carenote@ks-apps.org までお問い合わせください。
 
 また、アプリ内の設定画面から「デフォルト設定に戻す」を選択することで、設定値を初期状態に戻すことができます。
 
@@ -75,7 +75,7 @@
 
 本ポリシーに関するお問い合わせは、以下までご連絡ください。
 
-メール: carenote.app.support@gmail.com
+メール: support-carenote@ks-apps.org
 
 ---
 
@@ -150,4 +150,4 @@ This policy may be updated without prior notice. Any changes will be reflected w
 
 For questions about this policy, please contact us at:
 
-Email: carenote.app.support@gmail.com
+Email: support-carenote@ks-apps.org
