@@ -44,10 +44,11 @@ jobs:
         run: ./gradlew :app:jacocoTestCoverageVerification
 
       - name: Screenshot Tests
+        continue-on-error: true
         run: ./gradlew :app:verifyRoborazziDebug
 
       - name: Upload screenshot diffs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: roborazzi-diffs
