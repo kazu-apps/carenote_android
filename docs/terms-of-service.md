@@ -60,7 +60,7 @@
 
 本規約に関するお問い合わせは、以下までご連絡ください。
 
-メール: carenote.app.support@gmail.com
+メール: support-carenote@ks-apps.org
 
 ---
 
@@ -120,4 +120,4 @@ These Terms shall be governed by and construed in accordance with the laws of Ja
 
 For questions about these Terms, please contact us at:
 
-Email: carenote.app.support@gmail.com
+Email: support-carenote@ks-apps.org

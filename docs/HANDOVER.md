@@ -1,30 +1,46 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: v9.0 Phase 6 (統合テスト + E2E) 完了
+## セッションステータス: 問い合わせメールアドレス統一完了
 
-## 現在のタスク: v9.0 Phase 6 完了。全 Phase 完了
+## 現在のタスク: Google Workspace セットアップ + メールアドレス統一完了。v9.0 Phase 5 (招待 UI + フロー) から実行可能
 
-Round 2 完了：researcher 調査 (v19 DB確認、No-Op実装確認) → architect 提案 (6 Phase Plan) → critic リスク分析 (6リスク指摘) → researcher 相互レビュー (誤認6点、見落とし3点指摘)。
+### 今回のセッションで完了した作業
 
-修正内容:
-- **DB version**: v20 ではなく v21 migration が必須（v20 は既に消費済み）
-- **EntitySyncer**: ConfigDrivenEntitySyncer では Member/Invitation 実装不可。手動 Syncer が必要
-- **Dynamic Links**: 廃止リスク過大評価（現在使用なし。App Links で代替可）
-- **User.isPremium**: User モデルと PremiumFeatureGuard の責務分離を明記
-- **実装順**: Billing → 家族招待 → 通知制限（critic 提案と逆順が最適）
-- **フェーズ分割**: 1-6 Phase に細分化。Phase 1B (Cloud Functions) は Claude Code 守備範囲外
+1. **Google Workspace セットアップ**: ドメイン `ks-apps.org` で Business Starter 契約。管理アカウント `admin@ks-apps.org`
+2. **メールエイリアス追加**: Admin Console で `support-carenote@ks-apps.org` を admin ユーザーのエイリアスとして登録
+3. **メールアドレス全ファイル統一** (commit `10e1a59`): 12ファイル19箇所の旧アドレスを `support-carenote@ks-apps.org` に一括置換
+   - `AppConfig.kt`: CONTACT_EMAIL プレースホルダー → 実アドレス
+   - `docs/`: privacy-policy, terms-of-service, listing, index.html, DATA_RETENTION_POLICY 等 7 ファイル
+   - `assets/legal/`: アプリ内表示用テキスト 4 ファイル
+   - 旧アドレス `support@carenote.app`, `carenote.app.support@gmail.com` は完全除去
+
+### 前セッションの完了作業（同一ブランチ）
+
+- Codex レビュー P1 修正: クラウドデータ削除の過大主張を修正 (commit `75d3b03`)
+- GitHub Pages 有効化 + Play Console ストア掲載情報入力（日本語+英語）
+- listing.md: Firebase 対応チェックリスト、Data Safety セクション追加、英語アプリ名修正 (31→29文字)
+- privacy-policy.md/.html: Firebase サービス利用を明記
+- docs/index.html + docs/_config.yml: GitHub Pages 用ファイル作成
+- docs/terms-of-service.html: 利用規約ページ作成
+- PR #1, #2 作成・マージ
 
 ## 次のアクション
 
+- **Squarespace ドメイン認証**（手動・14日以内）: `ks-apps.org` のメール認証。Squarespace から確認メールが届いているはず
+- **Play Console 問い合わせメール更新**: `support-carenote@ks-apps.org` を Play Console のストア掲載情報に設定
+- **Play Console 残作業**（手動）: フィーチャーグラフィック (1024x500)、アプリアイコン (512x512)、スクリーンショット (4-8枚) のアップロード
+- **Play Console その他設定**（手動）: コンテンツレーティング質問票、Data Safety フォーム、ストアの設定（カテゴリ・タグ）
+- v9.0 Phase 5: 家族招待 — 招待 UI + 招待フロー（InvitationScreen, MemberManagementScreen, App Links）
 - v9.0 Phase 1B: Billing サーバーサイド検証 (Cloud Functions) — Claude Code 守備範囲外、手動作業
-- CLAUDE.md 更新: Phase 6 完了の反映（E2E テストファイル追加等）
+- v9.0 Phase 6: 統合テスト + E2E（Phase 5 完了後）
 
 ## 既知の問題
 
 ### 未解決（要対応）
 
-- 問い合わせメールがプレースホルダー (`support@carenote.app`) — リリース前に実アドレス確定必要
+- Play Console グラフィック未アップロード（フィーチャーグラフィック、スクリーンショット必須）
 - リリース APK の実機テスト未実施
+- **Firestore/Storage データ自動削除未実装**: アカウント削除時に Firebase Auth のみ削除。Cloud Firestore/Storage のユーザーデータ削除は Cloud Functions (Firebase Extensions `delete-user-data`) または手動対応が必要
 
 ### 記録のみ（対応保留）
 
@@ -276,8 +292,7 @@ AddEditCalendarEventViewModelTest recurrence 12 件、AddEditNoteViewModelTest c
 | v9.0 Ph2 PremiumGuard | PremiumFeatureGuard + NotificationCountDataSource + TaskReminderWorker 制限チェック + Settings 残り表示。テスト 22 件追加。全テスト通過 | DONE |
 | v9.0 Ph3 | CareRecipient firestoreId 追加 + SyncWorker 保存 + Firestore Rules isOwner/isMember + DB v22 + テスト 15 件。全テスト通過 | DONE |
 | v9.0 Ph4 | Member/Invitation ドメインモデル + Room Entity + DAO + Mapper + Repository + DI。DB v23（14 Entity）。テスト ~44 件追加。全テスト通過 | DONE |
-| v9.0 Ph5 | 招待 UI + 招待フロー + 品質修正（PII削除 + 重複防止 + 権限チェック + WhileSubscribed + メールマスキング + AppConfig集約）。テスト ~42 件。全テスト通過 | DONE |
-| v9.0 Ph6 | 統合テスト + E2E（TestDatabaseModule 5 DAO追加 + TestTags + Deep Link + E2eTestUtils seedヘルパー + MemberInvitationFlowTest 8件 + AcceptInvitationFlowTest 5件）。全ビルド・テスト通過 | DONE |
+| ストア掲載 | GitHub Pages 公開 + listing.md/privacy-policy 更新 + Play Console 日本語/英語テキスト入力。PR #1, #2 マージ | DONE |
 
 ## アーキテクチャ参照
 
@@ -341,24 +356,24 @@ Member/Invitation ドメインモデル、Room Entity、DAO、Mapper、Repositor
 - テスト: MemberMapperTest + InvitationMapperTest + MemberRepositoryImplTest + InvitationRepositoryImplTest + FakeMemberRepository (新規) + FakeInvitationRepository (新規) + TestBuilders (aMember/aInvitation 追加)
 - 依存: Phase 3
 
-### Phase 5: 家族招待 — 招待 UI + 招待フロー - DONE
-
-招待 UI (SendInvitationScreen, AcceptInvitationScreen, MemberManagementScreen) + ViewModel + Navigation + DI + App Links intent-filter + 品質修正（CRITICAL: UID PII 表示削除、HIGH: 重複招待防止 + cancelInvitation 権限チェック、MEDIUM: WhileSubscribed/メールマスキング/AppConfig 集約）。テスト ~42 件（既存 38 + 新規 4）。全ビルド・テスト通過。
-- 対象: `ui/screens/member/` (新規 8 ファイル), `ui/navigation/Screen.kt`, `ui/navigation/CareNoteNavHost.kt`, `AndroidManifest.xml`, `config/AppConfig.kt`, `res/values/strings.xml`, `res/values-en/strings.xml`
-- テスト: AcceptInvitationViewModelTest (10件) + SendInvitationViewModelTest (14件) + MemberManagementViewModelTest (14件) + FakeInvitationRepository + FakeMemberRepository
+### Phase 5: 家族招待 — 招待 UI + 招待フロー - PENDING
+招待画面 (InvitationScreen)、メンバー管理画面 (MemberManagementScreen) の実装。
+App Links で招待コード共有 → 受諾 → メンバー追加フロー。
+- 対象: ui/screens/invitation/, ui/screens/member/, ui/navigation/Screen.kt (新ルート追加), res/values/strings.xml (JP/EN), AndroidManifest.xml (App Links intent-filter)
 - 依存: Phase 4
+- 注意: Firebase Dynamic Links 廃止済み → App Links + Firebase Hosting 短縮 URL で代替
+- 手動作業: Firebase Hosting 設定、App Links assetlinks.json 配置、ドメイン検証
 
-### Phase 6: 統合テスト + E2E - DONE
-
-TestDatabaseModule に 5 DAO 追加（Member, Invitation, NoteComment, SyncMapping, Purchase）。TestTags に MEMBER_MANAGEMENT_FAB 追加。MemberManagementScreen FAB に testTag 追加。CareNoteNavHost に carenote:// Deep Link 追加。E2eTestUtils に seedCareRecipient/seedMember/seedInvitation ヘルパー追加。MemberInvitationFlowTest 新規作成（8 テスト: ナビゲーション、空状態、FAB遷移、メールバリデーション、入力表示、メンバーリスト、招待一覧、招待キャンセル）。AcceptInvitationFlowTest 新規作成（5 テスト: 有効トークン表示、承認成功、辞退、無効トークンエラー、期限切れエラー）。全ビルド・ユニットテスト通過。
-- 対象: `app/src/androidTest/java/com/carenote/app/di/TestDatabaseModule.kt`, `app/src/main/java/com/carenote/app/ui/testing/TestTags.kt`, `app/src/main/java/com/carenote/app/ui/screens/member/MemberManagementScreen.kt`, `app/src/main/java/com/carenote/app/ui/navigation/CareNoteNavHost.kt`, `app/src/androidTest/java/com/carenote/app/e2e/E2eTestUtils.kt`, `app/src/androidTest/java/com/carenote/app/e2e/MemberInvitationFlowTest.kt` (新規), `app/src/androidTest/java/com/carenote/app/e2e/AcceptInvitationFlowTest.kt` (新規)
-- テスト: MemberInvitationFlowTest (8件) + AcceptInvitationFlowTest (5件)
+### Phase 6: 統合テスト + E2E - PENDING
+全新機能の統合テスト、E2E テスト、セキュリティレビュー。
+- 対象: app/src/test/ (Unit), app/src/androidTest/ (E2E), Firestore Security Rules テスト
 - 依存: Phase 1, 2, 3, 4, 5
-- 注意: E2E テストは connectedDebugAndroidTest で実機/エミュレータが必要。Billing テストは Google Play Console テスター設定が必要
+- 注意: Billing テストは Google Play Console テスター設定が必要（実機テスト）。Security Rules テストは firebase-rules-unit-testing パッケージ
 
 ## スコープ外 / 将来
 
 - **v9.0+**: FCM リモート通知（Cloud Functions / バックエンド構築が前提）
 - **v9.0+**: Wear OS 対応（Horologist + Health Services、別モジュール必要）
 - **v9.0+**: CSV データインポート（対象ユーザー適合性検証後）
-- **手動**: Play Console メタデータ、Firestore Security Rules 確認、問い合わせメール確定
+- **手動**: Play Console メタデータ、Firestore Security Rules 確認
+- **Google Workspace**: `admin@ks-apps.org` (Business Starter ¥1,425/月) + エイリアス `support-carenote@ks-apps.org`。ドメイン `ks-apps.org` (¥1,400/年 via Squarespace)
