@@ -72,7 +72,7 @@ class HealthRecordCsvExporterTest {
                     "Recorded At", "Temperature", "BP (Sys)", "BP (Dia)",
                     "Pulse", "Weight", "Meal", "Excretion", "Condition Note"
                 )
-                writer.write(headers.joinToString(",") { exporter.escapeCsv(it) })
+                writer.write(headers.joinToString(",") { it.escapeCsv() })
                 writer.write("\r\n")
                 for (record in records) {
                     val fields = listOf(
@@ -86,7 +86,7 @@ class HealthRecordCsvExporterTest {
                         record.excretion?.name ?: "",
                         record.conditionNote
                     )
-                    writer.write(fields.joinToString(",") { exporter.escapeCsv(it) })
+                    writer.write(fields.joinToString(",") { it.escapeCsv() })
                     writer.write("\r\n")
                 }
             }
@@ -145,31 +145,31 @@ class HealthRecordCsvExporterTest {
 
     @Test
     fun `comma in value is escaped`() {
-        val result = exporter.escapeCsv("headache, fever")
+        val result = "headache, fever".escapeCsv()
         assertEquals("\"headache, fever\"", result)
     }
 
     @Test
     fun `double quote in value is escaped`() {
-        val result = exporter.escapeCsv("said \"hello\"")
+        val result = "said \"hello\"".escapeCsv()
         assertEquals("\"said \"\"hello\"\"\"", result)
     }
 
     @Test
     fun `newline in value is escaped`() {
-        val result = exporter.escapeCsv("line1\nline2")
+        val result = "line1\nline2".escapeCsv()
         assertEquals("\"line1\nline2\"", result)
     }
 
     @Test
     fun `carriage return in value is escaped`() {
-        val result = exporter.escapeCsv("line1\rline2")
+        val result = "line1\rline2".escapeCsv()
         assertEquals("\"line1\rline2\"", result)
     }
 
     @Test
     fun `plain value is not escaped`() {
-        val result = exporter.escapeCsv("hello")
+        val result = "hello".escapeCsv()
         assertEquals("hello", result)
     }
 
