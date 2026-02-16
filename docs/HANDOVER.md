@@ -1,18 +1,22 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: Codex レビュー指摘修正完了
+## セッションステータス: 問い合わせメールアドレス統一完了
 
-## 現在のタスク: PR #1 Codex レビュー P1 指摘（クラウドデータ削除の過大主張）を修正済み。v9.0 Phase 5 (招待 UI + フロー) から実行可能
+## 現在のタスク: Google Workspace セットアップ + メールアドレス統一完了。v9.0 Phase 5 (招待 UI + フロー) から実行可能
 
 ### 今回のセッションで完了した作業
 
-1. **Codex レビュー P1 修正**: アカウント削除時の「Cloud Firestore 上のデータも削除」という未実装機能の主張を削除
-   - `docs/store/listing.md`: Data Safety セキュリティ対策表 + Play Console 回答ガイドの 2 箇所を修正（Firebase Auth 削除のみと明記、Firestore/Storage 自動削除は今後対応予定）
-   - `docs/privacy-policy.md`: 「データの削除」セクションで Auth 削除のみと明記 + クラウドデータ削除は問い合わせ対応
-   - `docs/privacy-policy.html`: 同じ修正を HTML 版にも反映
+1. **Google Workspace セットアップ**: ドメイン `ks-apps.org` で Business Starter 契約。管理アカウント `admin@ks-apps.org`
+2. **メールエイリアス追加**: Admin Console で `support-carenote@ks-apps.org` を admin ユーザーのエイリアスとして登録
+3. **メールアドレス全ファイル統一** (commit `10e1a59`): 12ファイル19箇所の旧アドレスを `support-carenote@ks-apps.org` に一括置換
+   - `AppConfig.kt`: CONTACT_EMAIL プレースホルダー → 実アドレス
+   - `docs/`: privacy-policy, terms-of-service, listing, index.html, DATA_RETENTION_POLICY 等 7 ファイル
+   - `assets/legal/`: アプリ内表示用テキスト 4 ファイル
+   - 旧アドレス `support@carenote.app`, `carenote.app.support@gmail.com` は完全除去
 
 ### 前セッションの完了作業（同一ブランチ）
 
+- Codex レビュー P1 修正: クラウドデータ削除の過大主張を修正 (commit `75d3b03`)
 - GitHub Pages 有効化 + Play Console ストア掲載情報入力（日本語+英語）
 - listing.md: Firebase 対応チェックリスト、Data Safety セクション追加、英語アプリ名修正 (31→29文字)
 - privacy-policy.md/.html: Firebase サービス利用を明記
@@ -22,6 +26,8 @@
 
 ## 次のアクション
 
+- **Squarespace ドメイン認証**（手動・14日以内）: `ks-apps.org` のメール認証。Squarespace から確認メールが届いているはず
+- **Play Console 問い合わせメール更新**: `support-carenote@ks-apps.org` を Play Console のストア掲載情報に設定
 - **Play Console 残作業**（手動）: フィーチャーグラフィック (1024x500)、アプリアイコン (512x512)、スクリーンショット (4-8枚) のアップロード
 - **Play Console その他設定**（手動）: コンテンツレーティング質問票、Data Safety フォーム、ストアの設定（カテゴリ・タグ）
 - v9.0 Phase 5: 家族招待 — 招待 UI + 招待フロー（InvitationScreen, MemberManagementScreen, App Links）
@@ -369,4 +375,5 @@ App Links で招待コード共有 → 受諾 → メンバー追加フロー。
 - **v9.0+**: FCM リモート通知（Cloud Functions / バックエンド構築が前提）
 - **v9.0+**: Wear OS 対応（Horologist + Health Services、別モジュール必要）
 - **v9.0+**: CSV データインポート（対象ユーザー適合性検証後）
-- **手動**: Play Console メタデータ、Firestore Security Rules 確認、問い合わせメール確定
+- **手動**: Play Console メタデータ、Firestore Security Rules 確認
+- **Google Workspace**: `admin@ks-apps.org` (Business Starter ¥1,425/月) + エイリアス `support-carenote@ks-apps.org`。ドメイン `ks-apps.org` (¥1,400/年 via Squarespace)
