@@ -173,4 +173,4 @@ firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "
 android-test = { id = "com.android.test", version.ref = "agp" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
-play-publisher = { id = "com.github.triplet.play", version = "3.10.1" }
+play-publisher = { id = "com.github.triplet.play", version = "4.0.0" }

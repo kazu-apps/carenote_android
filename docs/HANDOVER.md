@@ -1,11 +1,10 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: Phase 1-2 完了
+## セッションステータス: Phase 1-3 完了
 
-## 現在のタスク: バグ修正（2件）— Phase 1-2 完了
+## 現在のタスク: Phase 1-3 完了（リマインダー修正 + タブレット DatePicker + GPP アップグレード）
 
-タスク画面の DatePicker/TimePicker がタブレットで開かないバグ + TaskReminderWorker 通知未着バグ。
-調査結果は `docs/INVESTIGATION.md`、Expert 3名（debugger, security, tester）の議論結果は本ロードマップに反映済み。
+Phase 1-3 全完了。
 
 ## 次のアクション
 
@@ -37,6 +36,9 @@
 ### Phase 2: タブレット DatePicker/TimePicker バグ修正 - DONE
 4箇所の TextButton → Text + `Modifier.clickable(role = Role.Button)` + `padding(12.dp)` に変更。i18n 4文字列追加（JP+EN）。DueDateSelectorTest 9件 + DateTimeSelectorTest 8件 = 17テスト新規。ビルド・全テスト pass。
 
+### Phase 3: GPP アップグレード + セキュリティ修正 - DONE
+GPP 3.10.1 → 4.0.0 アップグレード + android.newDsl=false 削除 + api-key.json を .gitignore 追加。ビルド成功、publish タスク確認。
+
 ### Expert 議論サマリー (2026-02-17)
 
 参加: debugger, security（固定）, tester — 各2-3ラウンドの peer-to-peer 議論完了
@@ -58,6 +60,21 @@
 - Phase 2 の真因確定は実機検証待ち（TextButton が最有力、改善しなければ別途調査）
 - Scheduler コード共通化は将来のリファクタリング候補
 - PII ログ修正（`TaskReminderWorker` の `title=$taskTitle`）はオプション（DEBUG レベル、低リスク）
+
+### Expert 議論サマリー: GPP アップグレード (2026-02-17)
+
+参加: researcher, security（固定）, critic — 2ラウンドの peer-to-peer 議論完了
+
+**全 Expert 合意:**
+1. 修正方針: GPP 3.10.1 → 4.0.0 + `android.newDsl=false` 削除（選択肢 b）
+2. `api-key.json` の `.gitignore` 未登録は CRITICAL — 即時対応必須
+3. テスト: `assembleDebug` + `tasks --group publishing` で publish タスク確認
+4. ProGuard への影響: なし（GPP はビルドプラグイン、実行時クラスなし）
+5. AGP 10.0（2026年後半）で `android.newDsl=false` 完全削除のため今対応が合理的
+
+**未合意（実装時に判断）:**
+- フェーズ分割: security は Phase 0 + Phase 1 分離推奨、critic は単一コミットで十分
+- `play {}` API 完全互換の断言: critic は留保付きを推奨（ビルド実行で最終確認）
 
 ## PENDING 項目
 
@@ -93,6 +110,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | CI グリーン化 | Detekt 1.23.7、workflow_dispatch、screenshot soft-fail、PR #4 マージ済み | DONE |
 | Phase 1 | リマインダー通知バグ修正: calculateDelay + Clock injection + plusDays(1)。TaskReminderSchedulerTest 13件 + MedicationReminderSchedulerTest 14件 新規 | DONE |
 | Phase 2 | タブレット DatePicker/TimePicker バグ修正: TextButton → clickable 化 + i18n + Compose UI テスト 17件 | DONE |
+| Phase 3 | GPP 4.0.0 アップグレード + api-key.json セキュリティ修正 | DONE |
 
 ## アーキテクチャ参照
 
