@@ -6,6 +6,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
+import com.carenote.app.domain.util.Clock
 import timber.log.Timber
 import java.time.Duration
 import java.time.LocalDateTime
@@ -34,7 +35,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class TaskReminderScheduler @Inject constructor(
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val clock: Clock
 ) : TaskReminderSchedulerInterface {
 
     override fun scheduleReminder(
@@ -43,7 +45,7 @@ class TaskReminderScheduler @Inject constructor(
         time: LocalTime
     ) {
         val delay = calculateDelay(time)
-        if (delay < 0) {
+        if (delay <= 0) {
             Timber.d("Task reminder time has passed for today: id=$taskId")
             return
         }
@@ -119,15 +121,11 @@ class TaskReminderScheduler @Inject constructor(
         Timber.d("Cancelled task follow-up: id=$taskId")
     }
 
-    private fun calculateDelay(time: LocalTime): Long {
-        val now = LocalDateTime.now()
-        val target = LocalDateTime.of(now.toLocalDate(), time)
-
-        return if (target.isAfter(now)) {
-            Duration.between(now, target).toMillis()
-        } else {
-            -1
-        }
+    internal fun calculateDelay(time: LocalTime): Long {
+        val now = clock.now()
+        val today = LocalDateTime.of(now.toLocalDate(), time)
+        val target = if (today.isAfter(now)) today else today.plusDays(1)
+        return Duration.between(now, target).toMillis()
     }
 
     private fun createTaskTag(taskId: Long): String {

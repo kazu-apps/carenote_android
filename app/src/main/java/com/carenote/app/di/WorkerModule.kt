@@ -9,6 +9,7 @@ import com.carenote.app.data.worker.TaskReminderScheduler
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
+import com.carenote.app.domain.util.Clock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,16 +40,18 @@ object WorkerModule {
     @Provides
     @Singleton
     fun provideMedicationReminderScheduler(
-        workManager: WorkManager
+        workManager: WorkManager,
+        clock: Clock
     ): MedicationReminderSchedulerInterface {
-        return MedicationReminderScheduler(workManager)
+        return MedicationReminderScheduler(workManager, clock)
     }
 
     @Provides
     @Singleton
     fun provideTaskReminderScheduler(
-        workManager: WorkManager
+        workManager: WorkManager,
+        clock: Clock
     ): TaskReminderSchedulerInterface {
-        return TaskReminderScheduler(workManager)
+        return TaskReminderScheduler(workManager, clock)
     }
 }
