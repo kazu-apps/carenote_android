@@ -249,6 +249,7 @@
     <string name="calendar_event_type_hospital">Hospital</string>
     <string name="calendar_event_type_visit">Home Visit</string>
     <string name="calendar_event_type_dayservice">Day Service</string>
+    <string name="calendar_event_type_task">Task</string>
     <string name="calendar_event_type_other">Other</string>
     <string name="calendar_event_completed">Completed</string>
     <string name="calendar_event_mark_complete">Mark Complete</string>

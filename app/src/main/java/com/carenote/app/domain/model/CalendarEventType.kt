@@ -7,5 +7,6 @@ enum class CalendarEventType {
     HOSPITAL,
     VISIT,
     DAYSERVICE,
+    TASK,
     OTHER
 }

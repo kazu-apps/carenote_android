@@ -188,6 +188,10 @@ fun aCalendarEvent(
     completed: Boolean = false,
     recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
     recurrenceInterval: Int = 1,
+    priority: TaskPriority? = null,
+    reminderEnabled: Boolean = false,
+    reminderTime: LocalTime? = null,
+    createdBy: String = "",
     clock: Clock = TestDataFixtures.DEFAULT_CLOCK
 ): CalendarEvent = CalendarEvent(
     id = id,
@@ -202,6 +206,10 @@ fun aCalendarEvent(
     completed = completed,
     recurrenceFrequency = recurrenceFrequency,
     recurrenceInterval = recurrenceInterval,
+    priority = priority,
+    reminderEnabled = reminderEnabled,
+    reminderTime = reminderTime,
+    createdBy = createdBy,
     createdAt = clock.now(),
     updatedAt = clock.now()
 )

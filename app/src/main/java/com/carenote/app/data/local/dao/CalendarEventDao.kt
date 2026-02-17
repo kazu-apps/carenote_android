@@ -1,5 +1,6 @@
 package com.carenote.app.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -46,4 +47,39 @@ interface CalendarEventDao {
 
     @Query("SELECT * FROM calendar_events WHERE updated_at > :lastSyncTime")
     suspend fun getModifiedSince(lastSyncTime: String): List<CalendarEventEntity>
+
+    @Query(
+        "SELECT * FROM calendar_events " +
+            "WHERE care_recipient_id = :careRecipientId AND type = 'TASK' " +
+            "ORDER BY date ASC, start_time ASC"
+    )
+    fun getTaskEvents(careRecipientId: Long): Flow<List<CalendarEventEntity>>
+
+    @Query(
+        "SELECT * FROM calendar_events " +
+            "WHERE care_recipient_id = :careRecipientId AND type = 'TASK' AND completed = 0 " +
+            "ORDER BY date ASC, start_time ASC"
+    )
+    fun getIncompleteTaskEvents(careRecipientId: Long): Flow<List<CalendarEventEntity>>
+
+    @Query(
+        "SELECT * FROM calendar_events " +
+            "WHERE care_recipient_id = :careRecipientId AND type = 'TASK' AND date = :date " +
+            "ORDER BY start_time ASC"
+    )
+    fun getTaskEventsByDate(date: String, careRecipientId: Long): Flow<List<CalendarEventEntity>>
+
+    @Query(
+        "SELECT * FROM calendar_events " +
+            "WHERE care_recipient_id = :careRecipientId AND type = 'TASK' " +
+            "AND title LIKE '%' || :query || '%' " +
+            "ORDER BY date ASC, start_time ASC"
+    )
+    fun getPagedTaskEvents(query: String, careRecipientId: Long): PagingSource<Int, CalendarEventEntity>
+
+    @Query(
+        "SELECT COUNT(*) FROM calendar_events " +
+            "WHERE care_recipient_id = :careRecipientId AND type = 'TASK' AND completed = 0"
+    )
+    fun getIncompleteTaskCount(careRecipientId: Long): Flow<Int>
 }

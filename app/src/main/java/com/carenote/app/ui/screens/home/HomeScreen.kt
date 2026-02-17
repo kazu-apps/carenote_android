@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Home
@@ -540,6 +541,7 @@ private fun CalendarEventType.toIcon(): ImageVector {
         CalendarEventType.HOSPITAL -> Icons.Filled.LocalHospital
         CalendarEventType.VISIT -> Icons.Filled.DirectionsCar
         CalendarEventType.DAYSERVICE -> Icons.Filled.Home
+        CalendarEventType.TASK -> Icons.Filled.CheckCircle
         CalendarEventType.OTHER -> Icons.Filled.Event
     }
 }

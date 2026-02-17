@@ -4,6 +4,7 @@ import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.testing.TestDataFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -284,6 +285,137 @@ class CalendarEventMapperTest {
         assertEquals(original.recurrenceInterval, roundtrip.recurrenceInterval)
     }
 
+    // region task fields
+
+    @Test
+    fun `toDomain maps priority field correctly`() {
+        val entity = createEntity(priority = "HIGH")
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(TaskPriority.HIGH, result.priority)
+    }
+
+    @Test
+    fun `toDomain maps null priority to null`() {
+        val entity = createEntity(priority = null)
+
+        val result = mapper.toDomain(entity)
+
+        assertNull(result.priority)
+    }
+
+    @Test
+    fun `toDomain maps invalid priority to null`() {
+        val entity = createEntity(priority = "INVALID")
+
+        val result = mapper.toDomain(entity)
+
+        assertNull(result.priority)
+    }
+
+    @Test
+    fun `toDomain maps reminderEnabled correctly`() {
+        val entity = createEntity(reminderEnabled = 1)
+
+        val result = mapper.toDomain(entity)
+
+        assertTrue(result.reminderEnabled)
+    }
+
+    @Test
+    fun `toDomain maps reminderTime correctly`() {
+        val entity = createEntity(reminderTime = "08:30:00")
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals(LocalTime.of(8, 30), result.reminderTime)
+    }
+
+    @Test
+    fun `toDomain maps createdBy correctly`() {
+        val entity = createEntity(createdBy = "testUser")
+
+        val result = mapper.toDomain(entity)
+
+        assertEquals("testUser", result.createdBy)
+    }
+
+    @Test
+    fun `toEntity maps priority to string`() {
+        val domain = createCalendarEvent(priority = TaskPriority.MEDIUM)
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("MEDIUM", result.priority)
+    }
+
+    @Test
+    fun `toEntity maps null priority to null`() {
+        val domain = createCalendarEvent(priority = null)
+
+        val result = mapper.toEntity(domain)
+
+        assertNull(result.priority)
+    }
+
+    @Test
+    fun `toEntity maps reminderEnabled to int`() {
+        val domain = createCalendarEvent(reminderEnabled = true)
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals(1, result.reminderEnabled)
+    }
+
+    @Test
+    fun `toEntity maps reminderEnabled false to 0`() {
+        val domain = createCalendarEvent(reminderEnabled = false)
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals(0, result.reminderEnabled)
+    }
+
+    @Test
+    fun `toEntity maps reminderTime correctly`() {
+        val domain = createCalendarEvent(reminderTime = LocalTime.of(9, 15))
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("09:15:00", result.reminderTime)
+    }
+
+    @Test
+    fun `toEntity maps createdBy correctly`() {
+        val domain = createCalendarEvent(createdBy = "testUser")
+
+        val result = mapper.toEntity(domain)
+
+        assertEquals("testUser", result.createdBy)
+    }
+
+    @Test
+    fun `roundtrip preserves task fields`() {
+        val original = createEntity(
+            type = "TASK",
+            priority = "HIGH",
+            reminderEnabled = 1,
+            reminderTime = "09:00:00",
+            createdBy = "testUser"
+        )
+
+        val domain = mapper.toDomain(original)
+        val roundtrip = mapper.toEntity(domain)
+
+        assertEquals(original.priority, roundtrip.priority)
+        assertEquals(original.reminderEnabled, roundtrip.reminderEnabled)
+        assertEquals(original.reminderTime, roundtrip.reminderTime)
+        assertEquals(original.createdBy, roundtrip.createdBy)
+    }
+
+    // endregion
+
     @Test
     fun `toDomainList maps list of entities`() {
         val entities = listOf(
@@ -353,6 +485,10 @@ class CalendarEventMapperTest {
         completed: Int = 0,
         recurrenceFrequency: String = "NONE",
         recurrenceInterval: Int = 1,
+        priority: String? = null,
+        reminderEnabled: Int = 0,
+        reminderTime: String? = null,
+        createdBy: String = "",
         createdAt: String = TestDataFixtures.NOW_STRING,
         updatedAt: String = TestDataFixtures.NOW.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     ): CalendarEventEntity = CalendarEventEntity(
@@ -367,6 +503,10 @@ class CalendarEventMapperTest {
         completed = completed,
         recurrenceFrequency = recurrenceFrequency,
         recurrenceInterval = recurrenceInterval,
+        priority = priority,
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -383,6 +523,10 @@ class CalendarEventMapperTest {
         completed: Boolean = false,
         recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
         recurrenceInterval: Int = 1,
+        priority: TaskPriority? = null,
+        reminderEnabled: Boolean = false,
+        reminderTime: LocalTime? = null,
+        createdBy: String = "",
         createdAt: LocalDateTime = TestDataFixtures.NOW,
         updatedAt: LocalDateTime = TestDataFixtures.NOW
     ): CalendarEvent = CalendarEvent(
@@ -397,6 +541,10 @@ class CalendarEventMapperTest {
         completed = completed,
         recurrenceFrequency = recurrenceFrequency,
         recurrenceInterval = recurrenceInterval,
+        priority = priority,
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime,
+        createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

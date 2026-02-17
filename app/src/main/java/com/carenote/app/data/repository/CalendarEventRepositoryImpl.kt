@@ -1,5 +1,9 @@
 package com.carenote.app.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import com.carenote.app.data.local.dao.CalendarEventDao
 import com.carenote.app.data.mapper.CalendarEventMapper
 import com.carenote.app.domain.common.DomainError
@@ -87,6 +91,40 @@ class CalendarEventRepositoryImpl @Inject constructor(
             errorTransform = { DomainError.DatabaseError("Failed to delete calendar event", it) }
         ) {
             calendarEventDao.deleteEvent(id)
+        }
+    }
+
+    override fun getTaskEvents(): Flow<List<CalendarEvent>> {
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getTaskEvents(recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
+    }
+
+    override fun getIncompleteTaskEvents(): Flow<List<CalendarEvent>> {
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getIncompleteTaskEvents(recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
+    }
+
+    override fun getTaskEventsByDate(date: LocalDate): Flow<List<CalendarEvent>> {
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getTaskEventsByDate(date.format(dateFormatter), recipientId)
+        }.map { entities -> mapper.toDomainList(entities) }
+    }
+
+    override fun getPagedTaskEvents(query: String): Flow<PagingData<CalendarEvent>> {
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            Pager(
+                config = PagingConfig(pageSize = 20)
+            ) {
+                calendarEventDao.getPagedTaskEvents(query, recipientId)
+            }.flow
+        }.map { pagingData -> pagingData.map { mapper.toDomain(it) } }
+    }
+
+    override fun getIncompleteTaskCount(): Flow<Int> {
+        return activeRecipientProvider.activeCareRecipientId.flatMapLatest { recipientId ->
+            calendarEventDao.getIncompleteTaskCount(recipientId)
         }
     }
 }

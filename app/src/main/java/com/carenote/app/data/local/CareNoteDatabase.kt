@@ -50,7 +50,7 @@ import com.carenote.app.data.local.entity.TaskEntity
         MemberEntity::class,
         InvitationEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)

@@ -249,6 +249,7 @@
     <string name="calendar_event_type_hospital">通院</string>
     <string name="calendar_event_type_visit">訪問</string>
     <string name="calendar_event_type_dayservice">デイサービス</string>
+    <string name="calendar_event_type_task">タスク</string>
     <string name="calendar_event_type_other">その他</string>
     <string name="calendar_event_completed">完了</string>
     <string name="calendar_event_mark_complete">完了にする</string>

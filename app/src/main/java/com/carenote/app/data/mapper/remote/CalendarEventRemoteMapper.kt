@@ -4,6 +4,7 @@ import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,6 +45,12 @@ class CalendarEventRemoteMapper @Inject constructor(
                 try { CalendarEventType.valueOf(it) } catch (_: IllegalArgumentException) { CalendarEventType.OTHER }
             } ?: CalendarEventType.OTHER,
             completed = data["completed"] as? Boolean ?: false,
+            priority = parseTaskPriority(data["priority"] as? String),
+            reminderEnabled = data["reminderEnabled"] as? Boolean ?: false,
+            reminderTime = (data["reminderTime"] as? String)?.let {
+                timestampConverter.toLocalTime(it)
+            },
+            createdBy = data["createdBy"] as? String ?: "",
             recurrenceFrequency = parseRecurrenceFrequency(data["recurrenceFrequency"] as? String),
             recurrenceInterval = (data["recurrenceInterval"] as? Number)?.toInt() ?: 1,
             createdAt = timestampConverter.toLocalDateTimeFromAny(createdAt),
@@ -62,6 +69,10 @@ class CalendarEventRemoteMapper @Inject constructor(
             "isAllDay" to domain.isAllDay,
             "type" to domain.type.name,
             "completed" to domain.completed,
+            "priority" to domain.priority?.name,
+            "reminderEnabled" to domain.reminderEnabled,
+            "reminderTime" to domain.reminderTime?.let { timestampConverter.toTimeString(it) },
+            "createdBy" to domain.createdBy,
             "recurrenceFrequency" to domain.recurrenceFrequency.name,
             "recurrenceInterval" to domain.recurrenceInterval,
             "createdAt" to timestampConverter.toTimestamp(domain.createdAt),
@@ -84,6 +95,15 @@ class CalendarEventRemoteMapper @Inject constructor(
             RecurrenceFrequency.valueOf(value)
         } catch (_: IllegalArgumentException) {
             RecurrenceFrequency.NONE
+        }
+    }
+
+    private fun parseTaskPriority(value: String?): TaskPriority? {
+        if (value == null) return null
+        return try {
+            TaskPriority.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            null
         }
     }
 

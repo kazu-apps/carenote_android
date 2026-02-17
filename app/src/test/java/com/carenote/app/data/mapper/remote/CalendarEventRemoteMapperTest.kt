@@ -4,6 +4,7 @@ import com.carenote.app.data.remote.model.SyncMetadata
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.testing.TestDataFixtures
 import com.google.firebase.Timestamp
 import org.junit.Assert.assertEquals
@@ -580,6 +581,141 @@ class CalendarEventRemoteMapperTest {
         assertNull(roundtrip.startTime)
         assertNull(roundtrip.endTime)
         assertTrue(roundtrip.isAllDay)
+    }
+
+    @Test
+    fun `roundtrip preserves task fields via remote`() {
+        val original = CalendarEvent(
+            id = 1L,
+            title = "タスクイベント",
+            date = eventDate,
+            type = CalendarEventType.TASK,
+            priority = TaskPriority.HIGH,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(9, 0),
+            createdBy = "testUser",
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val remote = mapper.toRemote(original, null)
+        val roundtrip = mapper.toDomain(remote)
+
+        assertEquals(original.priority, roundtrip.priority)
+        assertEquals(original.reminderEnabled, roundtrip.reminderEnabled)
+        assertEquals(original.reminderTime, roundtrip.reminderTime)
+        assertEquals(original.createdBy, roundtrip.createdBy)
+    }
+
+    // endregion
+
+    // region task fields
+
+    @Test
+    fun `toDomain maps priority from remote`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスクイベント",
+            "date" to eventDate.toString(),
+            "priority" to "HIGH",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(TaskPriority.HIGH, result.priority)
+    }
+
+    @Test
+    fun `toDomain maps null priority from remote`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to eventDate.toString(),
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertNull(result.priority)
+    }
+
+    @Test
+    fun `toDomain maps invalid priority from remote to null`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "テストイベント",
+            "date" to eventDate.toString(),
+            "priority" to "INVALID",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertNull(result.priority)
+    }
+
+    @Test
+    fun `toDomain maps reminderEnabled from remote`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスクイベント",
+            "date" to eventDate.toString(),
+            "reminderEnabled" to true,
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertTrue(result.reminderEnabled)
+    }
+
+    @Test
+    fun `toDomain maps reminderTime from remote`() {
+        val timestamp = toTimestamp(testDateTime)
+        val data = mapOf(
+            "localId" to 1L,
+            "title" to "タスクイベント",
+            "date" to eventDate.toString(),
+            "reminderTime" to "09:00",
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp
+        )
+
+        val result = mapper.toDomain(data)
+
+        assertEquals(LocalTime.of(9, 0), result.reminderTime)
+    }
+
+    @Test
+    fun `toRemote includes task fields`() {
+        val event = CalendarEvent(
+            id = 1L,
+            title = "タスクイベント",
+            date = eventDate,
+            type = CalendarEventType.TASK,
+            priority = TaskPriority.MEDIUM,
+            reminderEnabled = true,
+            reminderTime = LocalTime.of(8, 30),
+            createdBy = "testUser",
+            createdAt = testDateTime,
+            updatedAt = testDateTime
+        )
+
+        val result = mapper.toRemote(event, null)
+
+        assertEquals("MEDIUM", result["priority"])
+        assertEquals(true, result["reminderEnabled"])
+        assertEquals("08:30", result["reminderTime"])
+        assertEquals("testUser", result["createdBy"])
     }
 
     // endregion

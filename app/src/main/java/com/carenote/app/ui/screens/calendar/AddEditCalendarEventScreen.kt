@@ -492,6 +492,7 @@ private fun CalendarEventType.labelResId(): Int {
         CalendarEventType.HOSPITAL -> R.string.calendar_event_type_hospital
         CalendarEventType.VISIT -> R.string.calendar_event_type_visit
         CalendarEventType.DAYSERVICE -> R.string.calendar_event_type_dayservice
+        CalendarEventType.TASK -> R.string.calendar_event_type_task
         CalendarEventType.OTHER -> R.string.calendar_event_type_other
     }
 }

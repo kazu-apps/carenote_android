@@ -4,6 +4,7 @@ import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -32,6 +33,10 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
             completed = entity.completed == 1,
             recurrenceFrequency = parseRecurrenceFrequency(entity.recurrenceFrequency),
             recurrenceInterval = entity.recurrenceInterval,
+            priority = parseTaskPriority(entity.priority),
+            reminderEnabled = entity.reminderEnabled == 1,
+            reminderTime = entity.reminderTime?.let { LocalTime.parse(it, timeFormatter) },
+            createdBy = entity.createdBy,
             createdAt = LocalDateTime.parse(entity.createdAt, dateTimeFormatter),
             updatedAt = LocalDateTime.parse(entity.updatedAt, dateTimeFormatter)
         )
@@ -51,6 +56,10 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
             completed = if (domain.completed) 1 else 0,
             recurrenceFrequency = domain.recurrenceFrequency.name,
             recurrenceInterval = domain.recurrenceInterval,
+            priority = domain.priority?.name,
+            reminderEnabled = if (domain.reminderEnabled) 1 else 0,
+            reminderTime = domain.reminderTime?.format(timeFormatter),
+            createdBy = domain.createdBy,
             createdAt = domain.createdAt.format(dateTimeFormatter),
             updatedAt = domain.updatedAt.format(dateTimeFormatter)
         )
@@ -61,6 +70,15 @@ class CalendarEventMapper @Inject constructor() : Mapper<CalendarEventEntity, Ca
             RecurrenceFrequency.valueOf(value)
         } catch (_: IllegalArgumentException) {
             RecurrenceFrequency.NONE
+        }
+    }
+
+    private fun parseTaskPriority(value: String?): TaskPriority? {
+        if (value == null) return null
+        return try {
+            TaskPriority.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            null
         }
     }
 }

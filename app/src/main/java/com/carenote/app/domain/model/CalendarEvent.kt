@@ -22,6 +22,12 @@ data class CalendarEvent(
     val completed: Boolean = false,
     val recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
     val recurrenceInterval: Int = 1,
+    val priority: TaskPriority? = null,
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime? = null,
+    val createdBy: String = "",
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()
-)
+) {
+    val isTask: Boolean get() = type == CalendarEventType.TASK
+}

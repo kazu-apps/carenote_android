@@ -506,6 +506,11 @@ class HomeViewModelTest {
             override suspend fun insertEvent(event: CalendarEvent) = calendarEventRepository.insertEvent(event)
             override suspend fun updateEvent(event: CalendarEvent) = calendarEventRepository.updateEvent(event)
             override suspend fun deleteEvent(id: Long) = calendarEventRepository.deleteEvent(id)
+            override fun getTaskEvents() = calendarEventRepository.getTaskEvents()
+            override fun getIncompleteTaskEvents() = calendarEventRepository.getIncompleteTaskEvents()
+            override fun getTaskEventsByDate(date: LocalDate) = calendarEventRepository.getTaskEventsByDate(date)
+            override fun getPagedTaskEvents(query: String) = calendarEventRepository.getPagedTaskEvents(query)
+            override fun getIncompleteTaskCount() = calendarEventRepository.getIncompleteTaskCount()
         }
 
         val viewModel = HomeViewModel(

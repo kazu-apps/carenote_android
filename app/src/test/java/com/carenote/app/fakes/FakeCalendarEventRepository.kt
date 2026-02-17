@@ -1,11 +1,14 @@
 package com.carenote.app.fakes
 
+import androidx.paging.PagingData
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.repository.CalendarEventRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 
@@ -70,5 +73,39 @@ class FakeCalendarEventRepository : CalendarEventRepository {
         }
         events.value = events.value.filter { it.id != id }
         return Result.Success(Unit)
+    }
+
+    override fun getTaskEvents(): Flow<List<CalendarEvent>> {
+        return events.map { list ->
+            list.filter { it.type == CalendarEventType.TASK }
+        }
+    }
+
+    override fun getIncompleteTaskEvents(): Flow<List<CalendarEvent>> {
+        return events.map { list ->
+            list.filter { it.type == CalendarEventType.TASK && !it.completed }
+        }
+    }
+
+    override fun getTaskEventsByDate(date: LocalDate): Flow<List<CalendarEvent>> {
+        return events.map { list ->
+            list.filter { it.type == CalendarEventType.TASK && it.date == date }
+        }
+    }
+
+    override fun getPagedTaskEvents(query: String): Flow<PagingData<CalendarEvent>> {
+        return flowOf(
+            PagingData.from(
+                events.value.filter {
+                    it.type == CalendarEventType.TASK && it.title.contains(query)
+                }
+            )
+        )
+    }
+
+    override fun getIncompleteTaskCount(): Flow<Int> {
+        return events.map { list ->
+            list.count { it.type == CalendarEventType.TASK && !it.completed }
+        }
     }
 }

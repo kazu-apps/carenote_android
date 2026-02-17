@@ -49,6 +49,18 @@ data class CalendarEventEntity(
     @ColumnInfo(name = "recurrence_interval")
     val recurrenceInterval: Int = 1,
 
+    @ColumnInfo(name = "priority")
+    val priority: String? = null,
+
+    @ColumnInfo(name = "reminder_enabled", defaultValue = "0")
+    val reminderEnabled: Int = 0,
+
+    @ColumnInfo(name = "reminder_time")
+    val reminderTime: String? = null,
+
+    @ColumnInfo(name = "created_by", defaultValue = "")
+    val createdBy: String = "",
+
     @ColumnInfo(name = "created_at")
     val createdAt: String,
 
