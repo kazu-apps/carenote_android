@@ -1,71 +1,114 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: Phase 1-2 完了
 
-## 現在のタスク: Detekt 全 367 issues 修正 + CI グリーン化 + コンフリクト解決 → PR #4 マージ待ち
+## 現在のタスク: バグ修正（2件）— Phase 1-2 完了
 
-### 今回のセッションで完了した作業
+タスク画面の DatePicker/TimePicker がタブレットで開かないバグ + TaskReminderWorker 通知未着バグ。
+調査結果は `docs/INVESTIGATION.md`、Expert 3名（debugger, security, tester）の議論結果は本ロードマップに反映済み。
 
-1. **Detekt 全 367 issues → 0 修正**: 87 ファイル変更、327 Kotlin ファイル全てがゼロ code smells
-2. **detekt.yml 設定最適化**: FunctionNaming の UI 除外、Preview suffix 許可、DI モジュール閾値調整、LongParameterList functionThreshold=8
-3. **UI レイヤーリファクタリング**: 50+ 画面でヘルパーコンポーザブル抽出（Login, Register, Settings, Calendar, HealthRecords, Medication, Tasks, Notes 等）
-4. **DI モジュール分割**: AppModule (800+ 行) → AppModule + RepositoryModule + ExporterModule
-5. **Data レイヤー改善**: Workers, Syncers, Exporters, DAOs のメソッド長/複雑度削減
-6. **CsvUtils 共通ヘルパー抽出**: CSV エクスポーターの重複コード統合
-7. **テスト修正**: HealthRecordCsvExporterTest の escapeCsv() 呼び出しを拡張関数パターンに更新
-8. **Roborazzi golden images 更新**: LoginScreen (Light/Dark) + OnboardingWelcomeScreen (Light/Dark)
-9. **CI 修正 3 点**:
-   - `workflow_dispatch` トリガー追加（手動 CI 実行可能に）
-   - Detekt バージョン `2.0.0-alpha.2` → `1.23.7` に修正（設定ファイル互換性）
-   - Screenshot Tests を `continue-on-error: true` に（Windows/Linux フォントレンダリング差分対応）
-   - Test Reporter の `fail-on-error: false` に（スクリーンショット差分がビルド全体をブロックしないように）
-10. **CI グリーン**: ✅ workflow_dispatch run `22070828844` 成功
-11. **PR 作成・更新**: https://github.com/kazu-apps/carenote_android/pull/4
-12. **マージコンフリクト解決**: master との ci.yml コンフリクト（update_snapshots input + Detekt jar 方式統合）+ スクリーンショット PNG バイナリコンフリクト解決
+## 次のアクション
 
-### 変更ファイル (主要)
+1. タブレットエミュレータで手動検証（オプション — Phase 2 修正の視覚確認）
 
-| ファイル | 変更内容 |
-|---------|---------|
-| `.github/workflows/ci.yml` | Detekt 1.23.7, workflow_dispatch, screenshot soft-fail |
-| `detekt.yml` | Compose 用ルール調整 |
-| `di/AppModule.kt` | 800+ 行 → 分割 |
-| `di/RepositoryModule.kt` | 新規 - Repository バインディング |
-| `di/ExporterModule.kt` | 新規 - Exporter バインディング |
-| `data/export/CsvUtils.kt` | 新規 - CSV 共通ヘルパー（String 拡張関数） |
-| `ui/screens/settings/SettingsScreen.kt` | 225行関数 → 10+ ヘルパー分割 |
-| `ui/screens/auth/LoginScreen.kt` | LoginContent 129行 → 5 ヘルパー分割 |
-| `ui/screens/auth/RegisterScreen.kt` | RegisterContent 133行 → 6 ヘルパー分割 |
-| `ui/screens/medication/AddEditMedicationScreen.kt` | 135行 → 5 ヘルパー分割 |
-| `ui/screens/notes/AddEditNoteScreen.kt` | 130行 + 61行 → 7 ヘルパー分割 |
-| `test/.../HealthRecordCsvExporterTest.kt` | escapeCsv() 拡張関数パターンに修正 |
-| `test/snapshots/` | LoginScreen + OnboardingWelcomeScreen golden images 更新 |
-| その他 70+ ファイル | LongMethod, CyclomaticComplexity, MaxLineLength 修正 |
+## 既知の問題
 
-### テスト結果
+### 未解決（要対応）
 
-- Detekt: ✅ 0 code smells (327 files analyzed)
-- ビルド: ✅ `assembleDebug` BUILD SUCCESSFUL
-- ユニットテスト: ✅ `testDebugUnitTest` BUILD SUCCESSFUL（全テストパス）
-- スクリーンショットテスト: ✅ ローカル `verifyRoborazziDebug` パス（CI は soft-fail）
-- CI: ✅ `workflow_dispatch` run 成功
+- 問い合わせメールがプレースホルダー (`support@carenote.app`) — リリース前に実アドレス確定必要
+- リリース APK の実機テスト未実施
 
-### ブランチ情報
+### 記録のみ（対応保留）
 
-- ブランチ: `claude/upbeat-maxwell`
-- ワークツリー: `.claude/worktrees/upbeat-maxwell`
-- PR: https://github.com/kazu-apps/carenote_android/pull/4
-- ベース: `master`
-- 最新コミット: `10b3162` (merge: resolve conflicts with master)
+| 重要度 | 出典 | 内容 |
+|--------|------|------|
+| MEDIUM | v4.0 | Rate Limiting 未実装（API エンドポイント、バックエンド依存） |
+| LOW | v2.0 | FCM トークンのサーバー送信未実装（バックエンド前提） |
+| LOW | v10.0-tdd | SettingsViewModelTest 1170 行（Detekt 対象外だが将来的に分割検討） |
+| LOW | Detekt | Roborazzi スクリーンショット Windows/Linux フォントレンダリング差分（CI soft-fail 対応済み） |
+| LOW | Detekt | SwipeToDismissItem deprecated API 警告（将来的な対応推奨） |
+| INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
 
-### 次のアクション
+## ロードマップ
 
-1. PR #4 をレビュー・マージ
-2. エミュレータでの UI 動作確認（特にリファクタリングされた画面）
+### Phase 1: リマインダー通知バグ修正 (calculateDelay + Clock injection) - DONE
+`calculateDelay()` に `plusDays(1)` ロジック追加 + Clock injection で決定的テスト実現。TaskReminderSchedulerTest 13件 + MedicationReminderSchedulerTest 14件、全テスト pass、ビルド成功。
 
-### 既知の問題
+### Phase 2: タブレット DatePicker/TimePicker バグ修正 - DONE
+4箇所の TextButton → Text + `Modifier.clickable(role = Role.Button)` + `padding(12.dp)` に変更。i18n 4文字列追加（JP+EN）。DueDateSelectorTest 9件 + DateTimeSelectorTest 8件 = 17テスト新規。ビルド・全テスト pass。
 
-- Roborazzi スクリーンショットが Windows/Linux 間でフォントレンダリング差分あり（CI では soft-fail で対応）
-- Kotlin コンパイラ警告（annotation-default-target）が複数あるが、機能に影響なし
-- SwipeToDismissItem の deprecated API 警告あり（将来的な対応推奨）
-- テストコードの型チェック警告（`Check for instance is always 'true'`）が数件あるが、テスト結果に影響なし
+### Expert 議論サマリー (2026-02-17)
+
+参加: debugger, security（固定）, tester — 各2-3ラウンドの peer-to-peer 議論完了
+
+**全 Expert 合意（11項目）:**
+1. Clock injection 必須（既存インフラ活用、追加コストほぼゼロ）
+2. plusDays(1) 戦略（セキュリティリスクなし）
+3. delay = 0 → 翌日スケジュール（isAfter の自然な挙動維持）
+4. 防御的ガードを `delay <= 0` に変更して残す
+5. 2層テスト（calculateDelay 直接 + scheduleReminder 統合）計 11 テストケース
+6. delay 安全性 assert（0 < delay <= 86,400,000）
+7. ExistingWorkPolicy.REPLACE の verify
+8. semantics Role.Button 必須 + onClickLabel 推奨
+9. DueDateSelector 内側 Row のみ clickable（削除ボタン衝突回避）
+10. Compose UI テスト + Roborazzi + 手動タブレット検証
+11. NavigationDrawer 干渉説は棄却（コード確認で干渉メカニズムなし）
+
+**未合意（実装時に判断）:**
+- Phase 2 の真因確定は実機検証待ち（TextButton が最有力、改善しなければ別途調査）
+- Scheduler コード共通化は将来のリファクタリング候補
+- PII ログ修正（`TaskReminderWorker` の `title=$taskTitle`）はオプション（DEBUG レベル、低リスク）
+
+## PENDING 項目
+
+### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
+Google Play Developer API 経由のレシート検証を Cloud Functions で実装。本番リリース前の必須要件。
+- 種別: 実装
+- 対象: Cloud Functions (Node.js), Firestore の purchaseTokens コレクション
+- 依存: v9.0 Phase 1 完了済み
+- 注意: **Claude Code の守備範囲外**。Firebase CLI + Node.js 環境が必要
+
+## 完了タスク
+
+| Item | 概要 | Status |
+|------|------|--------|
+| v1.0 1-53 | Clean Architecture + 5機能 + リリース準備 + 品質改善 + テスト強化 | DONE |
+| v2.0 55-81 | Firebase Auth + Firestore 同期 + FCM + Crashlytics + セキュリティ強化 | DONE |
+| v2.2 82-102 | TDD リファクタリング（Syncer, Settings, Auth, コード品質） | DONE |
+| v3.0 Ph1-35 | バグ修正 + リマインダー + 依存更新 + Dynamic Color | DONE |
+| v4.0 Ph1-25 | CI/CD + Paging 3 + Roborazzi + Widget + Root 検出 | DONE |
+| v5.0 Ph1-6 | TDD リファクタリング（Clock, HealthMetricsParser, Scaffold, FormValidator, PhotoManager） | DONE |
+| v6.0 Ph1-5 | Root ダイアログ + E2E 拡充 + Firebase Analytics + パフォーマンス + CLAUDE.md | DONE |
+| v7.0 Ph1-6 | ProGuard + エクスポート（CSV/PDF）+ クロスモジュール検索 + Roborazzi + CLAUDE.md | DONE |
+| v8.0 Ph1-3 | ホーム画面 + CareRecipient 拡張 + CalendarEvent type/completed | DONE |
+| v8.1 Ph4-7 | recipientId + createdBy + オンボーディング + NoteComment + recurrence | DONE |
+| v9.0-sec Ph1-3 | Firestore Rules + Session timeout + PBKDF2 + domain/validator/ + APPI ドキュメント | DONE |
+| v9.0-test Ph1-3 | TestDataFixtures + TestBuilders + ResultMatchers + MedicationLogSyncerTest | DONE |
+| v10.0-tdd Ph1-4 | MainCoroutineRule + ViewModel テスト移行 + ResultMatchers 全面採用 | DONE |
+| v9.0 Ph1-2 | Billing 基盤 + PremiumFeatureGuard + 通知制限 | DONE |
+| v9.0 Ph3-4 | Firestore 構造移行 + Member/Invitation データモデル + DB v23 | DONE |
+| v9.0 Ph5-6 | 招待 UI + フロー + E2E テスト（MemberInvitation 8件 + AcceptInvitation 5件） | DONE |
+| CLAUDE.md | v9.0 Phase 1-6 反映（DB v23, 14テーブル, 25モデル, 30リポジトリ, 18 E2E） | DONE |
+| Detekt 全修正 | 367 issues → 0。87 ファイル変更。AppModule 分割 (→RepositoryModule + ExporterModule)、CsvUtils 抽出、50+ 画面ヘルパー分割 | DONE |
+| CI グリーン化 | Detekt 1.23.7、workflow_dispatch、screenshot soft-fail、PR #4 マージ済み | DONE |
+| Phase 1 | リマインダー通知バグ修正: calculateDelay + Clock injection + plusDays(1)。TaskReminderSchedulerTest 13件 + MedicationReminderSchedulerTest 14件 新規 | DONE |
+| Phase 2 | タブレット DatePicker/TimePicker バグ修正: TextButton → clickable 化 + i18n + Compose UI テスト 17件 | DONE |
+
+## アーキテクチャ参照
+
+| カテゴリ | 値 |
+|----------|-----|
+| Room DB | v23, SQLCipher 4.6.1, fallbackToDestructiveMigration, 14 Entity |
+| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
+| Billing | Google Play Billing 7.1.1, BillingAvailability + NoOpBillingRepository パターン |
+| DI 分割 | AppModule + RepositoryModule + ExporterModule + DatabaseModule + FirebaseModule + SyncModule + WorkerModule + BillingModule |
+| セキュリティ | SQLCipher + EncryptedPrefs + Root検出 + 生体認証 + PBKDF2 + Session timeout + domain/validator/ |
+| テスト基盤 | MainCoroutineRule + TestBuilders (11モデル) + ResultMatchers (13種) + TestDataFixtures |
+| エクスポート | HealthRecord/MedicationLog/Task/Note CSV/PDF + CsvUtils 共通ヘルパー |
+| Detekt | 1.23.7, maxIssues=0, Compose FunctionNaming 除外, LongParameterList functionThreshold=8 |
+
+## スコープ外 / 将来
+
+- **FCM リモート通知**: Cloud Functions / バックエンド構築が前提
+- **Wear OS 対応**: Horologist + Health Services、別モジュール必要
+- **CSV データインポート**: 対象ユーザー適合性検証後

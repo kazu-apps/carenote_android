@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.tasks
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -328,13 +330,19 @@ private fun DueDateSelector(
             style = MaterialTheme.typography.titleMedium
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onClickDate) {
-                Text(
-                    text = dueDate?.let { DateTimeFormatters.formatDate(it) }
-                        ?: stringResource(R.string.tasks_task_no_due_date),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            Text(
+                text = dueDate?.let { DateTimeFormatters.formatDate(it) }
+                    ?: stringResource(R.string.tasks_task_no_due_date),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clickable(
+                        onClick = onClickDate,
+                        onClickLabel = stringResource(R.string.tasks_select_due_date),
+                        role = Role.Button
+                    )
+                    .padding(12.dp)
+            )
             if (dueDate != null) {
                 TextButton(onClick = onClearDate) {
                     Text(
@@ -502,14 +510,20 @@ private fun ReminderSection(
                     text = stringResource(R.string.tasks_reminder_time),
                     style = MaterialTheme.typography.bodyLarge
                 )
-                TextButton(onClick = onClickTime) {
-                    Text(
-                        text = time?.let {
-                            String.format("%02d:%02d", it.hour, it.minute)
-                        } ?: stringResource(R.string.tasks_reminder_time_not_set),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
+                Text(
+                    text = time?.let {
+                        String.format("%02d:%02d", it.hour, it.minute)
+                    } ?: stringResource(R.string.tasks_reminder_time_not_set),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clickable(
+                            onClick = onClickTime,
+                            onClickLabel = stringResource(R.string.tasks_select_reminder_time),
+                            role = Role.Button
+                        )
+                        .padding(12.dp)
+                )
             }
         }
     }
