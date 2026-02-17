@@ -1,17 +1,15 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: Phase 1-2 完了
 
-## 現在のタスク: なし（全ロードマップ完了）
+## 現在のタスク: バグ修正（2件）— Phase 1-2 完了
 
-v9.0 全 6 Phase + Detekt 全修正 + CI グリーン化 完了。PR #4 マージ済み (2026-02-16)。
+タスク画面の DatePicker/TimePicker がタブレットで開かないバグ + TaskReminderWorker 通知未着バグ。
+調査結果は `docs/INVESTIGATION.md`、Expert 3名（debugger, security, tester）の議論結果は本ロードマップに反映済み。
 
 ## 次のアクション
 
-1. v9.0 Phase 1B: Billing サーバーサイド検証 (Cloud Functions) — **Claude Code 守備範囲外、手動作業**
-2. PR #4 マージ後の UI 動作確認（エミュレータ、特に Detekt リファクタリングされた画面）
-3. リリース前手動作業: Play Console メタデータ、Firestore Security Rules デプロイ確認、問い合わせメール確定
-4. リリース APK の実機テスト
+1. タブレットエミュレータで手動検証（オプション — Phase 2 修正の視覚確認）
 
 ## 既知の問題
 
@@ -30,6 +28,36 @@ v9.0 全 6 Phase + Detekt 全修正 + CI グリーン化 完了。PR #4 マー�
 | LOW | Detekt | Roborazzi スクリーンショット Windows/Linux フォントレンダリング差分（CI soft-fail 対応済み） |
 | LOW | Detekt | SwipeToDismissItem deprecated API 警告（将来的な対応推奨） |
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
+
+## ロードマップ
+
+### Phase 1: リマインダー通知バグ修正 (calculateDelay + Clock injection) - DONE
+`calculateDelay()` に `plusDays(1)` ロジック追加 + Clock injection で決定的テスト実現。TaskReminderSchedulerTest 13件 + MedicationReminderSchedulerTest 14件、全テスト pass、ビルド成功。
+
+### Phase 2: タブレット DatePicker/TimePicker バグ修正 - DONE
+4箇所の TextButton → Text + `Modifier.clickable(role = Role.Button)` + `padding(12.dp)` に変更。i18n 4文字列追加（JP+EN）。DueDateSelectorTest 9件 + DateTimeSelectorTest 8件 = 17テスト新規。ビルド・全テスト pass。
+
+### Expert 議論サマリー (2026-02-17)
+
+参加: debugger, security（固定）, tester — 各2-3ラウンドの peer-to-peer 議論完了
+
+**全 Expert 合意（11項目）:**
+1. Clock injection 必須（既存インフラ活用、追加コストほぼゼロ）
+2. plusDays(1) 戦略（セキュリティリスクなし）
+3. delay = 0 → 翌日スケジュール（isAfter の自然な挙動維持）
+4. 防御的ガードを `delay <= 0` に変更して残す
+5. 2層テスト（calculateDelay 直接 + scheduleReminder 統合）計 11 テストケース
+6. delay 安全性 assert（0 < delay <= 86,400,000）
+7. ExistingWorkPolicy.REPLACE の verify
+8. semantics Role.Button 必須 + onClickLabel 推奨
+9. DueDateSelector 内側 Row のみ clickable（削除ボタン衝突回避）
+10. Compose UI テスト + Roborazzi + 手動タブレット検証
+11. NavigationDrawer 干渉説は棄却（コード確認で干渉メカニズムなし）
+
+**未合意（実装時に判断）:**
+- Phase 2 の真因確定は実機検証待ち（TextButton が最有力、改善しなければ別途調査）
+- Scheduler コード共通化は将来のリファクタリング候補
+- PII ログ修正（`TaskReminderWorker` の `title=$taskTitle`）はオプション（DEBUG レベル、低リスク）
 
 ## PENDING 項目
 
@@ -63,6 +91,8 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | CLAUDE.md | v9.0 Phase 1-6 反映（DB v23, 14テーブル, 25モデル, 30リポジトリ, 18 E2E） | DONE |
 | Detekt 全修正 | 367 issues → 0。87 ファイル変更。AppModule 分割 (→RepositoryModule + ExporterModule)、CsvUtils 抽出、50+ 画面ヘルパー分割 | DONE |
 | CI グリーン化 | Detekt 1.23.7、workflow_dispatch、screenshot soft-fail、PR #4 マージ済み | DONE |
+| Phase 1 | リマインダー通知バグ修正: calculateDelay + Clock injection + plusDays(1)。TaskReminderSchedulerTest 13件 + MedicationReminderSchedulerTest 14件 新規 | DONE |
+| Phase 2 | タブレット DatePicker/TimePicker バグ修正: TextButton → clickable 化 + i18n + Compose UI テスト 17件 | DONE |
 
 ## アーキテクチャ参照
 

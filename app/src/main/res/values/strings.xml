@@ -253,6 +253,8 @@
     <string name="calendar_event_completed">完了</string>
     <string name="calendar_event_mark_complete">完了にする</string>
     <string name="calendar_event_mark_incomplete">未完了に戻す</string>
+    <string name="calendar_select_date">日付を選択</string>
+    <string name="calendar_select_time">時刻を選択</string>
 
     <!-- Tasks -->
     <string name="tasks_title">タスク</string>
@@ -294,6 +296,8 @@
     <string name="tasks_reminder_time_not_set">未設定</string>
     <string name="tasks_empty">タスクはありません</string>
     <string name="tasks_empty_action">タスクを追加する</string>
+    <string name="tasks_select_due_date">期限を選択</string>
+    <string name="tasks_select_reminder_time">通知時刻を選択</string>
 
     <!-- Health Records -->
     <string name="health_records_title">健康記録</string>

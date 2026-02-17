@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.calendar
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -418,12 +420,18 @@ private fun DateSelector(
             text = stringResource(R.string.calendar_event_date),
             style = MaterialTheme.typography.titleMedium
         )
-        TextButton(onClick = onClick) {
-            Text(
-                text = DateTimeFormatters.formatDate(date),
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
+        Text(
+            text = DateTimeFormatters.formatDate(date),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable(
+                    onClick = onClick,
+                    onClickLabel = stringResource(R.string.calendar_select_date),
+                    role = Role.Button
+                )
+                .padding(12.dp)
+        )
     }
 }
 
@@ -463,12 +471,18 @@ private fun TimeSelector(
             text = label,
             style = MaterialTheme.typography.titleMedium
         )
-        TextButton(onClick = onClick) {
-            Text(
-                text = time?.let { DateTimeFormatters.formatTime(it) } ?: "--:--",
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
+        Text(
+            text = time?.let { DateTimeFormatters.formatTime(it) } ?: "--:--",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable(
+                    onClick = onClick,
+                    onClickLabel = stringResource(R.string.calendar_select_time),
+                    role = Role.Button
+                )
+                .padding(12.dp)
+        )
     }
 }
 

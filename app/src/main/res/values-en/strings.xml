@@ -253,6 +253,8 @@
     <string name="calendar_event_completed">Completed</string>
     <string name="calendar_event_mark_complete">Mark Complete</string>
     <string name="calendar_event_mark_incomplete">Mark Incomplete</string>
+    <string name="calendar_select_date">Select date</string>
+    <string name="calendar_select_time">Select time</string>
 
     <!-- Tasks -->
     <string name="tasks_title">Tasks</string>
@@ -294,6 +296,8 @@
     <string name="tasks_reminder_time_not_set">Not set</string>
     <string name="tasks_empty">No tasks</string>
     <string name="tasks_empty_action">Add a task</string>
+    <string name="tasks_select_due_date">Select due date</string>
+    <string name="tasks_select_reminder_time">Select reminder time</string>
 
     <!-- Health Records -->
     <string name="health_records_title">Health Records</string>
