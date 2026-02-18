@@ -9,6 +9,7 @@ import com.carenote.app.domain.model.Invitation
 import com.carenote.app.domain.model.InvitationStatus
 import com.carenote.app.domain.model.Member
 import com.carenote.app.domain.model.MemberRole
+import com.carenote.app.domain.model.User
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.InvitationRepository
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 sealed class AcceptInvitationUiState {
@@ -128,43 +130,55 @@ class AcceptInvitationViewModel @Inject constructor(
                 return@launch
             }
 
-            val existingMembers = memberRepository.getAllMembers().firstOrNull() ?: emptyList()
-            val isDuplicate = existingMembers.any {
-                it.uid == currentUser.uid && it.careRecipientId == state.invitation.careRecipientId
-            }
-
-            if (!isDuplicate) {
-                val member = Member(
-                    careRecipientId = state.invitation.careRecipientId,
-                    uid = currentUser.uid,
-                    role = MemberRole.MEMBER,
-                    joinedAt = now
-                )
-                memberRepository.insertMember(member)
-                    .onFailure { error ->
-                        Timber.w("Failed to accept invitation: $error")
-                        _uiState.value = state.copy(isAccepting = false)
-                        snackbarController.showMessage(R.string.accept_invitation_failed)
-                        return@launch
-                    }
-            }
-
-            val updatedInvitation = state.invitation.copy(
-                status = InvitationStatus.ACCEPTED
-            )
-            invitationRepository.updateInvitation(updatedInvitation)
-                .onSuccess {
-                    Timber.d("Invitation accepted successfully")
-                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_INVITATION_ACCEPTED)
-                    _uiState.value = AcceptInvitationUiState.Success
-                }
-                .onFailure { error ->
-                    Timber.w("Failed to update invitation status: $error")
-                    _uiState.value = AcceptInvitationUiState.Error(
-                        UiText.Resource(R.string.accept_invitation_failed)
-                    )
-                }
+            if (!addMemberIfNeeded(state, currentUser, now)) return@launch
+            completeAcceptance(state)
         }
+    }
+
+    private suspend fun addMemberIfNeeded(
+        state: AcceptInvitationUiState.Content,
+        currentUser: User,
+        now: LocalDateTime
+    ): Boolean {
+        val existingMembers = memberRepository.getAllMembers().firstOrNull() ?: emptyList()
+        val isDuplicate = existingMembers.any {
+            it.uid == currentUser.uid &&
+                it.careRecipientId == state.invitation.careRecipientId
+        }
+        if (isDuplicate) return true
+
+        val member = Member(
+            careRecipientId = state.invitation.careRecipientId,
+            uid = currentUser.uid,
+            role = MemberRole.MEMBER,
+            joinedAt = now
+        )
+        memberRepository.insertMember(member)
+            .onFailure { error ->
+                Timber.w("Failed to accept invitation: $error")
+                _uiState.value = state.copy(isAccepting = false)
+                snackbarController.showMessage(R.string.accept_invitation_failed)
+                return false
+            }
+        return true
+    }
+
+    private suspend fun completeAcceptance(state: AcceptInvitationUiState.Content) {
+        val updatedInvitation = state.invitation.copy(
+            status = InvitationStatus.ACCEPTED
+        )
+        invitationRepository.updateInvitation(updatedInvitation)
+            .onSuccess {
+                Timber.d("Invitation accepted successfully")
+                analyticsRepository.logEvent(AppConfig.Analytics.EVENT_INVITATION_ACCEPTED)
+                _uiState.value = AcceptInvitationUiState.Success
+            }
+            .onFailure { error ->
+                Timber.w("Failed to update invitation status: $error")
+                _uiState.value = AcceptInvitationUiState.Error(
+                    UiText.Resource(R.string.accept_invitation_failed)
+                )
+            }
     }
 
     fun decline() {

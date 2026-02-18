@@ -325,6 +325,15 @@ private fun CareLevelAndMedicalFields(
         modifier = Modifier.fillMaxWidth()
     )
 
+    AllergiesAndMemoFields(uiState, onAllergiesChange, onMemoChange)
+}
+
+@Composable
+private fun AllergiesAndMemoFields(
+    uiState: CareRecipientUiState,
+    onAllergiesChange: (String) -> Unit,
+    onMemoChange: (String) -> Unit
+) {
     OutlinedTextField(
         value = uiState.allergies,
         onValueChange = onAllergiesChange,

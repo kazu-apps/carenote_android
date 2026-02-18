@@ -121,49 +121,16 @@ class CareRecipientViewModel @Inject constructor(
 
     fun save() {
         val current = _uiState.value
-
-        val nameError = combineValidations(
-            validateRequired(current.name, R.string.care_recipient_name_required),
-            validateMaxLength(current.name, AppConfig.CareRecipient.NAME_MAX_LENGTH)
-        )
-        val nicknameError = validateMaxLength(current.nickname, AppConfig.CareRecipient.NICKNAME_MAX_LENGTH)
-        val careLevelError = validateMaxLength(current.careLevel, AppConfig.CareRecipient.CARE_LEVEL_MAX_LENGTH)
-        val medicalHistoryError = validateMaxLength(current.medicalHistory, AppConfig.CareRecipient.MEDICAL_HISTORY_MAX_LENGTH)
-        val allergiesError = validateMaxLength(current.allergies, AppConfig.CareRecipient.ALLERGIES_MAX_LENGTH)
-        val memoError = validateMaxLength(current.memo, AppConfig.CareRecipient.MEMO_MAX_LENGTH)
-
-        if (nameError != null || nicknameError != null || careLevelError != null ||
-            medicalHistoryError != null || allergiesError != null || memoError != null
-        ) {
-            _uiState.value = current.copy(
-                nameError = nameError,
-                nicknameError = nicknameError,
-                careLevelError = careLevelError,
-                medicalHistoryError = medicalHistoryError,
-                allergiesError = allergiesError,
-                memoError = memoError
-            )
+        val validatedState = validateFields(current)
+        if (validatedState != null) {
+            _uiState.value = validatedState
             return
         }
 
         _uiState.value = current.copy(isSaving = true)
 
         viewModelScope.launch {
-            val now = clock.now()
-            val careRecipient = CareRecipient(
-                id = existingId,
-                name = current.name.trim(),
-                birthDate = current.birthDate,
-                gender = current.gender,
-                nickname = current.nickname.trim(),
-                careLevel = current.careLevel.trim(),
-                medicalHistory = current.medicalHistory.trim(),
-                allergies = current.allergies.trim(),
-                memo = current.memo.trim(),
-                createdAt = if (existingId == 0L) now else existingCreatedAt,
-                updatedAt = now
-            )
-
+            val careRecipient = buildCareRecipient(current)
             repository.saveCareRecipient(careRecipient)
                 .onSuccess {
                     analyticsRepository.logEvent(AppConfig.Analytics.EVENT_CARE_RECIPIENT_SAVED)
@@ -173,8 +140,61 @@ class CareRecipientViewModel @Inject constructor(
                 .onFailure {
                     snackbarController.showMessage(R.string.care_recipient_save_error)
                 }
-
             _uiState.value = _uiState.value.copy(isSaving = false)
         }
+    }
+
+    private fun validateFields(current: CareRecipientUiState): CareRecipientUiState? {
+        val nameError = combineValidations(
+            validateRequired(current.name, R.string.care_recipient_name_required),
+            validateMaxLength(current.name, AppConfig.CareRecipient.NAME_MAX_LENGTH)
+        )
+        val nicknameError = validateMaxLength(
+            current.nickname, AppConfig.CareRecipient.NICKNAME_MAX_LENGTH
+        )
+        val careLevelError = validateMaxLength(
+            current.careLevel, AppConfig.CareRecipient.CARE_LEVEL_MAX_LENGTH
+        )
+        val medicalHistoryError = validateMaxLength(
+            current.medicalHistory, AppConfig.CareRecipient.MEDICAL_HISTORY_MAX_LENGTH
+        )
+        val allergiesError = validateMaxLength(
+            current.allergies, AppConfig.CareRecipient.ALLERGIES_MAX_LENGTH
+        )
+        val memoError = validateMaxLength(
+            current.memo, AppConfig.CareRecipient.MEMO_MAX_LENGTH
+        )
+
+        val errors = listOfNotNull(
+            nameError, nicknameError, careLevelError,
+            medicalHistoryError, allergiesError, memoError
+        )
+        if (errors.isEmpty()) return null
+
+        return current.copy(
+            nameError = nameError,
+            nicknameError = nicknameError,
+            careLevelError = careLevelError,
+            medicalHistoryError = medicalHistoryError,
+            allergiesError = allergiesError,
+            memoError = memoError
+        )
+    }
+
+    private fun buildCareRecipient(current: CareRecipientUiState): CareRecipient {
+        val now = clock.now()
+        return CareRecipient(
+            id = existingId,
+            name = current.name.trim(),
+            birthDate = current.birthDate,
+            gender = current.gender,
+            nickname = current.nickname.trim(),
+            careLevel = current.careLevel.trim(),
+            medicalHistory = current.medicalHistory.trim(),
+            allergies = current.allergies.trim(),
+            memo = current.memo.trim(),
+            createdAt = if (existingId == 0L) now else existingCreatedAt,
+            updatedAt = now
+        )
     }
 }
