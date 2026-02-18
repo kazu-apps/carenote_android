@@ -2,7 +2,7 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: セキュリティ修正 Phase 3 完了
+## 現在のタスク: セキュリティ修正 Phase 3 完了 + Detekt 修正 + CI グリーン
 
 ## 次のアクション
 
@@ -70,6 +70,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | OSV-Scanner 導入 | OSV-Scanner v2 + Gradle dependency locking + CI workflow + Claude Code hook | DONE |
 | Sec Phase 2 | 入力バリデーション強化 + Biometric エラーハンドリング + DB リカバリバックアップ | DONE |
 | Sec Phase 3 | BiometricHelper DI + passphraseHex zero-clear + RootDetector 強化 + ImageCompressor 検証 | DONE |
+| Detekt 修正 | CareRecipientScreen/ViewModel, AcceptInvitationViewModel メソッド分割（LongMethod, ComplexCondition, MaxLineLength） | DONE |
 
 ## アーキテクチャ参照
 
