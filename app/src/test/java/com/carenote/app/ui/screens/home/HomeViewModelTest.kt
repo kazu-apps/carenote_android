@@ -347,6 +347,24 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `logItemClicked records analytics event with section and item id`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+
+        val sections = listOf("medication", "task", "health_record", "note", "calendar")
+        sections.forEachIndexed { index, section ->
+            viewModel.logItemClicked(section, (index + 1).toLong())
+        }
+
+        assertEquals(5, analyticsRepository.loggedEvents.size)
+        sections.forEachIndexed { index, section ->
+            val (name, params) = analyticsRepository.loggedEvents[index]
+            assertEquals(AppConfig.Analytics.EVENT_HOME_ITEM_CLICKED, name)
+            assertEquals(section, params[AppConfig.Analytics.PARAM_SECTION])
+            assertEquals((index + 1).toString(), params[AppConfig.Analytics.PARAM_ITEM_ID])
+        }
+    }
+
+    @Test
     fun `calendar events sorted by startTime`() = runTest(mainCoroutineRule.testDispatcher) {
         val today = fakeClock.today()
         calendarEventRepository.setEvents(

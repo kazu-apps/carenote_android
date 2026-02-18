@@ -106,6 +106,16 @@ class HomeViewModel @Inject constructor(
         _refreshTrigger.value = System.nanoTime()
     }
 
+    fun logItemClicked(section: String, itemId: Long) {
+        analyticsRepository.logEvent(
+            AppConfig.Analytics.EVENT_HOME_ITEM_CLICKED,
+            mapOf(
+                AppConfig.Analytics.PARAM_SECTION to section,
+                AppConfig.Analytics.PARAM_ITEM_ID to itemId.toString()
+            )
+        )
+    }
+
     fun logSeeAllClicked(section: String) {
         analyticsRepository.logEvent(
             AppConfig.Analytics.EVENT_HOME_SEE_ALL_CLICKED,

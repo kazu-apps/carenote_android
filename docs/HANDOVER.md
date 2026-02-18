@@ -47,15 +47,8 @@ ConnectivityRepository + OfflineIndicator コンポーネント。AdaptiveNaviga
 ### Phase 6: プレミアム/Billing UI - DONE
 Settings 画面にプレミアムプラン購入/管理セクションを追加。BillingRepository.launchBillingFlow() + BillingUiState + PremiumSection + SettingsViewModel 拡張 + テスト 6件。
 
-### Phase 7: 品質改善バッチ - PENDING
-
-依存ライブラリ更新 + Home 画面 UX 改善 + 画面遷移アニメーション統一。
-- 対象ファイル:
-  - `gradle/libs.versions.toml` (biometric 1.1.0→1.2.x)
-  - `ui/screens/home/HomeScreen.kt` (アイテム個別タップ→詳細遷移)
-  - `ui/navigation/CareNoteNavHost.kt` (画面遷移アニメーション)
-- 依存: なし
-- 信頼度: HIGH
+### Phase 7: 品質改善バッチ - DONE
+biometric 1.1.0→1.4.0-alpha05 + HomeScreenアイテムクリック詳細遷移 + 画面遷移アニメーション統一(スライド/フェード) + logItemClicked Analytics追加。
 
 ### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
 Google Play Developer API 経由のレシート検証を Cloud Functions で実装。本番リリース前の必須要件。
@@ -103,6 +96,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 4 | CalendarEventReminderSection + CalendarEventFormFields 画面分割。リマインダー UI + ViewModel 統合 | DONE |
 | Phase 5 | ConnectivityRepository + OfflineIndicator バナー。AdaptiveNavigationScaffold 統合 | DONE |
 | Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + SettingsViewModel BillingUiState + テスト 6件 | DONE |
+| Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック詳細遷移 + スライド/フェード遷移アニメーション + logItemClicked Analytics | DONE |
 
 ## アーキテクチャ参照
 

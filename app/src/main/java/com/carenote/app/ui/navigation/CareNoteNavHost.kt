@@ -1,5 +1,10 @@
 package com.carenote.app.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -56,7 +61,11 @@ fun CareNoteNavHost(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = { slideInHorizontally(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) { it } },
+        exitTransition = { slideOutHorizontally(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) { -it } },
+        popEnterTransition = { slideInHorizontally(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) { -it } },
+        popExitTransition = { slideOutHorizontally(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) { it } }
     ) {
         bottomNavRoutes(navController)
         settingsRoutes(navController)
@@ -86,7 +95,13 @@ private fun NavGraphBuilder.bottomNavRoutes(
 }
 
 private fun NavGraphBuilder.homeRoute(navController: NavHostController) {
-    composable(Screen.Home.route) {
+    composable(
+        Screen.Home.route,
+        enterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        exitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popEnterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popExitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) }
+    ) {
         HomeScreen(
             onNavigateToSettings = {
                 navController.navigate(Screen.Settings.route)
@@ -108,13 +123,34 @@ private fun NavGraphBuilder.homeRoute(navController: NavHostController) {
             },
             onNavigateToSearch = {
                 navController.navigate(Screen.Search.route)
+            },
+            onMedicationClick = { id ->
+                navController.navigate(Screen.MedicationDetail.createRoute(id))
+            },
+            onTaskClick = { id ->
+                navController.navigate(Screen.EditCalendarEvent.createRoute(id))
+            },
+            onHealthRecordClick = { id ->
+                navController.navigate(Screen.EditHealthRecord.createRoute(id))
+            },
+            onNoteClick = { id ->
+                navController.navigate(Screen.EditNote.createRoute(id))
+            },
+            onCalendarEventClick = { id ->
+                navController.navigate(Screen.EditCalendarEvent.createRoute(id))
             }
         )
     }
 }
 
 private fun NavGraphBuilder.medicationListRoute(navController: NavHostController) {
-    composable(Screen.Medication.route) {
+    composable(
+        Screen.Medication.route,
+        enterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        exitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popEnterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popExitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) }
+    ) {
         MedicationScreen(
             onNavigateToAddMedication = {
                 navController.navigate(Screen.AddMedication.route)
@@ -132,7 +168,13 @@ private fun NavGraphBuilder.medicationListRoute(navController: NavHostController
 }
 
 private fun NavGraphBuilder.calendarListRoute(navController: NavHostController) {
-    composable(Screen.Calendar.route) {
+    composable(
+        Screen.Calendar.route,
+        enterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        exitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popEnterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popExitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) }
+    ) {
         CalendarScreen(
             onNavigateToAddEvent = {
                 navController.navigate(Screen.AddCalendarEvent.createRoute())
@@ -153,7 +195,13 @@ private fun NavGraphBuilder.calendarListRoute(navController: NavHostController) 
 }
 
 private fun NavGraphBuilder.timelineRoute(navController: NavHostController) {
-    composable(Screen.Timeline.route) {
+    composable(
+        Screen.Timeline.route,
+        enterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        exitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popEnterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popExitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) }
+    ) {
         TimelineScreen(
             onNavigateToAddTask = {
                 navController.navigate(Screen.AddCalendarEvent.createRoute("TASK"))
@@ -163,7 +211,13 @@ private fun NavGraphBuilder.timelineRoute(navController: NavHostController) {
 }
 
 private fun NavGraphBuilder.healthRecordsListRoute(navController: NavHostController) {
-    composable(Screen.HealthRecords.route) {
+    composable(
+        Screen.HealthRecords.route,
+        enterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        exitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popEnterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popExitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) }
+    ) {
         HealthRecordsScreen(
             onNavigateToAddRecord = {
                 navController.navigate(Screen.AddHealthRecord.route)
@@ -181,7 +235,13 @@ private fun NavGraphBuilder.healthRecordsListRoute(navController: NavHostControl
 }
 
 private fun NavGraphBuilder.notesListRoute(navController: NavHostController) {
-    composable(Screen.Notes.route) {
+    composable(
+        Screen.Notes.route,
+        enterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        exitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popEnterTransition = { fadeIn(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) },
+        popExitTransition = { fadeOut(tween(AppConfig.UI.ANIMATION_DURATION_MS.toInt())) }
+    ) {
         NotesScreen(
             onNavigateToAddNote = {
                 navController.navigate(Screen.AddNote.route)

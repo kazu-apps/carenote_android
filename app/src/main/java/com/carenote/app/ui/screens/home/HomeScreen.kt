@@ -48,6 +48,7 @@ import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Note
 import com.carenote.app.ui.components.LoadingIndicator
+import androidx.compose.foundation.clickable
 import com.carenote.app.ui.preview.LightDarkPreview
 import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.CareNoteTheme
@@ -64,6 +65,11 @@ fun HomeScreen(
     onNavigateToHealthRecords: () -> Unit,
     onNavigateToNotes: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onMedicationClick: (Long) -> Unit = {},
+    onTaskClick: (Long) -> Unit = {},
+    onHealthRecordClick: (Long) -> Unit = {},
+    onNoteClick: (Long) -> Unit = {},
+    onCalendarEventClick: (Long) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -101,6 +107,26 @@ fun HomeScreen(
                 onNavigateToNotes = {
                     viewModel.logSeeAllClicked("notes")
                     onNavigateToNotes()
+                },
+                onMedicationClick = { id ->
+                    viewModel.logItemClicked("medication", id)
+                    onMedicationClick(id)
+                },
+                onTaskClick = { id ->
+                    viewModel.logItemClicked("task", id)
+                    onTaskClick(id)
+                },
+                onHealthRecordClick = { id ->
+                    viewModel.logItemClicked("health_record", id)
+                    onHealthRecordClick(id)
+                },
+                onNoteClick = { id ->
+                    viewModel.logItemClicked("note", id)
+                    onNoteClick(id)
+                },
+                onCalendarEventClick = { id ->
+                    viewModel.logItemClicked("calendar", id)
+                    onCalendarEventClick(id)
                 }
             ),
             modifier = Modifier.padding(innerPadding)
@@ -146,7 +172,12 @@ internal data class HomeNavigationCallbacks(
     val onNavigateToCalendar: () -> Unit,
     val onNavigateToTimeline: () -> Unit,
     val onNavigateToHealthRecords: () -> Unit,
-    val onNavigateToNotes: () -> Unit
+    val onNavigateToNotes: () -> Unit,
+    val onMedicationClick: (Long) -> Unit = {},
+    val onTaskClick: (Long) -> Unit = {},
+    val onHealthRecordClick: (Long) -> Unit = {},
+    val onNoteClick: (Long) -> Unit = {},
+    val onCalendarEventClick: (Long) -> Unit = {}
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,31 +218,36 @@ private fun HomeSectionList(
         item {
             MedicationSection(
                 medications = uiState.todayMedications,
-                onSeeAll = navigation.onNavigateToMedication
+                onSeeAll = navigation.onNavigateToMedication,
+                onItemClick = navigation.onMedicationClick
             )
         }
         item {
             TaskSection(
                 tasks = uiState.upcomingTasks,
-                onSeeAll = navigation.onNavigateToTimeline
+                onSeeAll = navigation.onNavigateToTimeline,
+                onItemClick = navigation.onTaskClick
             )
         }
         item {
             HealthRecordSection(
                 record = uiState.latestHealthRecord,
-                onSeeAll = navigation.onNavigateToHealthRecords
+                onSeeAll = navigation.onNavigateToHealthRecords,
+                onItemClick = navigation.onHealthRecordClick
             )
         }
         item {
             NoteSection(
                 notes = uiState.recentNotes,
-                onSeeAll = navigation.onNavigateToNotes
+                onSeeAll = navigation.onNavigateToNotes,
+                onItemClick = navigation.onNoteClick
             )
         }
         item {
             CalendarSection(
                 events = uiState.todayEvents,
-                onSeeAll = navigation.onNavigateToCalendar
+                onSeeAll = navigation.onNavigateToCalendar,
+                onItemClick = navigation.onCalendarEventClick
             )
         }
         item { Spacer(modifier = Modifier.height(AppConfig.UI.LIST_BOTTOM_PADDING_DP.dp)) }
@@ -241,7 +277,8 @@ private fun SectionHeader(
 @Composable
 private fun MedicationSection(
     medications: List<MedicationWithLog>,
-    onSeeAll: () -> Unit
+    onSeeAll: () -> Unit,
+    onItemClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -260,7 +297,7 @@ private fun MedicationSection(
                 )
             } else {
                 medications.forEach { medWithLog ->
-                    MedicationItem(medWithLog)
+                    MedicationItem(medWithLog, onClick = onItemClick)
                 }
             }
         }
@@ -268,12 +305,13 @@ private fun MedicationSection(
 }
 
 @Composable
-private fun MedicationItem(medWithLog: MedicationWithLog) {
+private fun MedicationItem(medWithLog: MedicationWithLog, onClick: (Long) -> Unit) {
     val takenCount = medWithLog.logs.size
     val totalTimings = medWithLog.medication.timings.size.coerceAtLeast(1)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick(medWithLog.medication.id) }
             .padding(vertical = AppConfig.UI.SMALL_SPACING_DP.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -297,7 +335,8 @@ private fun MedicationItem(medWithLog: MedicationWithLog) {
 @Composable
 private fun TaskSection(
     tasks: List<CalendarEvent>,
-    onSeeAll: () -> Unit
+    onSeeAll: () -> Unit,
+    onItemClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -315,18 +354,19 @@ private fun TaskSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                tasks.forEach { event -> TaskItem(event) }
+                tasks.forEach { event -> TaskItem(event, onClick = onItemClick) }
             }
         }
     }
 }
 
 @Composable
-private fun TaskItem(event: CalendarEvent) {
+private fun TaskItem(event: CalendarEvent, onClick: (Long) -> Unit) {
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick(event.id) }
             .padding(vertical = AppConfig.UI.SMALL_SPACING_DP.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -350,7 +390,8 @@ private fun TaskItem(event: CalendarEvent) {
 @Composable
 private fun HealthRecordSection(
     record: HealthRecord?,
-    onSeeAll: () -> Unit
+    onSeeAll: () -> Unit,
+    onItemClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -368,16 +409,20 @@ private fun HealthRecordSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                HealthRecordItem(record)
+                HealthRecordItem(record, onClick = onItemClick)
             }
         }
     }
 }
 
 @Composable
-private fun HealthRecordItem(record: HealthRecord) {
+private fun HealthRecordItem(record: HealthRecord, onClick: (Long) -> Unit) {
     val dateFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(record.id) }
+    ) {
         Text(
             text = dateFormatter.format(record.recordedAt),
             style = MaterialTheme.typography.bodySmall,
@@ -415,7 +460,8 @@ private fun HealthRecordItem(record: HealthRecord) {
 @Composable
 private fun NoteSection(
     notes: List<Note>,
-    onSeeAll: () -> Unit
+    onSeeAll: () -> Unit,
+    onItemClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -433,17 +479,18 @@ private fun NoteSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                notes.forEach { note -> NoteItem(note) }
+                notes.forEach { note -> NoteItem(note, onClick = onItemClick) }
             }
         }
     }
 }
 
 @Composable
-private fun NoteItem(note: Note) {
+private fun NoteItem(note: Note, onClick: (Long) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick(note.id) }
             .padding(vertical = AppConfig.UI.SMALL_SPACING_DP.dp)
     ) {
         Text(
@@ -465,7 +512,8 @@ private fun NoteItem(note: Note) {
 @Composable
 private fun CalendarSection(
     events: List<CalendarEvent>,
-    onSeeAll: () -> Unit
+    onSeeAll: () -> Unit,
+    onItemClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -483,17 +531,18 @@ private fun CalendarSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                events.forEach { event -> CalendarEventItem(event) }
+                events.forEach { event -> CalendarEventItem(event, onItemClick = onItemClick) }
             }
         }
     }
 }
 
 @Composable
-internal fun CalendarEventItem(event: CalendarEvent) {
+internal fun CalendarEventItem(event: CalendarEvent, onItemClick: (Long) -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onItemClick(event.id) }
             .padding(vertical = AppConfig.UI.SMALL_SPACING_DP.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

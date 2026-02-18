@@ -662,6 +662,8 @@ object AppConfig {
         const val EVENT_HOME_SEE_ALL_CLICKED = "home_see_all_clicked"
         const val EVENT_HOME_SECTION_CLICKED = "home_section_clicked"
         const val PARAM_SECTION = "section"
+        const val EVENT_HOME_ITEM_CLICKED = "home_item_clicked"
+        const val PARAM_ITEM_ID = "item_id"
 
         // Member
         const val SCREEN_MEMBER_MANAGEMENT = "member_management"
