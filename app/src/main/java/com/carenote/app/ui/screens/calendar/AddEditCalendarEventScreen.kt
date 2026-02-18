@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -265,26 +264,13 @@ private fun CalendarEventFormBody(
             onShowEndTimePicker = onShowEndTimePicker
         )
 
-        RecurrenceSection(
-            frequency = formState.recurrenceFrequency,
-            interval = formState.recurrenceInterval,
-            intervalError = formState.recurrenceIntervalError,
+        CalendarEventOptionalSections(
+            formState = formState,
             onFrequencySelected = onFrequencySelected,
-            onIntervalChanged = onIntervalChanged
-        )
-
-        AnimatedVisibility(visible = formState.type == CalendarEventType.TASK) {
-            TaskFields(
-                priority = formState.priority,
-                onPriorityChange = onPriorityChange
-            )
-        }
-
-        CalendarEventReminderSection(
-            enabled = formState.reminderEnabled,
-            time = formState.reminderTime,
-            onToggle = onToggleReminder,
-            onClickTime = onReminderTimeChange
+            onIntervalChanged = onIntervalChanged,
+            onPriorityChange = onPriorityChange,
+            onToggleReminder = onToggleReminder,
+            onReminderTimeChange = onReminderTimeChange
         )
 
         SaveCancelButtons(
@@ -292,9 +278,39 @@ private fun CalendarEventFormBody(
             onCancel = onCancel,
             onSave = onSave
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+@Composable
+private fun CalendarEventOptionalSections(
+    formState: AddEditCalendarEventFormState,
+    onFrequencySelected: (RecurrenceFrequency) -> Unit,
+    onIntervalChanged: (Int) -> Unit,
+    onPriorityChange: (TaskPriority) -> Unit,
+    onToggleReminder: () -> Unit,
+    onReminderTimeChange: () -> Unit
+) {
+    RecurrenceSection(
+        frequency = formState.recurrenceFrequency,
+        interval = formState.recurrenceInterval,
+        intervalError = formState.recurrenceIntervalError,
+        onFrequencySelected = onFrequencySelected,
+        onIntervalChanged = onIntervalChanged
+    )
+
+    AnimatedVisibility(visible = formState.type == CalendarEventType.TASK) {
+        TaskFields(
+            priority = formState.priority,
+            onPriorityChange = onPriorityChange
+        )
+    }
+
+    CalendarEventReminderSection(
+        enabled = formState.reminderEnabled,
+        time = formState.reminderTime,
+        onToggle = onToggleReminder,
+        onClickTime = onReminderTimeChange
+    )
 }
 
 @Composable

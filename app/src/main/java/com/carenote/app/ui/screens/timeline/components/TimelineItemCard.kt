@@ -52,22 +52,13 @@ fun TimelineItemCard(
             horizontalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp),
             verticalAlignment = Alignment.Top
         ) {
-            if (item is TimelineItem.CalendarEventItem && item.event.isTask && onToggleCompleted != null) {
-                Checkbox(
-                    checked = item.event.completed,
-                    onCheckedChange = { checked ->
-                        onToggleCompleted(item.event.id, checked)
-                    },
-                    modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
-                )
-            } else {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = tint,
-                    modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
-                )
-            }
+            TimelineItemLeadingIcon(
+                item = item,
+                icon = icon,
+                label = label,
+                tint = tint,
+                onToggleCompleted = onToggleCompleted
+            )
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -93,6 +84,32 @@ fun TimelineItemCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun TimelineItemLeadingIcon(
+    item: TimelineItem,
+    icon: ImageVector,
+    label: String,
+    tint: Color,
+    onToggleCompleted: ((Long, Boolean) -> Unit)?
+) {
+    if (item is TimelineItem.CalendarEventItem && item.event.isTask && onToggleCompleted != null) {
+        Checkbox(
+            checked = item.event.completed,
+            onCheckedChange = { checked ->
+                onToggleCompleted(item.event.id, checked)
+            },
+            modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
+        )
+    } else {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = tint,
+            modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
+        )
     }
 }
 

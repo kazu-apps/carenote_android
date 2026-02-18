@@ -2,12 +2,10 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: 全 PENDING フェーズ完了（Phase 1〜7）
-
 ## 次のアクション
 
-1. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
-2. Phase 1B: Billing サーバーサイド検証 — Firebase CLI + Node.js 環境で Cloud Functions 実装（Claude Code 守備範囲外）
+1. CI の workflow_dispatch で Roborazzi golden image 更新
+2. Phase 1B: Billing サーバーサイド検証（Claude Code 守備範囲外）
 3. リリース APK の実機テスト実施
 4. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
 
@@ -66,6 +64,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 5 | ConnectivityRepository + OfflineIndicator バナー | DONE |
 | Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + テスト 6件 | DONE |
 | Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック遷移 + スライド/フェードアニメーション | DONE |
+| Phase 8 | CI グリーン化: Detekt 4 violations + E2E asAndroidBitmap import 修正 | DONE |
 
 ## アーキテクチャ参照
 

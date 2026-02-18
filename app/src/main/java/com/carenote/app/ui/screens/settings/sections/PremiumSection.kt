@@ -80,32 +80,45 @@ fun PremiumSection(
                 )
             }
             else -> {
-                Text(
-                    text = stringResource(R.string.billing_free_tier_info),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(
-                        horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
-                        vertical = AppConfig.UI.SMALL_SPACING_DP.dp
-                    )
-                )
-                products.forEach { product ->
-                    ProductCard(
-                        product = product,
-                        onPurchaseClick = { onPurchaseClick(product.productId) }
-                    )
-                }
-                ClickablePreference(
-                    title = stringResource(R.string.billing_restore_purchases),
-                    summary = stringResource(
-                        R.string.billing_restore_purchases_summary
-                    ),
-                    onClick = onRestoreClick,
-                    modifier = Modifier.testTag(TestTags.PREMIUM_RESTORE_BUTTON)
+                FreeContent(
+                    products = products,
+                    onPurchaseClick = onPurchaseClick,
+                    onRestoreClick = onRestoreClick
                 )
             }
         }
     }
+}
+
+@Composable
+private fun FreeContent(
+    products: List<ProductInfo>,
+    onPurchaseClick: (String) -> Unit,
+    onRestoreClick: () -> Unit
+) {
+    Text(
+        text = stringResource(R.string.billing_free_tier_info),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(
+            horizontal = AppConfig.UI.SCREEN_HORIZONTAL_PADDING_DP.dp,
+            vertical = AppConfig.UI.SMALL_SPACING_DP.dp
+        )
+    )
+    products.forEach { product ->
+        ProductCard(
+            product = product,
+            onPurchaseClick = { onPurchaseClick(product.productId) }
+        )
+    }
+    ClickablePreference(
+        title = stringResource(R.string.billing_restore_purchases),
+        summary = stringResource(
+            R.string.billing_restore_purchases_summary
+        ),
+        onClick = onRestoreClick,
+        modifier = Modifier.testTag(TestTags.PREMIUM_RESTORE_BUTTON)
+    )
 }
 
 @Composable

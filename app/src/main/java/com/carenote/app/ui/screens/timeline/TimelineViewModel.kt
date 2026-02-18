@@ -61,8 +61,12 @@ class TimelineViewModel @Inject constructor(
             .map { (filter, items) ->
                 val filtered = when (filter) {
                     TimelineFilterType.ALL -> items
-                    TimelineFilterType.TASK -> items.filter { it is TimelineItem.CalendarEventItem && it.event.isTask }
-                    TimelineFilterType.EVENT -> items.filter { it is TimelineItem.CalendarEventItem && !it.event.isTask }
+                    TimelineFilterType.TASK -> items.filter {
+                        it is TimelineItem.CalendarEventItem && it.event.isTask
+                    }
+                    TimelineFilterType.EVENT -> items.filter {
+                        it is TimelineItem.CalendarEventItem && !it.event.isTask
+                    }
                     TimelineFilterType.MEDICATION -> items.filterIsInstance<TimelineItem.MedicationLogItem>()
                     TimelineFilterType.HEALTH_RECORD -> items.filterIsInstance<TimelineItem.HealthRecordItem>()
                     TimelineFilterType.NOTE -> items.filterIsInstance<TimelineItem.NoteItem>()

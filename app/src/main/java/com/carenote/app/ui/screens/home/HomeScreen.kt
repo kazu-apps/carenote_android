@@ -75,6 +75,20 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
+    val navigation = buildHomeNavigation(
+        viewModel = viewModel,
+        onNavigateToMedication = onNavigateToMedication,
+        onNavigateToCalendar = onNavigateToCalendar,
+        onNavigateToTimeline = onNavigateToTimeline,
+        onNavigateToHealthRecords = onNavigateToHealthRecords,
+        onNavigateToNotes = onNavigateToNotes,
+        onMedicationClick = onMedicationClick,
+        onTaskClick = onTaskClick,
+        onHealthRecordClick = onHealthRecordClick,
+        onNoteClick = onNoteClick,
+        onCalendarEventClick = onCalendarEventClick
+    )
+
     Scaffold(
         topBar = {
             HomeTopBar(
@@ -87,52 +101,68 @@ fun HomeScreen(
             uiState = uiState,
             isRefreshing = isRefreshing,
             onRefresh = { viewModel.refresh() },
-            navigation = HomeNavigationCallbacks(
-                onNavigateToMedication = {
-                    viewModel.logSeeAllClicked("medication")
-                    onNavigateToMedication()
-                },
-                onNavigateToCalendar = {
-                    viewModel.logSeeAllClicked("calendar")
-                    onNavigateToCalendar()
-                },
-                onNavigateToTimeline = {
-                    viewModel.logSeeAllClicked("tasks")
-                    onNavigateToTimeline()
-                },
-                onNavigateToHealthRecords = {
-                    viewModel.logSeeAllClicked("health_records")
-                    onNavigateToHealthRecords()
-                },
-                onNavigateToNotes = {
-                    viewModel.logSeeAllClicked("notes")
-                    onNavigateToNotes()
-                },
-                onMedicationClick = { id ->
-                    viewModel.logItemClicked("medication", id)
-                    onMedicationClick(id)
-                },
-                onTaskClick = { id ->
-                    viewModel.logItemClicked("task", id)
-                    onTaskClick(id)
-                },
-                onHealthRecordClick = { id ->
-                    viewModel.logItemClicked("health_record", id)
-                    onHealthRecordClick(id)
-                },
-                onNoteClick = { id ->
-                    viewModel.logItemClicked("note", id)
-                    onNoteClick(id)
-                },
-                onCalendarEventClick = { id ->
-                    viewModel.logItemClicked("calendar", id)
-                    onCalendarEventClick(id)
-                }
-            ),
+            navigation = navigation,
             modifier = Modifier.padding(innerPadding)
         )
     }
 }
+
+@Suppress("LongParameterList")
+@Composable
+private fun buildHomeNavigation(
+    viewModel: HomeViewModel,
+    onNavigateToMedication: () -> Unit,
+    onNavigateToCalendar: () -> Unit,
+    onNavigateToTimeline: () -> Unit,
+    onNavigateToHealthRecords: () -> Unit,
+    onNavigateToNotes: () -> Unit,
+    onMedicationClick: (Long) -> Unit,
+    onTaskClick: (Long) -> Unit,
+    onHealthRecordClick: (Long) -> Unit,
+    onNoteClick: (Long) -> Unit,
+    onCalendarEventClick: (Long) -> Unit
+): HomeNavigationCallbacks = HomeNavigationCallbacks(
+    onNavigateToMedication = {
+        viewModel.logSeeAllClicked("medication")
+        onNavigateToMedication()
+    },
+    onNavigateToCalendar = {
+        viewModel.logSeeAllClicked("calendar")
+        onNavigateToCalendar()
+    },
+    onNavigateToTimeline = {
+        viewModel.logSeeAllClicked("tasks")
+        onNavigateToTimeline()
+    },
+    onNavigateToHealthRecords = {
+        viewModel.logSeeAllClicked("health_records")
+        onNavigateToHealthRecords()
+    },
+    onNavigateToNotes = {
+        viewModel.logSeeAllClicked("notes")
+        onNavigateToNotes()
+    },
+    onMedicationClick = { id ->
+        viewModel.logItemClicked("medication", id)
+        onMedicationClick(id)
+    },
+    onTaskClick = { id ->
+        viewModel.logItemClicked("task", id)
+        onTaskClick(id)
+    },
+    onHealthRecordClick = { id ->
+        viewModel.logItemClicked("health_record", id)
+        onHealthRecordClick(id)
+    },
+    onNoteClick = { id ->
+        viewModel.logItemClicked("note", id)
+        onNoteClick(id)
+    },
+    onCalendarEventClick = { id ->
+        viewModel.logItemClicked("calendar", id)
+        onCalendarEventClick(id)
+    }
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
