@@ -40,6 +40,23 @@ class FakeNotificationHelper {
     private val _taskReminderHistory = mutableListOf<TaskReminderCall>()
     val taskReminderHistory: List<TaskReminderCall> get() = _taskReminderHistory.toList()
 
+    /** showCalendarEventReminder の呼び出し回数 */
+    var showCalendarEventReminderCallCount = 0
+        private set
+
+    /** 最後に呼び出された eventId */
+    var lastCalendarEventId: Long? = null
+        private set
+
+    /** 最後に呼び出された eventTitle */
+    var lastCalendarEventTitle: String? = null
+        private set
+
+    /** カレンダーイベントリマインダー全呼び出し履歴 */
+    private val _calendarEventReminderHistory = mutableListOf<CalendarEventReminderCall>()
+    val calendarEventReminderHistory: List<CalendarEventReminderCall>
+        get() = _calendarEventReminderHistory.toList()
+
     /**
      * 服薬リマインダー通知を「表示」（実際には呼び出しを記録）
      */
@@ -61,6 +78,16 @@ class FakeNotificationHelper {
     }
 
     /**
+     * カレンダーイベントリマインダー通知を「表示」（実際には呼び出しを記録）
+     */
+    fun showCalendarEventReminder(eventId: Long, eventTitle: String) {
+        showCalendarEventReminderCallCount++
+        lastCalendarEventId = eventId
+        lastCalendarEventTitle = eventTitle
+        _calendarEventReminderHistory.add(CalendarEventReminderCall(eventId, eventTitle))
+    }
+
+    /**
      * 状態をリセット
      */
     fun clear() {
@@ -72,6 +99,10 @@ class FakeNotificationHelper {
         lastTaskId = null
         lastTaskTitle = null
         _taskReminderHistory.clear()
+        showCalendarEventReminderCallCount = 0
+        lastCalendarEventId = null
+        lastCalendarEventTitle = null
+        _calendarEventReminderHistory.clear()
     }
 
     /**
@@ -88,5 +119,13 @@ class FakeNotificationHelper {
     data class TaskReminderCall(
         val taskId: Long,
         val taskTitle: String
+    )
+
+    /**
+     * カレンダーイベントリマインダー呼び出しの記録
+     */
+    data class CalendarEventReminderCall(
+        val eventId: Long,
+        val eventTitle: String
     )
 }

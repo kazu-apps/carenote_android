@@ -574,6 +574,12 @@
     <string name="notification_task_reminder_title">Task Reminder</string>
     <string name="notification_task_reminder_text">%1$s</string>
 
+    <!-- Calendar Event Reminder Notifications -->
+    <string name="notification_channel_calendar_name">Calendar Reminder</string>
+    <string name="notification_channel_calendar_description">Reminds you about calendar events</string>
+    <string name="notification_calendar_reminder_title">Calendar Reminder</string>
+    <string name="notification_calendar_reminder_text">%1$s</string>
+
     <!-- Navigation Badge -->
     <string name="nav_tasks_badge">%d incomplete tasks</string>
 

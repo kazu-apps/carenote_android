@@ -39,6 +39,7 @@ class NotificationHelper @Inject constructor(
             val channels = listOf(
                 createMedicationReminderChannel(),
                 createTaskReminderChannel(),
+                createCalendarEventReminderChannel(),
                 createSyncStatusChannel(),
                 createGeneralChannel()
             )
@@ -81,6 +82,25 @@ class NotificationHelper @Inject constructor(
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = context.getString(R.string.notification_channel_task_description)
+            enableVibration(true)
+            enableLights(true)
+        }
+    }
+
+    /**
+     * カレンダーイベントリマインダー用チャンネル（高重要度）
+     *
+     * カレンダーイベントの通知に使用。ユーザーのスケジュールに直接関わるため HIGH 重要度。
+     * バイブレーション・LED 有効。
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createCalendarEventReminderChannel(): NotificationChannel {
+        return NotificationChannel(
+            AppConfig.Notification.CHANNEL_ID_CALENDAR_REMINDER,
+            context.getString(R.string.notification_channel_calendar_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.notification_channel_calendar_description)
             enableVibration(true)
             enableLights(true)
         }
@@ -135,6 +155,9 @@ class NotificationHelper @Inject constructor(
 
         internal fun buildTaskDeepLink(taskId: Long): String =
             "${AppConfig.Notification.DEEP_LINK_SCHEME}://edit_task/$taskId"
+
+        internal fun buildCalendarEventDeepLink(eventId: Long): String =
+            "${AppConfig.Notification.DEEP_LINK_SCHEME}://edit_calendar_event/$eventId"
     }
 
     fun showMedicationReminder(
@@ -214,5 +237,47 @@ class NotificationHelper @Inject constructor(
         val notificationId = AppConfig.Notification.NOTIFICATION_ID_TASK_BASE + safeIntId(taskId)
         notificationManager.notify(notificationId, notification)
         Timber.d("Task reminder shown: id=$taskId")
+    }
+
+    /**
+     * カレンダーイベントリマインダー通知を表示
+     *
+     * @param eventId イベントの ID（通知 ID の生成に使用）
+     * @param eventTitle イベントのタイトル（通知テキストに表示）
+     */
+    fun showCalendarEventReminder(
+        eventId: Long,
+        eventTitle: String
+    ) {
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+
+        val intent = Intent(Intent.ACTION_VIEW, buildCalendarEventDeepLink(eventId).toUri()).apply {
+            setClass(context, MainActivity::class.java)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            safeIntId(eventId),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(
+            context,
+            AppConfig.Notification.CHANNEL_ID_CALENDAR_REMINDER
+        )
+            .setSmallIcon(R.drawable.ic_notification_calendar)
+            .setContentTitle(context.getString(R.string.notification_calendar_reminder_title))
+            .setContentText(
+                context.getString(R.string.notification_calendar_reminder_text, eventTitle)
+            )
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val notificationId = AppConfig.Notification.NOTIFICATION_ID_CALENDAR_BASE + safeIntId(eventId)
+        notificationManager.notify(notificationId, notification)
+        Timber.d("Calendar event reminder shown: id=$eventId")
     }
 }

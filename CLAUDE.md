@@ -175,7 +175,7 @@ detekt --config detekt.yml --input app/src/main/java
 | `di/DatabaseModule.kt` | Room DB + DAO (14 テーブル) + PassphraseManager + RecoveryHelper |
 | `di/FirebaseModule.kt` | FirebaseAuth, Firestore, Messaging, Storage, Analytics + AuthRepository + AnalyticsRepository + No-Op フォールバック |
 | `di/SyncModule.kt` | SyncRepository + EntitySyncer 群 |
-| `di/WorkerModule.kt` | WorkManager + 3 Scheduler (Sync, MedicationReminder, TaskReminder) |
+| `di/WorkerModule.kt` | WorkManager + 4 Scheduler (Sync, MedicationReminder, TaskReminder, CalendarEventReminder) |
 | `di/BillingModule.kt` | BillingRepository + PremiumFeatureGuard + No-Op フォールバック |
 | `di/BillingAvailability.kt` | Google Play Billing 利用可否チェック |
 | `di/WidgetEntryPoint.kt` | Glance Widget DI (EntryPointAccessors) |
@@ -359,6 +359,14 @@ class SyncWorker : CoroutineWorker {
 - 指定時刻にタスクリマインダー通知を発行
 - おやすみ時間（quietHours）チェック
 - ユーザー設定で通知オン/オフ
+
+### CalendarEventReminderWorker（カレンダーイベントリマインダー）
+
+- 指定時刻にカレンダーイベント（非タスク）のリマインダー通知を発行
+- おやすみ時間（quietHours）チェック
+- ユーザー設定で通知オン/オフ
+- PremiumFeatureGuard なし（カレンダーイベントは無制限）
+- スキップ条件: イベント未存在、isTask=true、reminderEnabled=false
 
 ## テーマ
 

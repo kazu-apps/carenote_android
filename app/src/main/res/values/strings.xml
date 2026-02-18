@@ -574,6 +574,12 @@
     <string name="notification_task_reminder_title">タスクのリマインダー</string>
     <string name="notification_task_reminder_text">%1$s</string>
 
+    <!-- Calendar Event Reminder Notifications -->
+    <string name="notification_channel_calendar_name">予定リマインダー</string>
+    <string name="notification_channel_calendar_description">カレンダーの予定をお知らせします</string>
+    <string name="notification_calendar_reminder_title">予定のリマインダー</string>
+    <string name="notification_calendar_reminder_text">%1$s</string>
+
     <!-- Navigation Badge -->
     <string name="nav_tasks_badge">未完了タスク %d 件</string>
 

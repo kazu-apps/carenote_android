@@ -5,7 +5,9 @@ import androidx.work.WorkManager
 import com.carenote.app.data.worker.MedicationReminderScheduler
 import com.carenote.app.data.worker.NoOpSyncWorkScheduler
 import com.carenote.app.data.worker.SyncWorkScheduler
+import com.carenote.app.data.worker.CalendarEventReminderScheduler
 import com.carenote.app.data.worker.TaskReminderScheduler
+import com.carenote.app.domain.repository.CalendarEventReminderSchedulerInterface
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
@@ -53,5 +55,14 @@ object WorkerModule {
         clock: Clock
     ): TaskReminderSchedulerInterface {
         return TaskReminderScheduler(workManager, clock)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCalendarEventReminderScheduler(
+        workManager: WorkManager,
+        clock: Clock
+    ): CalendarEventReminderSchedulerInterface {
+        return CalendarEventReminderScheduler(workManager, clock)
     }
 }

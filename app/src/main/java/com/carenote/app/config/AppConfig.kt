@@ -112,6 +112,18 @@ object AppConfig {
         /** タスクフォローアップワーカーのタグ */
         const val TASK_FOLLOW_UP_WORK_TAG = "task_follow_up_work"
 
+        /** 通知チャンネル ID: カレンダーイベントリマインダー */
+        const val CHANNEL_ID_CALENDAR_REMINDER = "calendar_reminder"
+
+        /** 通知 ID ベース値: カレンダーイベントリマインダー */
+        const val NOTIFICATION_ID_CALENDAR_BASE = 4000
+
+        /** カレンダーイベントリマインダーワーカーのタグ */
+        const val CALENDAR_REMINDER_WORK_TAG = "calendar_reminder_work"
+
+        /** カレンダーイベントフォローアップワーカーのタグ */
+        const val CALENDAR_FOLLOW_UP_WORK_TAG = "calendar_follow_up_work"
+
         /** Deep Link URI スキーム */
         const val DEEP_LINK_SCHEME = "carenote"
 

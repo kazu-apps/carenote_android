@@ -35,18 +35,8 @@ BillingRepositoryImpl debugMessage 漏洩修正 + nav_tasks/TaskRepository.kt �
 ### Phase 2: fallbackToDestructiveMigration 無効化 + v25 ベースライン化 - DONE
 DatabaseModule.kt から fallbackToDestructiveMigration 削除 + v12-v24 スキーマ JSON 削除。v25 を初回リリースのベースラインに設定。
 
-### Phase 3: カレンダーイベントリマインダー Phase 1 — Worker + Scheduler - PENDING
-
-非タスクのカレンダーイベント（病院予約等）にリマインダー通知を追加。既存 TaskReminderWorker パターンを流用。
-- 対象ファイル:
-  - `data/worker/CalendarEventReminderWorker.kt` (新規)
-  - `domain/repository/CalendarEventReminderScheduler.kt` (新規 interface)
-  - `data/repository/CalendarEventReminderSchedulerImpl.kt` (新規)
-  - `di/WorkerModule.kt` (Worker + Scheduler 登録)
-  - `res/values/strings.xml`, `res/values-en/strings.xml` (通知文字列)
-- 依存: なし
-- 信頼度: HIGH（既存パターン流用）
-- セキュリティ要件: 通知に患者氏名・診断名等の PII を含めない
+### Phase 3: カレンダーイベントリマインダー Phase 1 — Worker + Scheduler - DONE
+CalendarEventReminderWorker + Scheduler + NotificationHelper 拡張 + DI 登録 + テスト。TaskReminderWorker パターン流用。
 
 ### Phase 4: カレンダーイベントリマインダー Phase 2 — UI + 画面分割 - PENDING
 
@@ -136,6 +126,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Timeline フィルタ/FAB | TimelineFilterType + フィルタUI + FAB→タスク追加遷移 + route type パラメータ + 21 テスト | DONE |
 | Phase 1 | BillingRepositoryImpl debugMessage 漏洩修正 + Dead Code 除去 (nav_tasks, TaskRepository.kt) | DONE |
 | Phase 2 | fallbackToDestructiveMigration 削除 + v25 ベースライン化。旧スキーマ v12-v24 削除 | DONE |
+| Phase 3 | CalendarEventReminderWorker + Scheduler + 通知チャンネル + テスト。4000番台通知ID | DONE |
 
 ## アーキテクチャ参照
 
