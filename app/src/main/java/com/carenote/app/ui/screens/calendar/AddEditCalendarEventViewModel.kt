@@ -64,9 +64,16 @@ class AddEditCalendarEventViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val eventId: Long? = savedStateHandle.get<Long>("eventId")
+    private val typeFromNav: CalendarEventType? = savedStateHandle.get<String>("type")?.let { typeStr ->
+        CalendarEventType.entries.find { it.name == typeStr }
+    }
 
     private val _formState = MutableStateFlow(
-        AddEditCalendarEventFormState(date = clock.today(), isEditMode = eventId != null)
+        AddEditCalendarEventFormState(
+            date = clock.today(),
+            isEditMode = eventId != null,
+            type = if (eventId == null) typeFromNav ?: CalendarEventType.OTHER else CalendarEventType.OTHER
+        )
     )
     val formState: StateFlow<AddEditCalendarEventFormState> = _formState.asStateFlow()
 

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,7 +36,8 @@ import com.carenote.app.ui.util.DateTimeFormatters
 @Composable
 fun TimelineItemCard(
     item: TimelineItem,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onToggleCompleted: ((Long, Boolean) -> Unit)? = null
 ) {
     val (icon, tint, label) = resolveItemStyle(item)
 
@@ -50,12 +52,22 @@ fun TimelineItemCard(
             horizontalArrangement = Arrangement.spacedBy(AppConfig.UI.ITEM_SPACING_DP.dp),
             verticalAlignment = Alignment.Top
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = tint,
-                modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
-            )
+            if (item is TimelineItem.CalendarEventItem && item.event.isTask && onToggleCompleted != null) {
+                Checkbox(
+                    checked = item.event.completed,
+                    onCheckedChange = { checked ->
+                        onToggleCompleted(item.event.id, checked)
+                    },
+                    modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = tint,
+                    modifier = Modifier.size(AppConfig.UI.ICON_SIZE_MEDIUM_DP.dp)
+                )
+            }
 
             Column(
                 modifier = Modifier.weight(1f),

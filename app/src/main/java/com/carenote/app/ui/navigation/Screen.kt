@@ -167,11 +167,14 @@ sealed class Screen(
     }
 
     data object AddCalendarEvent : Screen(
-        route = "add_calendar_event",
+        route = "add_calendar_event?type={type}",
         titleResId = R.string.calendar_add_event,
         selectedIcon = Icons.Filled.Add,
         unselectedIcon = Icons.Outlined.Add
-    )
+    ) {
+        fun createRoute(type: String? = null): String =
+            if (type != null) "add_calendar_event?type=$type" else "add_calendar_event"
+    }
 
     data object EditCalendarEvent : Screen(
         route = "edit_calendar_event/{eventId}",

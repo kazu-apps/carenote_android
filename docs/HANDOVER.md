@@ -1,15 +1,13 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: 進行中
 
-## 現在のタスク: Task→CalendarEvent 統合 — 全5フェーズ完了
-
-Task モデル・画面・リポジトリを CalendarEvent に完全統合。80 ファイル変更、+2,292/-5,577 行。assembleDebug ビルド成功、testDebugUnitTest 全1897テスト合格、Detekt 0 issues。
+## 現在のタスク: Timeline フィルタ/FAB/タスク完了トグル — ロードマップ作成完了
 
 ## 次のアクション
 
-1. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
-2. Timeline フィルタ/FAB/タスク完了トグルの実装検討
+1. `/exec` で Phase 1 から実行開始
+2. E2E テスト手動実行は維持（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
 
 ## 既知の問題
 
@@ -38,6 +36,18 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 - 対象: Cloud Functions (Node.js), Firestore の purchaseTokens コレクション
 - 依存: v9.0 Phase 1 完了済み
 - 注意: **Claude Code の守備範囲外**。Firebase CLI + Node.js 環境が必要
+
+### Phase 1: ドメイン + ViewModel - DONE
+
+TimelineFilterType enum + TimelineViewModel フィルタ/トグル + AddEditCalendarEventViewModel type パラメータ。テスト10件追加、全テスト合格。
+
+### Phase 2: UI - DONE
+
+TimelineScreen に FAB・フィルタチップ・SnackbarHost 追加、TimelineItemCard にタスク完了 Checkbox 追加、TestTags・strings.xml (JP/EN) 更新。ビルド＋全テスト合格。
+
+### Phase 3: Navigation + テスト - DONE
+
+AddCalendarEvent route に type パラメータ追加、TimelineScreen FAB→タスク追加遷移接続、TimelineViewModelTest エッジケース 3 件追加（計 21 テスト）。
 
 ## 完了タスク
 
@@ -84,4 +94,3 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 - **FCM リモート通知**: Cloud Functions / バックエンド構築が前提
 - **Wear OS 対応**: Horologist + Health Services、別モジュール必要
 - **CSV データインポート**: 対象ユーザー適合性検証後
-- **Timeline フィルタ/FAB/タスク完了トグル**: Task→CalendarEvent 統合完了、次ステップとして実装可能

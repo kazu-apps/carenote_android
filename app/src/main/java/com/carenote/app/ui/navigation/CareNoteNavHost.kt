@@ -135,7 +135,7 @@ private fun NavGraphBuilder.calendarListRoute(navController: NavHostController) 
     composable(Screen.Calendar.route) {
         CalendarScreen(
             onNavigateToAddEvent = {
-                navController.navigate(Screen.AddCalendarEvent.route)
+                navController.navigate(Screen.AddCalendarEvent.createRoute())
             },
             onNavigateToEditEvent = { eventId ->
                 navController.navigate(
@@ -154,7 +154,11 @@ private fun NavGraphBuilder.calendarListRoute(navController: NavHostController) 
 
 private fun NavGraphBuilder.timelineRoute(navController: NavHostController) {
     composable(Screen.Timeline.route) {
-        TimelineScreen()
+        TimelineScreen(
+            onNavigateToAddTask = {
+                navController.navigate(Screen.AddCalendarEvent.createRoute("TASK"))
+            }
+        )
     }
 }
 
@@ -518,7 +522,16 @@ private fun NavGraphBuilder.healthRecordRoutes(
 private fun NavGraphBuilder.calendarRoutes(
     navController: NavHostController
 ) {
-    composable(Screen.AddCalendarEvent.route) {
+    composable(
+        route = Screen.AddCalendarEvent.route,
+        arguments = listOf(
+            navArgument("type") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    ) {
         AddEditCalendarEventScreen(
             onNavigateBack = { navController.popBackStack() }
         )
@@ -541,7 +554,7 @@ private fun NavGraphBuilder.taskRoutes(
 ) {
     composable(Screen.AddTask.route) {
         LaunchedEffect(Unit) {
-            navController.navigate(Screen.AddCalendarEvent.route) {
+            navController.navigate(Screen.AddCalendarEvent.createRoute("TASK")) {
                 popUpTo(Screen.AddTask.route) { inclusive = true }
             }
         }

@@ -593,6 +593,16 @@
     <string name="a11y_timeline_previous_day">前日</string>
     <string name="a11y_timeline_next_day">翌日</string>
     <string name="a11y_timeline_icon">タイムラインを表示</string>
+    <string name="timeline_toggle_failed">タスクの完了状態を変更できませんでした</string>
+    <string name="timeline_filter_all">すべて</string>
+    <string name="timeline_filter_tasks">タスク</string>
+    <string name="timeline_filter_events">予定</string>
+    <string name="timeline_filter_medication">服薬</string>
+    <string name="timeline_filter_health">健康</string>
+    <string name="timeline_filter_notes">メモ</string>
+    <string name="timeline_add_task">タスク追加</string>
+    <string name="a11y_toggle_task_completion">%sを完了にする</string>
+    <string name="a11y_toggle_task_incomplete">%sを未完了にする</string>
 
     <!-- Widget -->
     <string name="widget_name">ケアのて サマリー</string>

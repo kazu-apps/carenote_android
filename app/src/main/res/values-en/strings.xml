@@ -593,6 +593,16 @@
     <string name="a11y_timeline_previous_day">Previous day</string>
     <string name="a11y_timeline_next_day">Next day</string>
     <string name="a11y_timeline_icon">Show timeline</string>
+    <string name="timeline_toggle_failed">Failed to update task completion status</string>
+    <string name="timeline_filter_all">All</string>
+    <string name="timeline_filter_tasks">Tasks</string>
+    <string name="timeline_filter_events">Events</string>
+    <string name="timeline_filter_medication">Medication</string>
+    <string name="timeline_filter_health">Health</string>
+    <string name="timeline_filter_notes">Notes</string>
+    <string name="timeline_add_task">Add Task</string>
+    <string name="a11y_toggle_task_completion">Mark %s as complete</string>
+    <string name="a11y_toggle_task_incomplete">Mark %s as incomplete</string>
 
     <!-- Widget -->
     <string name="widget_name">CareNote Summary</string>
