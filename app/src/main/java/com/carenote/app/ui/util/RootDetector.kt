@@ -10,7 +10,7 @@ interface RootDetectionChecker {
 class RootDetector : RootDetectionChecker {
 
     override fun isDeviceRooted(): Boolean =
-        checkBuildTags() || checkSuBinaryPaths()
+        checkBuildTags() || checkSuBinaryPaths() || checkSystemProperties()
 
     private fun checkBuildTags(): Boolean =
         Build.TAGS?.contains("test-keys") == true
@@ -22,6 +22,16 @@ class RootDetector : RootDetectionChecker {
             } catch (_: Exception) {
                 false
             }
+        }
+
+    private fun checkSystemProperties(): Boolean =
+        try {
+            val clazz = Class.forName("android.os.SystemProperties")
+            val get = clazz.getMethod("get", String::class.java)
+            val debuggable = get.invoke(null, "ro.debuggable") as? String
+            debuggable == "1"
+        } catch (_: Exception) {
+            false
         }
 
     companion object {

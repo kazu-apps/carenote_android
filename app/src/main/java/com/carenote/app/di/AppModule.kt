@@ -9,6 +9,8 @@ import com.carenote.app.domain.repository.ConnectivityRepository
 import com.carenote.app.domain.repository.PremiumFeatureGuard
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.util.SystemClock
+import com.carenote.app.ui.util.BiometricAuthenticator
+import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetectionChecker
 import com.carenote.app.ui.util.RootDetector
 import dagger.Module
@@ -29,6 +31,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideRootDetectionChecker(): RootDetectionChecker = RootDetector()
+
+    @Provides
+    @Singleton
+    fun provideBiometricAuthenticator(): BiometricAuthenticator =
+        BiometricHelper()
 
     @Provides
     @Singleton

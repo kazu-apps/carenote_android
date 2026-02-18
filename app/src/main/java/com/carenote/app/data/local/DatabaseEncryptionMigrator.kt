@@ -55,29 +55,39 @@ class DatabaseEncryptionMigrator @Inject constructor() {
     ) {
         // SQLCipher ATTACH DATABASE does not support parameterized binding.
         // The path is derived from context.getDatabasePath() (system-controlled).
-        val passphraseHex = passphrase.joinToString("") { "%02x".format(it) }
+        val passphraseHex = CharArray(passphrase.size * 2)
+        passphrase.forEachIndexed { i, byte ->
+            val hex = "%02x".format(byte)
+            passphraseHex[i * 2] = hex[0]
+            passphraseHex[i * 2 + 1] = hex[1]
+        }
 
-        val db = SQLiteDatabase.openDatabase(
-            dbFile.absolutePath, "", null,
-            SQLiteDatabase.OPEN_READWRITE, null, null
-        )
+        try {
+            val db = SQLiteDatabase.openDatabase(
+                dbFile.absolutePath, "", null,
+                SQLiteDatabase.OPEN_READWRITE, null, null
+            )
 
-        val version = db.version
+            val version = db.version
+            val hexString = String(passphraseHex)
 
-        db.rawExecSQL(
-            "ATTACH DATABASE '${encryptedFile.absolutePath}' " +
-                "AS encrypted KEY \"x'$passphraseHex'\""
-        )
-        db.rawExecSQL("SELECT sqlcipher_export('encrypted')")
-        db.rawExecSQL("DETACH DATABASE encrypted")
-        db.close()
+            db.rawExecSQL(
+                "ATTACH DATABASE '${encryptedFile.absolutePath}' " +
+                    "AS encrypted KEY \"x'$hexString'\""
+            )
+            db.rawExecSQL("SELECT sqlcipher_export('encrypted')")
+            db.rawExecSQL("DETACH DATABASE encrypted")
+            db.close()
 
-        val encryptedDb = SQLiteDatabase.openDatabase(
-            encryptedFile.absolutePath, passphrase, null,
-            SQLiteDatabase.OPEN_READWRITE, null, null
-        )
-        encryptedDb.version = version
-        encryptedDb.close()
+            val encryptedDb = SQLiteDatabase.openDatabase(
+                encryptedFile.absolutePath, passphrase, null,
+                SQLiteDatabase.OPEN_READWRITE, null, null
+            )
+            encryptedDb.version = version
+            encryptedDb.close()
+        } finally {
+            passphraseHex.fill('\u0000')
+        }
     }
 
     private fun swapFiles(dbFile: File, encryptedFile: File, backupFile: File) {

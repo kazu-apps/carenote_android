@@ -1,6 +1,7 @@
 package com.carenote.app.data.local
 
 import android.content.Context
+import android.webkit.MimeTypeMap
 import androidx.test.core.app.ApplicationProvider
 import com.carenote.app.config.AppConfig
 import kotlinx.coroutines.test.runTest
@@ -10,7 +11,12 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows
+import android.graphics.Bitmap
+import androidx.core.net.toUri
+import org.junit.Assert.fail
 import java.io.File
+import java.io.FileOutputStream
 import java.io.RandomAccessFile
 
 @RunWith(RobolectricTestRunner::class)
@@ -28,6 +34,13 @@ class ImageCompressorTest {
         cacheDir.mkdirs()
         // Clean up before each test
         cacheDir.listFiles()?.forEach { it.delete() }
+        // Register MIME types so extension-based fallback resolves correctly
+        @Suppress("DEPRECATION")
+        val mimeTypeShadow = Shadows.shadowOf(MimeTypeMap.getSingleton())
+        mimeTypeShadow.addExtensionMimeTypeMapping("jpg", "image/jpeg")
+        mimeTypeShadow.addExtensionMimeTypeMapping("jpeg", "image/jpeg")
+        mimeTypeShadow.addExtensionMimeTypeMapping("png", "image/png")
+        mimeTypeShadow.addExtensionMimeTypeMapping("webp", "image/webp")
     }
 
     @Test
@@ -95,6 +108,71 @@ class ImageCompressorTest {
 
         // Should not throw
         compressor.cleanupCache()
+    }
+
+    @Test
+    fun `compress throws for unsupported MIME type`() = runTest {
+        // Create a text file and get its URI
+        val textFile = File(context.cacheDir, "test.txt").apply {
+            writeText("not an image")
+        }
+        val uri = textFile.toUri()
+
+        try {
+            compressor.compress(uri)
+            fail("Expected IllegalArgumentException for unsupported MIME type")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(
+                "Error should mention unsupported format",
+                e.message?.contains("Unsupported image format") == true
+            )
+        }
+    }
+
+    @Test
+    fun `compress throws for file exceeding size limit`() = runTest {
+        // Create an oversized JPEG file (just header + padding)
+        // AppConfig.Photo.MAX_IMAGE_SIZE_BYTES = 5_242_880 (5MB)
+        val largeFile = File(context.cacheDir, "large.jpg").apply {
+            // Write JPEG header bytes followed by padding to exceed limit
+            outputStream().use { os ->
+                // JPEG magic bytes
+                os.write(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()))
+                // Write 6MB of padding
+                val buffer = ByteArray(1024 * 1024) // 1MB
+                repeat(6) { os.write(buffer) }
+            }
+        }
+        val uri = largeFile.toUri()
+
+        try {
+            compressor.compress(uri)
+            fail("Expected IllegalArgumentException for oversized file")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(
+                "Error should mention image too large",
+                e.message?.contains("Image too large") == true ||
+                    e.message?.contains("Unsupported image format") == true
+            )
+        }
+    }
+
+    @Test
+    fun `compress succeeds for valid JPEG`() = runTest {
+        // Create a minimal valid bitmap and save as JPEG
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        val jpegFile = File(context.cacheDir, "valid_test.jpg")
+        FileOutputStream(jpegFile).use { fos ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos)
+        }
+        bitmap.recycle()
+        val uri = jpegFile.toUri()
+
+        val result = compressor.compress(uri)
+        assertTrue(
+            "Result URI should point to a file",
+            result.path?.isNotEmpty() == true
+        )
     }
 
     private fun createLargeFile(name: String, size: Long, daysAgo: Int): File {

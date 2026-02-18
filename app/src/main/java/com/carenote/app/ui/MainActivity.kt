@@ -48,7 +48,7 @@ import com.carenote.app.ui.navigation.CareNoteNavHost
 import com.carenote.app.ui.navigation.Screen
 import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.config.AppConfig
-import com.carenote.app.ui.util.BiometricHelper
+import com.carenote.app.ui.util.BiometricAuthenticator
 import com.carenote.app.ui.util.RootDetector
 import timber.log.Timber
 import dagger.hilt.android.AndroidEntryPoint
@@ -72,7 +72,8 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var connectivityRepository: ConnectivityRepository
 
-    private val biometricHelper = BiometricHelper()
+    @Inject
+    lateinit var biometricHelper: BiometricAuthenticator
     private val isAuthenticated = mutableStateOf(false)
     private var lastBackgroundTime: Long = 0L
     private var isRootDetected: Boolean = false

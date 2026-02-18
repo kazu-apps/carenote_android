@@ -2,7 +2,7 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: セキュリティ修正 Phase 2 完了
+## 現在のタスク: セキュリティ修正 Phase 3 完了
 
 ## 次のアクション
 
@@ -30,23 +30,11 @@
 | LOW | Detekt | SwipeToDismissItem deprecated API 警告（将来的な対応推奨） |
 | LOW | CI | E2E テストがエミュレータ不安定で soft-fail（Linux KVM なし）。実機テストで代替 |
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
+| LOW | Sec Ph3 | H-4: e.message コード衛生（DomainError 設計で UI 露出ゼロ、対応不要） |
+| LOW | Sec Ph3 | H-5: ExceptionMasker 拡張（既に Firebase 対応済み、YAGNI） |
+| INFO | Sec Ph3 | M-1: Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
 
 ## PENDING 項目
-
-### セキュリティ修正 Phase 3: 長期改善（再評価リスト） - PENDING
-
-Phase 2 完了後に実施判断。3 Expert 合意による重大度再評価済み。
-
-- 対象:
-  - H-4: e.message コード衛生（再評価: LOW — UI 露出ゼロ確認済み）
-  - H-5: ExceptionMasker Firebase/Network 層限定拡張（再評価: MEDIUM — 全面改修は YAGNI）
-  - H-2 続き: BiometricHelper DI 化（再評価: MEDIUM — onError のみ UX 問題）
-  - M-8: DatabaseEncryptionMigrator passphraseHex zero-clear
-  - M-1: Deep link App Links 移行（実ドメイン設定が前提）
-  - M-9: RootDetector 強化（Play Integrity API 検討）
-  - M-5: ImageCompressor MIME/サイズ検証
-- 依存: Phase 2 完了済み
-- 信頼度: MEDIUM
 
 ### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
 
@@ -81,6 +69,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | CLAUDE.md 軽量化 | CLAUDE.md 29KB→~9.5KB。詳細を docs/ARCHITECTURE.md (~17KB) に分離 | DONE |
 | OSV-Scanner 導入 | OSV-Scanner v2 + Gradle dependency locking + CI workflow + Claude Code hook | DONE |
 | Sec Phase 2 | 入力バリデーション強化 + Biometric エラーハンドリング + DB リカバリバックアップ | DONE |
+| Sec Phase 3 | BiometricHelper DI + passphraseHex zero-clear + RootDetector 強化 + ImageCompressor 検証 | DONE |
 
 ## アーキテクチャ参照
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.repository.ImageCompressorInterface
@@ -22,6 +23,24 @@ class ImageCompressor @Inject constructor(
 ) : ImageCompressorInterface {
 
     override suspend fun compress(sourceUri: Uri): Uri = withContext(Dispatchers.IO) {
+        val mimeType = context.contentResolver.getType(sourceUri)
+            ?: resolveMimeTypeFromExtension(sourceUri)
+        if (mimeType !in ALLOWED_MIME_TYPES) {
+            throw IllegalArgumentException(
+                "Unsupported image format: $mimeType"
+            )
+        }
+
+        val fileDescriptor = context.contentResolver
+            .openAssetFileDescriptor(sourceUri, "r")
+        val fileSize = fileDescriptor?.length ?: -1L
+        fileDescriptor?.close()
+        if (fileSize > AppConfig.Photo.MAX_IMAGE_SIZE_BYTES) {
+            throw IllegalArgumentException(
+                "Image too large: $fileSize bytes"
+            )
+        }
+
         val inputStream = context.contentResolver.openInputStream(sourceUri)
             ?: throw IllegalArgumentException("Cannot open input stream for URI: $sourceUri")
 
@@ -85,6 +104,19 @@ class ImageCompressor @Inject constructor(
         if (deletedByTtl > 0 || deletedBySize > 0) {
             Timber.d("Cache cleanup: deleted $deletedByTtl by TTL, $deletedBySize by size limit")
         }
+    }
+
+    companion object {
+        private val ALLOWED_MIME_TYPES = setOf(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        )
+    }
+
+    private fun resolveMimeTypeFromExtension(uri: Uri): String? {
+        val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
     }
 
     private fun calculateInSampleSize(width: Int, height: Int, maxDim: Int): Int {
