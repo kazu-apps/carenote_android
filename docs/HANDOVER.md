@@ -25,6 +25,7 @@
 | LOW | v10.0-tdd | SettingsViewModelTest 1170 行（Detekt 対象外だが将来的に分割検討） |
 | LOW | Detekt | Roborazzi スクリーンショット Windows/Linux フォントレンダリング差分（CI soft-fail 対応済み） |
 | LOW | Detekt | SwipeToDismissItem deprecated API 警告（将来的な対応推奨） |
+| LOW | CI | E2E テストがエミュレータ不安定で soft-fail（Linux KVM なし）。実機テストで代替 |
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
 
 ## PENDING 項目
@@ -64,7 +65,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 5 | ConnectivityRepository + OfflineIndicator バナー | DONE |
 | Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + テスト 6件 | DONE |
 | Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック遷移 + スライド/フェードアニメーション | DONE |
-| Phase 8 | CI グリーン化: Detekt violations + E2E import/Hilt binding 修正 | DONE |
+| Phase 8 | CI グリーン化: Detekt violations + E2E import/Hilt binding 修正 + e2e-test soft-fail | DONE |
 
 ## アーキテクチャ参照
 
@@ -78,6 +79,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | テスト基盤 | MainCoroutineRule + TestBuilders (11モデル) + ResultMatchers (13種) + TestDataFixtures |
 | エクスポート | HealthRecord/MedicationLog/Task/Note CSV/PDF + CsvUtils 共通ヘルパー |
 | Detekt | 1.23.7, maxIssues=0, Compose FunctionNaming 除外, LongParameterList functionThreshold=8 |
+| CI | build-test: Build + UnitTest + Coverage + Screenshot(soft-fail) + Detekt + E2E compile。e2e-test: soft-fail（エミュレータ不安定） |
 | Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離 + 画面分割 |
 | Timeline | TimelineFilterType enum + FAB→AddCalendarEvent(type=TASK) 遷移 + フィルタチップ |
 | 画面遷移 | NavHost デフォルト: slideInHorizontally/slideOutHorizontally 300ms。Bottom Nav タブ: fadeIn/fadeOut 300ms |
