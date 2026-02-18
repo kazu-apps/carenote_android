@@ -2,12 +2,14 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Expert 議論完了 — ロードマップ策定
+## 現在のタスク: 全 PENDING フェーズ完了（Phase 1〜7）
 
 ## 次のアクション
 
-1. `/exec` で Phase 1 から実行開始
-2. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
+1. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
+2. Phase 1B: Billing サーバーサイド検証 — Firebase CLI + Node.js 環境で Cloud Functions 実装（Claude Code 守備範囲外）
+3. リリース APK の実機テスト実施
+4. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
 
 ## 既知の問題
 
@@ -29,40 +31,12 @@
 
 ## PENDING 項目
 
-### Phase 1: セキュリティ修正 + Dead Code 除去 - DONE
-BillingRepositoryImpl debugMessage 漏洩修正 + nav_tasks/TaskRepository.kt 除去。
-
-### Phase 2: fallbackToDestructiveMigration 無効化 + v25 ベースライン化 - DONE
-DatabaseModule.kt から fallbackToDestructiveMigration 削除 + v12-v24 スキーマ JSON 削除。v25 を初回リリースのベースラインに設定。
-
-### Phase 3: カレンダーイベントリマインダー Phase 1 — Worker + Scheduler - DONE
-CalendarEventReminderWorker + Scheduler + NotificationHelper 拡張 + DI 登録 + テスト。TaskReminderWorker パターン流用。
-
-### Phase 4: カレンダーイベントリマインダー Phase 2 — UI + 画面分割 - DONE
-CalendarEventReminderSection + CalendarEventFormFields 抽出。全イベント種別でリマインダー有効化。ViewModel に CalendarEventReminderSchedulerInterface 追加。
-
-### Phase 5: オフライン状態インジケーター - DONE
-ConnectivityRepository + OfflineIndicator コンポーネント。AdaptiveNavigationScaffold にバナー埋め込み。
-
-### Phase 6: プレミアム/Billing UI - DONE
-Settings 画面にプレミアムプラン購入/管理セクションを追加。BillingRepository.launchBillingFlow() + BillingUiState + PremiumSection + SettingsViewModel 拡張 + テスト 6件。
-
-### Phase 7: 品質改善バッチ - DONE
-biometric 1.1.0→1.4.0-alpha05 + HomeScreenアイテムクリック詳細遷移 + 画面遷移アニメーション統一(スライド/フェード) + logItemClicked Analytics追加。
-
 ### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
 Google Play Developer API 経由のレシート検証を Cloud Functions で実装。本番リリース前の必須要件。
 - 種別: 実装
 - 対象: Cloud Functions (Node.js), Firestore の purchaseTokens コレクション
 - 依存: v9.0 Phase 1 完了済み
 - 注意: **Claude Code の守備範囲外**。Firebase CLI + Node.js 環境が必要
-
-## やらないリスト
-
-- **SettingsViewModel 分割**: ユーザー価値ゼロ。@Suppress("TooManyFunctions") で現状問題なし
-- **FCM リモート通知**: Cloud Functions バックエンド前提。現フェーズ対象外
-- **Wear OS 対応**: 別モジュール前提。長期計画
-- **CSV データインポート**: 対象ユーザー適合性未検証
 
 ## 完了タスク
 
@@ -82,21 +56,16 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | v9.0-test Ph1-3 | TestDataFixtures + TestBuilders + ResultMatchers + MedicationLogSyncerTest | DONE |
 | v10.0-tdd Ph1-4 | MainCoroutineRule + ViewModel テスト移行 + ResultMatchers 全面採用 | DONE |
 | v9.0 Ph1-6 | Billing 基盤 + Member/Invitation + 招待 UI/E2E + DB v23 | DONE |
-| CLAUDE.md | v9.0 反映（DB v23, 14テーブル, 25モデル, 30リポジトリ, 18 E2E） | DONE |
-| Detekt 全修正 | 367→0 issues。87 ファイル。AppModule 分割、CsvUtils 抽出、画面ヘルパー分割 | DONE |
-| CI グリーン化 | Detekt 1.23.7、workflow_dispatch、screenshot soft-fail、PR #4 マージ | DONE |
-| リマインダー修正 | calculateDelay + Clock injection + plusDays(1)。27テスト新規 | DONE |
-| タブレット修正 | TextButton → clickable 化 + i18n + Compose UI テスト 17件 | DONE |
-| GPP アップグレード | GPP 3.10.1→4.0.0 + api-key.json セキュリティ修正 | DONE |
-| Task→CalendarEvent 統合 | CalendarEvent 拡張→Task 削除→UI 統合→全参照除去→E2E 修正。DB v23→v25、80ファイル変更 | DONE |
-| Timeline フィルタ/FAB | TimelineFilterType + フィルタUI + FAB→タスク追加遷移 + route type パラメータ + 21 テスト | DONE |
-| Phase 1 | BillingRepositoryImpl debugMessage 漏洩修正 + Dead Code 除去 (nav_tasks, TaskRepository.kt) | DONE |
-| Phase 2 | fallbackToDestructiveMigration 削除 + v25 ベースライン化。旧スキーマ v12-v24 削除 | DONE |
-| Phase 3 | CalendarEventReminderWorker + Scheduler + 通知チャンネル + テスト。4000番台通知ID | DONE |
-| Phase 4 | CalendarEventReminderSection + CalendarEventFormFields 画面分割。リマインダー UI + ViewModel 統合 | DONE |
-| Phase 5 | ConnectivityRepository + OfflineIndicator バナー。AdaptiveNavigationScaffold 統合 | DONE |
-| Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + SettingsViewModel BillingUiState + テスト 6件 | DONE |
-| Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック詳細遷移 + スライド/フェード遷移アニメーション + logItemClicked Analytics | DONE |
+| Detekt 全修正 | 367→0 issues。AppModule 分割、CsvUtils 抽出、画面ヘルパー分割 | DONE |
+| CI グリーン化 | Detekt 1.23.7、workflow_dispatch、screenshot soft-fail | DONE |
+| Task→CalendarEvent | DB v23→v25、80ファイル変更。CalendarEventType.TASK 統合 | DONE |
+| Phase 1 | BillingRepositoryImpl debugMessage 漏洩修正 + Dead Code 除去 | DONE |
+| Phase 2 | fallbackToDestructiveMigration 削除 + v25 ベースライン化 | DONE |
+| Phase 3 | CalendarEventReminderWorker + Scheduler + 通知チャンネル + テスト | DONE |
+| Phase 4 | CalendarEventReminderSection + CalendarEventFormFields 画面分割 | DONE |
+| Phase 5 | ConnectivityRepository + OfflineIndicator バナー | DONE |
+| Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + テスト 6件 | DONE |
+| Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック遷移 + スライド/フェードアニメーション | DONE |
 
 ## アーキテクチャ参照
 
@@ -110,12 +79,14 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | テスト基盤 | MainCoroutineRule + TestBuilders (11モデル) + ResultMatchers (13種) + TestDataFixtures |
 | エクスポート | HealthRecord/MedicationLog/Task/Note CSV/PDF + CsvUtils 共通ヘルパー |
 | Detekt | 1.23.7, maxIssues=0, Compose FunctionNaming 除外, LongParameterList functionThreshold=8 |
-| Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離 + CalendarEventReminderSection/CalendarEventFormFields 画面分割。Screen.AddTask/EditTask はリダイレクト用に維持 |
-| Timeline | TimelineFilterType enum + FAB→AddCalendarEvent(type=TASK) 遷移 + フィルタチップ + Checkbox 完了トグル |
+| Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離 + 画面分割 |
+| Timeline | TimelineFilterType enum + FAB→AddCalendarEvent(type=TASK) 遷移 + フィルタチップ |
+| 画面遷移 | NavHost デフォルト: slideInHorizontally/slideOutHorizontally 300ms。Bottom Nav タブ: fadeIn/fadeOut 300ms |
 
 ## スコープ外 / 将来
 
 - **FCM リモート通知**: Cloud Functions / バックエンド構築が前提
 - **Wear OS 対応**: Horologist + Health Services、別モジュール必要
 - **CSV データインポート**: 対象ユーザー適合性検証後
-- **Firebase App Check**: 導入推奨（PII 保護強化）。Billing UI 実装前後に検討
+- **Firebase App Check**: 導入推奨（PII 保護強化）
+- **SettingsViewModel 分割**: ユーザー価値ゼロ。@Suppress("TooManyFunctions") で現状問題なし
