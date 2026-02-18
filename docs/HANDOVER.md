@@ -1,13 +1,13 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 進行中
+## セッションステータス: 完了
 
-## 現在のタスク: Timeline フィルタ/FAB/タスク完了トグル — ロードマップ作成完了
+## 現在のタスク: Timeline フィルタ/FAB/タスク完了トグル — 全 Phase 完了
 
 ## 次のアクション
 
-1. `/exec` で Phase 1 から実行開始
-2. E2E テスト手動実行は維持（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
+1. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
+2. 新機能の要件定義・ロードマップ作成
 
 ## 既知の問題
 
@@ -37,18 +37,6 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 - 依存: v9.0 Phase 1 完了済み
 - 注意: **Claude Code の守備範囲外**。Firebase CLI + Node.js 環境が必要
 
-### Phase 1: ドメイン + ViewModel - DONE
-
-TimelineFilterType enum + TimelineViewModel フィルタ/トグル + AddEditCalendarEventViewModel type パラメータ。テスト10件追加、全テスト合格。
-
-### Phase 2: UI - DONE
-
-TimelineScreen に FAB・フィルタチップ・SnackbarHost 追加、TimelineItemCard にタスク完了 Checkbox 追加、TestTags・strings.xml (JP/EN) 更新。ビルド＋全テスト合格。
-
-### Phase 3: Navigation + テスト - DONE
-
-AddCalendarEvent route に type パラメータ追加、TimelineScreen FAB→タスク追加遷移接続、TimelineViewModelTest エッジケース 3 件追加（計 21 テスト）。
-
 ## 完了タスク
 
 | Item | 概要 | Status |
@@ -73,7 +61,8 @@ AddCalendarEvent route に type パラメータ追加、TimelineScreen FAB→タ
 | リマインダー修正 | calculateDelay + Clock injection + plusDays(1)。27テスト新規 | DONE |
 | タブレット修正 | TextButton → clickable 化 + i18n + Compose UI テスト 17件 | DONE |
 | GPP アップグレード | GPP 3.10.1→4.0.0 + api-key.json セキュリティ修正 | DONE |
-| Task→CalendarEvent 統合 | 5フェーズ完了。CalendarEvent 拡張→Task 削除→UI 統合→全参照除去→E2E 修正。DB v23→v25、80ファイル変更、1897テスト合格 | DONE |
+| Task→CalendarEvent 統合 | CalendarEvent 拡張→Task 削除→UI 統合→全参照除去→E2E 修正。DB v23→v25、80ファイル変更 | DONE |
+| Timeline フィルタ/FAB | TimelineFilterType + フィルタUI + FAB→タスク追加遷移 + route type パラメータ + 21 テスト | DONE |
 
 ## アーキテクチャ参照
 
@@ -88,6 +77,7 @@ AddCalendarEvent route に type パラメータ追加、TimelineScreen FAB→タ
 | エクスポート | HealthRecord/MedicationLog/Task/Note CSV/PDF + CsvUtils 共通ヘルパー |
 | Detekt | 1.23.7, maxIssues=0, Compose FunctionNaming 除外, LongParameterList functionThreshold=8 |
 | Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離。Screen.AddTask/EditTask はリダイレクト用に維持 |
+| Timeline | TimelineFilterType enum + FAB→AddCalendarEvent(type=TASK) 遷移 + フィルタチップ + Checkbox 完了トグル |
 
 ## スコープ外 / 将来
 
