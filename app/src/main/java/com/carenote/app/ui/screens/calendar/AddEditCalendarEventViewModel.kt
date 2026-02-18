@@ -10,6 +10,7 @@ import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.repository.AnalyticsRepository
+import com.carenote.app.domain.repository.CalendarEventReminderSchedulerInterface
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.validator.RecurrenceValidator
@@ -60,6 +61,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
     private val calendarEventRepository: CalendarEventRepository,
     private val analyticsRepository: AnalyticsRepository,
     private val taskReminderScheduler: TaskReminderSchedulerInterface,
+    private val calendarEventReminderScheduler: CalendarEventReminderSchedulerInterface,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -262,12 +264,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
             recurrenceFrequency = current.recurrenceFrequency,
             recurrenceInterval = current.recurrenceInterval,
             priority = if (current.type == CalendarEventType.TASK) current.priority else null,
-            reminderEnabled = current.type == CalendarEventType.TASK && current.reminderEnabled,
-            reminderTime = if (current.type == CalendarEventType.TASK && current.reminderEnabled) {
-                current.reminderTime
-            } else {
-                null
-            },
+            reminderEnabled = current.reminderEnabled,
+            reminderTime = if (current.reminderEnabled) current.reminderTime else null,
             updatedAt = now
         )
         calendarEventRepository.updateEvent(updatedEvent)
@@ -276,12 +274,13 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 analyticsRepository.logEvent(
                     AppConfig.Analytics.EVENT_CALENDAR_EVENT_UPDATED
                 )
-                if (current.type == CalendarEventType.TASK && eventId != null) {
+                if (eventId != null) {
                     scheduleOrCancelReminder(
                         eventId,
                         current.title.trim(),
                         current.reminderEnabled,
-                        current.reminderTime
+                        current.reminderTime,
+                        current.type == CalendarEventType.TASK
                     )
                 }
                 _savedEvent.send(true)
@@ -308,12 +307,8 @@ class AddEditCalendarEventViewModel @Inject constructor(
             recurrenceFrequency = current.recurrenceFrequency,
             recurrenceInterval = current.recurrenceInterval,
             priority = if (current.type == CalendarEventType.TASK) current.priority else null,
-            reminderEnabled = current.type == CalendarEventType.TASK && current.reminderEnabled,
-            reminderTime = if (current.type == CalendarEventType.TASK && current.reminderEnabled) {
-                current.reminderTime
-            } else {
-                null
-            },
+            reminderEnabled = current.reminderEnabled,
+            reminderTime = if (current.reminderEnabled) current.reminderTime else null,
             createdAt = now,
             updatedAt = now
         )
@@ -323,14 +318,13 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 analyticsRepository.logEvent(
                     AppConfig.Analytics.EVENT_CALENDAR_EVENT_CREATED
                 )
-                if (current.type == CalendarEventType.TASK) {
-                    scheduleOrCancelReminder(
-                        id,
-                        current.title.trim(),
-                        current.reminderEnabled,
-                        current.reminderTime
-                    )
-                }
+                scheduleOrCancelReminder(
+                    id,
+                    current.title.trim(),
+                    current.reminderEnabled,
+                    current.reminderTime,
+                    current.type == CalendarEventType.TASK
+                )
                 _savedEvent.send(true)
             }
             .onFailure { error ->
@@ -344,11 +338,19 @@ class AddEditCalendarEventViewModel @Inject constructor(
         id: Long,
         title: String,
         enabled: Boolean,
-        time: LocalTime?
+        time: LocalTime?,
+        isTask: Boolean
     ) {
-        taskReminderScheduler.cancelReminder(id)
-        if (enabled && time != null) {
-            taskReminderScheduler.scheduleReminder(id, title, time)
+        if (isTask) {
+            taskReminderScheduler.cancelReminder(id)
+            if (enabled && time != null) {
+                taskReminderScheduler.scheduleReminder(id, title, time)
+            }
+        } else {
+            calendarEventReminderScheduler.cancelReminder(id)
+            if (enabled && time != null) {
+                calendarEventReminderScheduler.scheduleReminder(id, title, time)
+            }
         }
     }
 

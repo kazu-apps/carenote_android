@@ -38,17 +38,8 @@ DatabaseModule.kt から fallbackToDestructiveMigration 削除 + v12-v24 スキ�
 ### Phase 3: カレンダーイベントリマインダー Phase 1 — Worker + Scheduler - DONE
 CalendarEventReminderWorker + Scheduler + NotificationHelper 拡張 + DI 登録 + テスト。TaskReminderWorker パターン流用。
 
-### Phase 4: カレンダーイベントリマインダー Phase 2 — UI + 画面分割 - PENDING
-
-AddEditCalendarEventScreen にリマインダーセクションを追加。同時に 688 行の画面を 3 ファイルに分割（Detekt 800 行超過を予防）。
-- 対象ファイル:
-  - `ui/screens/calendar/AddEditCalendarEventScreen.kt` → 3 分割:
-    - `AddEditCalendarEventScreen.kt` — スキャフォールド + 状態管理
-    - `components/CalendarEventFormFields.kt` — 既存フォームフィールド群
-    - `components/CalendarEventReminderSection.kt` — 新規リマインダー UI
-  - `ui/screens/calendar/AddEditCalendarEventViewModel.kt` (リマインダー状態追加)
-- 依存: Phase 3
-- 信頼度: HIGH
+### Phase 4: カレンダーイベントリマインダー Phase 2 — UI + 画面分割 - DONE
+CalendarEventReminderSection + CalendarEventFormFields 抽出。全イベント種別でリマインダー有効化。ViewModel に CalendarEventReminderSchedulerInterface 追加。
 
 ### Phase 5: オフライン状態インジケーター - PENDING
 
@@ -127,6 +118,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 1 | BillingRepositoryImpl debugMessage 漏洩修正 + Dead Code 除去 (nav_tasks, TaskRepository.kt) | DONE |
 | Phase 2 | fallbackToDestructiveMigration 削除 + v25 ベースライン化。旧スキーマ v12-v24 削除 | DONE |
 | Phase 3 | CalendarEventReminderWorker + Scheduler + 通知チャンネル + テスト。4000番台通知ID | DONE |
+| Phase 4 | CalendarEventReminderSection + CalendarEventFormFields 画面分割。リマインダー UI + ViewModel 統合 | DONE |
 
 ## アーキテクチャ参照
 
@@ -140,7 +132,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | テスト基盤 | MainCoroutineRule + TestBuilders (11モデル) + ResultMatchers (13種) + TestDataFixtures |
 | エクスポート | HealthRecord/MedicationLog/Task/Note CSV/PDF + CsvUtils 共通ヘルパー |
 | Detekt | 1.23.7, maxIssues=0, Compose FunctionNaming 除外, LongParameterList functionThreshold=8 |
-| Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離。Screen.AddTask/EditTask はリダイレクト用に維持 |
+| Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離 + CalendarEventReminderSection/CalendarEventFormFields 画面分割。Screen.AddTask/EditTask はリダイレクト用に維持 |
 | Timeline | TimelineFilterType enum + FAB→AddCalendarEvent(type=TASK) 遷移 + フィルタチップ + Checkbox 完了トグル |
 
 ## スコープ外 / 将来

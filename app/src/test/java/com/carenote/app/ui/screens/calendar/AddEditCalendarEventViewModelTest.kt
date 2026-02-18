@@ -10,6 +10,7 @@ import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeCalendarEventRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.fakes.FakeCalendarEventReminderScheduler
 import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.testing.MainCoroutineRule
@@ -37,6 +38,7 @@ class AddEditCalendarEventViewModelTest {
     private lateinit var repository: FakeCalendarEventRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
     private lateinit var taskReminderScheduler: FakeTaskReminderScheduler
+    private lateinit var calendarEventReminderScheduler: FakeCalendarEventReminderScheduler
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditCalendarEventViewModel
 
@@ -45,6 +47,7 @@ class AddEditCalendarEventViewModelTest {
         repository = FakeCalendarEventRepository()
         analyticsRepository = FakeAnalyticsRepository()
         taskReminderScheduler = FakeTaskReminderScheduler()
+        calendarEventReminderScheduler = FakeCalendarEventReminderScheduler()
     }
 
     private fun createAddViewModel(): AddEditCalendarEventViewModel {
@@ -53,6 +56,7 @@ class AddEditCalendarEventViewModelTest {
             repository,
             analyticsRepository,
             taskReminderScheduler,
+            calendarEventReminderScheduler,
             clock = fakeClock
         )
     }
@@ -63,6 +67,7 @@ class AddEditCalendarEventViewModelTest {
             repository,
             analyticsRepository,
             taskReminderScheduler,
+            calendarEventReminderScheduler,
             clock = fakeClock
         )
     }
@@ -844,7 +849,7 @@ class AddEditCalendarEventViewModelTest {
     }
 
     @Test
-    fun `saveEvent does not schedule reminder for non-TASK type`() = runTest {
+    fun `saveEvent schedules calendar reminder for non-TASK type with reminder enabled`() = runTest {
         viewModel = createAddViewModel()
         viewModel.updateTitle("通院テスト")
         viewModel.updateType(CalendarEventType.HOSPITAL)
@@ -854,8 +859,119 @@ class AddEditCalendarEventViewModelTest {
         viewModel.saveEvent()
         advanceUntilIdle()
 
+        // taskReminderScheduler は呼ばれない
         assertTrue(taskReminderScheduler.cancelReminderCalls.isEmpty())
         assertTrue(taskReminderScheduler.scheduleReminderCalls.isEmpty())
+        // calendarEventReminderScheduler が呼ばれる
+        assertEquals(1, calendarEventReminderScheduler.cancelReminderCalls.size)
+        assertEquals(1, calendarEventReminderScheduler.scheduleReminderCalls.size)
+        val call = calendarEventReminderScheduler.scheduleReminderCalls[0]
+        assertEquals("通院テスト", call.eventTitle)
+        assertEquals(LocalTime.of(9, 0), call.time)
+    }
+
+    @Test
+    fun `saveEvent cancels calendar reminder for non-TASK with reminder disabled`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("通院テスト")
+        viewModel.updateType(CalendarEventType.HOSPITAL)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        // taskReminderScheduler は呼ばれない
+        assertTrue(taskReminderScheduler.cancelReminderCalls.isEmpty())
+        // calendarEventReminderScheduler.cancelReminder が呼ばれる
+        assertEquals(1, calendarEventReminderScheduler.cancelReminderCalls.size)
+        assertTrue(calendarEventReminderScheduler.scheduleReminderCalls.isEmpty())
+    }
+
+    @Test
+    fun `saveEvent uses taskReminderScheduler for TASK type`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("タスクテスト")
+        viewModel.updateType(CalendarEventType.TASK)
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(10, 0))
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        assertEquals(1, taskReminderScheduler.cancelReminderCalls.size)
+        assertEquals(1, taskReminderScheduler.scheduleReminderCalls.size)
+        // calendarEventReminderScheduler は呼ばれない
+        assertTrue(calendarEventReminderScheduler.cancelReminderCalls.isEmpty())
+        assertTrue(calendarEventReminderScheduler.scheduleReminderCalls.isEmpty())
+    }
+
+    @Test
+    fun `saveEvent uses calendarEventReminderScheduler for DAYSERVICE type`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("デイサービス")
+        viewModel.updateType(CalendarEventType.DAYSERVICE)
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(8, 0))
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        // taskReminderScheduler は呼ばれない
+        assertTrue(taskReminderScheduler.cancelReminderCalls.isEmpty())
+        // calendarEventReminderScheduler が呼ばれる
+        assertEquals(1, calendarEventReminderScheduler.cancelReminderCalls.size)
+        assertEquals(1, calendarEventReminderScheduler.scheduleReminderCalls.size)
+        val call = calendarEventReminderScheduler.scheduleReminderCalls[0]
+        assertEquals("デイサービス", call.eventTitle)
+        assertEquals(LocalTime.of(8, 0), call.time)
+    }
+
+    @Test
+    fun `saveEvent stores reminderEnabled true for non-TASK type`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("通院テスト")
+        viewModel.updateType(CalendarEventType.HOSPITAL)
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(9, 0))
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(1, events.size)
+            assertTrue(events[0].reminderEnabled)
+            assertEquals(LocalTime.of(9, 0), events[0].reminderTime)
+        }
+    }
+
+    @Test
+    fun `update event schedules calendar reminder for non-TASK type`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "通院",
+                    date = LocalDate.of(2025, 3, 15),
+                    type = CalendarEventType.HOSPITAL,
+                    reminderEnabled = false,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(8, 30))
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        // calendarEventReminderScheduler が使われる
+        assertEquals(1, calendarEventReminderScheduler.cancelReminderCalls.size)
+        assertEquals(1, calendarEventReminderScheduler.scheduleReminderCalls.size)
+        // taskReminderScheduler は呼ばれない
+        assertTrue(taskReminderScheduler.cancelReminderCalls.isEmpty())
     }
 
     @Test
