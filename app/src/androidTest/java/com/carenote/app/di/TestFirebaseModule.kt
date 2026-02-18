@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.carenote.app.domain.repository.MedicationReminderSchedulerInterface
 import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
+import com.carenote.app.domain.repository.CalendarEventReminderSchedulerInterface
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
@@ -80,6 +81,12 @@ object TestFirebaseModule {
     @Provides
     @Singleton
     fun provideTaskReminderScheduler(): TaskReminderSchedulerInterface {
+        return mockk(relaxed = true)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCalendarEventReminderScheduler(): CalendarEventReminderSchedulerInterface {
         return mockk(relaxed = true)
     }
 

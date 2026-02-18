@@ -64,7 +64,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 5 | ConnectivityRepository + OfflineIndicator バナー | DONE |
 | Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + テスト 6件 | DONE |
 | Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック遷移 + スライド/フェードアニメーション | DONE |
-| Phase 8 | CI グリーン化: Detekt 4 violations + E2E asAndroidBitmap import 修正 | DONE |
+| Phase 8 | CI グリーン化: Detekt violations + E2E import/Hilt binding 修正 | DONE |
 
 ## アーキテクチャ参照
 
