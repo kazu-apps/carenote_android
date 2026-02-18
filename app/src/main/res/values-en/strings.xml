@@ -6,7 +6,6 @@
     <!-- Navigation -->
     <string name="nav_medication">Medication</string>
     <string name="nav_calendar">Calendar</string>
-    <string name="nav_tasks">Tasks</string>
     <string name="nav_health_records">Records</string>
     <string name="nav_notes">Notes</string>
 

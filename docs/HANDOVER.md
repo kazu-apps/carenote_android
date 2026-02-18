@@ -2,12 +2,12 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Timeline フィルタ/FAB/タスク完了トグル — 全 Phase 完了
+## 現在のタスク: Expert 議論完了 — ロードマップ策定
 
 ## 次のアクション
 
-1. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
-2. 新機能の要件定義・ロードマップ作成
+1. `/exec` で Phase 1 から実行開始
+2. E2E テスト手動実行（エミュレータ必要）: `./gradlew.bat connectedDebugAndroidTest`
 
 ## 既知の問題
 
@@ -21,7 +21,7 @@
 
 | 重要度 | 出典 | 内容 |
 |--------|------|------|
-| MEDIUM | v4.0 | Rate Limiting 未実装（API エンドポイント、バックエンド依存） |
+| MEDIUM | v4.0 | Rate Limiting 未実装（API エンドポイント、バックエンド依存。Firebase コンソール設定で緩和可能） |
 | LOW | v2.0 | FCM トークンのサーバー送信未実装（バックエンド前提） |
 | LOW | v10.0-tdd | SettingsViewModelTest 1170 行（Detekt 対象外だが将来的に分割検討） |
 | LOW | Detekt | Roborazzi スクリーンショット Windows/Linux フォントレンダリング差分（CI soft-fail 対応済み） |
@@ -30,12 +30,92 @@
 
 ## PENDING 項目
 
+### Phase 1: セキュリティ修正 + Dead Code 除去 - DONE
+BillingRepositoryImpl debugMessage 漏洩修正 + nav_tasks/TaskRepository.kt 除去。
+
+### Phase 2: fallbackToDestructiveMigration 無効化 + Migration 整備 - PENDING
+
+リリースブロッカー。`DatabaseModule.kt` から `fallbackToDestructiveMigration()` を削除し、Room Migration v14→v25 を整備。介護記録の全消滅リスクを排除。
+- 対象ファイル:
+  - `di/DatabaseModule.kt`
+  - `data/local/migration/` (新規 Migration クラス群)
+  - テスト: MigrationTest
+- 依存: なし
+- 信頼度: MEDIUM（DB スキーマ差分の正確な把握が前提）
+- 注意: テーブル数 13 の全変更履歴を Room Entity から逆算する必要あり
+
+### Phase 3: カレンダーイベントリマインダー Phase 1 — Worker + Scheduler - PENDING
+
+非タスクのカレンダーイベント（病院予約等）にリマインダー通知を追加。既存 TaskReminderWorker パターンを流用。
+- 対象ファイル:
+  - `data/worker/CalendarEventReminderWorker.kt` (新規)
+  - `domain/repository/CalendarEventReminderScheduler.kt` (新規 interface)
+  - `data/repository/CalendarEventReminderSchedulerImpl.kt` (新規)
+  - `di/WorkerModule.kt` (Worker + Scheduler 登録)
+  - `res/values/strings.xml`, `res/values-en/strings.xml` (通知文字列)
+- 依存: なし
+- 信頼度: HIGH（既存パターン流用）
+- セキュリティ要件: 通知に患者氏名・診断名等の PII を含めない
+
+### Phase 4: カレンダーイベントリマインダー Phase 2 — UI + 画面分割 - PENDING
+
+AddEditCalendarEventScreen にリマインダーセクションを追加。同時に 688 行の画面を 3 ファイルに分割（Detekt 800 行超過を予防）。
+- 対象ファイル:
+  - `ui/screens/calendar/AddEditCalendarEventScreen.kt` → 3 分割:
+    - `AddEditCalendarEventScreen.kt` — スキャフォールド + 状態管理
+    - `components/CalendarEventFormFields.kt` — 既存フォームフィールド群
+    - `components/CalendarEventReminderSection.kt` — 新規リマインダー UI
+  - `ui/screens/calendar/AddEditCalendarEventViewModel.kt` (リマインダー状態追加)
+- 依存: Phase 3
+- 信頼度: HIGH
+
+### Phase 5: オフライン状態インジケーター - PENDING
+
+ネットワーク切断・同期失敗時のユーザー通知。ConnectivityManager + SyncState を組み合わせた UI コンポーネント。
+- 対象ファイル:
+  - `ui/components/` (新規 OfflineIndicator コンポーネント)
+  - `ui/navigation/AdaptiveNavigationScaffold.kt` (インジケーター埋め込み)
+  - `domain/repository/` (ConnectivityRepository interface)
+- 依存: なし
+- 信頼度: MEDIUM
+- セキュリティ要件: SyncState.Error には汎用メッセージのみ格納。DomainError.message を UI に直接表示しない
+
+### Phase 6: プレミアム/Billing UI - PENDING
+
+Settings 画面にプレミアムプラン購入/管理セクションを追加。BillingRepository インフラは完成済み。
+- 対象ファイル:
+  - `ui/screens/settings/sections/PremiumSection.kt` (新規)
+  - `ui/screens/settings/SettingsScreen.kt` (セクション追加)
+  - `res/values/strings.xml`, `res/values-en/strings.xml` (premium/billing 文字列)
+- 依存: Phase 1 (debugMessage 修正済みであること)
+- 信頼度: MEDIUM
+- 前提条件: `purchaseToken` 永続化設計を UI 実装前に決定
+- セキュリティ要件: snackbar での billing エラー表示は StringRes 使用（WithString 直接渡し禁止）
+- 注意: サーバーサイド検証（Cloud Functions）は別途。クライアントサイドのみで MVP は許容
+
+### Phase 7: 品質改善バッチ - PENDING
+
+依存ライブラリ更新 + Home 画面 UX 改善 + 画面遷移アニメーション統一。
+- 対象ファイル:
+  - `gradle/libs.versions.toml` (biometric 1.1.0→1.2.x)
+  - `ui/screens/home/HomeScreen.kt` (アイテム個別タップ→詳細遷移)
+  - `ui/navigation/CareNoteNavHost.kt` (画面遷移アニメーション)
+- 依存: なし
+- 信頼度: HIGH
+
 ### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
 Google Play Developer API 経由のレシート検証を Cloud Functions で実装。本番リリース前の必須要件。
 - 種別: 実装
 - 対象: Cloud Functions (Node.js), Firestore の purchaseTokens コレクション
 - 依存: v9.0 Phase 1 完了済み
 - 注意: **Claude Code の守備範囲外**。Firebase CLI + Node.js 環境が必要
+
+## やらないリスト
+
+- **SettingsViewModel 分割**: ユーザー価値ゼロ。@Suppress("TooManyFunctions") で現状問題なし
+- **FCM リモート通知**: Cloud Functions バックエンド前提。現フェーズ対象外
+- **Wear OS 対応**: 別モジュール前提。長期計画
+- **CSV データインポート**: 対象ユーザー適合性未検証
 
 ## 完了タスク
 
@@ -63,6 +143,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | GPP アップグレード | GPP 3.10.1→4.0.0 + api-key.json セキュリティ修正 | DONE |
 | Task→CalendarEvent 統合 | CalendarEvent 拡張→Task 削除→UI 統合→全参照除去→E2E 修正。DB v23→v25、80ファイル変更 | DONE |
 | Timeline フィルタ/FAB | TimelineFilterType + フィルタUI + FAB→タスク追加遷移 + route type パラメータ + 21 テスト | DONE |
+| Phase 1 | BillingRepositoryImpl debugMessage 漏洩修正 + Dead Code 除去 (nav_tasks, TaskRepository.kt) | DONE |
 
 ## アーキテクチャ参照
 
@@ -84,3 +165,4 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 - **FCM リモート通知**: Cloud Functions / バックエンド構築が前提
 - **Wear OS 対応**: Horologist + Health Services、別モジュール必要
 - **CSV データインポート**: 対象ユーザー適合性検証後
+- **Firebase App Check**: 導入推奨（PII 保護強化）。Billing UI 実装前後に検討

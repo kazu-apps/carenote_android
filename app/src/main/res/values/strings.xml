@@ -6,7 +6,6 @@
     <!-- Navigation -->
     <string name="nav_medication">服薬</string>
     <string name="nav_calendar">予定</string>
-    <string name="nav_tasks">タスク</string>
     <string name="nav_health_records">記録</string>
     <string name="nav_notes">メモ</string>
 

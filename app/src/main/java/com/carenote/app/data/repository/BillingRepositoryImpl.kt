@@ -264,19 +264,18 @@ class BillingRepositoryImpl(
                 Result.Failure(
                     DomainError.ValidationError("Item already owned")
                 )
-            BillingClient.BillingResponseCode.DEVELOPER_ERROR ->
+            BillingClient.BillingResponseCode.DEVELOPER_ERROR -> {
+                Timber.d("Billing developer error: %s", billingResult.debugMessage)
                 Result.Failure(
-                    DomainError.UnknownError(
-                        "Billing developer error: ${billingResult.debugMessage}"
-                    )
+                    DomainError.UnknownError("Billing configuration error")
                 )
-            else ->
+            }
+            else -> {
+                Timber.d("Billing error (%d): %s", billingResult.responseCode, billingResult.debugMessage)
                 Result.Failure(
-                    DomainError.UnknownError(
-                        "Billing error (${billingResult.responseCode}): " +
-                            "${billingResult.debugMessage}"
-                    )
+                    DomainError.UnknownError("Billing error (${billingResult.responseCode})")
                 )
+            }
         }
     }
 }
