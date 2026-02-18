@@ -479,6 +479,7 @@
     <string name="ui_error_not_found">データが見つかりませんでした</string>
     <string name="ui_error_validation">入力内容に問題があります</string>
     <string name="ui_error_network">ネットワークに接続できません</string>
+    <string name="offline_indicator_message">オフラインです — データはローカルに保存されます</string>
     <string name="ui_error_unauthorized">認証が必要です</string>
     <string name="ui_error_unknown">予期しないエラーが発生しました</string>
     <string name="ui_error_security">セキュリティエラーが発生しました</string>

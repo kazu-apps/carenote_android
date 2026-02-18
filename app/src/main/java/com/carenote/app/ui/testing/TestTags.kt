@@ -19,4 +19,6 @@ object TestTags {
     const val TIMELINE_FILTER_MEDICATION = "timeline_filter_medication"
     const val TIMELINE_FILTER_HEALTH_RECORD = "timeline_filter_health_record"
     const val TIMELINE_FILTER_NOTE = "timeline_filter_note"
+
+    const val OFFLINE_INDICATOR = "offline_indicator"
 }

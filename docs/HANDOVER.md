@@ -41,16 +41,8 @@ CalendarEventReminderWorker + Scheduler + NotificationHelper 拡張 + DI 登録 
 ### Phase 4: カレンダーイベントリマインダー Phase 2 — UI + 画面分割 - DONE
 CalendarEventReminderSection + CalendarEventFormFields 抽出。全イベント種別でリマインダー有効化。ViewModel に CalendarEventReminderSchedulerInterface 追加。
 
-### Phase 5: オフライン状態インジケーター - PENDING
-
-ネットワーク切断・同期失敗時のユーザー通知。ConnectivityManager + SyncState を組み合わせた UI コンポーネント。
-- 対象ファイル:
-  - `ui/components/` (新規 OfflineIndicator コンポーネント)
-  - `ui/navigation/AdaptiveNavigationScaffold.kt` (インジケーター埋め込み)
-  - `domain/repository/` (ConnectivityRepository interface)
-- 依存: なし
-- 信頼度: MEDIUM
-- セキュリティ要件: SyncState.Error には汎用メッセージのみ格納。DomainError.message を UI に直接表示しない
+### Phase 5: オフライン状態インジケーター - DONE
+ConnectivityRepository + OfflineIndicator コンポーネント。AdaptiveNavigationScaffold にバナー埋め込み。
 
 ### Phase 6: プレミアム/Billing UI - PENDING
 
@@ -119,6 +111,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 2 | fallbackToDestructiveMigration 削除 + v25 ベースライン化。旧スキーマ v12-v24 削除 | DONE |
 | Phase 3 | CalendarEventReminderWorker + Scheduler + 通知チャンネル + テスト。4000番台通知ID | DONE |
 | Phase 4 | CalendarEventReminderSection + CalendarEventFormFields 画面分割。リマインダー UI + ViewModel 統合 | DONE |
+| Phase 5 | ConnectivityRepository + OfflineIndicator バナー。AdaptiveNavigationScaffold 統合 | DONE |
 
 ## アーキテクチャ参照
 

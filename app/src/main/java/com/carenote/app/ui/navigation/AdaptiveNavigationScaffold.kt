@@ -1,5 +1,6 @@
 package com.carenote.app.ui.navigation
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,12 +15,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.carenote.app.ui.components.OfflineIndicator
 
 @Suppress("LongMethod")
 @Composable
 fun AdaptiveNavigationScaffold(
     navController: NavController,
     incompleteTaskCount: Int = 0,
+    isOffline: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val adaptiveInfo = currentWindowAdaptiveInfo()
@@ -77,6 +80,11 @@ fun AdaptiveNavigationScaffold(
             navigationDrawerContainerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        content()
+        Column {
+            if (isOffline) {
+                OfflineIndicator()
+            }
+            content()
+        }
     }
 }

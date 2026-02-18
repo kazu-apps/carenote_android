@@ -479,6 +479,7 @@
     <string name="ui_error_not_found">Data not found</string>
     <string name="ui_error_validation">There is a problem with your input</string>
     <string name="ui_error_network">Unable to connect to the network</string>
+    <string name="offline_indicator_message">Offline — Data is saved locally</string>
     <string name="ui_error_unauthorized">Authentication required</string>
     <string name="ui_error_unknown">An unexpected error occurred</string>
     <string name="ui_error_security">A security error occurred</string>

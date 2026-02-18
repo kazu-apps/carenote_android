@@ -38,8 +38,9 @@ import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
-import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
+import com.carenote.app.domain.repository.ConnectivityRepository
+import com.carenote.app.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.flowOf
 import com.carenote.app.ui.navigation.AdaptiveNavigationScaffold
 import com.carenote.app.ui.navigation.CareNoteNavHost
@@ -65,6 +66,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var analyticsRepository: AnalyticsRepository
+
+    @Inject
+    lateinit var connectivityRepository: ConnectivityRepository
 
     private val biometricHelper = BiometricHelper()
     private val isAuthenticated = mutableStateOf(false)
@@ -189,10 +193,14 @@ class MainActivity : AppCompatActivity() {
             }
             ).collectAsStateWithLifecycle(initialValue = 0)
 
+        val isOnline by connectivityRepository.isOnline
+            .collectAsStateWithLifecycle(initialValue = true)
+
         if (showBottomBar) {
             AdaptiveNavigationScaffold(
                 navController = navController,
-                incompleteTaskCount = incompleteTaskCount
+                incompleteTaskCount = incompleteTaskCount,
+                isOffline = !isOnline
             ) {
                 CareNoteNavHost(
                     navController = navController,
