@@ -1,0 +1,7 @@
+# OSV-Scanner Configuration
+# https://google.github.io/osv-scanner/configuration/
+
+# 既知の false positive やプロジェクト固有の除外を記載
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# reason = "理由を記載"

@@ -1,15 +1,16 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 進行中（セキュリティ修正 Phase 1 完了、Phase 2 待ち）
+## セッションステータス: 進行中（OSV-Scanner 導入完了、脆弱性対応 + セキュリティ Phase 2 待ち）
 
 ## 次のアクション
 
-1. **`/exec` でセキュリティ修正 Phase 1 を実行**
-2. Phase 2 セキュリティ修正（Phase 1 完了後）
-3. CI の workflow_dispatch で Roborazzi golden image 更新
-4. Phase 1B: Billing サーバーサイド検証（Claude Code 守備範囲外）
-5. リリース APK の実機テスト実施
-6. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
+1. **OSV-Scanner スキャン結果の脆弱性対応**（23件検出: 0 Critical, 7 High, 13 Medium, 1 Low, 2 Unknown。主要: protobuf-java 8.7, netty-codec-http2 8.2, netty-handler 7.5。全件修正可能）
+2. **`/exec` でセキュリティ修正 Phase 1 を実行**
+3. Phase 2 セキュリティ修正（Phase 1 完了後）
+4. CI の workflow_dispatch で Roborazzi golden image 更新
+5. Phase 1B: Billing サーバーサイド検証（Claude Code 守備範囲外）
+6. リリース APK の実機テスト実施
+7. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
 
 ## 既知の問題
 
@@ -110,6 +111,8 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック遷移 + スライド/フェードアニメーション | DONE |
 | Phase 8 | CI グリーン化: Detekt violations + E2E import/Hilt binding 修正 + e2e-test soft-fail | DONE |
 | Sec Phase 1 | データ保護 + 認可バイパス防止（backup DB exclude, email検証, 期限TOCTOU, 例外細分化） | DONE |
+| CLAUDE.md 軽量化 | CLAUDE.md 29KB→~9.5KB。詳細参照情報を docs/ARCHITECTURE.md (~17KB) に分離 | DONE |
+| OSV-Scanner 導入 | OSV-Scanner v2 + Gradle dependency locking + CI workflow + Claude Code hook | DONE |
 
 ## アーキテクチャ参照
 
@@ -126,6 +129,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | CI | build-test: Build + UnitTest + Coverage + Screenshot(soft-fail) + Detekt + E2E compile。e2e-test: soft-fail（エミュレータ不安定） |
 | Task→CalendarEvent | CalendarEventType.TASK + isTask computed property + validate() + TaskFields.kt 分離 + 画面分割 |
 | Timeline | TimelineFilterType enum + FAB→AddCalendarEvent(type=TASK) 遷移 + フィルタチップ |
+| ドキュメント構成 | CLAUDE.md (必須情報 ~9.5KB) + docs/ARCHITECTURE.md (詳細参照 ~17KB) |
 | 画面遷移 | NavHost デフォルト: slideInHorizontally/slideOutHorizontally 300ms。Bottom Nav タブ: fadeIn/fadeOut 300ms |
 
 ## スコープ外 / 将来

@@ -12,6 +12,17 @@ plugins {
     jacoco
 }
 
+// Dependency locking for OSV-Scanner vulnerability scanning
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+configurations.configureEach {
+    if (name.contains("lintClassPath", ignoreCase = true)) {
+        resolutionStrategy.deactivateDependencyLocking()
+    }
+}
+
 // Apply Firebase plugins only if google-services.json exists
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
