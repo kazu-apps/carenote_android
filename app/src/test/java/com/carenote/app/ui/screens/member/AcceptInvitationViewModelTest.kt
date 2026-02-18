@@ -176,13 +176,14 @@ class AcceptInvitationViewModelTest {
 
     @Test
     fun `accept creates member and updates invitation`() = runTest {
-        val user = aUser(uid = "accepterUid")
+        val user = aUser(uid = "accepterUid", email = "accepter@example.com")
         authRepository.setCurrentUser(user)
         val invitation = aInvitation(
             id = 1L,
             token = "accept-token",
             status = InvitationStatus.PENDING,
             careRecipientId = 1L,
+            inviteeEmail = "accepter@example.com",
             expiresAt = fakeClock.now().plusDays(7)
         )
         invitationRepository.setInvitations(listOf(invitation))
@@ -217,12 +218,13 @@ class AcceptInvitationViewModelTest {
 
     @Test
     fun `accept shows success state`() = runTest {
-        val user = aUser(uid = "accepterUid")
+        val user = aUser(uid = "accepterUid", email = "accepter@example.com")
         authRepository.setCurrentUser(user)
         val invitation = aInvitation(
             id = 1L,
             token = "success-token",
             status = InvitationStatus.PENDING,
+            inviteeEmail = "accepter@example.com",
             expiresAt = fakeClock.now().plusDays(7)
         )
         invitationRepository.setInvitations(listOf(invitation))
@@ -240,12 +242,13 @@ class AcceptInvitationViewModelTest {
 
     @Test
     fun `accept shows error on repository failure`() = runTest {
-        val user = aUser(uid = "accepterUid")
+        val user = aUser(uid = "accepterUid", email = "accepter@example.com")
         authRepository.setCurrentUser(user)
         val invitation = aInvitation(
             id = 1L,
             token = "fail-token",
             status = InvitationStatus.PENDING,
+            inviteeEmail = "accepter@example.com",
             expiresAt = fakeClock.now().plusDays(7)
         )
         invitationRepository.setInvitations(listOf(invitation))
@@ -280,6 +283,114 @@ class AcceptInvitationViewModelTest {
             val invitations = awaitItem()
             assertEquals(1, invitations.size)
             assertEquals(InvitationStatus.REJECTED, invitations[0].status)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `accept rejects email mismatch`() = runTest {
+        val user = aUser(uid = "uid1", email = "user@example.com")
+        authRepository.setCurrentUser(user)
+        val invitation = aInvitation(
+            id = 1L,
+            token = "mismatch-token",
+            status = InvitationStatus.PENDING,
+            inviteeEmail = "other@example.com",
+            expiresAt = fakeClock.now().plusDays(7)
+        )
+        invitationRepository.setInvitations(listOf(invitation))
+
+        val viewModel = createViewModel(token = "mismatch-token")
+
+        viewModel.snackbarController.events.test {
+            viewModel.accept()
+            val event = awaitItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(
+                R.string.accept_invitation_email_mismatch,
+                (event as SnackbarEvent.WithResId).messageResId
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Verify member was NOT created
+        memberRepository.getAllMembers().test {
+            val members = awaitItem()
+            assertEquals(0, members.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `accept rejects expired invitation on recheck`() = runTest {
+        val user = aUser(uid = "uid1", email = "invitee@example.com")
+        authRepository.setCurrentUser(user)
+        val invitation = aInvitation(
+            id = 1L,
+            token = "expire-recheck-token",
+            status = InvitationStatus.PENDING,
+            inviteeEmail = "invitee@example.com",
+            expiresAt = fakeClock.now().plusHours(1)
+        )
+        invitationRepository.setInvitations(listOf(invitation))
+
+        val viewModel = createViewModel(token = "expire-recheck-token")
+
+        // Verify it loaded as Content first
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state is AcceptInvitationUiState.Content)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Advance clock past expiry
+        fakeClock.setTime(fakeClock.now().plusHours(2))
+
+        viewModel.accept()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state is AcceptInvitationUiState.Error)
+            val error = state as AcceptInvitationUiState.Error
+            assertTrue(error.message is UiText.Resource)
+            assertEquals(
+                R.string.accept_invitation_expired,
+                (error.message as UiText.Resource).resId
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `accept shows error when invitation update fails`() = runTest {
+        val user = aUser(uid = "uid1", email = "invitee@example.com")
+        authRepository.setCurrentUser(user)
+        val invitation = aInvitation(
+            id = 1L,
+            token = "update-fail-token",
+            status = InvitationStatus.PENDING,
+            inviteeEmail = "invitee@example.com",
+            careRecipientId = 1L,
+            expiresAt = fakeClock.now().plusDays(7)
+        )
+        invitationRepository.setInvitations(listOf(invitation))
+
+        val viewModel = createViewModel(token = "update-fail-token")
+
+        // Set invitation repo to fail AFTER loading (only affects insert/update/delete)
+        invitationRepository.shouldFail = true
+
+        viewModel.accept()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state is AcceptInvitationUiState.Error)
+            val error = state as AcceptInvitationUiState.Error
+            assertTrue(error.message is UiText.Resource)
+            assertEquals(
+                R.string.accept_invitation_failed,
+                (error.message as UiText.Resource).resId
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }

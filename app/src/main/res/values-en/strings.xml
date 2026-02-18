@@ -751,6 +751,7 @@
     <string name="accept_invitation_expired">This invitation has expired</string>
     <string name="accept_invitation_already_accepted">This invitation has already been accepted</string>
     <string name="accept_invitation_not_logged_in">Please log in to accept this invitation</string>
+    <string name="accept_invitation_email_mismatch">This invitation is not for your email address</string>
     <string name="accept_invitation_loading">Loading invitation…</string>
 
     <!-- Premium / Billing -->

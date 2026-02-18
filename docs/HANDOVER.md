@@ -1,13 +1,15 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: 進行中（セキュリティ修正 Phase 1 完了、Phase 2 待ち）
 
 ## 次のアクション
 
-1. CI の workflow_dispatch で Roborazzi golden image 更新
-2. Phase 1B: Billing サーバーサイド検証（Claude Code 守備範囲外）
-3. リリース APK の実機テスト実施
-4. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
+1. **`/exec` でセキュリティ修正 Phase 1 を実行**
+2. Phase 2 セキュリティ修正（Phase 1 完了後）
+3. CI の workflow_dispatch で Roborazzi golden image 更新
+4. Phase 1B: Billing サーバーサイド検証（Claude Code 守備範囲外）
+5. リリース APK の実機テスト実施
+6. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
 
 ## 既知の問題
 
@@ -29,6 +31,47 @@
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
 
 ## PENDING 項目
+
+### セキュリティ修正 Phase 1: データ保護 + 認可バイパス防止 - DONE
+backup_rules DB exclude、AcceptInvitationViewModel メール検証/期限再チェック/重複チェック/トランザクション修正、DatabaseRecoveryHelper 例外細分化、テスト 4 件追加
+
+### セキュリティ修正 Phase 2: 中規模改善 - PENDING
+
+Phase 1 の防止策を補完する構造的改善。
+
+- 対象ファイル:
+  - `app/src/main/java/com/carenote/app/data/local/DatabaseRecoveryHelper.kt` — フルバックアップ + cache dir 保存
+  - `app/src/main/java/com/carenote/app/di/DatabaseModule.kt` — provideDatabase() try-catch 追加
+  - `app/src/main/java/com/carenote/app/ui/screens/carerecipient/CareRecipientViewModel.kt` — 6フィールド MAX_LENGTH バリデーション追加
+  - `app/src/main/java/com/carenote/app/ui/screens/emergencycontact/AddEditEmergencyContactViewModel.kt` — memo MAX_LENGTH + 電話番号フォーマット検証
+  - `app/src/main/java/com/carenote/app/ui/MainActivity.kt` — Biometric onError フォールバック
+- テスト: 各 ViewModel テストにバリデーションケース追加、DatabaseRecoveryHelperTest にバックアップテスト追加
+- 依存: Phase 1
+- 信頼度: HIGH
+
+### セキュリティ修正 Phase 3: 長期改善（再評価リスト） - PENDING
+
+Phase 2 完了後に実施判断。優先度 LOW/MEDIUM の項目。
+
+- 対象:
+  - H-4: e.message コード衛生（LOW — UI 露出ゼロ確認済み）
+  - H-5: ExceptionMasker Firebase/Network 層限定拡張（MEDIUM — 全面改修は YAGNI）
+  - M-8: DatabaseEncryptionMigrator passphraseHex zero-clear
+  - M-1: Deep link App Links 移行（実ドメイン設定が前提）
+  - M-9: RootDetector 強化（Play Integrity API 検討）
+  - M-5: ImageCompressor MIME/サイズ検証
+  - H-2 続き: BiometricHelper DI 化
+- 依存: Phase 2
+- 信頼度: MEDIUM
+
+### セキュリティレビュー重大度再評価（3 Expert 合意）
+
+| 項目 | 元の評価 | 最終評価 | 根拠 |
+|------|---------|---------|------|
+| H-4 (e.message UI 露出) | HIGH | **LOW** | ErrorDisplay は DomainError 型で固定メッセージ表示。HomeUiState.error は HomeScreen で未参照。ExportState.Error も未表示。全員一致 |
+| H-5 (ExceptionMasker 60+箇所) | HIGH | **MEDIUM** | DomainError は Throwable ではなく ExceptionMasker 不要。Firebase/Network 層のみ対応で十分。全員一致 |
+| H-2 (Biometric バイパス) | HIGH | **MEDIUM** | canAuthenticate フォールバックは正しい設計。onError のみ UX 問題。全員一致 |
+| H-6 (トークン平文保存) | HIGH | **MEDIUM** | SQLCipher 暗号化 DB 内。ハッシュ化は実装コスト過大。期限再チェックのみ Phase 1 |
 
 ### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
 Google Play Developer API 経由のレシート検証を Cloud Functions で実装。本番リリース前の必須要件。
@@ -66,6 +109,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + テスト 6件 | DONE |
 | Phase 7 | biometric 1.4.0-alpha05 + HomeScreen クリック遷移 + スライド/フェードアニメーション | DONE |
 | Phase 8 | CI グリーン化: Detekt violations + E2E import/Hilt binding 修正 + e2e-test soft-fail | DONE |
+| Sec Phase 1 | データ保護 + 認可バイパス防止（backup DB exclude, email検証, 期限TOCTOU, 例外細分化） | DONE |
 
 ## アーキテクチャ参照
 

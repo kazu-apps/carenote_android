@@ -110,37 +110,59 @@ class AcceptInvitationViewModel @Inject constructor(
             return
         }
 
+        if (state.invitation.inviteeEmail.lowercase() != currentUser.email.lowercase()) {
+            viewModelScope.launch {
+                snackbarController.showMessage(R.string.accept_invitation_email_mismatch)
+            }
+            return
+        }
+
         _uiState.value = state.copy(isAccepting = true)
 
         viewModelScope.launch {
             val now = clock.now()
-            val member = Member(
-                careRecipientId = state.invitation.careRecipientId,
-                uid = currentUser.uid,
-                role = MemberRole.MEMBER,
-                joinedAt = now
-            )
+            if (now.isAfter(state.invitation.expiresAt)) {
+                _uiState.value = AcceptInvitationUiState.Error(
+                    UiText.Resource(R.string.accept_invitation_expired)
+                )
+                return@launch
+            }
 
-            memberRepository.insertMember(member)
+            val existingMembers = memberRepository.getAllMembers().firstOrNull() ?: emptyList()
+            val isDuplicate = existingMembers.any {
+                it.uid == currentUser.uid && it.careRecipientId == state.invitation.careRecipientId
+            }
+
+            if (!isDuplicate) {
+                val member = Member(
+                    careRecipientId = state.invitation.careRecipientId,
+                    uid = currentUser.uid,
+                    role = MemberRole.MEMBER,
+                    joinedAt = now
+                )
+                memberRepository.insertMember(member)
+                    .onFailure { error ->
+                        Timber.w("Failed to accept invitation: $error")
+                        _uiState.value = state.copy(isAccepting = false)
+                        snackbarController.showMessage(R.string.accept_invitation_failed)
+                        return@launch
+                    }
+            }
+
+            val updatedInvitation = state.invitation.copy(
+                status = InvitationStatus.ACCEPTED
+            )
+            invitationRepository.updateInvitation(updatedInvitation)
                 .onSuccess {
-                    val updatedInvitation = state.invitation.copy(
-                        status = InvitationStatus.ACCEPTED
-                    )
-                    invitationRepository.updateInvitation(updatedInvitation)
-                        .onSuccess {
-                            Timber.d("Invitation accepted successfully")
-                            analyticsRepository.logEvent(AppConfig.Analytics.EVENT_INVITATION_ACCEPTED)
-                            _uiState.value = AcceptInvitationUiState.Success
-                        }
-                        .onFailure { error ->
-                            Timber.w("Failed to update invitation status: $error")
-                            _uiState.value = AcceptInvitationUiState.Success
-                        }
+                    Timber.d("Invitation accepted successfully")
+                    analyticsRepository.logEvent(AppConfig.Analytics.EVENT_INVITATION_ACCEPTED)
+                    _uiState.value = AcceptInvitationUiState.Success
                 }
                 .onFailure { error ->
-                    Timber.w("Failed to accept invitation: $error")
-                    _uiState.value = state.copy(isAccepting = false)
-                    snackbarController.showMessage(R.string.accept_invitation_failed)
+                    Timber.w("Failed to update invitation status: $error")
+                    _uiState.value = AcceptInvitationUiState.Error(
+                        UiText.Resource(R.string.accept_invitation_failed)
+                    )
                 }
         }
     }

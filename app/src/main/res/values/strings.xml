@@ -751,6 +751,7 @@
     <string name="accept_invitation_expired">この招待は期限切れです</string>
     <string name="accept_invitation_already_accepted">この招待はすでに受け入れ済みです</string>
     <string name="accept_invitation_not_logged_in">招待を受け入れるにはログインが必要です</string>
+    <string name="accept_invitation_email_mismatch">この招待はあなたのメールアドレス宛てではありません</string>
     <string name="accept_invitation_loading">招待情報を読み込み中…</string>
 
     <!-- Premium / Billing -->

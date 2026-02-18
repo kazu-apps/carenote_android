@@ -29,9 +29,13 @@ class DatabaseRecoveryHelper @Inject constructor() {
                 null
             )
             true
-        } catch (e: Exception) {
-            Timber.d("Cannot open database with current passphrase: $e")
-            false
+        } catch (e: android.database.sqlite.SQLiteException) {
+            if (e.message?.contains("not a database") == true) {
+                Timber.d("Passphrase mismatch detected")
+                false
+            } else {
+                throw e
+            }
         } finally {
             db?.close()
         }

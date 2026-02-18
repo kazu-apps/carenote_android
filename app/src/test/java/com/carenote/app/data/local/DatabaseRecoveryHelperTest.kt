@@ -55,6 +55,15 @@ class DatabaseRecoveryHelperTest {
         assertFalse(dbFile.exists())
     }
 
+    @Test(expected = android.database.sqlite.SQLiteException::class)
+    fun `recoverIfNeeded propagates non-passphrase exception`() {
+        dbFile.writeText("fake-db-content")
+        every { helper.canOpenDatabase(dbFile, any()) } throws
+            android.database.sqlite.SQLiteException("disk I/O error")
+
+        helper.recoverIfNeeded(dbFile, ByteArray(32))
+    }
+
     @Test
     fun `deleteDatabaseFiles removes all auxiliary files`() {
         dbFile.writeText("db")
