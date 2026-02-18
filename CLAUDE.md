@@ -145,7 +145,7 @@ detekt --config detekt.yml --input app/src/main/java
 | 言語 | Kotlin 2.3.0 / JVM 17 |
 | UI | Jetpack Compose + Material 3 (BOM 2026.01.01) |
 | DI | Hilt 2.59.1 (KSP 2.3.5) |
-| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v23, fallbackToDestructiveMigration) |
+| DB | Room 2.8.4 + SQLCipher 4.6.1 (`carenote_database` v25) |
 | ナビゲーション | Navigation Compose 2.9.7 |
 | 非同期 | Coroutines 1.10.2 + StateFlow |
 | ログ | Timber 5.0.1 |
@@ -462,7 +462,7 @@ Timber.d("User signed in successfully")
 ## よくある落とし穴
 
 1. **Detekt は CLI ツール** — Gradle プラグインとして追加しないこと（MockK インストルメンテーションと競合）
-2. **Room Entity 変更時** — Migration ファイル作成 + `DatabaseModule.kt` への登録が必須（v14 を baseline として squash 済み。v1-v13 の migration は削除済み。新規 migration は v14 以降から作成する。未リリースのため `fallbackToDestructiveMigration()` を使用中）
+2. **Room Entity 変更時** — Migration ファイル作成 + `DatabaseModule.kt` への登録が必須（v25 を baseline として初回リリース。未リリースのため v12-v24 スキーマは削除済み。今後の migration は v25 以降から作成する。`room-testing` 依存追加 + MigrationTest 作成が必要）
 3. **strings.xml は JP/EN ペア更新** — 片方だけ更新すると実行時に英語/日本語が混在
 4. **DomainError は Throwable ではない** — `Timber.w(error, msg)` は使えない。`Timber.w("msg: $error")` と書く
 5. **Result は独自実装** — `domain/common/Result.kt` の `Result<T, E>`。kotlin.Result ではない

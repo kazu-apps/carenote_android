@@ -55,7 +55,6 @@ object DatabaseModule {
             CareNoteDatabase.DATABASE_NAME
         )
             .openHelperFactory(factory)
-            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 

@@ -15,7 +15,6 @@
 
 - 問い合わせメールがプレースホルダー (`support@carenote.app`) — リリース前に実アドレス確定必要
 - リリース APK の実機テスト未実施
-- `fallbackToDestructiveMigration` リリース前に無効化 + 適切な Migration 作成必要
 
 ### 記録のみ（対応保留）
 
@@ -33,16 +32,8 @@
 ### Phase 1: セキュリティ修正 + Dead Code 除去 - DONE
 BillingRepositoryImpl debugMessage 漏洩修正 + nav_tasks/TaskRepository.kt 除去。
 
-### Phase 2: fallbackToDestructiveMigration 無効化 + Migration 整備 - PENDING
-
-リリースブロッカー。`DatabaseModule.kt` から `fallbackToDestructiveMigration()` を削除し、Room Migration v14→v25 を整備。介護記録の全消滅リスクを排除。
-- 対象ファイル:
-  - `di/DatabaseModule.kt`
-  - `data/local/migration/` (新規 Migration クラス群)
-  - テスト: MigrationTest
-- 依存: なし
-- 信頼度: MEDIUM（DB スキーマ差分の正確な把握が前提）
-- 注意: テーブル数 13 の全変更履歴を Room Entity から逆算する必要あり
+### Phase 2: fallbackToDestructiveMigration 無効化 + v25 ベースライン化 - DONE
+DatabaseModule.kt から fallbackToDestructiveMigration 削除 + v12-v24 スキーマ JSON 削除。v25 を初回リリースのベースラインに設定。
 
 ### Phase 3: カレンダーイベントリマインダー Phase 1 — Worker + Scheduler - PENDING
 
@@ -144,12 +135,13 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Task→CalendarEvent 統合 | CalendarEvent 拡張→Task 削除→UI 統合→全参照除去→E2E 修正。DB v23→v25、80ファイル変更 | DONE |
 | Timeline フィルタ/FAB | TimelineFilterType + フィルタUI + FAB→タスク追加遷移 + route type パラメータ + 21 テスト | DONE |
 | Phase 1 | BillingRepositoryImpl debugMessage 漏洩修正 + Dead Code 除去 (nav_tasks, TaskRepository.kt) | DONE |
+| Phase 2 | fallbackToDestructiveMigration 削除 + v25 ベースライン化。旧スキーマ v12-v24 削除 | DONE |
 
 ## アーキテクチャ参照
 
 | カテゴリ | 値 |
 |----------|-----|
-| Room DB | v25, SQLCipher 4.6.1, fallbackToDestructiveMigration, 13 Entity (TaskEntity 削除済み) |
+| Room DB | v25, SQLCipher 4.6.1, 13 Entity (TaskEntity 削除済み) |
 | Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
 | Billing | Google Play Billing 7.1.1, BillingAvailability + NoOpBillingRepository パターン |
 | DI 分割 | AppModule + RepositoryModule + ExporterModule + DatabaseModule + FirebaseModule + SyncModule + WorkerModule + BillingModule |
