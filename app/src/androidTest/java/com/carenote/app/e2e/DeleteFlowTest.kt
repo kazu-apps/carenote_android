@@ -21,11 +21,6 @@ class DeleteFlowTest : E2eTestBase() {
         waitForFab(TestTags.NOTES_FAB)
     }
 
-    private fun navigateToTasks() {
-        navigateToTab(R.string.nav_tasks)
-        waitForFab(TestTags.TASKS_FAB)
-    }
-
     private fun navigateToCalendar() {
         navigateToTab(R.string.nav_calendar)
         waitForFab(TestTags.CALENDAR_FAB)
@@ -68,27 +63,6 @@ class DeleteFlowTest : E2eTestBase() {
 
         // Verify note is removed
         waitForItemRemoved(noteTitle)
-    }
-
-    @Test
-    fun test_deleteTask_removesFromList() {
-        navigateToTasks()
-
-        val taskTitle = "DeleteTask E2E"
-
-        // Add task
-        clickFab(TestTags.TASKS_FAB)
-        waitForText(R.string.tasks_add)
-        fillTextFieldByLabel(R.string.tasks_task_title, taskTitle)
-        clickText(R.string.common_save)
-        waitForText(taskTitle)
-        composeRule.onNodeWithText(taskTitle).assertIsDisplayed()
-
-        // Swipe to delete and confirm
-        swipeToDeleteAndConfirm(taskTitle)
-
-        // Verify task is removed
-        waitForItemRemoved(taskTitle)
     }
 
     @Test

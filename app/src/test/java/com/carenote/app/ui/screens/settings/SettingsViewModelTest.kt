@@ -20,9 +20,11 @@ import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.fakes.FakeTaskCsvExporter
 import com.carenote.app.fakes.FakeTaskPdfExporter
-import com.carenote.app.fakes.FakeTaskRepository
+import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.Note
-import com.carenote.app.domain.model.Task
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.ui.viewmodel.ExportState
@@ -53,7 +55,7 @@ class SettingsViewModelTest {
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var careRecipientRepository: FakeCareRecipientRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
-    private lateinit var taskRepository: FakeTaskRepository
+    private lateinit var calendarEventRepository: FakeCalendarEventRepository
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var taskCsvExporter: FakeTaskCsvExporter
     private lateinit var taskPdfExporter: FakeTaskPdfExporter
@@ -71,7 +73,7 @@ class SettingsViewModelTest {
         syncWorkScheduler = FakeSyncWorkScheduler()
         careRecipientRepository = FakeCareRecipientRepository()
         analyticsRepository = FakeAnalyticsRepository()
-        taskRepository = FakeTaskRepository()
+        calendarEventRepository = FakeCalendarEventRepository()
         noteRepository = FakeNoteRepository()
         taskCsvExporter = FakeTaskCsvExporter()
         taskPdfExporter = FakeTaskPdfExporter()
@@ -86,7 +88,7 @@ class SettingsViewModelTest {
         return SettingsViewModel(
             settingsRepository, authRepository, syncWorkScheduler,
             analyticsRepository, careRecipientRepository,
-            taskRepository, noteRepository,
+            calendarEventRepository, noteRepository,
             taskCsvExporter, taskPdfExporter,
             noteCsvExporter, notePdfExporter,
             rootDetector,
@@ -811,7 +813,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksCsv success updates exportState`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -824,7 +826,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksPdf success updates exportState`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -837,7 +839,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksCsv failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         taskCsvExporter.shouldFail = true
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -856,7 +858,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksCsv logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -870,7 +872,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksPdf logs analytics event`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -978,7 +980,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `resetExportState sets state to Idle`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -994,7 +996,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksCsv on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         rootDetector.isRooted = true
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -1013,7 +1015,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksPdf on rooted device shows blocked snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         rootDetector.isRooted = true
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -1070,7 +1072,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksCsv on non-rooted device succeeds normally`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         rootDetector.isRooted = false
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -1084,7 +1086,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportTasksPdf on non-rooted device succeeds normally`() = runTest(mainCoroutineRule.testDispatcher) {
-        taskRepository.insertTask(Task(id = 0, title = "Test Task"))
+        calendarEventRepository.insertEvent(CalendarEvent(id = 0, title = "Test Task", date = java.time.LocalDate.now(), type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM))
         rootDetector.isRooted = false
         viewModel = createViewModel()
         advanceUntilIdle()

@@ -8,7 +8,7 @@ import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.SettingsRepository
 import com.carenote.app.domain.repository.PremiumFeatureGuard
 import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
-import com.carenote.app.domain.repository.TaskRepository
+import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.ui.util.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -40,7 +40,7 @@ class TaskReminderWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val settingsRepository: SettingsRepository,
     private val notificationHelper: NotificationHelper,
-    private val taskRepository: TaskRepository,
+    private val calendarEventRepository: CalendarEventRepository,
     private val reminderScheduler: TaskReminderSchedulerInterface,
     private val premiumFeatureGuard: PremiumFeatureGuard
 ) : CoroutineWorker(appContext, workerParams) {
@@ -50,10 +50,7 @@ class TaskReminderWorker @AssistedInject constructor(
         val taskTitle = inputData.getString(KEY_TASK_TITLE) ?: ""
         val followUpAttempt = inputData.getInt(KEY_FOLLOW_UP_ATTEMPT, 0)
 
-        Timber.d(
-            "TaskReminderWorker started: id=$taskId, " +
-                "title=$taskTitle, attempt=$followUpAttempt"
-        )
+        Timber.d("TaskReminderWorker started: id=$taskId, attempt=$followUpAttempt")
 
         val skipReason = getSkipReason(taskId, taskTitle)
         if (skipReason != null) return skipReason
@@ -78,8 +75,8 @@ class TaskReminderWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        val task = taskRepository.getTaskById(taskId).first()
-        if (task == null || task.isCompleted) {
+        val event = calendarEventRepository.getEventById(taskId).first()
+        if (event == null || !event.isTask || event.completed) {
             Timber.d("TaskReminderWorker: Task not found or completed")
             return Result.success()
         }

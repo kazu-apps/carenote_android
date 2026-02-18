@@ -20,13 +20,6 @@ sealed class TimelineItem {
                 ?: event.date.atStartOfDay()
     }
 
-    data class TaskItem(
-        val task: Task
-    ) : TimelineItem() {
-        override val timestamp: LocalDateTime
-            get() = task.dueDate?.atStartOfDay() ?: task.createdAt
-    }
-
     data class HealthRecordItem(
         val record: HealthRecord
     ) : TimelineItem() {

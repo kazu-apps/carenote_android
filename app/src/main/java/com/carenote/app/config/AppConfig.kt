@@ -433,7 +433,7 @@ object AppConfig {
         const val BATCH_SIZE = 100
 
         /** 同期エンティティタイプ数（進捗計算用） */
-        const val ENTITY_TYPE_COUNT = 7
+        const val ENTITY_TYPE_COUNT = 6
 
         /** 定期同期間隔（分） - WorkManager 最小値 15分 */
         const val SYNC_INTERVAL_MINUTES = 15L

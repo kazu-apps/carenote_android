@@ -18,7 +18,7 @@ import com.carenote.app.fakes.FakeSettingsRepository
 import com.carenote.app.fakes.FakeSyncWorkScheduler
 import com.carenote.app.fakes.FakeTaskCsvExporter
 import com.carenote.app.fakes.FakeTaskPdfExporter
-import com.carenote.app.fakes.FakeTaskRepository
+import com.carenote.app.fakes.FakeCalendarEventRepository
 import com.carenote.app.ui.util.SnackbarEvent
 import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,7 +49,7 @@ class SettingsViewModelUpdateTest {
     private lateinit var syncWorkScheduler: FakeSyncWorkScheduler
     private lateinit var careRecipientRepository: FakeCareRecipientRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
-    private lateinit var taskRepository: FakeTaskRepository
+    private lateinit var calendarEventRepository: FakeCalendarEventRepository
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var taskCsvExporter: FakeTaskCsvExporter
     private lateinit var taskPdfExporter: FakeTaskPdfExporter
@@ -67,7 +67,7 @@ class SettingsViewModelUpdateTest {
         syncWorkScheduler = FakeSyncWorkScheduler()
         careRecipientRepository = FakeCareRecipientRepository()
         analyticsRepository = FakeAnalyticsRepository()
-        taskRepository = FakeTaskRepository()
+        calendarEventRepository = FakeCalendarEventRepository()
         noteRepository = FakeNoteRepository()
         taskCsvExporter = FakeTaskCsvExporter()
         taskPdfExporter = FakeTaskPdfExporter()
@@ -82,7 +82,7 @@ class SettingsViewModelUpdateTest {
         return SettingsViewModel(
             settingsRepository, authRepository, syncWorkScheduler,
             analyticsRepository, careRecipientRepository,
-            taskRepository, noteRepository,
+            calendarEventRepository, noteRepository,
             taskCsvExporter, taskPdfExporter,
             noteCsvExporter, notePdfExporter,
             rootDetector,

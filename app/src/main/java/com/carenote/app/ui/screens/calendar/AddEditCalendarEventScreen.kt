@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.calendar
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -49,6 +51,7 @@ import com.carenote.app.ui.components.CareNoteAddEditScaffold
 import com.carenote.app.ui.components.CareNoteDatePickerDialog
 import com.carenote.app.ui.components.CareNoteTextField
 import com.carenote.app.ui.components.CareNoteTimePickerDialog
+import com.carenote.app.ui.screens.calendar.components.TaskFields
 import com.carenote.app.ui.preview.LightDarkPreview
 import com.carenote.app.ui.preview.PreviewData
 import com.carenote.app.ui.theme.ButtonShape
@@ -68,27 +71,53 @@ fun AddEditCalendarEventScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     CalendarEventScreenEffects(viewModel, snackbarHostState, onNavigateBack)
 
-    val title = if (formState.isEditMode) {
-        stringResource(R.string.calendar_edit_event)
-    } else {
-        stringResource(R.string.calendar_add_event)
-    }
+    val titleRes = if (formState.isEditMode) R.string.calendar_edit_event else R.string.calendar_add_event
 
     CalendarEventScreenScaffold(
-        title = title,
+        title = stringResource(titleRes),
         formState = formState,
         viewModel = viewModel,
         snackbarHostState = snackbarHostState,
         onNavigateBack = onNavigateBack,
         onShowDatePicker = { showDatePicker = true },
         onShowStartTimePicker = { showStartTimePicker = true },
-        onShowEndTimePicker = { showEndTimePicker = true }
+        onShowEndTimePicker = { showEndTimePicker = true },
+        onShowReminderTimePicker = { showReminderTimePicker = true }
     )
 
+    CalendarEventDialogs(
+        formState = formState,
+        viewModel = viewModel,
+        showDatePicker = showDatePicker,
+        showStartTimePicker = showStartTimePicker,
+        showEndTimePicker = showEndTimePicker,
+        showReminderTimePicker = showReminderTimePicker,
+        onDismissDatePicker = { showDatePicker = false },
+        onDismissStartTimePicker = { showStartTimePicker = false },
+        onDismissEndTimePicker = { showEndTimePicker = false },
+        onDismissReminderTimePicker = { showReminderTimePicker = false }
+    )
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun CalendarEventDialogs(
+    formState: AddEditCalendarEventFormState,
+    viewModel: AddEditCalendarEventViewModel,
+    showDatePicker: Boolean,
+    showStartTimePicker: Boolean,
+    showEndTimePicker: Boolean,
+    showReminderTimePicker: Boolean,
+    onDismissDatePicker: () -> Unit,
+    onDismissStartTimePicker: () -> Unit,
+    onDismissEndTimePicker: () -> Unit,
+    onDismissReminderTimePicker: () -> Unit
+) {
     CalendarEventDateTimePickers(
         formState = formState,
         showDatePicker = showDatePicker,
@@ -96,20 +125,46 @@ fun AddEditCalendarEventScreen(
         showEndTimePicker = showEndTimePicker,
         onDateSelected = { date ->
             viewModel.updateDate(date)
-            showDatePicker = false
+            onDismissDatePicker()
         },
-        onDismissDatePicker = { showDatePicker = false },
+        onDismissDatePicker = onDismissDatePicker,
         onStartTimeSelected = { time ->
             viewModel.updateStartTime(time)
-            showStartTimePicker = false
+            onDismissStartTimePicker()
         },
-        onDismissStartTimePicker = { showStartTimePicker = false },
+        onDismissStartTimePicker = onDismissStartTimePicker,
         onEndTimeSelected = { time ->
             viewModel.updateEndTime(time)
-            showEndTimePicker = false
+            onDismissEndTimePicker()
         },
-        onDismissEndTimePicker = { showEndTimePicker = false }
+        onDismissEndTimePicker = onDismissEndTimePicker
     )
+
+    ReminderTimePicker(
+        visible = showReminderTimePicker,
+        currentTime = formState.reminderTime,
+        onTimeSelected = { time ->
+            viewModel.updateReminderTime(time)
+            onDismissReminderTimePicker()
+        },
+        onDismiss = onDismissReminderTimePicker
+    )
+}
+
+@Composable
+private fun ReminderTimePicker(
+    visible: Boolean,
+    currentTime: LocalTime?,
+    onTimeSelected: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (visible) {
+        CareNoteTimePickerDialog(
+            initialTime = currentTime ?: LocalTime.of(9, 0),
+            onTimeSelected = onTimeSelected,
+            onDismiss = onDismiss
+        )
+    }
 }
 
 @Composable
@@ -147,7 +202,8 @@ private fun CalendarEventScreenScaffold(
     onNavigateBack: () -> Unit,
     onShowDatePicker: () -> Unit,
     onShowStartTimePicker: () -> Unit,
-    onShowEndTimePicker: () -> Unit
+    onShowEndTimePicker: () -> Unit,
+    onShowReminderTimePicker: () -> Unit
 ) {
     CareNoteAddEditScaffold(
         title = title,
@@ -166,6 +222,9 @@ private fun CalendarEventScreenScaffold(
             onShowEndTimePicker = onShowEndTimePicker,
             onFrequencySelected = viewModel::updateRecurrenceFrequency,
             onIntervalChanged = viewModel::updateRecurrenceInterval,
+            onPriorityChange = viewModel::updatePriority,
+            onToggleReminder = viewModel::toggleReminder,
+            onReminderTimeChange = onShowReminderTimePicker,
             onCancel = onNavigateBack,
             onSave = viewModel::saveEvent,
             modifier = Modifier.padding(innerPadding)
@@ -187,6 +246,9 @@ private fun CalendarEventFormBody(
     onShowEndTimePicker: () -> Unit,
     onFrequencySelected: (RecurrenceFrequency) -> Unit,
     onIntervalChanged: (Int) -> Unit,
+    onPriorityChange: (TaskPriority) -> Unit,
+    onToggleReminder: () -> Unit,
+    onReminderTimeChange: () -> Unit,
     onCancel: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
@@ -194,12 +256,10 @@ private fun CalendarEventFormBody(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-
         CalendarEventTextFields(
             formState = formState,
             onTitleChange = onTitleChange,
@@ -227,7 +287,16 @@ private fun CalendarEventFormBody(
             onIntervalChanged = onIntervalChanged
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        AnimatedVisibility(visible = formState.type == CalendarEventType.TASK) {
+            TaskFields(
+                priority = formState.priority,
+                onPriorityChange = onPriorityChange,
+                reminderEnabled = formState.reminderEnabled,
+                onToggleReminder = onToggleReminder,
+                reminderTime = formState.reminderTime,
+                onReminderTimeChange = onReminderTimeChange
+            )
+        }
 
         SaveCancelButtons(
             isSaving = formState.isSaving,

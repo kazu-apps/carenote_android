@@ -43,8 +43,7 @@ import com.carenote.app.ui.screens.member.SendInvitationScreen
 import com.carenote.app.ui.screens.search.SearchScreen
 import com.carenote.app.ui.screens.settings.LegalDocumentScreen
 import com.carenote.app.ui.screens.settings.SettingsScreen
-import com.carenote.app.ui.screens.tasks.AddEditTaskScreen
-import com.carenote.app.ui.screens.tasks.TasksScreen
+import androidx.compose.runtime.LaunchedEffect
 import com.carenote.app.ui.screens.timeline.TimelineScreen
 import com.carenote.app.domain.model.SearchResult
 
@@ -82,7 +81,6 @@ private fun NavGraphBuilder.bottomNavRoutes(
     medicationListRoute(navController)
     calendarListRoute(navController)
     timelineRoute(navController)
-    tasksListRoute(navController)
     healthRecordsListRoute(navController)
     notesListRoute(navController)
 }
@@ -99,8 +97,8 @@ private fun NavGraphBuilder.homeRoute(navController: NavHostController) {
             onNavigateToCalendar = {
                 navController.navigate(Screen.Calendar.route)
             },
-            onNavigateToTasks = {
-                navController.navigate(Screen.Tasks.route)
+            onNavigateToTimeline = {
+                navController.navigate(Screen.Timeline.route)
             },
             onNavigateToHealthRecords = {
                 navController.navigate(Screen.HealthRecords.route)
@@ -156,25 +154,7 @@ private fun NavGraphBuilder.calendarListRoute(navController: NavHostController) 
 
 private fun NavGraphBuilder.timelineRoute(navController: NavHostController) {
     composable(Screen.Timeline.route) {
-        TimelineScreen(
-            onNavigateBack = { navController.popBackStack() }
-        )
-    }
-}
-
-private fun NavGraphBuilder.tasksListRoute(navController: NavHostController) {
-    composable(Screen.Tasks.route) {
-        TasksScreen(
-            onNavigateToAddTask = {
-                navController.navigate(Screen.AddTask.route)
-            },
-            onNavigateToEditTask = { taskId ->
-                navController.navigate(Screen.EditTask.createRoute(taskId))
-            },
-            onNavigateToSearch = {
-                navController.navigate(Screen.Search.route)
-            }
-        )
+        TimelineScreen()
     }
 }
 
@@ -258,8 +238,6 @@ private fun navigateToSearchResult(
             Screen.MedicationDetail.createRoute(result.id)
         is SearchResult.NoteResult ->
             Screen.EditNote.createRoute(result.id)
-        is SearchResult.TaskResult ->
-            Screen.EditTask.createRoute(result.id)
         is SearchResult.HealthRecordResult ->
             Screen.EditHealthRecord.createRoute(result.id)
         is SearchResult.CalendarEventResult ->
@@ -562,9 +540,11 @@ private fun NavGraphBuilder.taskRoutes(
     navController: NavHostController
 ) {
     composable(Screen.AddTask.route) {
-        AddEditTaskScreen(
-            onNavigateBack = { navController.popBackStack() }
-        )
+        LaunchedEffect(Unit) {
+            navController.navigate(Screen.AddCalendarEvent.route) {
+                popUpTo(Screen.AddTask.route) { inclusive = true }
+            }
+        }
     }
 
     composable(
@@ -578,10 +558,13 @@ private fun NavGraphBuilder.taskRoutes(
                     "://edit_task/{taskId}"
             }
         )
-    ) {
-        AddEditTaskScreen(
-            onNavigateBack = { navController.popBackStack() }
-        )
+    ) { backStackEntry ->
+        val taskId = backStackEntry.arguments?.getLong("taskId") ?: return@composable
+        LaunchedEffect(taskId) {
+            navController.navigate(Screen.EditCalendarEvent.createRoute(taskId)) {
+                popUpTo(Screen.EditTask.route) { inclusive = true }
+            }
+        }
     }
 }
 

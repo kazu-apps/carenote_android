@@ -33,7 +33,6 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
     @Named("note") private val noteSyncer: EntitySyncer<*, *>,
     @Named("healthRecord") private val healthRecordSyncer: EntitySyncer<*, *>,
     @Named("calendarEvent") private val calendarEventSyncer: EntitySyncer<*, *>,
-    @Named("task") private val taskSyncer: EntitySyncer<*, *>,
     @Named("noteComment") private val noteCommentSyncer: EntitySyncer<*, *>
 ) : SyncRepository {
 
@@ -65,7 +64,7 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
     ): SyncResult? {
         val entityNames = listOf(
             "medications", "notes", "healthRecords",
-            "calendarEvents", "tasks", "noteComments"
+            "calendarEvents", "noteComments"
         )
 
         entityNames.forEachIndexed { index, entityName ->
@@ -90,7 +89,6 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         "notes" -> syncNotes(careRecipientId)
         "healthRecords" -> syncHealthRecords(careRecipientId)
         "calendarEvents" -> syncCalendarEvents(careRecipientId)
-        "tasks" -> syncTasks(careRecipientId)
         "noteComments" -> syncNoteComments(careRecipientId)
         else -> SyncResult.Success(0, 0)
     }
@@ -189,11 +187,6 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         return calendarEventSyncer.sync(careRecipientId, lastSyncTime)
     }
 
-    override suspend fun syncTasks(careRecipientId: String): SyncResult {
-        val lastSyncTime = getLastSyncTime()
-        return taskSyncer.sync(careRecipientId, lastSyncTime)
-    }
-
     override suspend fun syncNoteComments(careRecipientId: String): SyncResult {
         val lastSyncTime = getLastSyncTime()
         return noteCommentSyncer.sync(careRecipientId, lastSyncTime)
@@ -215,7 +208,7 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
 
         val syncers = listOf(
             medicationSyncer, noteSyncer, healthRecordSyncer,
-            calendarEventSyncer, taskSyncer, noteCommentSyncer
+            calendarEventSyncer, noteCommentSyncer
         )
 
         syncers.forEachIndexed { index, syncer ->
@@ -261,7 +254,7 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
 
         val syncers = listOf(
             medicationSyncer, noteSyncer, healthRecordSyncer,
-            calendarEventSyncer, taskSyncer, noteCommentSyncer
+            calendarEventSyncer, noteCommentSyncer
         )
 
         syncers.forEachIndexed { index, syncer ->

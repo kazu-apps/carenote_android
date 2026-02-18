@@ -8,14 +8,12 @@ import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.Note
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.repository.NoteRepository
-import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.domain.util.Clock
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,12 +27,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
-import java.time.LocalDate
 import javax.inject.Inject
 
 data class HomeUiState(
     val todayMedications: List<MedicationWithLog> = emptyList(),
-    val upcomingTasks: List<Task> = emptyList(),
+    val upcomingTasks: List<CalendarEvent> = emptyList(),
     val latestHealthRecord: HealthRecord? = null,
     val recentNotes: List<Note> = emptyList(),
     val todayEvents: List<CalendarEvent> = emptyList(),
@@ -50,7 +47,7 @@ data class MedicationWithLog(
 private data class FiveCombined(
     val medications: List<Medication>,
     val todayLogs: List<MedicationLog>,
-    val incompleteTasks: List<Task>,
+    val incompleteTasks: List<CalendarEvent>,
     val allRecords: List<HealthRecord>,
     val allNotes: List<Note>
 )
@@ -59,7 +56,6 @@ private data class FiveCombined(
 class HomeViewModel @Inject constructor(
     private val medicationRepository: MedicationRepository,
     private val medicationLogRepository: MedicationLogRepository,
-    private val taskRepository: TaskRepository,
     private val healthRecordRepository: HealthRecordRepository,
     private val noteRepository: NoteRepository,
     private val calendarEventRepository: CalendarEventRepository,
@@ -78,7 +74,7 @@ class HomeViewModel @Inject constructor(
             combine(
                 medicationRepository.getAllMedications(),
                 medicationLogRepository.getLogsForDate(today),
-                taskRepository.getIncompleteTasks(),
+                calendarEventRepository.getIncompleteTaskEvents(),
                 healthRecordRepository.getAllRecords(),
                 noteRepository.getAllNotes()
             ) { medications, todayLogs, incompleteTasks, allRecords, allNotes ->
@@ -120,7 +116,7 @@ class HomeViewModel @Inject constructor(
     private fun buildHomeUiState(
         medications: List<Medication>,
         todayLogs: List<MedicationLog>,
-        incompleteTasks: List<Task>,
+        incompleteTasks: List<CalendarEvent>,
         allRecords: List<HealthRecord>,
         allNotes: List<Note>,
         todayEvents: List<CalendarEvent>
@@ -135,7 +131,7 @@ class HomeViewModel @Inject constructor(
             }
 
         val upcomingTasks = incompleteTasks
-            .sortedBy { it.dueDate ?: LocalDate.MAX }
+            .sortedBy { it.date }
             .take(AppConfig.Home.MAX_SECTION_ITEMS)
 
         val latestRecord = allRecords

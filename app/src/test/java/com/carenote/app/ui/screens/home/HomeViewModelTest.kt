@@ -1,21 +1,17 @@
 package com.carenote.app.ui.screens.home
 
-import androidx.paging.PagingData
 import app.cash.turbine.test
 import com.carenote.app.config.AppConfig
-import com.carenote.app.domain.common.DomainError
-import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.Note
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.MedicationRepository
-import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeCalendarEventRepository
 import com.carenote.app.fakes.FakeClock
@@ -23,15 +19,12 @@ import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.fakes.FakeNoteRepository
-import com.carenote.app.fakes.FakeTaskRepository
 import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.testing.aCalendarEvent
 import com.carenote.app.testing.aMedication
 import com.carenote.app.testing.aMedicationLog
-import com.carenote.app.testing.aTask
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -56,7 +49,6 @@ class HomeViewModelTest {
     private val fakeClock = FakeClock()
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var medicationLogRepository: FakeMedicationLogRepository
-    private lateinit var taskRepository: FakeTaskRepository
     private lateinit var healthRecordRepository: FakeHealthRecordRepository
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var calendarEventRepository: FakeCalendarEventRepository
@@ -66,7 +58,6 @@ class HomeViewModelTest {
     fun setUp() {
         medicationRepository = FakeMedicationRepository()
         medicationLogRepository = FakeMedicationLogRepository()
-        taskRepository = FakeTaskRepository()
         healthRecordRepository = FakeHealthRecordRepository()
         noteRepository = FakeNoteRepository()
         calendarEventRepository = FakeCalendarEventRepository()
@@ -77,7 +68,6 @@ class HomeViewModelTest {
         return HomeViewModel(
             medicationRepository = medicationRepository,
             medicationLogRepository = medicationLogRepository,
-            taskRepository = taskRepository,
             healthRecordRepository = healthRecordRepository,
             noteRepository = noteRepository,
             calendarEventRepository = calendarEventRepository,
@@ -129,13 +119,12 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `tasks are sorted by due date`() = runTest(mainCoroutineRule.testDispatcher) {
-        val today = fakeClock.today()
-        taskRepository.setTasks(
+    fun `tasks are sorted by date`() = runTest(mainCoroutineRule.testDispatcher) {
+        calendarEventRepository.setEvents(
             listOf(
-                aTask(id = 1, title = "Later", dueDate = today.plusDays(5)),
-                aTask(id = 2, title = "Soon", dueDate = today.plusDays(1)),
-                aTask(id = 3, title = "No date", dueDate = null)
+                aCalendarEvent(id = 1, title = "Later", date = fakeClock.today().plusDays(5), type = CalendarEventType.TASK),
+                aCalendarEvent(id = 2, title = "Soon", date = fakeClock.today().plusDays(1), type = CalendarEventType.TASK),
+                aCalendarEvent(id = 3, title = "Today", date = fakeClock.today(), type = CalendarEventType.TASK)
             )
         )
 
@@ -145,9 +134,9 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val tasks = expectMostRecentItem().upcomingTasks
             assertEquals(3, tasks.size)
-            assertEquals("Soon", tasks[0].title)
-            assertEquals("Later", tasks[1].title)
-            assertEquals("No date", tasks[2].title)
+            assertEquals("Today", tasks[0].title)
+            assertEquals("Soon", tasks[1].title)
+            assertEquals("Later", tasks[2].title)
         }
     }
 
@@ -229,11 +218,6 @@ class HomeViewModelTest {
         }
         medicationRepository.setMedications(medications)
 
-        val tasks = (1..10).map { i ->
-            aTask(id = i.toLong(), title = "Task $i", dueDate = today.plusDays(i.toLong()))
-        }
-        taskRepository.setTasks(tasks)
-
         val notes = (1..10).map { i ->
             Note(
                 id = i.toLong(),
@@ -252,7 +236,15 @@ class HomeViewModelTest {
                 startTime = LocalTime.of(8 + (i % 12), 0)
             )
         }
-        calendarEventRepository.setEvents(events)
+        val taskEvents = (1..10).map { i ->
+            aCalendarEvent(
+                id = (100 + i).toLong(),
+                title = "Task $i",
+                date = today.plusDays(i.toLong()),
+                type = CalendarEventType.TASK
+            )
+        }
+        calendarEventRepository.setEvents(events + taskEvents)
 
         val viewModel = createViewModel()
 
@@ -406,9 +398,6 @@ class HomeViewModelTest {
                 )
             )
         )
-        taskRepository.setTasks(
-            listOf(aTask(id = 1, title = "Test Task", dueDate = today.plusDays(1)))
-        )
         healthRecordRepository.setRecords(
             listOf(HealthRecord(id = 1, temperature = 36.5, recordedAt = today.atTime(8, 0)))
         )
@@ -416,7 +405,10 @@ class HomeViewModelTest {
             listOf(Note(id = 1, title = "Test Note", content = "content", updatedAt = today.atStartOfDay()))
         )
         calendarEventRepository.setEvents(
-            listOf(aCalendarEvent(id = 1, title = "Test Event", date = today, startTime = LocalTime.of(9, 0)))
+            listOf(
+                aCalendarEvent(id = 1, title = "Test Event", date = today, startTime = LocalTime.of(9, 0)),
+                aCalendarEvent(id = 2, title = "Test Task", date = today.plusDays(1), type = CalendarEventType.TASK)
+            )
         )
     }
 
@@ -439,7 +431,6 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             medicationRepository = failingMedicationRepo,
             medicationLogRepository = medicationLogRepository,
-            taskRepository = taskRepository,
             healthRecordRepository = healthRecordRepository,
             noteRepository = noteRepository,
             calendarEventRepository = calendarEventRepository,
@@ -453,43 +444,6 @@ class HomeViewModelTest {
             assertFalse(state.isLoading)
             assertNotNull(state.error)
             assertEquals("Database corrupted", state.error)
-        }
-    }
-
-    @Test
-    fun `task repository exception is caught gracefully`() = runTest(mainCoroutineRule.testDispatcher) {
-        val failingTaskRepo = object : TaskRepository {
-            override fun getIncompleteTasks(): Flow<List<Task>> = flow {
-                throw RuntimeException("Task DB error")
-            }
-            override fun getAllTasks() = taskRepository.getAllTasks()
-            override fun getTaskById(id: Long) = taskRepository.getTaskById(id)
-            override fun getTasksByDueDate(date: LocalDate) = taskRepository.getTasksByDueDate(date)
-            override fun getPagedAllTasks(query: String): Flow<PagingData<Task>> = taskRepository.getPagedAllTasks(query)
-            override fun getPagedIncompleteTasks(query: String): Flow<PagingData<Task>> = taskRepository.getPagedIncompleteTasks(query)
-            override fun getPagedCompletedTasks(query: String): Flow<PagingData<Task>> = taskRepository.getPagedCompletedTasks(query)
-            override fun getIncompleteTaskCount() = taskRepository.getIncompleteTaskCount()
-            override suspend fun insertTask(task: Task) = taskRepository.insertTask(task)
-            override suspend fun updateTask(task: Task) = taskRepository.updateTask(task)
-            override suspend fun deleteTask(id: Long) = taskRepository.deleteTask(id)
-        }
-
-        val viewModel = HomeViewModel(
-            medicationRepository = medicationRepository,
-            medicationLogRepository = medicationLogRepository,
-            taskRepository = failingTaskRepo,
-            healthRecordRepository = healthRecordRepository,
-            noteRepository = noteRepository,
-            calendarEventRepository = calendarEventRepository,
-            analyticsRepository = analyticsRepository,
-            clock = fakeClock
-        )
-
-        viewModel.uiState.test {
-            advanceUntilIdle()
-            val state = expectMostRecentItem()
-            assertFalse(state.isLoading)
-            assertNotNull(state.error)
         }
     }
 
@@ -516,7 +470,6 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             medicationRepository = medicationRepository,
             medicationLogRepository = medicationLogRepository,
-            taskRepository = taskRepository,
             healthRecordRepository = healthRecordRepository,
             noteRepository = noteRepository,
             calendarEventRepository = failingCalendarRepo,
@@ -549,7 +502,6 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             medicationRepository = errorMedicationRepo,
             medicationLogRepository = medicationLogRepository,
-            taskRepository = taskRepository,
             healthRecordRepository = healthRecordRepository,
             noteRepository = noteRepository,
             calendarEventRepository = calendarEventRepository,

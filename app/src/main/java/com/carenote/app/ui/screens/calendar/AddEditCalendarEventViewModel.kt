@@ -8,7 +8,9 @@ import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.repository.AnalyticsRepository
+import com.carenote.app.domain.repository.TaskReminderSchedulerInterface
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.domain.validator.RecurrenceValidator
 import com.carenote.app.ui.util.SnackbarController
@@ -42,6 +44,9 @@ data class AddEditCalendarEventFormState(
     val type: CalendarEventType = CalendarEventType.OTHER,
     val recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
     val recurrenceInterval: Int = 1,
+    val priority: TaskPriority = TaskPriority.MEDIUM,
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime? = null,
     val titleError: UiText? = null,
     val descriptionError: UiText? = null,
     val recurrenceIntervalError: UiText? = null,
@@ -54,6 +59,7 @@ class AddEditCalendarEventViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val calendarEventRepository: CalendarEventRepository,
     private val analyticsRepository: AnalyticsRepository,
+    private val taskReminderScheduler: TaskReminderSchedulerInterface,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -114,7 +120,10 @@ class AddEditCalendarEventViewModel @Inject constructor(
                     isAllDay = event.isAllDay,
                     type = event.type,
                     recurrenceFrequency = event.recurrenceFrequency,
-                    recurrenceInterval = event.recurrenceInterval
+                    recurrenceInterval = event.recurrenceInterval,
+                    priority = event.priority ?: TaskPriority.MEDIUM,
+                    reminderEnabled = event.reminderEnabled,
+                    reminderTime = event.reminderTime
                 )
                 _initialFormState = _formState.value
             }
@@ -169,6 +178,20 @@ class AddEditCalendarEventViewModel @Inject constructor(
             recurrenceInterval = interval,
             recurrenceIntervalError = null
         )
+    }
+
+    fun updatePriority(priority: TaskPriority) {
+        _formState.value = _formState.value.copy(priority = priority)
+    }
+
+    fun toggleReminder() {
+        _formState.value = _formState.value.copy(
+            reminderEnabled = !_formState.value.reminderEnabled
+        )
+    }
+
+    fun updateReminderTime(time: LocalTime?) {
+        _formState.value = _formState.value.copy(reminderTime = time)
     }
 
     fun saveEvent() {
@@ -231,6 +254,13 @@ class AddEditCalendarEventViewModel @Inject constructor(
             type = current.type,
             recurrenceFrequency = current.recurrenceFrequency,
             recurrenceInterval = current.recurrenceInterval,
+            priority = if (current.type == CalendarEventType.TASK) current.priority else null,
+            reminderEnabled = current.type == CalendarEventType.TASK && current.reminderEnabled,
+            reminderTime = if (current.type == CalendarEventType.TASK && current.reminderEnabled) {
+                current.reminderTime
+            } else {
+                null
+            },
             updatedAt = now
         )
         calendarEventRepository.updateEvent(updatedEvent)
@@ -239,6 +269,14 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 analyticsRepository.logEvent(
                     AppConfig.Analytics.EVENT_CALENDAR_EVENT_UPDATED
                 )
+                if (current.type == CalendarEventType.TASK && eventId != null) {
+                    scheduleOrCancelReminder(
+                        eventId,
+                        current.title.trim(),
+                        current.reminderEnabled,
+                        current.reminderTime
+                    )
+                }
                 _savedEvent.send(true)
             }
             .onFailure { error ->
@@ -262,6 +300,13 @@ class AddEditCalendarEventViewModel @Inject constructor(
             type = current.type,
             recurrenceFrequency = current.recurrenceFrequency,
             recurrenceInterval = current.recurrenceInterval,
+            priority = if (current.type == CalendarEventType.TASK) current.priority else null,
+            reminderEnabled = current.type == CalendarEventType.TASK && current.reminderEnabled,
+            reminderTime = if (current.type == CalendarEventType.TASK && current.reminderEnabled) {
+                current.reminderTime
+            } else {
+                null
+            },
             createdAt = now,
             updatedAt = now
         )
@@ -271,6 +316,14 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 analyticsRepository.logEvent(
                     AppConfig.Analytics.EVENT_CALENDAR_EVENT_CREATED
                 )
+                if (current.type == CalendarEventType.TASK) {
+                    scheduleOrCancelReminder(
+                        id,
+                        current.title.trim(),
+                        current.reminderEnabled,
+                        current.reminderTime
+                    )
+                }
                 _savedEvent.send(true)
             }
             .onFailure { error ->
@@ -278,6 +331,18 @@ class AddEditCalendarEventViewModel @Inject constructor(
                 _formState.value = _formState.value.copy(isSaving = false)
                 snackbarController.showMessage(R.string.calendar_event_save_failed)
             }
+    }
+
+    private fun scheduleOrCancelReminder(
+        id: Long,
+        title: String,
+        enabled: Boolean,
+        time: LocalTime?
+    ) {
+        taskReminderScheduler.cancelReminder(id)
+        if (enabled && time != null) {
+            taskReminderScheduler.scheduleReminder(id, title, time)
+        }
     }
 
 }

@@ -19,8 +19,7 @@ import java.time.LocalDateTime
  * - medicationLogs: 服薬記録
  * - notes: メモ・申し送り
  * - healthRecords: 健康記録
- * - calendarEvents: カレンダーイベント
- * - tasks: タスク
+ * - calendarEvents: カレンダーイベント（タスク含む）
  *
  * ## 使用例
  * ```kotlin
@@ -61,7 +60,7 @@ interface SyncRepository {
     /**
      * 全エンティティタイプを同期する
      *
-     * medications → medicationLogs → notes → healthRecords → calendarEvents → tasks
+     * medications → medicationLogs → notes → healthRecords → calendarEvents
      * の順序で同期を実行。途中でエラーが発生した場合は PartialSuccess または Failure を返す。
      *
      * @param careRecipientId 被介護者 ID (Firestore の careRecipients ドキュメント ID)
@@ -111,14 +110,6 @@ interface SyncRepository {
      * @return 同期結果
      */
     suspend fun syncCalendarEvents(careRecipientId: String): SyncResult
-
-    /**
-     * タスクデータを同期する
-     *
-     * @param careRecipientId 被介護者 ID
-     * @return 同期結果
-     */
-    suspend fun syncTasks(careRecipientId: String): SyncResult
 
     /**
      * メモコメントデータを同期する

@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.MonitorHeart
@@ -267,9 +266,6 @@ private fun resultIconAndLabel(result: SearchResult): Pair<ImageVector, String> 
         is SearchResult.NoteResult ->
             Icons.AutoMirrored.Filled.StickyNote2 to
                 stringResource(R.string.search_result_note)
-        is SearchResult.TaskResult ->
-            Icons.Filled.CheckCircle to
-                stringResource(R.string.search_result_task)
         is SearchResult.HealthRecordResult ->
             Icons.Filled.MonitorHeart to
                 stringResource(R.string.search_result_health_record)

@@ -70,7 +70,6 @@ fun TimelineItemCard(
                 when (item) {
                     is TimelineItem.MedicationLogItem -> MedicationLogContent(item)
                     is TimelineItem.CalendarEventItem -> CalendarEventContent(item)
-                    is TimelineItem.TaskItem -> TaskContent(item)
                     is TimelineItem.HealthRecordItem -> HealthRecordContent(item)
                     is TimelineItem.NoteItem -> NoteContent(item)
                 }
@@ -114,9 +113,22 @@ private fun CalendarEventContent(item: TimelineItem.CalendarEventItem) {
         text = item.event.title,
         style = MaterialTheme.typography.bodyMedium,
         maxLines = 1,
-        overflow = TextOverflow.Ellipsis
+        overflow = TextOverflow.Ellipsis,
+        textDecoration = if (item.event.isTask && item.event.completed) {
+            TextDecoration.LineThrough
+        } else {
+            TextDecoration.None
+        }
     )
-    if (item.event.startTime != null) {
+    if (item.event.isTask && item.event.description.isNotBlank()) {
+        Text(
+            text = item.event.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = AppConfig.Timeline.PREVIEW_MAX_LINES,
+            overflow = TextOverflow.Ellipsis
+        )
+    } else if (item.event.startTime != null) {
         val timeRange = buildString {
             append(DateTimeFormatters.formatTime(item.event.startTime))
             item.event.endTime?.let { end ->
@@ -128,26 +140,6 @@ private fun CalendarEventContent(item: TimelineItem.CalendarEventItem) {
             text = timeRange,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun TaskContent(item: TimelineItem.TaskItem) {
-    Text(
-        text = item.task.title,
-        style = MaterialTheme.typography.bodyMedium,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        textDecoration = if (item.task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
-    )
-    if (item.task.description.isNotBlank()) {
-        Text(
-            text = item.task.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = AppConfig.Timeline.PREVIEW_MAX_LINES,
-            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -215,16 +207,19 @@ private fun resolveItemStyle(item: TimelineItem): ItemStyle {
             tint = Color(0xFF2E7D32),
             label = stringResource(R.string.timeline_medication_log)
         )
-        is TimelineItem.CalendarEventItem -> ItemStyle(
-            icon = Icons.Filled.CalendarMonth,
-            tint = Color(0xFF1565C0),
-            label = stringResource(R.string.timeline_calendar_event)
-        )
-        is TimelineItem.TaskItem -> ItemStyle(
-            icon = Icons.Filled.CheckCircle,
-            tint = Color(0xFFE65100),
-            label = stringResource(R.string.timeline_task)
-        )
+        is TimelineItem.CalendarEventItem -> if (item.event.isTask) {
+            ItemStyle(
+                icon = Icons.Filled.CheckCircle,
+                tint = Color(0xFFE65100),
+                label = stringResource(R.string.timeline_task)
+            )
+        } else {
+            ItemStyle(
+                icon = Icons.Filled.CalendarMonth,
+                tint = Color(0xFF1565C0),
+                label = stringResource(R.string.timeline_calendar_event)
+            )
+        }
         is TimelineItem.HealthRecordItem -> ItemStyle(
             icon = Icons.Filled.MonitorHeart,
             tint = Color(0xFFC62828),

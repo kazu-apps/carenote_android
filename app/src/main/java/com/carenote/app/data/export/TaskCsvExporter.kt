@@ -5,8 +5,8 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.RecurrenceFrequency
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.repository.TaskCsvExporterInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,7 +29,7 @@ class TaskCsvExporter @Inject constructor(
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     private val dueDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    override suspend fun export(tasks: List<Task>): Uri = withContext(Dispatchers.IO) {
+    override suspend fun export(events: List<CalendarEvent>): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, AppConfig.Export.CACHE_DIR_NAME).also { it.mkdirs() }
         cleanupStaleCache(exportDir)
         val fileName = "${AppConfig.Export.TASK_CSV_FILE_PREFIX}${System.currentTimeMillis()}.csv"
@@ -40,14 +40,14 @@ class TaskCsvExporter @Inject constructor(
                 writer.write("\uFEFF")
                 writer.write(buildHeaderRow())
                 writer.write("\r\n")
-                for (task in tasks) {
-                    writer.write(buildDataRow(task))
+                for (event in events) {
+                    writer.write(buildDataRow(event))
                     writer.write("\r\n")
                 }
             }
         }
 
-        Timber.d("Task CSV exported: ${file.length()} bytes, ${tasks.size} records")
+        Timber.d("Task CSV exported: ${file.length()} bytes, ${events.size} records")
 
         FileProvider.getUriForFile(
             context,
@@ -69,19 +69,19 @@ class TaskCsvExporter @Inject constructor(
         return headers.joinToString(",") { it.escapeCsv() }
     }
 
-    private fun buildDataRow(task: Task): String {
+    private fun buildDataRow(event: CalendarEvent): String {
         val fields = listOf(
-            task.title,
-            task.description,
-            task.dueDate?.format(dueDateFormatter) ?: "",
-            localizePriority(task.priority),
-            if (task.isCompleted) {
+            event.title,
+            event.description,
+            event.date.format(dueDateFormatter),
+            localizePriority(event.priority ?: TaskPriority.MEDIUM),
+            if (event.completed) {
                 context.getString(R.string.tasks_completed)
             } else {
                 context.getString(R.string.tasks_incomplete)
             },
-            localizeRecurrence(task.recurrenceFrequency),
-            task.createdAt.format(dateFormatter)
+            localizeRecurrence(event.recurrenceFrequency),
+            event.createdAt.format(dateFormatter)
         )
         return fields.joinToString(",") { it.escapeCsv() }
     }

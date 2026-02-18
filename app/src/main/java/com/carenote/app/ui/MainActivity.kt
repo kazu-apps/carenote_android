@@ -39,7 +39,7 @@ import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.SettingsRepository
-import com.carenote.app.domain.repository.TaskRepository
+import com.carenote.app.domain.repository.CalendarEventRepository
 import kotlinx.coroutines.flow.flowOf
 import com.carenote.app.ui.navigation.AdaptiveNavigationScaffold
 import com.carenote.app.ui.navigation.CareNoteNavHost
@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var authRepository: AuthRepository
 
     @Inject
-    lateinit var taskRepository: TaskRepository
+    lateinit var calendarEventRepository: CalendarEventRepository
 
     @Inject
     lateinit var analyticsRepository: AnalyticsRepository
@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity() {
 
         val incompleteTaskCount by (
             if (isLoggedIn) {
-                taskRepository.getIncompleteTaskCount()
+                calendarEventRepository.getIncompleteTaskCount()
             } else {
                 flowOf(0)
             }

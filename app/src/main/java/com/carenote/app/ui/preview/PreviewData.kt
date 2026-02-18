@@ -14,7 +14,6 @@ import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.SearchResult
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.screens.auth.ForgotPasswordFormState
 import com.carenote.app.ui.screens.auth.LoginFormState
@@ -26,7 +25,6 @@ import com.carenote.app.ui.screens.home.HomeUiState
 import com.carenote.app.ui.screens.home.MedicationWithLog
 import com.carenote.app.ui.screens.medication.AddEditMedicationFormState
 import com.carenote.app.ui.screens.notes.AddEditNoteFormState
-import com.carenote.app.ui.screens.tasks.AddEditTaskFormState
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -86,44 +84,6 @@ object PreviewData {
         (2L to MedicationTiming.MORNING.name) to MedicationLogStatus.TAKEN,
         (2L to MedicationTiming.EVENING.name) to MedicationLogStatus.SKIPPED
     )
-
-    val task1 = Task(
-        id = 1,
-        title = "通院予約の確認",
-        description = "来週の内科通院の予約時間を確認する",
-        dueDate = fixedDate.plusDays(3),
-        isCompleted = false,
-        priority = TaskPriority.HIGH,
-        createdAt = fixedDateTime,
-        updatedAt = fixedDateTime
-    )
-
-    val task2 = Task(
-        id = 2,
-        title = "介護保険の更新手続き",
-        description = "市役所で介護保険の更新申請を行う",
-        dueDate = fixedDate.plusDays(7),
-        isCompleted = false,
-        priority = TaskPriority.MEDIUM,
-        recurrenceFrequency = RecurrenceFrequency.MONTHLY,
-        reminderEnabled = true,
-        reminderTime = LocalTime.of(9, 0),
-        createdAt = fixedDateTime,
-        updatedAt = fixedDateTime
-    )
-
-    val task3 = Task(
-        id = 3,
-        title = "買い物リスト作成",
-        description = "",
-        dueDate = null,
-        isCompleted = true,
-        priority = TaskPriority.LOW,
-        createdAt = fixedDateTime,
-        updatedAt = fixedDateTime
-    )
-
-    val tasks = listOf(task1, task2, task3)
 
     val note1 = Note(
         id = 1,
@@ -221,7 +181,7 @@ object PreviewData {
     val searchResults = listOf(
         SearchResult.MedicationResult(medication1),
         SearchResult.NoteResult(note1),
-        SearchResult.TaskResult(task1)
+        SearchResult.CalendarEventResult(calendarEvent1)
     )
 
     // --- Form States (populated) ---
@@ -250,15 +210,6 @@ object PreviewData {
             MedicationTiming.EVENING to LocalTime.of(20, 0)
         ),
         reminderEnabled = true
-    )
-
-    val addEditTaskFormState = AddEditTaskFormState(
-        title = "通院予約の確認",
-        description = "来週の内科通院の予約時間を確認する",
-        dueDate = fixedDate.plusDays(3),
-        priority = TaskPriority.HIGH,
-        reminderEnabled = true,
-        reminderTime = LocalTime.of(9, 0)
     )
 
     val addEditCalendarEventFormState = AddEditCalendarEventFormState(
@@ -311,9 +262,34 @@ object PreviewData {
         )
     )
 
+    val taskEvent1 = CalendarEvent(
+        id = 101,
+        title = "通院予約の確認",
+        description = "来週の内科通院の予約時間を確認する",
+        date = fixedDate.plusDays(3),
+        type = CalendarEventType.TASK,
+        priority = TaskPriority.HIGH,
+        createdAt = fixedDateTime,
+        updatedAt = fixedDateTime
+    )
+
+    val taskEvent2 = CalendarEvent(
+        id = 102,
+        title = "介護保険の更新手続き",
+        description = "市役所で介護保険の更新申請を行う",
+        date = fixedDate.plusDays(7),
+        type = CalendarEventType.TASK,
+        priority = TaskPriority.MEDIUM,
+        recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+        reminderEnabled = true,
+        reminderTime = LocalTime.of(9, 0),
+        createdAt = fixedDateTime,
+        updatedAt = fixedDateTime
+    )
+
     val homeUiState = HomeUiState(
         todayMedications = medicationWithLogs,
-        upcomingTasks = listOf(task1, task2),
+        upcomingTasks = listOf(taskEvent1, taskEvent2),
         latestHealthRecord = healthRecord1,
         recentNotes = listOf(note1, note2),
         todayEvents = listOf(calendarEvent1, calendarEvent2),

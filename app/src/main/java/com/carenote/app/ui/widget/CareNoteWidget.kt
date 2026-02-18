@@ -31,7 +31,7 @@ import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.MedicationTiming
-import com.carenote.app.domain.model.Task
+import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.ui.MainActivity
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
@@ -54,10 +54,10 @@ class CareNoteWidget : GlanceAppWidget() {
             .getLogsForDate(LocalDate.now())
             .first()
 
-        val tasks = entryPoint.taskRepository()
-            .getTasksByDueDate(LocalDate.now())
+        val tasks = entryPoint.calendarEventRepository()
+            .getTaskEventsByDate(LocalDate.now())
             .first()
-            .filter { !it.isCompleted }
+            .filter { !it.completed }
             .take(AppConfig.Widget.MAX_TASK_ITEMS)
 
         provideContent {
@@ -78,7 +78,7 @@ private fun WidgetContent(
     context: Context,
     medications: List<Medication>,
     todayLogs: List<MedicationLog>,
-    tasks: List<Task>
+    tasks: List<CalendarEvent>
 ) {
     Column(
         modifier = GlanceModifier
@@ -127,7 +127,7 @@ private fun MedicationSection(
 @Composable
 private fun TaskSection(
     context: Context,
-    tasks: List<Task>
+    tasks: List<CalendarEvent>
 ) {
     Text(
         text = context.getString(R.string.widget_tasks_title),
@@ -207,7 +207,7 @@ private fun MedicationRow(
 }
 
 @Composable
-private fun TaskRow(context: Context, task: Task) {
+private fun TaskRow(context: Context, task: CalendarEvent) {
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically

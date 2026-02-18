@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.History
@@ -44,7 +43,6 @@ import com.carenote.app.ui.viewmodel.UiState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimelineScreen(
-    onNavigateBack: () -> Unit = {},
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val selectedDate by viewModel.selectedDate
@@ -59,16 +57,6 @@ fun TimelineScreen(
             TopAppBar(
                 title = {
                     Text(stringResource(R.string.timeline_title))
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(
-                                R.string.common_close
-                            )
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

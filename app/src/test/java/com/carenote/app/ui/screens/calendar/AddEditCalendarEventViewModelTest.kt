@@ -6,9 +6,11 @@ import com.carenote.app.R
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.RecurrenceFrequency
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeCalendarEventRepository
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.fakes.FakeTaskReminderScheduler
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.testing.MainCoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +36,7 @@ class AddEditCalendarEventViewModelTest {
 
     private lateinit var repository: FakeCalendarEventRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
+    private lateinit var taskReminderScheduler: FakeTaskReminderScheduler
     private val fakeClock = FakeClock()
     private lateinit var viewModel: AddEditCalendarEventViewModel
 
@@ -41,10 +44,17 @@ class AddEditCalendarEventViewModelTest {
     fun setUp() {
         repository = FakeCalendarEventRepository()
         analyticsRepository = FakeAnalyticsRepository()
+        taskReminderScheduler = FakeTaskReminderScheduler()
     }
 
     private fun createAddViewModel(): AddEditCalendarEventViewModel {
-        return AddEditCalendarEventViewModel(SavedStateHandle(), repository, analyticsRepository, clock = fakeClock)
+        return AddEditCalendarEventViewModel(
+            SavedStateHandle(),
+            repository,
+            analyticsRepository,
+            taskReminderScheduler,
+            clock = fakeClock
+        )
     }
 
     private fun createEditViewModel(eventId: Long): AddEditCalendarEventViewModel {
@@ -52,6 +62,7 @@ class AddEditCalendarEventViewModelTest {
             SavedStateHandle(mapOf("eventId" to eventId)),
             repository,
             analyticsRepository,
+            taskReminderScheduler,
             clock = fakeClock
         )
     }
@@ -685,6 +696,182 @@ class AddEditCalendarEventViewModelTest {
         viewModel = createAddViewModel()
 
         viewModel.updateRecurrenceInterval(5)
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    // --- Priority Tests ---
+
+    @Test
+    fun `default priority is MEDIUM`() {
+        viewModel = createAddViewModel()
+
+        assertEquals(TaskPriority.MEDIUM, viewModel.formState.value.priority)
+    }
+
+    @Test
+    fun `updatePriority updates form state`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updatePriority(TaskPriority.HIGH)
+
+        assertEquals(TaskPriority.HIGH, viewModel.formState.value.priority)
+    }
+
+    @Test
+    fun `saveEvent includes priority for TASK type`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("タスクテスト")
+        viewModel.updateType(CalendarEventType.TASK)
+        viewModel.updatePriority(TaskPriority.HIGH)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(1, events.size)
+            assertEquals(TaskPriority.HIGH, events[0].priority)
+        }
+    }
+
+    @Test
+    fun `saveEvent sets priority null for non-TASK type`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("通院テスト")
+        viewModel.updateType(CalendarEventType.HOSPITAL)
+        viewModel.updatePriority(TaskPriority.HIGH)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        repository.getAllEvents().test {
+            val events = awaitItem()
+            assertEquals(1, events.size)
+            assertNull(events[0].priority)
+        }
+    }
+
+    @Test
+    fun `edit mode loads priority from existing event`() = runTest {
+        repository.setEvents(
+            listOf(
+                CalendarEvent(
+                    id = 1L,
+                    title = "タスク",
+                    date = LocalDate.of(2025, 3, 15),
+                    type = CalendarEventType.TASK,
+                    priority = TaskPriority.HIGH,
+                    createdAt = LocalDateTime.of(2025, 3, 15, 10, 0),
+                    updatedAt = LocalDateTime.of(2025, 3, 15, 10, 0)
+                )
+            )
+        )
+        viewModel = createEditViewModel(1L)
+        advanceUntilIdle()
+
+        assertEquals(TaskPriority.HIGH, viewModel.formState.value.priority)
+    }
+
+    @Test
+    fun `isDirty detects priority change`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updatePriority(TaskPriority.HIGH)
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    // --- Reminder Tests ---
+
+    @Test
+    fun `default reminderEnabled is false`() {
+        viewModel = createAddViewModel()
+
+        assertFalse(viewModel.formState.value.reminderEnabled)
+    }
+
+    @Test
+    fun `toggleReminder toggles reminderEnabled`() {
+        viewModel = createAddViewModel()
+
+        viewModel.toggleReminder()
+        assertTrue(viewModel.formState.value.reminderEnabled)
+
+        viewModel.toggleReminder()
+        assertFalse(viewModel.formState.value.reminderEnabled)
+    }
+
+    @Test
+    fun `updateReminderTime updates form state`() {
+        viewModel = createAddViewModel()
+        val time = LocalTime.of(9, 0)
+
+        viewModel.updateReminderTime(time)
+
+        assertEquals(time, viewModel.formState.value.reminderTime)
+    }
+
+    @Test
+    fun `saveEvent schedules reminder for TASK with reminder enabled`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("リマインダータスク")
+        viewModel.updateType(CalendarEventType.TASK)
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(9, 0))
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        assertEquals(1, taskReminderScheduler.cancelReminderCalls.size)
+        assertEquals(1, taskReminderScheduler.scheduleReminderCalls.size)
+        val call = taskReminderScheduler.scheduleReminderCalls[0]
+        assertEquals("リマインダータスク", call.taskTitle)
+        assertEquals(LocalTime.of(9, 0), call.time)
+    }
+
+    @Test
+    fun `saveEvent cancels reminder for TASK with reminder disabled`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("リマインダーなしタスク")
+        viewModel.updateType(CalendarEventType.TASK)
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        assertEquals(1, taskReminderScheduler.cancelReminderCalls.size)
+        assertTrue(taskReminderScheduler.scheduleReminderCalls.isEmpty())
+    }
+
+    @Test
+    fun `saveEvent does not schedule reminder for non-TASK type`() = runTest {
+        viewModel = createAddViewModel()
+        viewModel.updateTitle("通院テスト")
+        viewModel.updateType(CalendarEventType.HOSPITAL)
+        viewModel.toggleReminder()
+        viewModel.updateReminderTime(LocalTime.of(9, 0))
+
+        viewModel.saveEvent()
+        advanceUntilIdle()
+
+        assertTrue(taskReminderScheduler.cancelReminderCalls.isEmpty())
+        assertTrue(taskReminderScheduler.scheduleReminderCalls.isEmpty())
+    }
+
+    @Test
+    fun `isDirty detects reminderEnabled change`() {
+        viewModel = createAddViewModel()
+
+        viewModel.toggleReminder()
+
+        assertTrue(viewModel.isDirty)
+    }
+
+    @Test
+    fun `isDirty detects reminderTime change`() {
+        viewModel = createAddViewModel()
+
+        viewModel.updateReminderTime(LocalTime.of(14, 30))
 
         assertTrue(viewModel.isDirty)
     }

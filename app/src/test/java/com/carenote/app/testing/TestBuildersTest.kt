@@ -6,9 +6,7 @@ import com.carenote.app.domain.model.Gender
 import com.carenote.app.domain.model.MealAmount
 import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.NoteTag
-import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.RelationshipType
-import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.fakes.FakeClock
 import org.junit.Assert.assertEquals
@@ -96,47 +94,6 @@ class TestBuildersTest {
         val note = aNote(clock = customClock)
         assertEquals(LocalDateTime.of(2025, 3, 15, 8, 30, 0), note.createdAt)
         assertEquals(LocalDateTime.of(2025, 3, 15, 8, 30, 0), note.updatedAt)
-    }
-
-    // --- Task ---
-
-    @Test
-    fun `aTask - default values are correct`() {
-        val task = aTask()
-        assertEquals(1L, task.id)
-        assertEquals(TestDataFixtures.DEFAULT_CARE_RECIPIENT_ID, task.careRecipientId)
-        assertEquals("テストタスク", task.title)
-        assertEquals("", task.description)
-        assertEquals(null, task.dueDate)
-        assertEquals(false, task.isCompleted)
-        assertEquals(TaskPriority.MEDIUM, task.priority)
-        assertEquals(RecurrenceFrequency.NONE, task.recurrenceFrequency)
-        assertEquals(TestDataFixtures.DEFAULT_USER, task.createdBy)
-        assertEquals(TestDataFixtures.NOW, task.createdAt)
-    }
-
-    @Test
-    fun `aTask - custom values override defaults`() {
-        val task = aTask(
-            id = 77L,
-            title = "カスタムタスク",
-            description = "重要なタスク",
-            isCompleted = true,
-            priority = TaskPriority.HIGH
-        )
-        assertEquals(77L, task.id)
-        assertEquals("カスタムタスク", task.title)
-        assertEquals("重要なタスク", task.description)
-        assertEquals(true, task.isCompleted)
-        assertEquals(TaskPriority.HIGH, task.priority)
-    }
-
-    @Test
-    fun `aTask - FakeClock integration`() {
-        val customClock = FakeClock(LocalDateTime.of(2025, 12, 25, 0, 0, 0))
-        val task = aTask(clock = customClock)
-        assertEquals(LocalDateTime.of(2025, 12, 25, 0, 0, 0), task.createdAt)
-        assertEquals(LocalDateTime.of(2025, 12, 25, 0, 0, 0), task.updatedAt)
     }
 
     // --- HealthRecord ---

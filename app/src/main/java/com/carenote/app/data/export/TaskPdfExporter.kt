@@ -9,8 +9,8 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
+import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.RecurrenceFrequency
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -34,7 +34,7 @@ class TaskPdfExporter @Inject constructor(
 
     private val columnWidths = intArrayOf(90, 120, 65, 45, 50, 55, 90)
 
-    override suspend fun export(tasks: List<Task>): Uri = withContext(Dispatchers.IO) {
+    override suspend fun export(events: List<CalendarEvent>): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, AppConfig.Export.CACHE_DIR_NAME).also { it.mkdirs() }
         cleanupStaleCache(exportDir)
         val fileName = "${AppConfig.Export.TASK_PDF_FILE_PREFIX}${System.currentTimeMillis()}.pdf"
@@ -48,7 +48,7 @@ class TaskPdfExporter @Inject constructor(
             var yPos = drawTitle(canvas)
             yPos = drawTableHeader(canvas, yPos)
 
-            for (task in tasks) {
+            for (event in events) {
                 val maxY = AppConfig.Export.PDF_PAGE_HEIGHT - AppConfig.Export.PDF_MARGIN
                 if (yPos + AppConfig.Export.PDF_LINE_HEIGHT > maxY) {
                     document.finishPage(page)
@@ -58,7 +58,7 @@ class TaskPdfExporter @Inject constructor(
                     yPos = AppConfig.Export.PDF_MARGIN.toFloat() + AppConfig.Export.PDF_HEADER_LINE_HEIGHT
                     yPos = drawTableHeader(canvas, yPos - AppConfig.Export.PDF_HEADER_LINE_HEIGHT)
                 }
-                yPos = drawDataRow(canvas, task, yPos)
+                yPos = drawDataRow(canvas, event, yPos)
             }
 
             document.finishPage(page)
@@ -70,7 +70,7 @@ class TaskPdfExporter @Inject constructor(
             document.close()
         }
 
-        Timber.d("Task PDF exported: ${file.length()} bytes, ${tasks.size} records")
+        Timber.d("Task PDF exported: ${file.length()} bytes, ${events.size} records")
 
         FileProvider.getUriForFile(
             context,
@@ -132,7 +132,7 @@ class TaskPdfExporter @Inject constructor(
 
     private fun drawDataRow(
         canvas: Canvas,
-        task: Task,
+        event: CalendarEvent,
         yPos: Float
     ): Float {
         val paint = Paint().apply {
@@ -152,17 +152,17 @@ class TaskPdfExporter @Inject constructor(
         )
 
         val fields = listOf(
-            task.title,
-            task.description,
-            task.dueDate?.format(dueDateFormatter) ?: "",
-            localizePriority(task.priority),
-            if (task.isCompleted) {
+            event.title,
+            event.description,
+            event.date.format(dueDateFormatter),
+            localizePriority(event.priority ?: TaskPriority.MEDIUM),
+            if (event.completed) {
                 context.getString(R.string.tasks_completed)
             } else {
                 context.getString(R.string.tasks_incomplete)
             },
-            localizeRecurrence(task.recurrenceFrequency),
-            task.createdAt.format(dateFormatter)
+            localizeRecurrence(event.recurrenceFrequency),
+            event.createdAt.format(dateFormatter)
         )
         var xPos = margin + 4f
         for (i in fields.indices) {

@@ -5,14 +5,12 @@ import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.Note
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TimelineItem
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.repository.NoteRepository
-import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.domain.repository.TimelineRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -27,7 +25,6 @@ class TimelineRepositoryImpl @Inject constructor(
     private val medicationLogRepository: MedicationLogRepository,
     private val medicationRepository: MedicationRepository,
     private val calendarEventRepository: CalendarEventRepository,
-    private val taskRepository: TaskRepository,
     private val healthRecordRepository: HealthRecordRepository,
     private val noteRepository: NoteRepository
 ) : TimelineRepository {
@@ -54,12 +51,6 @@ class TimelineRepositoryImpl @Inject constructor(
                 emit(emptyList())
             }
 
-        val tasksFlow = taskRepository.getTasksByDueDate(date)
-            .catch { e ->
-                Timber.w("Failed to load tasks for timeline: $e")
-                emit(emptyList())
-            }
-
         val healthRecordsFlow = healthRecordRepository.getRecordsByDateRange(startOfDay, startOfNextDay)
             .catch { e ->
                 Timber.w("Failed to load health records for timeline: $e")
@@ -76,10 +67,9 @@ class TimelineRepositoryImpl @Inject constructor(
             medicationLogsFlow,
             medicationsFlow,
             calendarEventsFlow,
-            tasksFlow,
             healthRecordsFlow
-        ) { logs, medications, events, tasks, records ->
-            CombinedData(logs, medications, events, tasks, records)
+        ) { logs, medications, events, records ->
+            CombinedData(logs, medications, events, records)
         }
 
         return combine(firstCombined, notesFlow) { data, notes ->
@@ -102,10 +92,6 @@ class TimelineRepositoryImpl @Inject constructor(
             TimelineItem.CalendarEventItem(event = event)
         }
 
-        data.tasks.mapTo(items) { task ->
-            TimelineItem.TaskItem(task = task)
-        }
-
         data.records.mapTo(items) { record ->
             TimelineItem.HealthRecordItem(record = record)
         }
@@ -121,7 +107,6 @@ class TimelineRepositoryImpl @Inject constructor(
         val logs: List<MedicationLog>,
         val medications: List<Medication>,
         val events: List<CalendarEvent>,
-        val tasks: List<Task>,
         val records: List<HealthRecord>
     )
 }

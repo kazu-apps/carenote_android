@@ -24,7 +24,7 @@ import com.carenote.app.domain.repository.NotePdfExporterInterface
 import com.carenote.app.domain.repository.BillingRepository
 import com.carenote.app.domain.repository.PremiumFeatureGuard
 import com.carenote.app.domain.repository.SettingsRepository
-import com.carenote.app.domain.repository.TaskRepository
+import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.TaskCsvExporterInterface
 import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import com.carenote.app.ui.util.LocaleManager
@@ -54,7 +54,7 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
     private val syncWorkScheduler: SyncWorkSchedulerInterface,
     private val analyticsRepository: AnalyticsRepository,
     private val careRecipientRepository: CareRecipientRepository,
-    private val taskRepository: TaskRepository,
+    private val calendarEventRepository: CalendarEventRepository,
     private val noteRepository: NoteRepository,
     private val taskCsvExporter: TaskCsvExporterInterface,
     private val taskPdfExporter: TaskPdfExporterInterface,
@@ -264,8 +264,8 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {
-                val tasks = taskRepository.getAllTasks().first()
-                val filtered = filterByPeriod(tasks, periodDays) { it.createdAt }
+                val events = calendarEventRepository.getTaskEvents().first()
+                val filtered = filterByPeriod(events, periodDays) { it.createdAt }
                 if (filtered.isEmpty()) {
                     snackbarController.showMessage(R.string.task_export_empty)
                     _exportState.value = ExportState.Idle
@@ -292,8 +292,8 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
         viewModelScope.launch {
             _exportState.value = ExportState.Exporting
             try {
-                val tasks = taskRepository.getAllTasks().first()
-                val filtered = filterByPeriod(tasks, periodDays) { it.createdAt }
+                val events = calendarEventRepository.getTaskEvents().first()
+                val filtered = filterByPeriod(events, periodDays) { it.createdAt }
                 if (filtered.isEmpty()) {
                     snackbarController.showMessage(R.string.task_export_empty)
                     _exportState.value = ExportState.Idle

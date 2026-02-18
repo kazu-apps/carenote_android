@@ -2,13 +2,13 @@ package com.carenote.app.data.repository
 
 import app.cash.turbine.test
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.MedicationLogStatus
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteTag
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.model.TimelineItem
 import com.carenote.app.fakes.FakeCalendarEventRepository
@@ -16,7 +16,6 @@ import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.fakes.FakeMedicationLogRepository
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.fakes.FakeNoteRepository
-import com.carenote.app.fakes.FakeTaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,7 +32,6 @@ class TimelineRepositoryImplTest {
     private lateinit var medicationLogRepo: FakeMedicationLogRepository
     private lateinit var medicationRepo: FakeMedicationRepository
     private lateinit var calendarEventRepo: FakeCalendarEventRepository
-    private lateinit var taskRepo: FakeTaskRepository
     private lateinit var healthRecordRepo: FakeHealthRecordRepository
     private lateinit var noteRepo: FakeNoteRepository
     private lateinit var repository: TimelineRepositoryImpl
@@ -45,21 +43,19 @@ class TimelineRepositoryImplTest {
         medicationLogRepo = FakeMedicationLogRepository()
         medicationRepo = FakeMedicationRepository()
         calendarEventRepo = FakeCalendarEventRepository()
-        taskRepo = FakeTaskRepository()
         healthRecordRepo = FakeHealthRecordRepository()
         noteRepo = FakeNoteRepository()
         repository = TimelineRepositoryImpl(
             medicationLogRepository = medicationLogRepo,
             medicationRepository = medicationRepo,
             calendarEventRepository = calendarEventRepo,
-            taskRepository = taskRepo,
             healthRecordRepository = healthRecordRepo,
             noteRepository = noteRepo
         )
     }
 
     @Test
-    fun `getTimelineItemsForDate returns all 5 types sorted by timestamp`() = runTest {
+    fun `getTimelineItemsForDate returns all types sorted by timestamp`() = runTest {
         val medication = Medication(id = 1L, name = "Test Med")
         medicationRepo.setMedications(listOf(medication))
 
@@ -77,15 +73,14 @@ class TimelineRepositoryImplTest {
             date = testDate,
             startTime = LocalTime.of(10, 0)
         )
-        calendarEventRepo.setEvents(listOf(event))
-
-        val task = Task(
-            id = 1L,
+        val taskEvent = CalendarEvent(
+            id = 2L,
             title = "Buy groceries",
-            dueDate = testDate,
+            date = testDate,
+            type = CalendarEventType.TASK,
             priority = TaskPriority.HIGH
         )
-        taskRepo.setTasks(listOf(task))
+        calendarEventRepo.setEvents(listOf(event, taskEvent))
 
         val record = HealthRecord(
             id = 1L,
@@ -109,14 +104,15 @@ class TimelineRepositoryImplTest {
             val items = awaitItem()
             assertEquals(5, items.size)
 
-            // Sorted by timestamp: 7:00, 8:00, 9:00, 10:00, then task (start of day)
-            // HealthRecord 7:00, MedLog 8:00, Note 9:00, CalendarEvent 10:00, Task startOfDay=00:00
-            // Actually Task dueDate.atStartOfDay() = 00:00, so it's first
-            assertTrue(items[0] is TimelineItem.TaskItem)
+            // Sorted by timestamp: HealthRecord 7:00, MedLog 8:00, Note 9:00, CalendarEvent 10:00, TaskEvent startOfDay=00:00
+            // TaskEvent with no startTime gets date.atStartOfDay() = 00:00, so it's first
+            assertTrue(items[0] is TimelineItem.CalendarEventItem)
+            assertEquals("Buy groceries", (items[0] as TimelineItem.CalendarEventItem).event.title)
             assertTrue(items[1] is TimelineItem.HealthRecordItem)
             assertTrue(items[2] is TimelineItem.MedicationLogItem)
             assertTrue(items[3] is TimelineItem.NoteItem)
             assertTrue(items[4] is TimelineItem.CalendarEventItem)
+            assertEquals("Doctor Visit", (items[4] as TimelineItem.CalendarEventItem).event.title)
 
             cancelAndConsumeRemainingEvents()
         }

@@ -30,11 +30,6 @@ class EditFlowTest : E2eTestBase() {
         waitForFab(TestTags.CALENDAR_FAB)
     }
 
-    private fun navigateToTasks() {
-        navigateToTab(R.string.nav_tasks)
-        waitForFab(TestTags.TASKS_FAB)
-    }
-
     private fun navigateToHealthRecords() {
         navigateToTab(R.string.nav_health_records)
         waitForFab(TestTags.HEALTH_RECORDS_FAB)
@@ -95,33 +90,6 @@ class EditFlowTest : E2eTestBase() {
 
         // Update title
         fillTextFieldByLabel(R.string.calendar_event_title, updatedTitle)
-        clickText(R.string.common_save)
-
-        // Verify updated title in list
-        waitForText(updatedTitle)
-        composeRule.onNodeWithText(updatedTitle).assertIsDisplayed()
-    }
-
-    @Test
-    fun test_editTask_updatesTitle() {
-        navigateToTasks()
-
-        val originalTitle = "EditTask E2E"
-        val updatedTitle = "EditTask Updated E2E"
-
-        // Add task
-        clickFab(TestTags.TASKS_FAB)
-        waitForText(R.string.tasks_add)
-        fillTextFieldByLabel(R.string.tasks_task_title, originalTitle)
-        clickText(R.string.common_save)
-        waitForText(originalTitle)
-
-        // Click task to edit (direct navigation to edit screen)
-        clickText(originalTitle)
-        waitForText(R.string.tasks_edit)
-
-        // Update title
-        fillTextFieldByLabel(R.string.tasks_task_title, updatedTitle)
         clickText(R.string.common_save)
 
         // Verify updated title in list

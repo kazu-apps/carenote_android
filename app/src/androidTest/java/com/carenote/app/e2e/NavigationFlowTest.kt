@@ -25,10 +25,10 @@ class NavigationFlowTest : E2eTestBase() {
         navigateToTab(R.string.nav_calendar)
         waitForFab(TestTags.CALENDAR_FAB)
 
-        // Navigate to Tasks
-        navigateToTab(R.string.nav_tasks)
-        waitForText(R.string.tasks_title)
-        assertTextDisplayed(R.string.tasks_title)
+        // Navigate to Timeline
+        navigateToTab(R.string.timeline_title)
+        waitForText(R.string.timeline_title)
+        assertTextDisplayed(R.string.timeline_title)
 
         // Navigate to Health Records
         navigateToTab(R.string.nav_health_records)
@@ -83,19 +83,18 @@ class NavigationFlowTest : E2eTestBase() {
         // Verify back on Medication list
         waitForText(R.string.medication_title)
 
-        // Go to Tasks tab, then Add Task screen
-        navigateToTab(R.string.nav_tasks)
-        waitForFab(TestTags.TASKS_FAB)
-        clickFab(TestTags.TASKS_FAB)
-        waitForText(R.string.tasks_add)
+        // Go to Calendar tab, then Add Event screen
+        navigateToTab(R.string.nav_calendar)
+        waitForFab(TestTags.CALENDAR_FAB)
+        clickFab(TestTags.CALENDAR_FAB)
+        waitForText(R.string.calendar_add_event)
 
-        // Click back arrow
-        val closeDesc = getString(R.string.common_close)
-        composeRule.onNodeWithContentDescription(closeDesc).performClick()
+        // Click cancel
+        clickText(R.string.common_cancel)
         composeRule.waitForIdle()
 
-        // Verify back on Tasks list
-        waitForText(R.string.tasks_title)
+        // Verify back on Calendar
+        waitForFab(TestTags.CALENDAR_FAB)
 
         // Go to Notes tab, then Add Note screen
         navigateToTab(R.string.nav_notes)

@@ -64,12 +64,6 @@ class NoOpSyncRepositoryTest {
     }
 
     @Test
-    fun `syncTasks returns Failure`() = runTest {
-        val result = repository.syncTasks("careRecipient1")
-        assertTrue(result is SyncResult.Failure)
-    }
-
-    @Test
     fun `getLastSyncTime returns null`() = runTest {
         assertNull(repository.getLastSyncTime())
     }

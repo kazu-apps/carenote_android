@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Note
-import com.carenote.app.domain.model.Task
 import com.carenote.app.ui.components.LoadingIndicator
 import com.carenote.app.ui.preview.LightDarkPreview
 import com.carenote.app.ui.preview.PreviewData
@@ -61,7 +60,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToMedication: () -> Unit,
     onNavigateToCalendar: () -> Unit,
-    onNavigateToTasks: () -> Unit,
+    onNavigateToTimeline: () -> Unit,
     onNavigateToHealthRecords: () -> Unit,
     onNavigateToNotes: () -> Unit,
     onNavigateToSearch: () -> Unit,
@@ -91,9 +90,9 @@ fun HomeScreen(
                     viewModel.logSeeAllClicked("calendar")
                     onNavigateToCalendar()
                 },
-                onNavigateToTasks = {
+                onNavigateToTimeline = {
                     viewModel.logSeeAllClicked("tasks")
-                    onNavigateToTasks()
+                    onNavigateToTimeline()
                 },
                 onNavigateToHealthRecords = {
                     viewModel.logSeeAllClicked("health_records")
@@ -145,7 +144,7 @@ private fun HomeTopBar(
 internal data class HomeNavigationCallbacks(
     val onNavigateToMedication: () -> Unit,
     val onNavigateToCalendar: () -> Unit,
-    val onNavigateToTasks: () -> Unit,
+    val onNavigateToTimeline: () -> Unit,
     val onNavigateToHealthRecords: () -> Unit,
     val onNavigateToNotes: () -> Unit
 )
@@ -194,7 +193,7 @@ private fun HomeSectionList(
         item {
             TaskSection(
                 tasks = uiState.upcomingTasks,
-                onSeeAll = navigation.onNavigateToTasks
+                onSeeAll = navigation.onNavigateToTimeline
             )
         }
         item {
@@ -297,7 +296,7 @@ private fun MedicationItem(medWithLog: MedicationWithLog) {
 
 @Composable
 private fun TaskSection(
-    tasks: List<Task>,
+    tasks: List<CalendarEvent>,
     onSeeAll: () -> Unit
 ) {
     Card(
@@ -316,14 +315,14 @@ private fun TaskSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                tasks.forEach { task -> TaskItem(task) }
+                tasks.forEach { event -> TaskItem(event) }
             }
         }
     }
 }
 
 @Composable
-private fun TaskItem(task: Task) {
+private fun TaskItem(event: CalendarEvent) {
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
     Row(
         modifier = Modifier
@@ -333,20 +332,18 @@ private fun TaskItem(task: Task) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = task.title,
+            text = event.title,
             style = MaterialTheme.typography.bodyLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        task.dueDate?.let { date ->
-            Spacer(modifier = Modifier.width(AppConfig.UI.ITEM_SPACING_DP.dp))
-            Text(
-                text = dateFormatter.format(date),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Spacer(modifier = Modifier.width(AppConfig.UI.ITEM_SPACING_DP.dp))
+        Text(
+            text = dateFormatter.format(event.date),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -557,7 +554,7 @@ private fun HomeContentPreview() {
             navigation = HomeNavigationCallbacks(
                 onNavigateToMedication = {},
                 onNavigateToCalendar = {},
-                onNavigateToTasks = {},
+                onNavigateToTimeline = {},
                 onNavigateToHealthRecords = {},
                 onNavigateToNotes = {}
             )

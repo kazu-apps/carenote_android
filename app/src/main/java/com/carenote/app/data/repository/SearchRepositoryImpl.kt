@@ -7,7 +7,6 @@ import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.SearchRepository
-import com.carenote.app.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -16,7 +15,6 @@ import javax.inject.Inject
 class SearchRepositoryImpl @Inject constructor(
     private val medicationRepository: MedicationRepository,
     private val noteRepository: NoteRepository,
-    private val taskRepository: TaskRepository,
     private val healthRecordRepository: HealthRecordRepository,
     private val calendarEventRepository: CalendarEventRepository,
     private val emergencyContactRepository: EmergencyContactRepository
@@ -28,14 +26,6 @@ class SearchRepositoryImpl @Inject constructor(
 
         val noteFlow = noteRepository.searchNotes(query, null)
             .map { list -> list.map { SearchResult.NoteResult(it) } }
-
-        val taskFlow = taskRepository.getAllTasks()
-            .map { list ->
-                list.filter { task ->
-                    task.title.contains(query, ignoreCase = true) ||
-                        task.description.contains(query, ignoreCase = true)
-                }.map { SearchResult.TaskResult(it) }
-            }
 
         val healthRecordFlow = healthRecordRepository.getAllRecords()
             .map { list ->
@@ -61,8 +51,8 @@ class SearchRepositoryImpl @Inject constructor(
                 }.map { SearchResult.EmergencyContactResult(it) }
             }
 
-        val firstHalf = combine(medicationFlow, noteFlow, taskFlow) { a, b, c -> a + b + c }
-        val secondHalf = combine(healthRecordFlow, calendarEventFlow, emergencyContactFlow) { d, e, f -> d + e + f }
+        val firstHalf = combine(medicationFlow, noteFlow, healthRecordFlow) { a, b, c -> a + b + c }
+        val secondHalf = combine(calendarEventFlow, emergencyContactFlow) { d, e -> d + e }
 
         return combine(firstHalf, secondHalf) { first, second ->
             (first + second).sortedByDescending { it.timestamp }

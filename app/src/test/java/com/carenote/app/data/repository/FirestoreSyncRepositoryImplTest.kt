@@ -27,7 +27,7 @@ import java.time.LocalDateTime
 /**
  * FirestoreSyncRepositoryImpl のユニットテスト
  *
- * 6つの EntitySyncer を MockK でモック化し、同期オーケストレーションをテストする。
+ * 5つの EntitySyncer を MockK でモック化し、同期オーケストレーションをテストする。
  *
  * テスト対象:
  * - syncAll(): 全エンティティ同期のオーケストレーション
@@ -45,7 +45,6 @@ class FirestoreSyncRepositoryImplTest {
     private lateinit var noteSyncer: EntitySyncer<*, *>
     private lateinit var healthRecordSyncer: EntitySyncer<*, *>
     private lateinit var calendarEventSyncer: EntitySyncer<*, *>
-    private lateinit var taskSyncer: EntitySyncer<*, *>
     private lateinit var noteCommentSyncer: EntitySyncer<*, *>
 
     private lateinit var repository: FirestoreSyncRepositoryImpl
@@ -73,7 +72,6 @@ class FirestoreSyncRepositoryImplTest {
         noteSyncer = mockk(relaxed = true)
         healthRecordSyncer = mockk(relaxed = true)
         calendarEventSyncer = mockk(relaxed = true)
-        taskSyncer = mockk(relaxed = true)
         noteCommentSyncer = mockk(relaxed = true)
 
         // Default mock behavior: all syncers return success
@@ -81,7 +79,6 @@ class FirestoreSyncRepositoryImplTest {
         coEvery { noteSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { healthRecordSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { calendarEventSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
-        coEvery { taskSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { noteCommentSyncer.sync(any(), any()) } returns SyncResult.Success(0, 0)
         coEvery { medicationLogSyncer.syncForMedication(any(), any(), any(), any()) } returns
             SyncResult.Success(0, 0)
@@ -91,7 +88,6 @@ class FirestoreSyncRepositoryImplTest {
         every { noteSyncer.entityType } returns "note"
         every { healthRecordSyncer.entityType } returns "healthRecord"
         every { calendarEventSyncer.entityType } returns "calendarEvent"
-        every { taskSyncer.entityType } returns "task"
         every { medicationLogSyncer.entityType } returns "medicationLog"
         every { noteCommentSyncer.entityType } returns "noteComment"
 
@@ -103,7 +99,6 @@ class FirestoreSyncRepositoryImplTest {
             noteSyncer = noteSyncer,
             healthRecordSyncer = healthRecordSyncer,
             calendarEventSyncer = calendarEventSyncer,
-            taskSyncer = taskSyncer,
             noteCommentSyncer = noteCommentSyncer
         )
     }
@@ -121,17 +116,15 @@ class FirestoreSyncRepositoryImplTest {
             SyncResult.Success(uploadedCount = 0, downloadedCount = 3)
         coEvery { calendarEventSyncer.sync(any(), any()) } returns
             SyncResult.Success(uploadedCount = 1, downloadedCount = 0)
-        coEvery { taskSyncer.sync(any(), any()) } returns
-            SyncResult.Success(uploadedCount = 2, downloadedCount = 2, conflictCount = 1)
 
         // When
         val result = repository.syncAll(careRecipientId)
 
         // Then
         val success = result.assertSyncSuccess()
-        assertEquals(6, success.uploadedCount) // 2 + 1 + 0 + 1 + 2
-        assertEquals(8, success.downloadedCount) // 1 + 2 + 3 + 0 + 2
-        assertEquals(1, success.conflictCount)
+        assertEquals(4, success.uploadedCount) // 2 + 1 + 0 + 1
+        assertEquals(6, success.downloadedCount) // 1 + 2 + 3 + 0
+        assertEquals(0, success.conflictCount)
     }
 
     @Test
@@ -296,20 +289,6 @@ class FirestoreSyncRepositoryImplTest {
         coVerify(exactly = 1) { calendarEventSyncer.sync(careRecipientId, any()) }
     }
 
-    @Test
-    fun `syncTasks delegates to taskSyncer`() = runTest {
-        // Given
-        coEvery { taskSyncer.sync(careRecipientId, any()) } returns
-            SyncResult.Success(uploadedCount = 1, downloadedCount = 4)
-
-        // When
-        val result = repository.syncTasks(careRecipientId)
-
-        // Then
-        result.assertSyncSuccess()
-        coVerify(exactly = 1) { taskSyncer.sync(careRecipientId, any()) }
-    }
-
     // ========== syncMedicationLogs() テスト ==========
 
     @Test
@@ -380,15 +359,13 @@ class FirestoreSyncRepositoryImplTest {
             SyncResult.Success(uploadedCount = 0, downloadedCount = 0)
         coEvery { calendarEventSyncer.sync(any(), any()) } returns
             SyncResult.Success(uploadedCount = 1, downloadedCount = 0)
-        coEvery { taskSyncer.sync(any(), any()) } returns
-            SyncResult.Success(uploadedCount = 1, downloadedCount = 0)
 
         // When
         val result = repository.pushLocalChanges(careRecipientId)
 
         // Then
         val success = result.assertSyncSuccess()
-        assertEquals(5, success.uploadedCount) // 1 + 2 + 0 + 1 + 1
+        assertEquals(4, success.uploadedCount) // 1 + 2 + 0 + 1
         assertEquals(0, success.downloadedCount)
 
         // lastSyncTime が更新される
@@ -399,7 +376,6 @@ class FirestoreSyncRepositoryImplTest {
         coVerify(exactly = 1) { noteSyncer.sync(any(), any()) }
         coVerify(exactly = 1) { healthRecordSyncer.sync(any(), any()) }
         coVerify(exactly = 1) { calendarEventSyncer.sync(any(), any()) }
-        coVerify(exactly = 1) { taskSyncer.sync(any(), any()) }
     }
 
     @Test
@@ -415,8 +391,6 @@ class FirestoreSyncRepositoryImplTest {
             SyncResult.Success(uploadedCount = 0, downloadedCount = 5, conflictCount = 2)
         coEvery { calendarEventSyncer.sync(any(), any()) } returns
             SyncResult.Success(uploadedCount = 0, downloadedCount = 1)
-        coEvery { taskSyncer.sync(any(), any()) } returns
-            SyncResult.Success(uploadedCount = 0, downloadedCount = 4)
 
         // When
         val result = repository.pullRemoteChanges(careRecipientId)
@@ -424,7 +398,7 @@ class FirestoreSyncRepositoryImplTest {
         // Then
         val success = result.assertSyncSuccess()
         assertEquals(0, success.uploadedCount)
-        assertEquals(15, success.downloadedCount) // 3 + 2 + 5 + 1 + 4
+        assertEquals(11, success.downloadedCount) // 3 + 2 + 5 + 1
         assertEquals(2, success.conflictCount)
 
         // lastSyncTime が更新される
@@ -598,8 +572,6 @@ class FirestoreSyncRepositoryImplTest {
             SyncResult.Success(uploadedCount = 2, downloadedCount = 8, conflictCount = 1)
         coEvery { calendarEventSyncer.sync(any(), any()) } returns
             SyncResult.Success(uploadedCount = 0, downloadedCount = 0)
-        coEvery { taskSyncer.sync(any(), any()) } returns
-            SyncResult.Success(uploadedCount = 1, downloadedCount = 1)
 
         // When
         val result = repository.syncAll(careRecipientId)
@@ -667,6 +639,5 @@ class FirestoreSyncRepositoryImplTest {
         coVerify { noteSyncer.sync(careRecipientId, lastSync) }
         coVerify { healthRecordSyncer.sync(careRecipientId, lastSync) }
         coVerify { calendarEventSyncer.sync(careRecipientId, lastSync) }
-        coVerify { taskSyncer.sync(careRecipientId, lastSync) }
     }
 }

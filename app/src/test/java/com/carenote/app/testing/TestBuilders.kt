@@ -23,7 +23,6 @@ import com.carenote.app.domain.model.NoteComment
 import com.carenote.app.domain.model.NoteTag
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.RelationshipType
-import com.carenote.app.domain.model.Task
 import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.User
@@ -72,37 +71,6 @@ fun aNote(
     title = title,
     content = content,
     tag = tag,
-    createdBy = createdBy,
-    createdAt = clock.now(),
-    updatedAt = clock.now()
-)
-
-fun aTask(
-    id: Long = 1L,
-    careRecipientId: Long = TestDataFixtures.DEFAULT_CARE_RECIPIENT_ID,
-    title: String = "テストタスク",
-    description: String = "",
-    dueDate: LocalDate? = null,
-    isCompleted: Boolean = false,
-    priority: TaskPriority = TaskPriority.MEDIUM,
-    recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.NONE,
-    recurrenceInterval: Int = 1,
-    reminderEnabled: Boolean = false,
-    reminderTime: LocalTime? = null,
-    createdBy: String = TestDataFixtures.DEFAULT_USER,
-    clock: Clock = TestDataFixtures.DEFAULT_CLOCK
-): Task = Task(
-    id = id,
-    careRecipientId = careRecipientId,
-    title = title,
-    description = description,
-    dueDate = dueDate,
-    isCompleted = isCompleted,
-    priority = priority,
-    recurrenceFrequency = recurrenceFrequency,
-    recurrenceInterval = recurrenceInterval,
-    reminderEnabled = reminderEnabled,
-    reminderTime = reminderTime,
     createdBy = createdBy,
     createdAt = clock.now(),
     updatedAt = clock.now()

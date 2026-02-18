@@ -46,11 +46,6 @@ class NoOpSyncRepository : SyncRepository {
         return firebaseUnavailableFailure()
     }
 
-    override suspend fun syncTasks(careRecipientId: String): SyncResult {
-        Timber.w("syncTasks called but Firebase is not configured")
-        return firebaseUnavailableFailure()
-    }
-
     override suspend fun syncNoteComments(careRecipientId: String): SyncResult {
         Timber.w("syncNoteComments called but Firebase is not configured")
         return firebaseUnavailableFailure()

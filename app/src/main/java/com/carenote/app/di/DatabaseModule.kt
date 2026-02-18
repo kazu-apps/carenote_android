@@ -19,7 +19,6 @@ import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.PurchaseDao
 import com.carenote.app.data.local.dao.SyncMappingDao
-import com.carenote.app.data.local.dao.TaskDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -88,12 +87,6 @@ object DatabaseModule {
     @Singleton
     fun provideCalendarEventDao(database: CareNoteDatabase): CalendarEventDao {
         return database.calendarEventDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideTaskDao(database: CareNoteDatabase): TaskDao {
-        return database.taskDao()
     }
 
     @Provides

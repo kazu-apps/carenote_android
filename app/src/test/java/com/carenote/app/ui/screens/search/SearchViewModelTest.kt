@@ -8,7 +8,9 @@ import com.carenote.app.fakes.FakeSearchRepository
 import com.carenote.app.testing.MainCoroutineRule
 import com.carenote.app.testing.aMedication
 import com.carenote.app.testing.aNote
-import com.carenote.app.testing.aTask
+import com.carenote.app.testing.aCalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.ui.viewmodel.UiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
@@ -57,8 +59,10 @@ class SearchViewModelTest {
     private fun createTaskResult(
         id: Long = 3L,
         title: String = "テストタスク"
-    ): SearchResult.TaskResult {
-        return SearchResult.TaskResult(aTask(id = id, title = title))
+    ): SearchResult.CalendarEventResult {
+        return SearchResult.CalendarEventResult(
+            aCalendarEvent(id = id, title = title, type = CalendarEventType.TASK, priority = TaskPriority.MEDIUM)
+        )
     }
 
     @Test

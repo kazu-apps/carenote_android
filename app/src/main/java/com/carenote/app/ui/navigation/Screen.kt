@@ -39,13 +39,6 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.CalendarMonth
     )
 
-    data object Tasks : Screen(
-        route = "tasks",
-        titleResId = R.string.nav_tasks,
-        selectedIcon = Icons.Filled.CheckCircle,
-        unselectedIcon = Icons.Outlined.CheckCircle
-    )
-
     data object HealthRecords : Screen(
         route = "health_records",
         titleResId = R.string.nav_health_records,
@@ -266,7 +259,7 @@ sealed class Screen(
     }
 
     companion object {
-        val bottomNavItems get() = listOf(Home, Medication, Calendar, Tasks, HealthRecords, Notes)
+        val bottomNavItems get() = listOf(Home, Medication, Calendar, Timeline, HealthRecords, Notes)
         val authScreens get() = listOf(Login, Register, ForgotPassword)
     }
 }

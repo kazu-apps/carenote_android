@@ -22,11 +22,6 @@ class ValidationFlowTest : E2eTestBase() {
         waitForFab(TestTags.NOTES_FAB)
     }
 
-    private fun navigateToTasks() {
-        navigateToTab(R.string.nav_tasks)
-        waitForFab(TestTags.TASKS_FAB)
-    }
-
     private fun navigateToCalendar() {
         navigateToTab(R.string.nav_calendar)
         waitForFab(TestTags.CALENDAR_FAB)
@@ -81,20 +76,6 @@ class ValidationFlowTest : E2eTestBase() {
         scrollToAndClickText(R.string.common_save)
 
         val errorText = getString(R.string.notes_content_required)
-        waitForError(errorText)
-    }
-
-    @Test
-    fun test_task_emptyTitle_showsError() {
-        navigateToTasks()
-
-        clickFab(TestTags.TASKS_FAB)
-        waitForText(R.string.tasks_add)
-
-        // Try to save without filling title
-        scrollToAndClickText(R.string.common_save)
-
-        val errorText = getString(R.string.tasks_task_title_required)
         waitForError(errorText)
     }
 

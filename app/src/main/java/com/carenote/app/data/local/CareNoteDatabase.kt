@@ -17,7 +17,6 @@ import com.carenote.app.data.local.dao.PurchaseDao
 import com.carenote.app.data.local.dao.CareRecipientDao
 import com.carenote.app.data.local.dao.PhotoDao
 import com.carenote.app.data.local.dao.SyncMappingDao
-import com.carenote.app.data.local.dao.TaskDao
 import com.carenote.app.data.local.entity.CareRecipientEntity
 import com.carenote.app.data.local.entity.CalendarEventEntity
 import com.carenote.app.data.local.entity.EmergencyContactEntity
@@ -31,7 +30,6 @@ import com.carenote.app.data.local.entity.NoteEntity
 import com.carenote.app.data.local.entity.PurchaseEntity
 import com.carenote.app.data.local.entity.PhotoEntity
 import com.carenote.app.data.local.entity.SyncMappingEntity
-import com.carenote.app.data.local.entity.TaskEntity
 
 @Database(
     entities = [
@@ -40,7 +38,6 @@ import com.carenote.app.data.local.entity.TaskEntity
         NoteEntity::class,
         HealthRecordEntity::class,
         CalendarEventEntity::class,
-        TaskEntity::class,
         SyncMappingEntity::class,
         CareRecipientEntity::class,
         PhotoEntity::class,
@@ -50,7 +47,7 @@ import com.carenote.app.data.local.entity.TaskEntity
         MemberEntity::class,
         InvitationEntity::class
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 @TypeConverters(DateTimeConverters::class)
@@ -61,7 +58,6 @@ abstract class CareNoteDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun healthRecordDao(): HealthRecordDao
     abstract fun calendarEventDao(): CalendarEventDao
-    abstract fun taskDao(): TaskDao
     abstract fun syncMappingDao(): SyncMappingDao
     abstract fun careRecipientDao(): CareRecipientDao
     abstract fun photoDao(): PhotoDao

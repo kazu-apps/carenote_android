@@ -22,13 +22,6 @@ sealed class SearchResult {
         override val timestamp: LocalDateTime get() = note.updatedAt
     }
 
-    data class TaskResult(val task: Task) : SearchResult() {
-        override val id: Long get() = task.id
-        override val title: String get() = task.title
-        override val subtitle: String get() = task.description
-        override val timestamp: LocalDateTime get() = task.updatedAt
-    }
-
     data class HealthRecordResult(val record: HealthRecord) : SearchResult() {
         override val id: Long get() = record.id
         override val title: String get() = record.conditionNote

@@ -2,18 +2,18 @@ package com.carenote.app.data.repository
 
 import app.cash.turbine.test
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CalendarEventType
 import com.carenote.app.domain.model.EmergencyContact
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.SearchResult
-import com.carenote.app.domain.model.Task
+import com.carenote.app.domain.model.TaskPriority
 import com.carenote.app.fakes.FakeCalendarEventRepository
 import com.carenote.app.fakes.FakeEmergencyContactRepository
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.fakes.FakeMedicationRepository
 import com.carenote.app.fakes.FakeNoteRepository
-import com.carenote.app.fakes.FakeTaskRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -28,7 +28,6 @@ class SearchRepositoryImplTest {
 
     private lateinit var medicationRepository: FakeMedicationRepository
     private lateinit var noteRepository: FakeNoteRepository
-    private lateinit var taskRepository: FakeTaskRepository
     private lateinit var healthRecordRepository: FakeHealthRecordRepository
     private lateinit var calendarEventRepository: FakeCalendarEventRepository
     private lateinit var emergencyContactRepository: FakeEmergencyContactRepository
@@ -38,14 +37,12 @@ class SearchRepositoryImplTest {
     fun setUp() {
         medicationRepository = FakeMedicationRepository()
         noteRepository = FakeNoteRepository()
-        taskRepository = FakeTaskRepository()
         healthRecordRepository = FakeHealthRecordRepository()
         calendarEventRepository = FakeCalendarEventRepository()
         emergencyContactRepository = FakeEmergencyContactRepository()
         searchRepository = SearchRepositoryImpl(
             medicationRepository,
             noteRepository,
-            taskRepository,
             healthRecordRepository,
             calendarEventRepository,
             emergencyContactRepository
@@ -78,15 +75,21 @@ class SearchRepositoryImplTest {
         updatedAt = createdAt
     )
 
-    private fun createTask(
+    private fun createTaskEvent(
         id: Long = 1L,
         title: String = "テストタスク",
         description: String = "タスクの説明",
+        date: LocalDate = LocalDate.of(2026, 1, 1),
+        startTime: java.time.LocalTime? = null,
         createdAt: LocalDateTime = LocalDateTime.of(2026, 1, 1, 10, 0)
-    ) = Task(
+    ) = CalendarEvent(
         id = id,
         title = title,
         description = description,
+        date = date,
+        startTime = startTime,
+        type = CalendarEventType.TASK,
+        priority = TaskPriority.MEDIUM,
         createdAt = createdAt,
         updatedAt = createdAt
     )
@@ -163,14 +166,14 @@ class SearchRepositoryImplTest {
 
     @Test
     fun `searchAll returns task results when title matches`() = runTest {
-        val task = createTask(title = "買い物")
-        taskRepository.setTasks(listOf(task))
+        val taskEvent = createTaskEvent(title = "買い物")
+        calendarEventRepository.setEvents(listOf(taskEvent))
 
         searchRepository.searchAll("買い物").test {
             val results = awaitItem()
             assertEquals(1, results.size)
-            assertTrue(results[0] is SearchResult.TaskResult)
-            assertEquals(task, (results[0] as SearchResult.TaskResult).task)
+            assertTrue(results[0] is SearchResult.CalendarEventResult)
+            assertEquals(taskEvent, (results[0] as SearchResult.CalendarEventResult).event)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -252,20 +255,22 @@ class SearchRepositoryImplTest {
             title = "テストメモ",
             createdAt = LocalDateTime.of(2026, 1, 2, 10, 0)
         )
-        val middleTask = createTask(
+        val middleTaskEvent = createTaskEvent(
             id = 1L,
             title = "テストタスク",
+            date = LocalDate.of(2026, 1, 1),
+            startTime = java.time.LocalTime.of(15, 0),
             createdAt = LocalDateTime.of(2026, 1, 1, 15, 0)
         )
         medicationRepository.setMedications(listOf(olderMedication))
         noteRepository.setNotes(listOf(newerNote))
-        taskRepository.setTasks(listOf(middleTask))
+        calendarEventRepository.setEvents(listOf(middleTaskEvent))
 
         searchRepository.searchAll("テスト").test {
             val results = awaitItem()
             assertEquals(3, results.size)
             assertTrue(results[0] is SearchResult.NoteResult)
-            assertTrue(results[1] is SearchResult.TaskResult)
+            assertTrue(results[1] is SearchResult.CalendarEventResult)
             assertTrue(results[2] is SearchResult.MedicationResult)
             cancelAndIgnoreRemainingEvents()
         }
@@ -273,13 +278,13 @@ class SearchRepositoryImplTest {
 
     @Test
     fun `searchAll is case insensitive for in-memory filtering`() = runTest {
-        val task = createTask(title = "IMPORTANT TASK", description = "do something")
-        taskRepository.setTasks(listOf(task))
+        val taskEvent = createTaskEvent(title = "IMPORTANT TASK", description = "do something")
+        calendarEventRepository.setEvents(listOf(taskEvent))
 
         searchRepository.searchAll("important task").test {
             val results = awaitItem()
             assertEquals(1, results.size)
-            assertTrue(results[0] is SearchResult.TaskResult)
+            assertTrue(results[0] is SearchResult.CalendarEventResult)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -288,7 +293,7 @@ class SearchRepositoryImplTest {
     fun `searchAll returns empty when nothing matches`() = runTest {
         medicationRepository.setMedications(listOf(createMedication(name = "アスピリン")))
         noteRepository.setNotes(listOf(createNote(title = "メモ")))
-        taskRepository.setTasks(listOf(createTask(title = "タスク")))
+        calendarEventRepository.setEvents(listOf(createTaskEvent(title = "タスク")))
 
         searchRepository.searchAll("zzzzz").test {
             val results = awaitItem()

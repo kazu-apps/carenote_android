@@ -1,6 +1,5 @@
 package com.carenote.app.ui.navigation
 
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -11,15 +10,10 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.carenote.app.R
-import com.carenote.app.config.AppConfig
 
 @Suppress("LongMethod")
 @Composable
@@ -45,24 +39,6 @@ fun AdaptiveNavigationScaffold(
         navigationSuiteItems = {
             Screen.bottomNavItems.forEach { screen ->
                 val selected = currentRoute == screen.route
-                val badgeContent: (@Composable () -> Unit)? =
-                    if (screen.route == Screen.Tasks.route && incompleteTaskCount > 0) {
-                        {
-                            val displayText = if (incompleteTaskCount > AppConfig.UI.BADGE_MAX_COUNT) {
-                                "${AppConfig.UI.BADGE_MAX_COUNT}+"
-                            } else {
-                                incompleteTaskCount.toString()
-                            }
-                            val badgeDescription = stringResource(R.string.nav_tasks_badge, incompleteTaskCount)
-                            Badge(
-                                modifier = Modifier.semantics {
-                                    contentDescription = badgeDescription
-                                }
-                            ) { Text(displayText) }
-                        }
-                    } else {
-                        null
-                    }
 
                 item(
                     icon = {
@@ -77,7 +53,6 @@ fun AdaptiveNavigationScaffold(
                             style = MaterialTheme.typography.labelSmall
                         )
                     },
-                    badge = badgeContent,
                     selected = selected,
                     onClick = {
                         if (currentRoute != screen.route) {

@@ -12,7 +12,6 @@ import com.carenote.app.data.local.dao.MemberDao
 import com.carenote.app.data.local.dao.NoteCommentDao
 import com.carenote.app.data.local.dao.NoteDao
 import com.carenote.app.data.local.dao.PhotoDao
-import com.carenote.app.data.local.dao.TaskDao
 import com.carenote.app.data.mapper.CareRecipientMapper
 import com.carenote.app.data.mapper.CalendarEventMapper
 import com.carenote.app.data.mapper.EmergencyContactMapper
@@ -24,7 +23,6 @@ import com.carenote.app.data.mapper.MemberMapper
 import com.carenote.app.data.mapper.NoteCommentMapper
 import com.carenote.app.data.mapper.NoteMapper
 import com.carenote.app.data.mapper.PhotoMapper
-import com.carenote.app.data.mapper.TaskMapper
 import com.carenote.app.data.repository.SettingsRepositoryImpl
 import com.carenote.app.data.repository.CareRecipientRepositoryImpl
 import com.carenote.app.data.repository.CalendarEventRepositoryImpl
@@ -37,7 +35,6 @@ import com.carenote.app.data.repository.MemberRepositoryImpl
 import com.carenote.app.data.repository.NoteCommentRepositoryImpl
 import com.carenote.app.data.repository.NoteRepositoryImpl
 import com.carenote.app.data.repository.PhotoRepositoryImpl
-import com.carenote.app.data.repository.TaskRepositoryImpl
 import com.carenote.app.data.repository.ActiveCareRecipientProviderImpl
 import com.carenote.app.data.repository.SearchRepositoryImpl
 import com.carenote.app.data.repository.TimelineRepositoryImpl
@@ -56,7 +53,6 @@ import com.carenote.app.domain.repository.NoteCommentRepository
 import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.repository.SearchRepository
 import com.carenote.app.domain.repository.PhotoRepository
-import com.carenote.app.domain.repository.TaskRepository
 import com.carenote.app.domain.repository.TimelineRepository
 import dagger.Module
 import dagger.Provides
@@ -165,19 +161,6 @@ object RepositoryModule {
     ): CalendarEventRepository {
         return CalendarEventRepositoryImpl(
             calendarEventDao, mapper, activeRecipientProvider
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideTaskRepository(
-        taskDao: TaskDao,
-        mapper: TaskMapper,
-        activeRecipientProvider: ActiveCareRecipientProvider,
-        authRepository: AuthRepository
-    ): TaskRepository {
-        return TaskRepositoryImpl(
-            taskDao, mapper, activeRecipientProvider, authRepository
         )
     }
 
