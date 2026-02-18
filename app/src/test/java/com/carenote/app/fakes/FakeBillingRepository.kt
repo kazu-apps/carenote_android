@@ -1,5 +1,6 @@
 package com.carenote.app.fakes
 
+import android.app.Activity
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.BillingConnectionState
@@ -19,6 +20,7 @@ class FakeBillingRepository : BillingRepository {
     override val connectionState: StateFlow<BillingConnectionState> = _connectionState.asStateFlow()
 
     var shouldFail = false
+    var launchBillingFlowCallCount = 0
     private var products = emptyList<ProductInfo>()
 
     fun setPremiumActive(productId: String = "carenote_premium_monthly") {
@@ -73,10 +75,20 @@ class FakeBillingRepository : BillingRepository {
         _connectionState.value = BillingConnectionState.DISCONNECTED
     }
 
+    override suspend fun launchBillingFlow(
+        activity: Activity,
+        productId: String
+    ): Result<Unit, DomainError> {
+        launchBillingFlowCallCount++
+        if (shouldFail) return Result.Failure(DomainError.NetworkError("Fake error"))
+        return Result.Success(Unit)
+    }
+
     fun clear() {
         _premiumStatus.value = PremiumStatus.Inactive
         _connectionState.value = BillingConnectionState.DISCONNECTED
         shouldFail = false
+        launchBillingFlowCallCount = 0
         products = emptyList()
     }
 }

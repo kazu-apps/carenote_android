@@ -752,4 +752,28 @@
     <string name="accept_invitation_already_accepted">この招待はすでに受け入れ済みです</string>
     <string name="accept_invitation_not_logged_in">招待を受け入れるにはログインが必要です</string>
     <string name="accept_invitation_loading">招待情報を読み込み中…</string>
+
+    <!-- Premium / Billing -->
+    <string name="settings_premium">プレミアムプラン</string>
+    <string name="billing_status_active">有効</string>
+    <string name="billing_status_inactive">無料プラン</string>
+    <string name="billing_status_expired">期限切れ</string>
+    <string name="billing_status_pending">処理中</string>
+    <string name="billing_purchase_button">購入する</string>
+    <string name="billing_restore_purchases">購入を復元</string>
+    <string name="billing_restore_purchases_summary">以前の購入を復元します</string>
+    <string name="billing_restore_success">購入を復元しました</string>
+    <string name="billing_restore_no_purchases">復元可能な購入が見つかりません</string>
+    <string name="billing_manage_subscription">サブスクリプション管理</string>
+    <string name="billing_manage_subscription_summary">Google Play で管理します</string>
+    <string name="billing_error_load_products">商品情報の取得に失敗しました</string>
+    <string name="billing_error_purchase">購入処理に失敗しました</string>
+    <string name="billing_error_restore">購入の復元に失敗しました</string>
+    <string name="billing_period_month">月</string>
+    <string name="billing_period_year">年</string>
+    <string name="billing_period_3months">3ヶ月</string>
+    <string name="billing_period_6months">6ヶ月</string>
+    <string name="billing_free_tier_info">プレミアムプランにアップグレードして、すべての機能をお楽しみください</string>
+    <string name="billing_connecting">接続中…</string>
+    <string name="billing_unavailable">Google Play Billing は利用できません</string>
 </resources>

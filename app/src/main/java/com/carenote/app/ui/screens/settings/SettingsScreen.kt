@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.settings
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.padding
@@ -40,6 +41,7 @@ import com.carenote.app.ui.screens.settings.sections.EmergencyContactSection
 import com.carenote.app.ui.screens.settings.sections.MemberManagementSection
 import com.carenote.app.ui.screens.settings.sections.SecuritySection
 import com.carenote.app.ui.screens.settings.sections.DataExportSection
+import com.carenote.app.ui.screens.settings.sections.PremiumSection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
 import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetector
@@ -47,6 +49,7 @@ import com.carenote.app.ui.screens.settings.sections.ThemeSection
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.ui.util.SnackbarEvent
+import com.carenote.app.ui.viewmodel.BillingUiState
 import com.carenote.app.ui.viewmodel.ExportState
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -68,8 +71,14 @@ fun SettingsScreen(
     val careRecipientName by viewModel.careRecipientName.collectAsStateWithLifecycle()
     val taskReminderLimitText by viewModel.taskReminderLimitText.collectAsStateWithLifecycle()
     val exportState by viewModel.exportState.collectAsStateWithLifecycle()
+    val billingUiState by viewModel.billingUiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var dialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
+
+    LaunchedEffect(Unit) {
+        viewModel.connectBilling()
+        viewModel.loadProducts()
+    }
 
     SettingsEffects(viewModel, snackbarHostState, exportState)
     SettingsScaffold(
@@ -79,6 +88,7 @@ fun SettingsScreen(
         isSyncing = isSyncing,
         careRecipientName = careRecipientName,
         taskReminderLimitText = taskReminderLimitText,
+        billingUiState = billingUiState,
         snackbarHostState = snackbarHostState,
         dialogState = dialogState,
         onDialogStateChange = { dialogState = it },
@@ -131,6 +141,7 @@ private fun SettingsScaffold(
     isSyncing: Boolean,
     careRecipientName: String?,
     taskReminderLimitText: String?,
+    billingUiState: BillingUiState,
     snackbarHostState: SnackbarHostState,
     dialogState: SettingsDialogState,
     onDialogStateChange: (SettingsDialogState) -> Unit,
@@ -152,6 +163,7 @@ private fun SettingsScaffold(
             isSyncing = isSyncing,
             careRecipientName = careRecipientName,
             taskReminderLimitText = taskReminderLimitText,
+            billingUiState = billingUiState,
             onDialogStateChange = onDialogStateChange,
             onNavigateToPrivacyPolicy = onNavigateToPrivacyPolicy,
             onNavigateToTermsOfService = onNavigateToTermsOfService,
@@ -196,6 +208,7 @@ private fun SettingsContent(
     isSyncing: Boolean,
     careRecipientName: String?,
     taskReminderLimitText: String?,
+    billingUiState: BillingUiState,
     onDialogStateChange: (SettingsDialogState) -> Unit,
     onNavigateToPrivacyPolicy: () -> Unit,
     onNavigateToTermsOfService: () -> Unit,
@@ -212,7 +225,7 @@ private fun SettingsContent(
         )
         settingsPreferenceItems(
             settings, isLoggedIn, currentUser, isSyncing,
-            taskReminderLimitText, onDialogStateChange,
+            taskReminderLimitText, billingUiState, onDialogStateChange,
             onNavigateToPrivacyPolicy, onNavigateToTermsOfService,
             viewModel
         )
@@ -250,6 +263,7 @@ private fun LazyListScope.settingsPreferenceItems(
     currentUser: User?,
     isSyncing: Boolean,
     taskReminderLimitText: String?,
+    billingUiState: BillingUiState,
     onDialogStateChange: (SettingsDialogState) -> Unit,
     onNavigateToPrivacyPolicy: () -> Unit,
     onNavigateToTermsOfService: () -> Unit,
@@ -258,7 +272,8 @@ private fun LazyListScope.settingsPreferenceItems(
     settingsAppearanceItems(settings, viewModel)
     settingsAccountAndNotificationItems(
         settings, isLoggedIn, currentUser, isSyncing,
-        taskReminderLimitText, onDialogStateChange, viewModel
+        taskReminderLimitText, billingUiState, onDialogStateChange,
+        viewModel
     )
     settingsDataAndInfoItems(
         settings, onDialogStateChange,
@@ -288,6 +303,7 @@ private fun LazyListScope.settingsAccountAndNotificationItems(
     currentUser: User?,
     isSyncing: Boolean,
     taskReminderLimitText: String?,
+    billingUiState: BillingUiState,
     onDialogStateChange: (SettingsDialogState) -> Unit,
     viewModel: SettingsViewModel
 ) {
@@ -304,6 +320,12 @@ private fun LazyListScope.settingsAccountAndNotificationItems(
         SettingsAccountItem(
             isLoggedIn = isLoggedIn, currentUser = currentUser,
             onDialogStateChange = onDialogStateChange,
+            viewModel = viewModel
+        )
+    }
+    item(key = "premium") {
+        SettingsPremiumItem(
+            billingUiState = billingUiState,
             viewModel = viewModel
         )
     }
@@ -530,6 +552,34 @@ private fun SettingsMedicationTimeItem(
         ),
         onEveningClick = {
             onDialogStateChange(SettingsDialogState.EveningTime)
+        }
+    )
+}
+
+@Composable
+private fun SettingsPremiumItem(
+    billingUiState: BillingUiState,
+    viewModel: SettingsViewModel
+) {
+    val context = LocalContext.current
+    PremiumSection(
+        premiumStatus = billingUiState.premiumStatus,
+        connectionState = billingUiState.connectionState,
+        products = billingUiState.products,
+        isLoading = billingUiState.isLoading,
+        onPurchaseClick = { productId ->
+            (context as? Activity)?.let { activity ->
+                viewModel.launchPurchase(activity, productId)
+            }
+        },
+        onRestoreClick = { viewModel.restorePurchases() },
+        onManageClick = {
+            viewModel.logManageSubscription()
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(AppConfig.Billing.GOOGLE_PLAY_SUBSCRIPTION_URL)
+            )
+            context.startActivity(intent)
         }
     )
 }

@@ -21,4 +21,9 @@ object TestTags {
     const val TIMELINE_FILTER_NOTE = "timeline_filter_note"
 
     const val OFFLINE_INDICATOR = "offline_indicator"
+
+    const val PREMIUM_SECTION = "premium_section"
+    const val PREMIUM_STATUS_BADGE = "premium_status_badge"
+    const val PREMIUM_PURCHASE_BUTTON = "premium_purchase_button"
+    const val PREMIUM_RESTORE_BUTTON = "premium_restore_button"
 }

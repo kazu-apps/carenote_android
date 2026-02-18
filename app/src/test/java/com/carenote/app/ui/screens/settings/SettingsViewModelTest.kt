@@ -4,7 +4,10 @@ import app.cash.turbine.test
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.AppLanguage
+import com.carenote.app.domain.model.BillingConnectionState
 import com.carenote.app.domain.model.MedicationTiming
+import com.carenote.app.domain.model.PremiumStatus
+import com.carenote.app.domain.model.ProductInfo
 import com.carenote.app.domain.model.ThemeMode
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.fakes.FakeAuthRepository
@@ -1217,6 +1220,162 @@ class SettingsViewModelTest {
             advanceUntilIdle()
             val text = expectMostRecentItem()
             assertEquals("3/3", text)
+        }
+    }
+
+    // --- Billing / Premium Tests ---
+
+    @Test
+    fun `billingUiState emits inactive status initially`() = runTest(mainCoroutineRule.testDispatcher) {
+        viewModel = createViewModel()
+
+        viewModel.billingUiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertTrue(state.premiumStatus is PremiumStatus.Inactive)
+            assertEquals(BillingConnectionState.DISCONNECTED, state.connectionState)
+            assertTrue(state.products.isEmpty())
+            assertFalse(state.isLoading)
+        }
+    }
+
+    @Test
+    fun `billingUiState emits active status when premium`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.setPremiumActive()
+        viewModel = createViewModel()
+
+        viewModel.billingUiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertTrue(state.premiumStatus is PremiumStatus.Active)
+        }
+    }
+
+    @Test
+    fun `billingUiState emits expired status`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.setPremiumExpired()
+        viewModel = createViewModel()
+
+        viewModel.billingUiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertTrue(state.premiumStatus is PremiumStatus.Expired)
+        }
+    }
+
+    @Test
+    fun `billingUiState emits pending status`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.setPremiumPending()
+        viewModel = createViewModel()
+
+        viewModel.billingUiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertTrue(state.premiumStatus is PremiumStatus.Pending)
+        }
+    }
+
+    @Test
+    fun `loadProducts success updates billingUiState products`() = runTest(mainCoroutineRule.testDispatcher) {
+        val testProducts = listOf(
+            ProductInfo("monthly", "Monthly", "Monthly plan", "¥480", 480_000_000L, "P1M"),
+            ProductInfo("yearly", "Yearly", "Yearly plan", "¥4800", 4_800_000_000L, "P1Y")
+        )
+        billingRepository.setProducts(testProducts)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.loadProducts()
+        advanceUntilIdle()
+
+        viewModel.billingUiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertEquals(2, state.products.size)
+            assertEquals("monthly", state.products[0].productId)
+            assertFalse(state.isLoading)
+        }
+    }
+
+    @Test
+    fun `loadProducts failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.loadProducts()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.billing_error_load_products, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `restorePurchases active success shows success snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.setPremiumActive()
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.restorePurchases()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.billing_restore_success, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `restorePurchases inactive success shows no purchases snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.restorePurchases()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.billing_restore_no_purchases, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `restorePurchases failure shows error snackbar`() = runTest(mainCoroutineRule.testDispatcher) {
+        billingRepository.shouldFail = true
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.restorePurchases()
+        advanceUntilIdle()
+
+        viewModel.snackbarController.events.test {
+            advanceUntilIdle()
+            val event = expectMostRecentItem()
+            assertTrue(event is SnackbarEvent.WithResId)
+            assertEquals(R.string.billing_error_restore, (event as SnackbarEvent.WithResId).messageResId)
+        }
+    }
+
+    @Test
+    fun `connectBilling updates connection state`() = runTest(mainCoroutineRule.testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.connectBilling()
+        advanceUntilIdle()
+
+        viewModel.billingUiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertEquals(BillingConnectionState.CONNECTED, state.connectionState)
         }
     }
 }

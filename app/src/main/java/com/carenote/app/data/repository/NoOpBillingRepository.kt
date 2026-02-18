@@ -1,5 +1,6 @@
 package com.carenote.app.data.repository
 
+import android.app.Activity
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.BillingConnectionState
@@ -33,6 +34,15 @@ class NoOpBillingRepository : BillingRepository {
     }
 
     override suspend fun restorePurchases(): Result<PremiumStatus, DomainError> {
+        return Result.Failure(
+            DomainError.NetworkError("Google Play Billing is not available")
+        )
+    }
+
+    override suspend fun launchBillingFlow(
+        activity: Activity,
+        productId: String
+    ): Result<Unit, DomainError> {
         return Result.Failure(
             DomainError.NetworkError("Google Play Billing is not available")
         )

@@ -669,6 +669,12 @@ object AppConfig {
         const val EVENT_INVITATION_ACCEPTED = "invitation_accepted"
         const val EVENT_INVITATION_CANCELLED = "invitation_cancelled"
         const val EVENT_MEMBER_DELETED = "member_deleted"
+
+        // Billing
+        const val EVENT_PURCHASE_STARTED = "purchase_started"
+        const val EVENT_PURCHASE_RESTORED = "purchase_restored"
+        const val EVENT_MANAGE_SUBSCRIPTION = "manage_subscription"
+        const val PARAM_PRODUCT_ID = "product_id"
     }
 
     /**
@@ -691,6 +697,8 @@ object AppConfig {
         const val YEARLY_PRODUCT_ID = "carenote_premium_yearly"
         const val CONNECTION_RETRY_DELAY_MS = 3_000L
         const val MAX_CONNECTION_RETRIES = 3
+        const val GOOGLE_PLAY_SUBSCRIPTION_URL =
+            "https://play.google.com/store/account/subscriptions"
     }
 
     /**

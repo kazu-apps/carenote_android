@@ -44,18 +44,8 @@ CalendarEventReminderSection + CalendarEventFormFields 抽出。全イベント�
 ### Phase 5: オフライン状態インジケーター - DONE
 ConnectivityRepository + OfflineIndicator コンポーネント。AdaptiveNavigationScaffold にバナー埋め込み。
 
-### Phase 6: プレミアム/Billing UI - PENDING
-
-Settings 画面にプレミアムプラン購入/管理セクションを追加。BillingRepository インフラは完成済み。
-- 対象ファイル:
-  - `ui/screens/settings/sections/PremiumSection.kt` (新規)
-  - `ui/screens/settings/SettingsScreen.kt` (セクション追加)
-  - `res/values/strings.xml`, `res/values-en/strings.xml` (premium/billing 文字列)
-- 依存: Phase 1 (debugMessage 修正済みであること)
-- 信頼度: MEDIUM
-- 前提条件: `purchaseToken` 永続化設計を UI 実装前に決定
-- セキュリティ要件: snackbar での billing エラー表示は StringRes 使用（WithString 直接渡し禁止）
-- 注意: サーバーサイド検証（Cloud Functions）は別途。クライアントサイドのみで MVP は許容
+### Phase 6: プレミアム/Billing UI - DONE
+Settings 画面にプレミアムプラン購入/管理セクションを追加。BillingRepository.launchBillingFlow() + BillingUiState + PremiumSection + SettingsViewModel 拡張 + テスト 6件。
 
 ### Phase 7: 品質改善バッチ - PENDING
 
@@ -112,6 +102,7 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Phase 3 | CalendarEventReminderWorker + Scheduler + 通知チャンネル + テスト。4000番台通知ID | DONE |
 | Phase 4 | CalendarEventReminderSection + CalendarEventFormFields 画面分割。リマインダー UI + ViewModel 統合 | DONE |
 | Phase 5 | ConnectivityRepository + OfflineIndicator バナー。AdaptiveNavigationScaffold 統合 | DONE |
+| Phase 6 | BillingRepository.launchBillingFlow + PremiumSection + SettingsViewModel BillingUiState + テスト 6件 | DONE |
 
 ## アーキテクチャ参照
 

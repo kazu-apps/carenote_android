@@ -752,4 +752,28 @@
     <string name="accept_invitation_already_accepted">This invitation has already been accepted</string>
     <string name="accept_invitation_not_logged_in">Please log in to accept this invitation</string>
     <string name="accept_invitation_loading">Loading invitation…</string>
+
+    <!-- Premium / Billing -->
+    <string name="settings_premium">Premium Plan</string>
+    <string name="billing_status_active">Active</string>
+    <string name="billing_status_inactive">Free Plan</string>
+    <string name="billing_status_expired">Expired</string>
+    <string name="billing_status_pending">Pending</string>
+    <string name="billing_purchase_button">Subscribe</string>
+    <string name="billing_restore_purchases">Restore Purchases</string>
+    <string name="billing_restore_purchases_summary">Restore your previous purchases</string>
+    <string name="billing_restore_success">Purchases restored successfully</string>
+    <string name="billing_restore_no_purchases">No purchases found to restore</string>
+    <string name="billing_manage_subscription">Manage Subscription</string>
+    <string name="billing_manage_subscription_summary">Manage on Google Play</string>
+    <string name="billing_error_load_products">Failed to load product information</string>
+    <string name="billing_error_purchase">Purchase failed</string>
+    <string name="billing_error_restore">Failed to restore purchases</string>
+    <string name="billing_period_month">month</string>
+    <string name="billing_period_year">year</string>
+    <string name="billing_period_3months">3 months</string>
+    <string name="billing_period_6months">6 months</string>
+    <string name="billing_free_tier_info">Upgrade to Premium to unlock all features</string>
+    <string name="billing_connecting">Connecting…</string>
+    <string name="billing_unavailable">Google Play Billing is not available</string>
 </resources>

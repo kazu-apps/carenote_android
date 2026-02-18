@@ -5,7 +5,9 @@ import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.ProductDetailsResult
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
@@ -14,6 +16,7 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
+import android.app.Activity
 import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.dao.PurchaseDao
 import com.carenote.app.data.mapper.PurchaseMapper
@@ -50,6 +53,7 @@ class BillingRepositoryImpl(
     override val connectionState: StateFlow<BillingConnectionState> =
         _connectionState.asStateFlow()
 
+    private var cachedProductDetails: List<ProductDetails> = emptyList()
     private var retryCount = 0
 
     private val purchasesUpdatedListener =
@@ -146,6 +150,10 @@ class BillingRepositoryImpl(
 
         val result: ProductDetailsResult = billingClient.queryProductDetails(params)
 
+        if (result.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+            cachedProductDetails = result.productDetailsList ?: emptyList()
+        }
+
         return mapBillingResult(result.billingResult) {
             result.productDetailsList?.map { details ->
                 val subscriptionOffer =
@@ -209,6 +217,45 @@ class BillingRepositoryImpl(
             processPurchase(latestPurchase)
         }
         return Result.Success(_premiumStatus.value)
+    }
+
+    override suspend fun launchBillingFlow(
+        activity: Activity,
+        productId: String
+    ): Result<Unit, DomainError> {
+        if (_connectionState.value != BillingConnectionState.CONNECTED) {
+            return Result.Failure(
+                DomainError.NetworkError("Billing client not connected")
+            )
+        }
+
+        val productDetails = cachedProductDetails.find { it.productId == productId }
+            ?: return Result.Failure(
+                DomainError.NotFoundError("Product not found: $productId")
+            )
+
+        val offerToken = productDetails.subscriptionOfferDetails
+            ?.firstOrNull()?.offerToken
+            ?: return Result.Failure(
+                DomainError.NotFoundError(
+                    "No offer available for product: $productId"
+                )
+            )
+
+        val productDetailsParams =
+            BillingFlowParams.ProductDetailsParams.newBuilder()
+                .setProductDetails(productDetails)
+                .setOfferToken(offerToken)
+                .build()
+
+        val billingFlowParams = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(listOf(productDetailsParams))
+            .build()
+
+        val billingResult = billingClient.launchBillingFlow(
+            activity, billingFlowParams
+        )
+        return mapBillingResult(billingResult) { }
     }
 
     private suspend fun handlePurchasesUpdated(

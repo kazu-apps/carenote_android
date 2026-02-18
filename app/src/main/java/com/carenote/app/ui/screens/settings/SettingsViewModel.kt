@@ -1,5 +1,6 @@
 package com.carenote.app.ui.screens.settings
 
+import android.app.Activity
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
@@ -30,6 +31,8 @@ import com.carenote.app.domain.repository.TaskPdfExporterInterface
 import com.carenote.app.ui.util.LocaleManager
 import com.carenote.app.ui.util.RootDetectionChecker
 import com.carenote.app.ui.util.SnackbarController
+import com.carenote.app.domain.model.ProductInfo
+import com.carenote.app.ui.viewmodel.BillingUiState
 import com.carenote.app.ui.viewmodel.ExportState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -153,6 +156,90 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
 
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
     val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
+
+    private val _billingProducts = MutableStateFlow<List<ProductInfo>>(emptyList())
+    private val _billingLoading = MutableStateFlow(false)
+
+    val billingUiState: StateFlow<BillingUiState> = combine(
+        billingRepository.premiumStatus,
+        billingRepository.connectionState,
+        _billingProducts,
+        _billingLoading
+    ) { status, connection, products, loading ->
+        BillingUiState(
+            premiumStatus = status,
+            connectionState = connection,
+            products = products,
+            isLoading = loading
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(AppConfig.UI.FLOW_STOP_TIMEOUT_MS),
+        initialValue = BillingUiState()
+    )
+
+    fun loadProducts() {
+        viewModelScope.launch {
+            _billingLoading.value = true
+            billingRepository.queryProducts()
+                .onSuccess { products ->
+                    _billingProducts.value = products
+                }
+                .onFailure { error ->
+                    Timber.w("Failed to load products: $error")
+                    snackbarController.showMessage(R.string.billing_error_load_products)
+                }
+            _billingLoading.value = false
+        }
+    }
+
+    fun launchPurchase(activity: Activity, productId: String) {
+        analyticsRepository.logEvent(
+            AppConfig.Analytics.EVENT_PURCHASE_STARTED,
+            mapOf(AppConfig.Analytics.PARAM_PRODUCT_ID to productId)
+        )
+        viewModelScope.launch {
+            billingRepository.launchBillingFlow(activity, productId)
+                .onFailure { error ->
+                    Timber.w("Failed to launch purchase: $error")
+                    snackbarController.showMessage(R.string.billing_error_purchase)
+                }
+        }
+    }
+
+    fun restorePurchases() {
+        viewModelScope.launch {
+            billingRepository.restorePurchases()
+                .onSuccess { status ->
+                    analyticsRepository.logEvent(
+                        AppConfig.Analytics.EVENT_PURCHASE_RESTORED
+                    )
+                    if (status.isActive) {
+                        snackbarController.showMessage(
+                            R.string.billing_restore_success
+                        )
+                    } else {
+                        snackbarController.showMessage(
+                            R.string.billing_restore_no_purchases
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    Timber.w("Failed to restore purchases: $error")
+                    snackbarController.showMessage(R.string.billing_error_restore)
+                }
+        }
+    }
+
+    fun connectBilling() {
+        billingRepository.startConnection()
+    }
+
+    fun logManageSubscription() {
+        analyticsRepository.logEvent(
+            AppConfig.Analytics.EVENT_MANAGE_SUBSCRIPTION
+        )
+    }
 
     private fun updateSetting(
         logTag: String,

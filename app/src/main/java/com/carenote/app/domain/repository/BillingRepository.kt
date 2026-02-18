@@ -1,5 +1,6 @@
 package com.carenote.app.domain.repository
 
+import android.app.Activity
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.BillingConnectionState
@@ -14,6 +15,7 @@ interface BillingRepository {
     suspend fun queryProducts(): Result<List<ProductInfo>, DomainError>
     suspend fun acknowledgePurchase(purchaseToken: String): Result<Unit, DomainError>
     suspend fun restorePurchases(): Result<PremiumStatus, DomainError>
+    suspend fun launchBillingFlow(activity: Activity, productId: String): Result<Unit, DomainError>
     fun startConnection()
     fun endConnection()
 }
