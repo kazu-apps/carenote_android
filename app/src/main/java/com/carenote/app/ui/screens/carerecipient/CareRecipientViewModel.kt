@@ -10,7 +10,9 @@ import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.util.Clock
 import com.carenote.app.ui.common.UiText
-import com.carenote.app.ui.util.FormValidator
+import com.carenote.app.ui.util.FormValidator.combineValidations
+import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validateRequired
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,6 +36,11 @@ data class CareRecipientUiState(
     val allergies: String = "",
     val memo: String = "",
     val nameError: UiText? = null,
+    val nicknameError: UiText? = null,
+    val careLevelError: UiText? = null,
+    val medicalHistoryError: UiText? = null,
+    val allergiesError: UiText? = null,
+    val memoError: UiText? = null,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false
 )
@@ -93,31 +100,49 @@ class CareRecipientViewModel @Inject constructor(
     }
 
     fun updateNickname(nickname: String) {
-        _uiState.value = _uiState.value.copy(nickname = nickname)
+        _uiState.value = _uiState.value.copy(nickname = nickname, nicknameError = null)
     }
 
     fun updateCareLevel(careLevel: String) {
-        _uiState.value = _uiState.value.copy(careLevel = careLevel)
+        _uiState.value = _uiState.value.copy(careLevel = careLevel, careLevelError = null)
     }
 
     fun updateMedicalHistory(medicalHistory: String) {
-        _uiState.value = _uiState.value.copy(medicalHistory = medicalHistory)
+        _uiState.value = _uiState.value.copy(medicalHistory = medicalHistory, medicalHistoryError = null)
     }
 
     fun updateAllergies(allergies: String) {
-        _uiState.value = _uiState.value.copy(allergies = allergies)
+        _uiState.value = _uiState.value.copy(allergies = allergies, allergiesError = null)
     }
 
     fun updateMemo(memo: String) {
-        _uiState.value = _uiState.value.copy(memo = memo)
+        _uiState.value = _uiState.value.copy(memo = memo, memoError = null)
     }
 
     fun save() {
         val current = _uiState.value
 
-        val nameError = FormValidator.validateRequired(current.name, R.string.care_recipient_name_required)
-        if (nameError != null) {
-            _uiState.value = current.copy(nameError = nameError)
+        val nameError = combineValidations(
+            validateRequired(current.name, R.string.care_recipient_name_required),
+            validateMaxLength(current.name, AppConfig.CareRecipient.NAME_MAX_LENGTH)
+        )
+        val nicknameError = validateMaxLength(current.nickname, AppConfig.CareRecipient.NICKNAME_MAX_LENGTH)
+        val careLevelError = validateMaxLength(current.careLevel, AppConfig.CareRecipient.CARE_LEVEL_MAX_LENGTH)
+        val medicalHistoryError = validateMaxLength(current.medicalHistory, AppConfig.CareRecipient.MEDICAL_HISTORY_MAX_LENGTH)
+        val allergiesError = validateMaxLength(current.allergies, AppConfig.CareRecipient.ALLERGIES_MAX_LENGTH)
+        val memoError = validateMaxLength(current.memo, AppConfig.CareRecipient.MEMO_MAX_LENGTH)
+
+        if (nameError != null || nicknameError != null || careLevelError != null ||
+            medicalHistoryError != null || allergiesError != null || memoError != null
+        ) {
+            _uiState.value = current.copy(
+                nameError = nameError,
+                nicknameError = nicknameError,
+                careLevelError = careLevelError,
+                medicalHistoryError = medicalHistoryError,
+                allergiesError = allergiesError,
+                memoError = memoError
+            )
             return
         }
 

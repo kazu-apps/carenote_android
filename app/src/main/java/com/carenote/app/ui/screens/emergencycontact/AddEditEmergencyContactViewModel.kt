@@ -13,6 +13,7 @@ import com.carenote.app.domain.repository.EmergencyContactRepository
 import com.carenote.app.ui.common.UiText
 import com.carenote.app.ui.util.FormValidator.combineValidations
 import com.carenote.app.ui.util.FormValidator.validateMaxLength
+import com.carenote.app.ui.util.FormValidator.validatePhoneFormat
 import com.carenote.app.ui.util.FormValidator.validateRequired
 import com.carenote.app.ui.util.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,8 @@ data class EmergencyContactFormState(
     val memo: String = "",
     val nameError: UiText? = null,
     val phoneNumberError: UiText? = null,
+    val memoError: UiText? = null,
+    val phoneFormatError: UiText? = null,
     val isSaving: Boolean = false,
     val isEditMode: Boolean = false
 )
@@ -68,12 +71,16 @@ class AddEditEmergencyContactViewModel @Inject constructor(
             val current = _formState.value.copy(
                 nameError = null,
                 phoneNumberError = null,
+                memoError = null,
+                phoneFormatError = null,
                 isSaving = false,
                 isEditMode = false
             )
             val baseline = initial.copy(
                 nameError = null,
                 phoneNumberError = null,
+                memoError = null,
+                phoneFormatError = null,
                 isSaving = false,
                 isEditMode = false
             )
@@ -123,7 +130,7 @@ class AddEditEmergencyContactViewModel @Inject constructor(
     }
 
     fun updateMemo(memo: String) {
-        _formState.value = _formState.value.copy(memo = memo)
+        _formState.value = _formState.value.copy(memo = memo, memoError = null)
     }
 
     fun save() {
@@ -141,13 +148,19 @@ class AddEditEmergencyContactViewModel @Inject constructor(
             validateMaxLength(
                 current.phoneNumber,
                 AppConfig.EmergencyContact.PHONE_MAX_LENGTH
-            )
+            ),
+            validatePhoneFormat(current.phoneNumber)
+        )
+        val memoError = validateMaxLength(
+            current.memo,
+            AppConfig.EmergencyContact.MEMO_MAX_LENGTH
         )
 
-        if (nameError != null || phoneNumberError != null) {
+        if (nameError != null || phoneNumberError != null || memoError != null) {
             _formState.value = current.copy(
                 nameError = nameError,
-                phoneNumberError = phoneNumberError
+                phoneNumberError = phoneNumberError,
+                memoError = memoError
             )
             return
         }

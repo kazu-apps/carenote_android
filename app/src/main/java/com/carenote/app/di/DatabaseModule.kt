@@ -25,6 +25,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import timber.log.Timber
 import javax.inject.Singleton
 
 @Module
@@ -44,8 +45,13 @@ object DatabaseModule {
         val passphrase = passphraseManager.getOrCreatePassphrase(context)
         val dbFile = context.getDatabasePath(CareNoteDatabase.DATABASE_NAME)
 
-        encryptionMigrator.migrateIfNeeded(dbFile, passphrase)
-        recoveryHelper.recoverIfNeeded(dbFile, passphrase)
+        try {
+            encryptionMigrator.migrateIfNeeded(dbFile, passphrase)
+            recoveryHelper.recoverIfNeeded(dbFile, passphrase)
+        } catch (e: Exception) {
+            Timber.e("Database pre-initialization failed: $e")
+            recoveryHelper.deleteDatabaseFiles(dbFile)
+        }
 
         val factory = SupportOpenHelperFactory(passphrase)
 

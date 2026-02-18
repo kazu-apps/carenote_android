@@ -12,7 +12,7 @@ interface BiometricAuthenticator {
     fun authenticate(
         activity: FragmentActivity,
         onSuccess: () -> Unit,
-        onError: (String) -> Unit
+        onError: (Int, String) -> Unit
     )
 }
 
@@ -27,7 +27,7 @@ class BiometricHelper : BiometricAuthenticator {
     override fun authenticate(
         activity: FragmentActivity,
         onSuccess: () -> Unit,
-        onError: (String) -> Unit
+        onError: (Int, String) -> Unit
     ) {
         val executor = ContextCompat.getMainExecutor(activity)
 
@@ -39,7 +39,7 @@ class BiometricHelper : BiometricAuthenticator {
             }
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                onError(errString.toString())
+                onError(errorCode, errString.toString())
             }
 
             override fun onAuthenticationFailed() {

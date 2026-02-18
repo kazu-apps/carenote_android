@@ -495,6 +495,7 @@
     <string name="ui_confirm_discard_no">Keep Editing</string>
     <string name="ui_validation_required">This field is required</string>
     <string name="ui_validation_too_long">Must be %1$d characters or less</string>
+    <string name="ui_validation_invalid_phone_format">Invalid phone number format</string>
 
     <!-- Photos -->
     <string name="photo_section_title">Photos</string>

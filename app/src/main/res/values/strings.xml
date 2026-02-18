@@ -495,6 +495,7 @@
     <string name="ui_confirm_discard_no">編集を続ける</string>
     <string name="ui_validation_required">この項目は必須です</string>
     <string name="ui_validation_too_long">%1$d文字以内で入力してください</string>
+    <string name="ui_validation_invalid_phone_format">電話番号の形式が正しくありません</string>
 
     <!-- Photos -->
     <string name="photo_section_title">写真</string>

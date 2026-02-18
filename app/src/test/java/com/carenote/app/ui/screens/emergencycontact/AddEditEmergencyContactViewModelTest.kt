@@ -3,6 +3,7 @@ package com.carenote.app.ui.screens.emergencycontact
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeAnalyticsRepository
@@ -291,6 +292,75 @@ class AddEditEmergencyContactViewModelTest {
             assertEquals("テスト", list[0].name)
             assertEquals("090-1234", list[0].phoneNumber)
             assertEquals("メモ", list[0].memo)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // --- Memo validation tests ---
+
+    @Test
+    fun `save with memo exceeding max length shows error`() {
+        val viewModel = createViewModel()
+        viewModel.updateName("テスト")
+        viewModel.updatePhoneNumber("090-0000-0000")
+        viewModel.updateMemo("A".repeat(AppConfig.EmergencyContact.MEMO_MAX_LENGTH + 1))
+        viewModel.save()
+
+        assertNotNull(viewModel.formState.value.memoError)
+        assertFalse(viewModel.formState.value.isSaving)
+    }
+
+    @Test
+    fun `save with memo at max length succeeds`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.updateName("テスト")
+        viewModel.updatePhoneNumber("090-0000-0000")
+        viewModel.updateMemo("A".repeat(AppConfig.EmergencyContact.MEMO_MAX_LENGTH))
+
+        viewModel.savedEvent.test {
+            viewModel.save()
+            val result = awaitItem()
+            assertTrue(result)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `updateMemo clears memo error`() {
+        val viewModel = createViewModel()
+        viewModel.updateName("テスト")
+        viewModel.updatePhoneNumber("090-0000-0000")
+        viewModel.updateMemo("A".repeat(AppConfig.EmergencyContact.MEMO_MAX_LENGTH + 1))
+        viewModel.save()
+        assertNotNull(viewModel.formState.value.memoError)
+
+        viewModel.updateMemo("Short")
+        assertNull(viewModel.formState.value.memoError)
+    }
+
+    // --- Phone format validation tests ---
+
+    @Test
+    fun `save with invalid phone format shows error`() {
+        val viewModel = createViewModel()
+        viewModel.updateName("テスト")
+        viewModel.updatePhoneNumber("abc-invalid")
+        viewModel.save()
+
+        assertNotNull(viewModel.formState.value.phoneNumberError)
+        assertFalse(viewModel.formState.value.isSaving)
+    }
+
+    @Test
+    fun `save with valid phone format succeeds`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.updateName("テスト")
+        viewModel.updatePhoneNumber("+81-90-1234-5678")
+
+        viewModel.savedEvent.test {
+            viewModel.save()
+            val result = awaitItem()
+            assertTrue(result)
             cancelAndIgnoreRemainingEvents()
         }
     }

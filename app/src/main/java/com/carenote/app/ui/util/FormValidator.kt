@@ -18,4 +18,14 @@ object FormValidator {
 
     inline fun combineValidations(vararg errors: UiText?): UiText? =
         errors.firstOrNull { it != null }
+
+    @PublishedApi
+    internal val PHONE_PATTERN = Regex("^[0-9+\\-() ]{0,20}$")
+
+    inline fun validatePhoneFormat(value: String): UiText? =
+        if (value.isEmpty() || PHONE_PATTERN.matches(value)) {
+            null
+        } else {
+            UiText.Resource(R.string.ui_validation_invalid_phone_format)
+        }
 }

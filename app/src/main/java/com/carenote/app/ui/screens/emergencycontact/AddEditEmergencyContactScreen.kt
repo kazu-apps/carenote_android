@@ -104,6 +104,10 @@ private fun EmergencyContactFormContent(
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.emergency_contact_memo_label)) },
             placeholder = { Text(stringResource(R.string.emergency_contact_memo_placeholder)) },
+            isError = formState.memoError != null,
+            supportingText = formState.memoError?.let { error ->
+                { Text(error.asString()) }
+            },
             minLines = 2,
             maxLines = 4
         )

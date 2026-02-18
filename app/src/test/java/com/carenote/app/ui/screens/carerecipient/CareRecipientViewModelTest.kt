@@ -2,6 +2,7 @@ package com.carenote.app.ui.screens.carerecipient
 
 import app.cash.turbine.test
 import com.carenote.app.R
+import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.Gender
 import com.carenote.app.fakes.FakeCareRecipientRepository
@@ -391,5 +392,117 @@ class CareRecipientViewModelTest {
         assertEquals("", state.allergies)
         assertEquals("", state.memo)
         assertNull(state.nameError)
+    }
+
+    // --- MaxLength validation tests ---
+
+    @Test
+    fun `save with name exceeding max length shows error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("A".repeat(AppConfig.CareRecipient.NAME_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.nameError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with nickname exceeding max length shows error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("Valid Name")
+        viewModel.updateNickname("A".repeat(AppConfig.CareRecipient.NICKNAME_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.nicknameError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with careLevel exceeding max length shows error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("Valid Name")
+        viewModel.updateCareLevel("A".repeat(AppConfig.CareRecipient.CARE_LEVEL_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.careLevelError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with medicalHistory exceeding max length shows error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("Valid Name")
+        viewModel.updateMedicalHistory("A".repeat(AppConfig.CareRecipient.MEDICAL_HISTORY_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.medicalHistoryError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with allergies exceeding max length shows error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("Valid Name")
+        viewModel.updateAllergies("A".repeat(AppConfig.CareRecipient.ALLERGIES_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.allergiesError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with memo exceeding max length shows error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("Valid Name")
+        viewModel.updateMemo("A".repeat(AppConfig.CareRecipient.MEMO_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.memoError)
+        assertFalse(viewModel.uiState.value.isSaving)
+    }
+
+    @Test
+    fun `save with empty name and name at max length shows required error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // empty name triggers required error (not max length)
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.nameError)
+    }
+
+    @Test
+    fun `updateNickname clears nickname error`() = runTest(mainCoroutineRule.testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateName("Valid Name")
+        viewModel.updateNickname("A".repeat(AppConfig.CareRecipient.NICKNAME_MAX_LENGTH + 1))
+        viewModel.save()
+        advanceUntilIdle()
+        assertNotNull(viewModel.uiState.value.nicknameError)
+
+        viewModel.updateNickname("Short")
+        assertNull(viewModel.uiState.value.nicknameError)
     }
 }

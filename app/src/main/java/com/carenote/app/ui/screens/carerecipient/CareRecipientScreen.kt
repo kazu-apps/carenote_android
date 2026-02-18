@@ -216,6 +216,10 @@ private fun BasicInfoFields(
         onValueChange = onNameChange,
         label = { Text(stringResource(R.string.care_recipient_name)) },
         placeholder = { Text(stringResource(R.string.care_recipient_name_hint)) },
+        isError = uiState.nameError != null,
+        supportingText = uiState.nameError?.let { error ->
+            { Text(error.asString()) }
+        },
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
     )
@@ -225,6 +229,10 @@ private fun BasicInfoFields(
         onValueChange = onNicknameChange,
         label = { Text(stringResource(R.string.care_recipient_nickname)) },
         placeholder = { Text(stringResource(R.string.care_recipient_nickname_hint)) },
+        isError = uiState.nicknameError != null,
+        supportingText = uiState.nicknameError?.let { error ->
+            { Text(error.asString()) }
+        },
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
     )
@@ -295,6 +303,10 @@ private fun CareLevelAndMedicalFields(
         onValueChange = onCareLevelChange,
         label = { Text(stringResource(R.string.care_recipient_care_level)) },
         placeholder = { Text(stringResource(R.string.care_recipient_care_level_hint)) },
+        isError = uiState.careLevelError != null,
+        supportingText = uiState.careLevelError?.let { error ->
+            { Text(error.asString()) }
+        },
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
     )
@@ -304,6 +316,10 @@ private fun CareLevelAndMedicalFields(
         onValueChange = onMedicalHistoryChange,
         label = { Text(stringResource(R.string.care_recipient_medical_history)) },
         placeholder = { Text(stringResource(R.string.care_recipient_medical_history_hint)) },
+        isError = uiState.medicalHistoryError != null,
+        supportingText = uiState.medicalHistoryError?.let { error ->
+            { Text(error.asString()) }
+        },
         minLines = 3,
         maxLines = 6,
         modifier = Modifier.fillMaxWidth()
@@ -314,6 +330,10 @@ private fun CareLevelAndMedicalFields(
         onValueChange = onAllergiesChange,
         label = { Text(stringResource(R.string.care_recipient_allergies)) },
         placeholder = { Text(stringResource(R.string.care_recipient_allergies_hint)) },
+        isError = uiState.allergiesError != null,
+        supportingText = uiState.allergiesError?.let { error ->
+            { Text(error.asString()) }
+        },
         minLines = 3,
         maxLines = 6,
         modifier = Modifier.fillMaxWidth()
@@ -324,6 +344,10 @@ private fun CareLevelAndMedicalFields(
         onValueChange = onMemoChange,
         label = { Text(stringResource(R.string.care_recipient_memo)) },
         placeholder = { Text(stringResource(R.string.care_recipient_memo_hint)) },
+        isError = uiState.memoError != null,
+        supportingText = uiState.memoError?.let { error ->
+            { Text(error.asString()) }
+        },
         minLines = 3,
         maxLines = 6,
         modifier = Modifier.fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.carenote.app.data.local
 
+import android.content.Context
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
@@ -16,12 +17,16 @@ class DatabaseRecoveryHelperTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
+    private lateinit var mockContext: Context
     private lateinit var helper: DatabaseRecoveryHelper
     private lateinit var dbFile: File
 
     @Before
     fun setUp() {
-        helper = spyk(DatabaseRecoveryHelper())
+        mockContext = io.mockk.mockk(relaxed = true)
+        val cacheDir = tempFolder.newFolder("cache")
+        every { mockContext.cacheDir } returns cacheDir
+        helper = spyk(DatabaseRecoveryHelper(mockContext))
         dbFile = File(tempFolder.root, "test.db")
     }
 
@@ -77,5 +82,32 @@ class DatabaseRecoveryHelperTest {
         assertFalse(walFile.exists())
         assertFalse(shmFile.exists())
         assertFalse(journalFile.exists())
+    }
+
+    @Test
+    fun `recoverIfNeeded creates backup before deleting database`() {
+        dbFile.writeText("fake-db-content")
+        every { helper.canOpenDatabase(dbFile, any()) } returns false
+
+        helper.recoverIfNeeded(dbFile, ByteArray(32))
+
+        val backupDir = File(mockContext.cacheDir, "db-backup")
+        assertTrue(backupDir.exists())
+        val backupFiles = backupDir.listFiles()
+        assertTrue(backupFiles != null && backupFiles.isNotEmpty())
+    }
+
+    @Test
+    fun `recoverIfNeeded still deletes database when backup fails`() {
+        dbFile.writeText("fake-db-content")
+        every { helper.canOpenDatabase(dbFile, any()) } returns false
+        // Make cacheDir return a non-existent read-only path to force backup failure
+        val readOnlyDir = File(tempFolder.root, "readonly-nonexistent/deep/path")
+        every { mockContext.cacheDir } returns readOnlyDir
+
+        helper.recoverIfNeeded(dbFile, ByteArray(32))
+
+        verify(exactly = 1) { helper.deleteDatabaseFiles(dbFile) }
+        assertFalse(dbFile.exists())
     }
 }

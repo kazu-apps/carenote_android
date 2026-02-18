@@ -112,4 +112,36 @@ class FormValidatorTest {
         val result = FormValidator.combineValidations()
         assertNull(result)
     }
+
+    // --- validatePhoneFormat ---
+
+    @Test
+    fun `validatePhoneFormat returns null for valid digits and hyphens`() {
+        val result = FormValidator.validatePhoneFormat("090-1234-5678")
+        assertNull(result)
+    }
+
+    @Test
+    fun `validatePhoneFormat returns null for empty string`() {
+        val result = FormValidator.validatePhoneFormat("")
+        assertNull(result)
+    }
+
+    @Test
+    fun `validatePhoneFormat returns error for letters`() {
+        val result = FormValidator.validatePhoneFormat("090-abc-5678")
+        assertNotNull(result)
+    }
+
+    @Test
+    fun `validatePhoneFormat returns error for special characters`() {
+        val result = FormValidator.validatePhoneFormat("090@1234#5678")
+        assertNotNull(result)
+    }
+
+    @Test
+    fun `validatePhoneFormat returns null for international format`() {
+        val result = FormValidator.validatePhoneFormat("+81-90-1234-5678")
+        assertNull(result)
+    }
 }

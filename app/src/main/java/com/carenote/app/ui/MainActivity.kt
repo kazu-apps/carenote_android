@@ -3,6 +3,7 @@ package com.carenote.app.ui
 import android.Manifest
 import android.content.Intent
 import android.os.Build
+import androidx.biometric.BiometricPrompt
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
@@ -49,6 +50,7 @@ import com.carenote.app.ui.theme.CareNoteTheme
 import com.carenote.app.config.AppConfig
 import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetector
+import timber.log.Timber
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -320,7 +322,25 @@ class MainActivity : AppCompatActivity() {
         biometricHelper.authenticate(
             activity = this,
             onSuccess = { isAuthenticated.value = true },
-            onError = { _ -> }
+            onError = { errorCode, _ ->
+                when (errorCode) {
+                    BiometricPrompt.ERROR_USER_CANCELED,
+                    BiometricPrompt.ERROR_NEGATIVE_BUTTON -> {
+                        finish()
+                    }
+                    BiometricPrompt.ERROR_NO_BIOMETRICS,
+                    BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> {
+                        isAuthenticated.value = true
+                    }
+                    BiometricPrompt.ERROR_LOCKOUT,
+                    BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> {
+                        Timber.w("Biometric lockout: code=$errorCode")
+                    }
+                    else -> {
+                        Timber.w("Biometric error: code=$errorCode")
+                    }
+                }
+            }
         )
     }
 }
