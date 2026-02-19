@@ -8,7 +8,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| パッケージ名 | `com.carenote.original.app` |
+| パッケージ名 | `com.carenote.app` |
 | バージョン名 | 1.0.0 |
 | バージョンコード | 1 |
 | compileSdk | 36 |

@@ -33,7 +33,7 @@ describe("playApiClient", () => {
     });
 
     const result = await verifySubscription(
-      "com.carenote.original.app",
+      "com.carenote.app",
       "carenote_premium_monthly",
       "test_token"
     );
@@ -55,7 +55,7 @@ describe("playApiClient", () => {
     });
 
     const result = await verifySubscription(
-      "com.carenote.original.app",
+      "com.carenote.app",
       "carenote_premium_monthly",
       "test_token"
     );
@@ -76,7 +76,7 @@ describe("playApiClient", () => {
     });
 
     const result = await verifySubscription(
-      "com.carenote.original.app",
+      "com.carenote.app",
       "carenote_premium_monthly",
       "test_token"
     );
@@ -90,7 +90,7 @@ describe("playApiClient", () => {
 
     await expect(
       verifySubscription(
-        "com.carenote.original.app",
+        "com.carenote.app",
         "carenote_premium_monthly",
         "test_token"
       )
@@ -102,7 +102,7 @@ describe("playApiClient", () => {
 
     await expect(
       verifySubscription(
-        "com.carenote.original.app",
+        "com.carenote.app",
         "carenote_premium_monthly",
         "test_token"
       )

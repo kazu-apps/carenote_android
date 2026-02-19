@@ -41,7 +41,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.carenote.original.app"
+        applicationId = "com.carenote.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

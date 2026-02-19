@@ -137,7 +137,7 @@ describe("verifyPurchase", () => {
       autoRenewing: true,
     });
     expect(mockVerifySubscription).toHaveBeenCalledWith(
-      "com.carenote.original.app",
+      "com.carenote.app",
       "carenote_premium_monthly",
       "new-token"
     );

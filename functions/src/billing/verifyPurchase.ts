@@ -8,7 +8,7 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const PACKAGE_NAME = "com.carenote.original.app";
+const PACKAGE_NAME = "com.carenote.app";
 
 interface VerifyPurchaseRequest {
   purchaseToken: string;

@@ -1,24 +1,24 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: 進行中
 
-## 現在のタスク: Phase 5 完了、全 PENDING フェーズ消化済み
+## 現在のタスク: Disc 20260219 完了、ロードマップ策定
 
 ## 次のアクション
 
-1. Firebase App Check 手動設定:
-   - Firebase Console → App Check → Play Integrity プロバイダー登録
-   - Google Cloud Console → Play Integrity API 有効化
-   - enforcement を段階的に有効化
-2. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
-3. リリース APK の実機テスト実施（手動: 物理デバイス SDK 26-36）
-4. 問い合わせメールアドレス確定（ビジネス判断: 現在プレースホルダー `support@carenote.app`）
+1. `/exec` で Phase 0 から順次実行
+2. Phase 0 完了 — applicationId は com.carenote.app に確定
+3. Phase 1 (Billing UI) は無料版先行リリースなら SKIP 可能
+4. Firebase App Check 手動設定（Firebase Console + Google Cloud Console）
+5. リリース APK の実機テスト実施（手動: 物理デバイス SDK 26-36）
+6. 問い合わせメールアドレス確定（ビジネス判断: 現在プレースホルダー `support@carenote.app`）
 
 ## 既知の問題
 
 ### 未解決（要対応）
 
 - **[CRITICAL] Firestore sync 基盤欠損** — `careRecipientMembers` への書き込みコードが存在せず、SyncWorker 全体が非機能。初期セットアップフロー実装が必要（スコープ外/将来に記載）
+- **[HIGH] Billing UI 未実装** — BillingScreen/BillingViewModel なし。isPremium = false ハードコード (UserMapper.kt:21)
 - 問い合わせメールがプレースホルダー (`support@carenote.app`) — リリース前に実アドレス確定必要
 - リリース APK の実機テスト未実施
 
@@ -40,6 +40,61 @@
 | LOW | Dir | テスト Fake 重複（test/ vs androidTest/）は DI アノテーション差異のため統合見送り |
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告（機能影響なし） |
 | INFO | Sec Ph3 | Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
+| MEDIUM | Disc 20260219b | HomeScreen.kt 706行、CareNoteNavHost.kt 686行。LargeClass 閾値 800行に近接 |
+| LOW | Disc 20260219b | オンボーディングがシングル画面。機能紹介・権限説明なし |
+| LOW | Disc 20260219b | Widget タップが常にアプリトップ起動（個別ディープリンクなし） |
+| LOW | Disc 20260219b | android:allowBackup="true"。SharedPreferences がバックアップ対象（DB は除外済み） |
+
+## ロードマップ
+
+戦略: 無料版 MVP 先行リリース → Billing 追加 → Sync 基盤
+
+### Phase 0: applicationId 修正 + リリース準備 - DONE
+
+applicationId の仮文字列 `original` を削除し、正式な ID に変更。1行変更だが公開後は変更不可のため最優先。
+- 対象ファイル:
+  - `app/build.gradle.kts` (applicationId 修正)
+- 依存: なし
+- 信頼度: HIGH
+- 備考: 正式 applicationId はユーザーが決定（ビジネス判断）
+
+### Phase 1: Billing UI 実装 (BillingScreen + BillingViewModel) - PENDING
+
+プレミアム購入 UI を実装。BillingRepositoryImpl は実装済みのため、UI + ViewModel + isPremium 反映が主な作業。
+- 対象ファイル:
+  - `ui/screens/billing/BillingScreen.kt` (新規)
+  - `ui/screens/billing/BillingViewModel.kt` (新規)
+  - `ui/navigation/Screen.kt` (Billing ルート追加)
+  - `ui/navigation/CareNoteNavHost.kt` (Billing ナビゲーション追加)
+  - `data/mapper/UserMapper.kt` (isPremium ハードコード修正)
+  - `ui/screens/settings/SettingsScreen.kt` (プレミアム購入への導線)
+  - テストファイル (BillingViewModelTest.kt 新規)
+- 依存: Phase 0
+- 信頼度: MEDIUM
+- 備考: 無料版先行リリースなら SKIP 可能。収益化を急ぐ場合のみ必要
+
+### Phase 2: 大きなファイル分割 (HomeScreen + CareNoteNavHost) - PENDING
+
+Detekt LargeClass 閾値 (800行) に近接しているファイルを分割。機能追加による閾値超過を予防。
+- 対象ファイル:
+  - `ui/screens/home/HomeScreen.kt` (706行 → 分割)
+  - `ui/navigation/CareNoteNavHost.kt` (686行 → ルートビルダー抽出)
+- 依存: なし
+- 信頼度: HIGH
+- 備考: リリースブロッカーではないが、今後の機能追加前に実施推奨
+
+### Phase 3: Firestore 初期セットアップフロー - PENDING
+
+ユーザー登録/ログイン時に Firestore の `careRecipients` + `careRecipientMembers` を作成。sync 基盤を機能させる前提条件。
+- 対象ファイル:
+  - `data/repository/FirestoreSyncRepositoryImpl.kt` (セットアップロジック追加)
+  - `data/worker/SyncWorker.kt` (getCareRecipientId 改善)
+  - `ui/screens/auth/AuthViewModel.kt` (登録時 Firestore 書き込み)
+  - `domain/repository/SyncRepository.kt` (セットアップ関数追加)
+  - テストファイル (セットアップフローテスト)
+- 依存: なし（Phase 0-2 と独立だが、Phase 0 後が推奨）
+- 信頼度: LOW（スコープの不確実性が高い。詳細設計が必要）
+- 備考: ローカルオンリー MVP では SKIP 可能。v2.0 への延期も選択肢
 
 ## 完了タスク
 
@@ -67,6 +122,7 @@
 | Dir Phase 4 | Firebase App Check (Play Integrity) 導入。debug スキップ、release のみ | DONE |
 | Dir Phase 5 | Offline First 強化: 同期 Snackbar UI、lastSyncTime バグ修正、接続復帰即時同期 | DONE |
 | firebase-tools | functions/ の firebase-tools 13.x→15.6.0 更新（devDependency のみ） | DONE |
+| Phase 0 | applicationId 修正 (com.carenote.original.app → com.carenote.app)。7ファイル変更 | DONE |
 
 ## アーキテクチャ参照
 
