@@ -2,7 +2,7 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 1B 品質チェック完了 + ユニットテスト全 PASS (2008/2008)
+## 現在のタスク: Phase 1B 品質チェック完了
 
 ## 次のアクション
 
@@ -28,13 +28,13 @@
 | LOW | Detekt | Roborazzi スクリーンショット Windows/Linux フォントレンダリング差分（CI soft-fail 対応済み） |
 | LOW | Detekt | SwipeToDismissItem deprecated API 警告（将来的な対応推奨） |
 | LOW | CI | E2E テストがエミュレータ不安定で soft-fail（Linux KVM なし）。実機テストで代替 |
-| INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
 | LOW | Sec Ph3 | H-4: e.message コード衛生（DomainError 設計で UI 露出ゼロ、対応不要） |
 | LOW | Disc Robo/1B | Roborazzi golden image は Linux 基準。Windows ローカルでの verify は常に差分が出る（soft-fail 維持） |
 | LOW | Sec Ph3 | H-5: ExceptionMasker 拡張（既に Firebase 対応済み、YAGNI） |
-| INFO | Sec Ph3 | M-1: Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
 | LOW | Disc OSV | biometric = "1.4.0-alpha05" alpha 版使用中。安定版リリース確認を別タスクとして検討 |
 | LOW | Disc OSV | AGP テスト基盤 netty/protobuf は AGP メジャーアップデートで解消見込み。osv-scanner.toml クリーンアップを将来実施 |
+| INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
+| INFO | Sec Ph3 | M-1: Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
 
 ## PENDING 項目
 
@@ -77,8 +77,8 @@
 | カテゴリ | 値 |
 |----------|-----|
 | Room DB | v25, SQLCipher 4.6.1, 13 Entity (TaskEntity 削除済み) |
-| Firebase | BOM 34.9.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
-| Billing | Google Play Billing 7.1.1, BillingAvailability + NoOpBillingRepository パターン |
+| Firebase | BOM 34.9.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics, Functions) + No-Op フォールバック |
+| Billing | Google Play Billing 7.1.1, BillingAvailability + NoOpBillingRepository + PurchaseVerifier パターン |
 | DI 分割 | AppModule + RepositoryModule + ExporterModule + DatabaseModule + FirebaseModule + SyncModule + WorkerModule + BillingModule |
 | セキュリティ | SQLCipher + EncryptedPrefs + Root検出 + 生体認証 + PBKDF2 + Session timeout + domain/validator/ + OSV-Scanner |
 | テスト基盤 | MainCoroutineRule + TestBuilders (11モデル) + ResultMatchers (13種) + TestDataFixtures |
