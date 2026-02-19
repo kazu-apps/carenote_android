@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Event
@@ -21,6 +22,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.carenote.app.domain.model.CalendarEventType
 import androidx.compose.material3.Icon
@@ -34,6 +37,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -45,6 +51,7 @@ import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Note
 import com.carenote.app.ui.components.LoadingIndicator
@@ -92,6 +99,9 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             HomeTopBar(
+                activeRecipient = uiState.activeRecipient,
+                allRecipients = uiState.allRecipients,
+                onRecipientSelected = { viewModel.switchRecipient(it) },
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToSettings = onNavigateToSettings
             )
@@ -167,14 +177,18 @@ private fun buildHomeNavigation(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeTopBar(
+    activeRecipient: CareRecipient?,
+    allRecipients: List<CareRecipient>,
+    onRecipientSelected: (Long) -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     TopAppBar(
         title = {
-            Text(
-                text = stringResource(R.string.home_title),
-                style = MaterialTheme.typography.titleLarge
+            RecipientTitle(
+                activeRecipient = activeRecipient,
+                allRecipients = allRecipients,
+                onRecipientSelected = onRecipientSelected
             )
         },
         actions = {
@@ -195,6 +209,48 @@ private fun HomeTopBar(
             containerColor = MaterialTheme.colorScheme.background
         )
     )
+}
+
+@Composable
+private fun RecipientTitle(
+    activeRecipient: CareRecipient?,
+    allRecipients: List<CareRecipient>,
+    onRecipientSelected: (Long) -> Unit
+) {
+    val displayName = activeRecipient?.name ?: stringResource(R.string.home_title)
+
+    if (allRecipients.size <= 1) {
+        Text(
+            text = displayName,
+            style = MaterialTheme.typography.titleLarge
+        )
+    } else {
+        var expanded by remember { mutableStateOf(false) }
+        TextButton(onClick = { expanded = true }) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.titleLarge
+            )
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = stringResource(R.string.care_recipient_switch)
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            allRecipients.forEach { recipient ->
+                DropdownMenuItem(
+                    text = { Text(text = recipient.name) },
+                    onClick = {
+                        onRecipientSelected(recipient.id)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 internal data class HomeNavigationCallbacks(

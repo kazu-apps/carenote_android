@@ -13,6 +13,12 @@ interface CareRecipientDao {
     @Query("SELECT * FROM care_recipients LIMIT 1")
     fun getCareRecipient(): Flow<CareRecipientEntity?>
 
+    @Query("SELECT * FROM care_recipients ORDER BY id ASC")
+    fun getAllCareRecipients(): Flow<List<CareRecipientEntity>>
+
+    @Query("SELECT * FROM care_recipients WHERE id = :id")
+    suspend fun getCareRecipientById(id: Long): CareRecipientEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(entity: CareRecipientEntity): Long
 

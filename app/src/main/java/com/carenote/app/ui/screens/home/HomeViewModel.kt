@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
 import com.carenote.app.domain.model.Note
+import com.carenote.app.domain.repository.ActiveCareRecipientProvider
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
+import com.carenote.app.domain.repository.CareRecipientRepository
 import com.carenote.app.domain.repository.HealthRecordRepository
 import com.carenote.app.domain.repository.MedicationLogRepository
 import com.carenote.app.domain.repository.MedicationRepository
@@ -17,6 +20,7 @@ import com.carenote.app.domain.repository.NoteRepository
 import com.carenote.app.domain.util.Clock
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +30,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -35,6 +40,8 @@ data class HomeUiState(
     val latestHealthRecord: HealthRecord? = null,
     val recentNotes: List<Note> = emptyList(),
     val todayEvents: List<CalendarEvent> = emptyList(),
+    val activeRecipient: CareRecipient? = null,
+    val allRecipients: List<CareRecipient> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -60,6 +67,8 @@ class HomeViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val calendarEventRepository: CalendarEventRepository,
     private val analyticsRepository: AnalyticsRepository,
+    private val careRecipientRepository: CareRecipientRepository,
+    private val activeRecipientProvider: ActiveCareRecipientProvider,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -67,11 +76,19 @@ class HomeViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val recipientFlow: Flow<Pair<CareRecipient?, List<CareRecipient>>> = combine(
+        activeRecipientProvider.activeCareRecipientId,
+        careRecipientRepository.getAllCareRecipients()
+    ) { activeId, recipients ->
+        val active = recipients.find { it.id == activeId }
+        active to recipients
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<HomeUiState> = _refreshTrigger
         .flatMapLatest {
             val today = clock.today()
-            combine(
+            val dataFlow = combine(
                 medicationRepository.getAllMedications(),
                 medicationLogRepository.getLogsForDate(today),
                 calendarEventRepository.getIncompleteTaskEvents(),
@@ -80,13 +97,18 @@ class HomeViewModel @Inject constructor(
             ) { medications, todayLogs, incompleteTasks, allRecords, allNotes ->
                 FiveCombined(medications, todayLogs, incompleteTasks, allRecords, allNotes)
             }.combine(calendarEventRepository.getEventsByDate(today)) { five, todayEvents ->
+                five to todayEvents
+            }
+            dataFlow.combine(recipientFlow) { (five, todayEvents), (active, all) ->
                 buildHomeUiState(
                     medications = five.medications,
                     todayLogs = five.todayLogs,
                     incompleteTasks = five.incompleteTasks,
                     allRecords = five.allRecords,
                     allNotes = five.allNotes,
-                    todayEvents = todayEvents
+                    todayEvents = todayEvents,
+                    activeRecipient = active,
+                    allRecipients = all
                 )
             }
         }
@@ -123,13 +145,22 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    fun switchRecipient(id: Long) {
+        viewModelScope.launch {
+            activeRecipientProvider.setActiveCareRecipientId(id)
+        }
+    }
+
+    @Suppress("LongParameterList")
     private fun buildHomeUiState(
         medications: List<Medication>,
         todayLogs: List<MedicationLog>,
         incompleteTasks: List<CalendarEvent>,
         allRecords: List<HealthRecord>,
         allNotes: List<Note>,
-        todayEvents: List<CalendarEvent>
+        todayEvents: List<CalendarEvent>,
+        activeRecipient: CareRecipient? = null,
+        allRecipients: List<CareRecipient> = emptyList()
     ): HomeUiState {
         val medicationsWithLogs = medications
             .take(AppConfig.Home.MAX_SECTION_ITEMS)
@@ -162,6 +193,8 @@ class HomeViewModel @Inject constructor(
             latestHealthRecord = latestRecord,
             recentNotes = recentNotes,
             todayEvents = sortedEvents,
+            activeRecipient = activeRecipient,
+            allRecipients = allRecipients,
             isLoading = false
         )
     }

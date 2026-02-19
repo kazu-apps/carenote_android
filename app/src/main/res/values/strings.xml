@@ -681,6 +681,7 @@
     <string name="home_empty_health_record">健康記録はありません</string>
     <string name="home_empty_notes">メモはありません</string>
     <string name="home_empty_calendar">予定はありません</string>
+    <string name="care_recipient_switch">ケア対象者を切り替え</string>
 
     <!-- CareRecipient Extension -->
     <string name="care_recipient_nickname">ニックネーム</string>

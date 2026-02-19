@@ -681,6 +681,7 @@
     <string name="home_empty_health_record">No health records</string>
     <string name="home_empty_notes">No notes</string>
     <string name="home_empty_calendar">No upcoming events</string>
+    <string name="care_recipient_switch">Switch care recipient</string>
 
     <!-- CareRecipient Extension -->
     <string name="care_recipient_nickname">Nickname</string>

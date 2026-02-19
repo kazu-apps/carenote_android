@@ -35,6 +35,7 @@ import com.carenote.app.data.repository.MemberRepositoryImpl
 import com.carenote.app.data.repository.NoteCommentRepositoryImpl
 import com.carenote.app.data.repository.NoteRepositoryImpl
 import com.carenote.app.data.repository.PhotoRepositoryImpl
+import com.carenote.app.data.local.ActiveCareRecipientPreferences
 import com.carenote.app.data.repository.ActiveCareRecipientProviderImpl
 import com.carenote.app.data.repository.SearchRepositoryImpl
 import com.carenote.app.data.repository.TimelineRepositoryImpl
@@ -67,9 +68,10 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideActiveCareRecipientProvider(
-        careRecipientRepository: CareRecipientRepository
+        careRecipientRepository: CareRecipientRepository,
+        preferences: ActiveCareRecipientPreferences
     ): ActiveCareRecipientProvider {
-        return ActiveCareRecipientProviderImpl(careRecipientRepository)
+        return ActiveCareRecipientProviderImpl(careRecipientRepository, preferences)
     }
 
     @Provides

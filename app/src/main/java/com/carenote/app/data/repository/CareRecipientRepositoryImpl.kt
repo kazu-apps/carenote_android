@@ -23,6 +23,16 @@ class CareRecipientRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getAllCareRecipients(): Flow<List<CareRecipient>> {
+        return careRecipientDao.getAllCareRecipients().map { entities ->
+            entities.map { mapper.toDomain(it) }
+        }
+    }
+
+    override suspend fun getCareRecipientById(id: Long): CareRecipient? {
+        return careRecipientDao.getCareRecipientById(id)?.let { mapper.toDomain(it) }
+    }
+
     override suspend fun saveCareRecipient(careRecipient: CareRecipient): Result<Unit, DomainError> {
         return Result.catchingSuspend(
             errorTransform = { DomainError.DatabaseError("Failed to save care recipient", it) }

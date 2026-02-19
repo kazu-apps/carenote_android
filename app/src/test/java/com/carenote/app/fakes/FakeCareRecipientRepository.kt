@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FakeCareRecipientRepository : CareRecipientRepository {
 
     private val careRecipient = MutableStateFlow<CareRecipient?>(null)
+    private val careRecipients = MutableStateFlow<List<CareRecipient>>(emptyList())
     var shouldFail = false
     var updateFirestoreIdCalled = false
 
@@ -17,13 +18,24 @@ class FakeCareRecipientRepository : CareRecipientRepository {
         careRecipient.value = value
     }
 
+    fun setCareRecipients(list: List<CareRecipient>) {
+        careRecipients.value = list
+    }
+
     fun clear() {
         careRecipient.value = null
+        careRecipients.value = emptyList()
         shouldFail = false
         updateFirestoreIdCalled = false
     }
 
     override fun getCareRecipient(): Flow<CareRecipient?> = careRecipient
+
+    override fun getAllCareRecipients(): Flow<List<CareRecipient>> = careRecipients
+
+    override suspend fun getCareRecipientById(id: Long): CareRecipient? {
+        return careRecipients.value.find { it.id == id }
+    }
 
     override suspend fun saveCareRecipient(careRecipient: CareRecipient): Result<Unit, DomainError> {
         if (shouldFail) {

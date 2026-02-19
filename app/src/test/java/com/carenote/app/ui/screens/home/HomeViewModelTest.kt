@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.CalendarEvent
 import com.carenote.app.domain.model.CalendarEventType
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.HealthRecord
 import com.carenote.app.domain.model.Medication
 import com.carenote.app.domain.model.MedicationLog
@@ -12,8 +13,10 @@ import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.MedicationRepository
+import com.carenote.app.fakes.FakeActiveCareRecipientProvider
 import com.carenote.app.fakes.FakeAnalyticsRepository
 import com.carenote.app.fakes.FakeCalendarEventRepository
+import com.carenote.app.fakes.FakeCareRecipientRepository
 import com.carenote.app.fakes.FakeClock
 import com.carenote.app.fakes.FakeHealthRecordRepository
 import com.carenote.app.fakes.FakeMedicationLogRepository
@@ -53,6 +56,8 @@ class HomeViewModelTest {
     private lateinit var noteRepository: FakeNoteRepository
     private lateinit var calendarEventRepository: FakeCalendarEventRepository
     private lateinit var analyticsRepository: FakeAnalyticsRepository
+    private lateinit var careRecipientRepository: FakeCareRecipientRepository
+    private lateinit var activeRecipientProvider: FakeActiveCareRecipientProvider
 
     @Before
     fun setUp() {
@@ -62,6 +67,8 @@ class HomeViewModelTest {
         noteRepository = FakeNoteRepository()
         calendarEventRepository = FakeCalendarEventRepository()
         analyticsRepository = FakeAnalyticsRepository()
+        careRecipientRepository = FakeCareRecipientRepository()
+        activeRecipientProvider = FakeActiveCareRecipientProvider()
     }
 
     private fun createViewModel(): HomeViewModel {
@@ -72,7 +79,9 @@ class HomeViewModelTest {
             noteRepository = noteRepository,
             calendarEventRepository = calendarEventRepository,
             analyticsRepository = analyticsRepository,
-            clock = fakeClock
+            clock = fakeClock,
+            careRecipientRepository = careRecipientRepository,
+            activeRecipientProvider = activeRecipientProvider
         )
     }
 
@@ -453,7 +462,9 @@ class HomeViewModelTest {
             noteRepository = noteRepository,
             calendarEventRepository = calendarEventRepository,
             analyticsRepository = analyticsRepository,
-            clock = fakeClock
+            clock = fakeClock,
+            careRecipientRepository = careRecipientRepository,
+            activeRecipientProvider = activeRecipientProvider
         )
 
         viewModel.uiState.test {
@@ -492,7 +503,9 @@ class HomeViewModelTest {
             noteRepository = noteRepository,
             calendarEventRepository = failingCalendarRepo,
             analyticsRepository = analyticsRepository,
-            clock = fakeClock
+            clock = fakeClock,
+            careRecipientRepository = careRecipientRepository,
+            activeRecipientProvider = activeRecipientProvider
         )
 
         viewModel.uiState.test {
@@ -524,7 +537,9 @@ class HomeViewModelTest {
             noteRepository = noteRepository,
             calendarEventRepository = calendarEventRepository,
             analyticsRepository = analyticsRepository,
-            clock = fakeClock
+            clock = fakeClock,
+            careRecipientRepository = careRecipientRepository,
+            activeRecipientProvider = activeRecipientProvider
         )
 
         viewModel.uiState.test {
@@ -539,4 +554,52 @@ class HomeViewModelTest {
             assertFalse(errorState.isLoading)
         }
     }
+
+    // --- Recipient tests ---
+
+    @Test
+    fun `recipients are reflected in UI state`() =
+        runTest(mainCoroutineRule.testDispatcher) {
+            val recipients = listOf(
+                CareRecipient(id = 1L, name = "太郎"),
+                CareRecipient(id = 2L, name = "花子")
+            )
+            careRecipientRepository.setCareRecipients(recipients)
+            activeRecipientProvider.setActiveCareRecipientId(1L)
+
+            val viewModel = createViewModel()
+
+            viewModel.uiState.test {
+                advanceUntilIdle()
+                val state = expectMostRecentItem()
+                assertEquals(2, state.allRecipients.size)
+                assertEquals(1L, state.activeRecipient?.id)
+                assertEquals("太郎", state.activeRecipient?.name)
+            }
+        }
+
+    @Test
+    fun `switchRecipient updates active recipient`() =
+        runTest(mainCoroutineRule.testDispatcher) {
+            val recipients = listOf(
+                CareRecipient(id = 1L, name = "太郎"),
+                CareRecipient(id = 2L, name = "花子")
+            )
+            careRecipientRepository.setCareRecipients(recipients)
+            activeRecipientProvider.setActiveCareRecipientId(1L)
+
+            val viewModel = createViewModel()
+
+            viewModel.uiState.test {
+                advanceUntilIdle()
+                expectMostRecentItem()
+
+                viewModel.switchRecipient(2L)
+                advanceUntilIdle()
+
+                val state = expectMostRecentItem()
+                assertEquals(2L, state.activeRecipient?.id)
+                assertEquals("花子", state.activeRecipient?.name)
+            }
+        }
 }

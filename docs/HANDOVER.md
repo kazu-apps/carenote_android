@@ -2,7 +2,7 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 2 完了（AppConfig.kt 分割）
+## 現在のタスク: Phase 3 完了（複数ケア対象者 UI 補完）
 
 ## 次のアクション
 
@@ -49,18 +49,6 @@
 
 ## PENDING 項目
 
-### Phase 3: 複数ケア対象者 UI 補完 - PENDING
-
-DB/DAO/Repository 層は完成済み（全 Entity に careRecipientId あり、全 DAO にフィルタクエリ実装済み、ActiveCareRecipientProvider 実装済み）。残存作業は CareRecipientDao の LIMIT 1 解除、選択状態の DataStore 永続化、切替 UI 実装。ローカルのみ（Firestore sync 再設計は v2.0）。
-- 対象ファイル:
-  - `app/src/main/java/com/carenote/app/data/local/dao/CareRecipientDao.kt` (LIMIT 1 解除)
-  - `app/src/main/java/com/carenote/app/data/repository/ActiveCareRecipientProviderImpl.kt` (DataStore 永続化)
-  - `app/src/main/java/com/carenote/app/ui/screens/home/HomeScreen.kt` (対象者切替 UI)
-  - 各 ViewModel (対象者切替の State 反映)
-- 依存: Phase 1（Firestore Rules 修正が先）
-- 信頼度: MEDIUM（Firestore sync は後続。ローカルのみの範囲では HIGH）
-- 工数: 7-9日
-
 ### Phase 4: Firebase App Check 導入 - PENDING
 
 Play Integrity ベースの App Check を導入し、Cloud Functions エンドポイントと Firestore のコスト保護を強化する。リリース後 2週間以内（P1）。Play Console 設定は手動作業。
@@ -80,7 +68,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
   - `app/src/main/java/com/carenote/app/data/repository/` (SyncQueueRepository 新規)
   - `app/src/main/java/com/carenote/app/ui/components/` (同期状態 Snackbar)
   - `app/src/main/java/com/carenote/app/data/worker/SyncWorker.kt` (再試行ロジック拡張)
-- 依存: Phase 3
+- 依存: Phase 3（完了済み）
 - 信頼度: MEDIUM
 - 工数: 3-4日
 
@@ -117,6 +105,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Phase OSV | Firebase BOM 34.8.0→34.9.0 + osv-scanner.toml テスト基盤 CVE 除外（23件→0件） | DONE |
 | Phase Robo | Roborazzi golden image を CI (Linux) 基準に更新。16ファイル更新（既存6修正 + 新規10追加） | DONE |
 | Phase 2 | AppConfig.kt を 7 ファイルに分割（delegation facade パターン）。既存 import 変更ゼロ | DONE |
+| Phase 3 | 複数ケア対象者 UI 補完: DAO全件取得、SharedPreferences永続化、HomeScreen切替UI | DONE |
 
 ## アーキテクチャ参照
 

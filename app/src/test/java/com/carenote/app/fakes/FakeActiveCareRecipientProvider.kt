@@ -15,7 +15,7 @@ class FakeActiveCareRecipientProvider : ActiveCareRecipientProvider {
 
     override suspend fun getActiveFirestoreId(): String? = firestoreId
 
-    fun setActiveCareRecipientId(id: Long) {
+    override suspend fun setActiveCareRecipientId(id: Long) {
         _activeCareRecipientId.value = id
     }
 }
