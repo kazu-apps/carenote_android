@@ -73,7 +73,7 @@ Git 履歴を確認し、key.properties は一度もコミットされていな�
 - 信頼度: HIGH
 - 工数: 15分
 
-### Phase 2: osv-scanner.toml 統合 + _config.yml exclude + DEPLOY_INSTRUCTIONS 移動 - PENDING
+### Phase 2: osv-scanner.toml 統合 + _config.yml exclude + DEPLOY_INSTRUCTIONS 移動 - DONE
 
 ルートの osv-scanner.toml を削除（app/ 側と完全同一のため）。docs/_config.yml に exclude リスト追加で開発ドキュメントの GitHub Pages 公開を防止。DEPLOY_INSTRUCTIONS.md を docs/ に移動。
 - 対象ファイル:
@@ -155,6 +155,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Phase 3 | 複数ケア対象者 UI 補完: DAO全件取得、SharedPreferences永続化、HomeScreen切替UI | DONE |
 | Phase 0 (Dir) | key.properties Git 履歴確認。コミット履歴なし、filter-repo 不要 | DONE |
 | Phase 1 (Dir) | .gitignore に detekt-cli/.kotlin/node_modules/ 追加。nul ファイル 2 箇所削除 | DONE |
+| Phase 2 (Dir) | osv-scanner.toml ルート削除、_config.yml exclude 追加、DEPLOY_INSTRUCTIONS.md → docs/ 移動 | DONE |
 
 ## アーキテクチャ参照
 

@@ -1,3 +1,19 @@
 theme: null
 title: CareNote
 description: ケアのて - 家族でつながる介護記録
+
+exclude:
+  # Internal development documentation
+  - HANDOVER.md
+  - INVESTIGATION.md
+  - RELEASE_CHECKLIST.md
+  - ARCHITECTURE.md
+  - DEPLOY_INSTRUCTIONS.md
+  - ADR-002-UNIFIED-MAPPER.md
+  # Security and setup documentation
+  - FIREBASE_SETUP.md
+  - FIRESTORE_SCHEMA.md
+  - DATA_RETENTION_POLICY.md
+  - SECURITY.md
+  # Store metadata (not for web)
+  - store/
