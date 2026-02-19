@@ -10,6 +10,10 @@
 2. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
 3. リリース APK の実機テスト実施（手動: 物理デバイス SDK 26-36）
 4. 問い合わせメールアドレス確定（ビジネス判断: 現在プレースホルダー `support@carenote.app`）
+5. Firebase App Check 手動設定:
+   - Firebase Console → App Check → Play Integrity プロバイダー登録
+   - Google Cloud Console → Play Integrity API 有効化
+   - enforcement を段階的に有効化
 
 ### テスト結果 (Phase 1)
 
@@ -96,17 +100,17 @@ Gradle Play Publisher v4.0.0 への移行完了済み。fastlane/Appfile, fastla
 - 信頼度: HIGH
 - 工数: 15分
 
-### Phase 4: Firebase App Check 導入 - PENDING
+### Phase 4: Firebase App Check 導入 - DONE
 
-Play Integrity ベースの App Check を導入し、Cloud Functions エンドポイントと Firestore のコスト保護を強化する。リリース後 2週間以内（P1）。Play Console 設定は手動作業。
+Play Integrity ベースの App Check を導入。debug ビルドではスキップ、release のみ有効。CareNoteApplication.onCreate() で初期化。ProGuard ルール追加。
 - 対象ファイル:
-  - `app/build.gradle.kts` (firebase-appcheck 依存追加)
-  - `gradle/libs.versions.toml` (バージョン追加)
-  - `app/src/main/java/com/carenote/app/di/FirebaseModule.kt` (App Check 初期化)
-  - `app/proguard-rules.pro` (keep ルール追加)
+  - `gradle/libs.versions.toml` (firebase-appcheck-playintegrity 追加)
+  - `app/build.gradle.kts` (implementation 追加)
+  - `app/src/main/java/com/carenote/app/CareNoteApplication.kt` (initializeAppCheck() 追加)
+  - `app/proguard-rules.pro` (App Check keep ルール追加)
 - 依存: Phase 1
-- 信頼度: MEDIUM（Play Console 手動設定が必要）
-- 工数: 2-3日
+- 信頼度: HIGH
+- 手動ステップ: Firebase Console で Play Integrity プロバイダー登録 + enforcement 有効化
 
 ### Phase 5: Offline First 強化 - PENDING
 
@@ -157,6 +161,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Phase 1 (Dir) | .gitignore に detekt-cli/.kotlin/node_modules/ 追加。nul ファイル 2 箇所削除 | DONE |
 | Phase 2 (Dir) | osv-scanner.toml ルート削除、_config.yml exclude 追加、DEPLOY_INSTRUCTIONS.md → docs/ 移動 | DONE |
 | Phase 3 (Dir) | fastlane/ + Gemfile 削除、.gitignore クリーンアップ。Gradle Play Publisher 移行済み | DONE |
+| Phase 4 (Dir) | Firebase App Check (Play Integrity) 導入。debug スキップ、release のみ有効。ProGuard 対応 | DONE |
 
 ## アーキテクチャ参照
 

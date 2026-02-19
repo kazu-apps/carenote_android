@@ -112,3 +112,9 @@
 
 # VerifiedPurchase data class — used for Cloud Functions response deserialization
 -keep class com.carenote.app.data.remote.VerifiedPurchase { *; }
+
+# ========== Firebase App Check ==========
+
+# Firebase App Check (Play Integrity provider) — token validation via reflection
+-keep class com.google.firebase.appcheck.** { *; }
+-keep class com.google.firebase.appcheck.interop.** { *; }

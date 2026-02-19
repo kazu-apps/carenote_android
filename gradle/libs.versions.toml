@@ -135,6 +135,7 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-functions = { group = "com.google.firebase", name = "firebase-functions" }
 google-billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "playServicesCoroutines" }
+firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }
 
 # Test
 junit = { group = "junit", name = "junit", version.ref = "junit" }

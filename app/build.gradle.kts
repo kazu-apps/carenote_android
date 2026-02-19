@@ -197,6 +197,7 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.functions)
+    implementation(libs.firebase.appcheck.playintegrity)
 
     // Google Play Billing
     implementation(libs.google.billing)
