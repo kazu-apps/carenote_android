@@ -11,6 +11,7 @@ import com.carenote.app.data.mapper.PurchaseMapper
 import com.carenote.app.domain.model.BillingConnectionState
 import com.carenote.app.domain.model.PremiumStatus
 import com.carenote.app.fakes.FakeClock
+import com.carenote.app.fakes.FakePurchaseVerifier
 import com.carenote.app.testing.assertNetworkError
 import io.mockk.every
 import io.mockk.mockk
@@ -30,6 +31,7 @@ class BillingRepositoryImplTest {
     private val purchaseDao = mockk<PurchaseDao>(relaxed = true)
     private val purchaseMapper = PurchaseMapper()
     private val clock = FakeClock()
+    private val purchaseVerifier = FakePurchaseVerifier()
     private val mockBillingClient = mockk<BillingClient>(relaxed = true)
     private val listenerSlot = slot<PurchasesUpdatedListener>()
     private val builderMock = mockk<BillingClient.Builder>(relaxed = true)
@@ -55,7 +57,7 @@ class BillingRepositoryImplTest {
         every { builderMock.enablePendingPurchases(any()) } returns builderMock
         every { builderMock.build() } returns mockBillingClient
 
-        repository = BillingRepositoryImpl(context, purchaseDao, purchaseMapper, clock)
+        repository = BillingRepositoryImpl(context, purchaseDao, purchaseMapper, clock, purchaseVerifier)
     }
 
     @After

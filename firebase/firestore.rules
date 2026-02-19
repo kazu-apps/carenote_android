@@ -61,5 +61,11 @@ service cloud.firestore {
         allow read, write: if hasAccess(recipientId);
       }
     }
+
+    // User purchases (server-side write only)
+    match /users/{uid}/purchases/{token} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow write: if false;
+    }
   }
 }

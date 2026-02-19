@@ -11,6 +11,7 @@ object ExceptionMasker {
         val code = when (e) {
             is com.google.firebase.firestore.FirebaseFirestoreException -> "code=${e.code}"
             is com.google.firebase.auth.FirebaseAuthException -> "code=${e.errorCode}"
+            is com.google.firebase.functions.FirebaseFunctionsException -> "code=${e.code}"
             else -> ""
         }
         return if (code.isNotEmpty()) "$typeName($code)" else typeName

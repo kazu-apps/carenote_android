@@ -701,6 +701,8 @@ object AppConfig {
         const val MAX_CONNECTION_RETRIES = 3
         const val GOOGLE_PLAY_SUBSCRIPTION_URL =
             "https://play.google.com/store/account/subscriptions"
+        const val CLOUD_FUNCTIONS_REGION = "asia-northeast1"
+        const val VERIFY_PURCHASE_FUNCTION_NAME = "verifyPurchase"
     }
 
     /**

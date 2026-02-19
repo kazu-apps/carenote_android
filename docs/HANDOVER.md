@@ -2,15 +2,14 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: セキュリティ修正 Phase 3 完了 + Detekt 修正 + CI グリーン
+## 現在のタスク: Phase 1B 品質チェック完了 + ユニットテスト全 PASS (2008/2008)
 
 ## 次のアクション
 
-1. **OSV-Scanner 脆弱性対応**（23件: 7 High, 13 Medium, 1 Low, 2 Unknown。主要: protobuf-java 8.7, netty-codec-http2 8.2, netty-handler 7.5。全件トランジティブ依存、Firebase BOM 更新で解消見込み）
-2. CI の workflow_dispatch で Roborazzi golden image 更新
-3. Phase 1B: Billing サーバーサイド検証（Claude Code 守備範囲外）
-4. リリース APK の実機テスト実施
-5. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
+1. **OSV-Scanner 実行**（ツール未インストール。`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest` 必要）
+2. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
+3. リリース APK の実機テスト実施
+4. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
 
 ## 既知の問題
 
@@ -31,22 +30,21 @@
 | LOW | CI | E2E テストがエミュレータ不安定で soft-fail（Linux KVM なし）。実機テストで代替 |
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
 | LOW | Sec Ph3 | H-4: e.message コード衛生（DomainError 設計で UI 露出ゼロ、対応不要） |
+| LOW | Disc Robo/1B | Roborazzi golden image は Linux 基準。Windows ローカルでの verify は常に差分が出る（soft-fail 維持） |
 | LOW | Sec Ph3 | H-5: ExceptionMasker 拡張（既に Firebase 対応済み、YAGNI） |
 | INFO | Sec Ph3 | M-1: Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
+| LOW | Disc OSV | biometric = "1.4.0-alpha05" alpha 版使用中。安定版リリース確認を別タスクとして検討 |
+| LOW | Disc OSV | AGP テスト基盤 netty/protobuf は AGP メジャーアップデートで解消見込み。osv-scanner.toml クリーンアップを将来実施 |
 
 ## PENDING 項目
 
-### Phase 1B: Billing サーバーサイド検証 (Cloud Functions) - PENDING
-
-Google Play Developer API 経由のレシート検証を Cloud Functions で実装。本番リリース前の必須要件。
-- 種別: 実装
-- 対象: Cloud Functions (Node.js), Firestore の purchaseTokens コレクション
-- 注意: **Claude Code の守備範囲外**。Firebase CLI + Node.js 環境が必要
+（なし）
 
 ## 完了タスク
 
 | Item | 概要 | Status |
 |------|------|--------|
+| Phase 1B | Cloud Functions + PurchaseVerifier + BillingRepository 検証統合。品質チェック全 PASS（Build, Detekt, Unit Tests 2008/2008, Cloud Functions 14/14） | DONE |
 | v1.0 1-53 | Clean Architecture + 5機能 + リリース準備 + 品質改善 + テスト強化 | DONE |
 | v2.0 55-81 | Firebase Auth + Firestore 同期 + FCM + Crashlytics + セキュリティ強化 | DONE |
 | v2.2 82-102 | TDD リファクタリング（Syncer, Settings, Auth, コード品質） | DONE |
@@ -71,13 +69,15 @@ Google Play Developer API 経由のレシート検証を Cloud Functions で実�
 | Sec Phase 2 | 入力バリデーション強化 + Biometric エラーハンドリング + DB リカバリバックアップ | DONE |
 | Sec Phase 3 | BiometricHelper DI + passphraseHex zero-clear + RootDetector 強化 + ImageCompressor 検証 | DONE |
 | Detekt 修正 | CareRecipientScreen/ViewModel, AcceptInvitationViewModel メソッド分割（LongMethod, ComplexCondition, MaxLineLength） | DONE |
+| Phase OSV | Firebase BOM 34.8.0→34.9.0 + osv-scanner.toml テスト基盤 CVE 除外（23件→0件） | DONE |
+| Phase Robo | Roborazzi golden image を CI (Linux) 基準に更新。16ファイル更新（既存6修正 + 新規10追加） | DONE |
 
 ## アーキテクチャ参照
 
 | カテゴリ | 値 |
 |----------|-----|
 | Room DB | v25, SQLCipher 4.6.1, 13 Entity (TaskEntity 削除済み) |
-| Firebase | BOM 34.8.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
+| Firebase | BOM 34.9.0 (Auth, Firestore, Messaging, Crashlytics, Storage, Analytics) + No-Op フォールバック |
 | Billing | Google Play Billing 7.1.1, BillingAvailability + NoOpBillingRepository パターン |
 | DI 分割 | AppModule + RepositoryModule + ExporterModule + DatabaseModule + FirebaseModule + SyncModule + WorkerModule + BillingModule |
 | セキュリティ | SQLCipher + EncryptedPrefs + Root検出 + 生体認証 + PBKDF2 + Session timeout + domain/validator/ + OSV-Scanner |

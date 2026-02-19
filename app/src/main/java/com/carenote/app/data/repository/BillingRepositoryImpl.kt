@@ -20,6 +20,7 @@ import android.app.Activity
 import com.carenote.app.config.AppConfig
 import com.carenote.app.data.local.dao.PurchaseDao
 import com.carenote.app.data.mapper.PurchaseMapper
+import com.carenote.app.data.remote.PurchaseVerifier
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.BillingConnectionState
@@ -41,7 +42,8 @@ class BillingRepositoryImpl(
     context: Context,
     private val purchaseDao: PurchaseDao,
     private val purchaseMapper: PurchaseMapper,
-    private val clock: Clock
+    private val clock: Clock,
+    private val purchaseVerifier: PurchaseVerifier
 ) : BillingRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -280,6 +282,21 @@ class BillingRepositoryImpl(
     private suspend fun processPurchase(purchase: Purchase) {
         val entity = purchaseMapper.toEntity(purchase, clock)
         purchaseDao.upsert(entity)
+
+        // Server-side purchase verification
+        val verifyResult = purchaseVerifier.verify(
+            purchaseToken = purchase.purchaseToken,
+            productId = purchase.products.firstOrNull() ?: ""
+        )
+        when (verifyResult) {
+            is Result.Failure -> {
+                Timber.w("Server-side purchase verification failed, skipping acknowledge")
+                return
+            }
+            is Result.Success -> {
+                Timber.d("Purchase verified successfully on server")
+            }
+        }
 
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
             !purchase.isAcknowledged

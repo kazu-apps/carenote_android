@@ -181,14 +181,13 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
     fun loadProducts() {
         viewModelScope.launch {
             _billingLoading.value = true
-            billingRepository.queryProducts()
-                .onSuccess { products ->
-                    _billingProducts.value = products
-                }
-                .onFailure { error ->
-                    Timber.w("Failed to load products: $error")
+            when (val result = billingRepository.queryProducts()) {
+                is Result.Success -> _billingProducts.value = result.value
+                is Result.Failure -> {
+                    Timber.w("Failed to load products: ${result.error}")
                     snackbarController.showMessage(R.string.billing_error_load_products)
                 }
+            }
             _billingLoading.value = false
         }
     }
@@ -199,22 +198,24 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
             mapOf(AppConfig.Analytics.PARAM_PRODUCT_ID to productId)
         )
         viewModelScope.launch {
-            billingRepository.launchBillingFlow(activity, productId)
-                .onFailure { error ->
-                    Timber.w("Failed to launch purchase: $error")
+            when (val result = billingRepository.launchBillingFlow(activity, productId)) {
+                is Result.Success -> Unit
+                is Result.Failure -> {
+                    Timber.w("Failed to launch purchase: ${result.error}")
                     snackbarController.showMessage(R.string.billing_error_purchase)
                 }
+            }
         }
     }
 
     fun restorePurchases() {
         viewModelScope.launch {
-            billingRepository.restorePurchases()
-                .onSuccess { status ->
+            when (val result = billingRepository.restorePurchases()) {
+                is Result.Success -> {
                     analyticsRepository.logEvent(
                         AppConfig.Analytics.EVENT_PURCHASE_RESTORED
                     )
-                    if (status.isActive) {
+                    if (result.value.isActive) {
                         snackbarController.showMessage(
                             R.string.billing_restore_success
                         )
@@ -224,10 +225,11 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
                         )
                     }
                 }
-                .onFailure { error ->
-                    Timber.w("Failed to restore purchases: $error")
+                is Result.Failure -> {
+                    Timber.w("Failed to restore purchases: ${result.error}")
                     snackbarController.showMessage(R.string.billing_error_restore)
                 }
+            }
         }
     }
 
@@ -249,16 +251,17 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
         action: suspend () -> Result<Unit, DomainError>
     ) {
         viewModelScope.launch {
-            action()
-                .onSuccess {
+            when (val result = action()) {
+                is Result.Success -> {
                     Timber.d(logTag)
                     onSuccess?.invoke()
                     snackbarController.showMessage(successMessageResId)
                 }
-                .onFailure { error ->
-                    Timber.w("Failed: $logTag: $error")
+                is Result.Failure -> {
+                    Timber.w("Failed: $logTag: ${result.error}")
                     snackbarController.showMessage(failureMessageResId)
                 }
+            }
         }
     }
 
@@ -469,74 +472,80 @@ class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
-            authRepository.signOut()
-                .onSuccess {
+            when (val result = authRepository.signOut()) {
+                is Result.Success -> {
                     Timber.d("User signed out")
                     analyticsRepository.logEvent(AppConfig.Analytics.EVENT_SIGN_OUT)
                     snackbarController.showMessage(R.string.settings_signed_out)
                 }
-                .onFailure { error ->
-                    Timber.w("Sign out failed: $error")
+                is Result.Failure -> {
+                    Timber.w("Sign out failed: ${result.error}")
                     snackbarController.showMessage(R.string.settings_sign_out_failed)
                 }
+            }
         }
     }
 
     fun changePassword(currentPassword: String, newPassword: String) {
         viewModelScope.launch {
-            authRepository.reauthenticate(currentPassword)
-                .onSuccess {
-                    authRepository.updatePassword(newPassword)
-                        .onSuccess {
+            when (val authResult = authRepository.reauthenticate(currentPassword)) {
+                is Result.Success -> {
+                    when (val updateResult = authRepository.updatePassword(newPassword)) {
+                        is Result.Success -> {
                             Timber.d("Password changed")
                             analyticsRepository.logEvent(AppConfig.Analytics.EVENT_PASSWORD_CHANGED)
                             snackbarController.showMessage(R.string.settings_password_changed)
                         }
-                        .onFailure { error ->
-                            Timber.w("Password update failed: $error")
+                        is Result.Failure -> {
+                            Timber.w("Password update failed: ${updateResult.error}")
                             snackbarController.showMessage(R.string.settings_password_change_failed)
                         }
+                    }
                 }
-                .onFailure { error ->
-                    Timber.w("Reauthentication failed for password change: $error")
+                is Result.Failure -> {
+                    Timber.w("Reauthentication failed for password change: ${authResult.error}")
                     snackbarController.showMessage(R.string.settings_reauthenticate_failed)
                 }
+            }
         }
     }
 
     fun deleteAccount(password: String) {
         viewModelScope.launch {
-            authRepository.reauthenticate(password)
-                .onSuccess {
-                    authRepository.deleteAccount()
-                        .onSuccess {
+            when (val authResult = authRepository.reauthenticate(password)) {
+                is Result.Success -> {
+                    when (val deleteResult = authRepository.deleteAccount()) {
+                        is Result.Success -> {
                             Timber.d("Account deleted")
                             analyticsRepository.logEvent(AppConfig.Analytics.EVENT_ACCOUNT_DELETED)
                             snackbarController.showMessage(R.string.settings_account_deleted)
                         }
-                        .onFailure { error ->
-                            Timber.w("Account deletion failed: $error")
+                        is Result.Failure -> {
+                            Timber.w("Account deletion failed: ${deleteResult.error}")
                             snackbarController.showMessage(R.string.settings_account_delete_failed)
                         }
+                    }
                 }
-                .onFailure { error ->
-                    Timber.w("Reauthentication failed for account deletion: $error")
+                is Result.Failure -> {
+                    Timber.w("Reauthentication failed for account deletion: ${authResult.error}")
                     snackbarController.showMessage(R.string.settings_reauthenticate_failed)
                 }
+            }
         }
     }
 
     fun sendEmailVerification() {
         viewModelScope.launch {
-            authRepository.sendEmailVerification()
-                .onSuccess {
+            when (val result = authRepository.sendEmailVerification()) {
+                is Result.Success -> {
                     Timber.d("Email verification sent")
                     snackbarController.showMessage(R.string.settings_email_verification_sent)
                 }
-                .onFailure { error ->
-                    Timber.w("Email verification failed: $error")
+                is Result.Failure -> {
+                    Timber.w("Email verification failed: ${result.error}")
                     snackbarController.showMessage(R.string.settings_email_verification_failed)
                 }
+            }
         }
     }
 }

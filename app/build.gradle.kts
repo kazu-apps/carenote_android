@@ -196,6 +196,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.functions)
 
     // Google Play Billing
     implementation(libs.google.billing)

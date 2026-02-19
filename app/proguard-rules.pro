@@ -107,3 +107,8 @@
 -keep class com.android.vending.billing.** { *; }
 -keep class com.android.billingclient.** { *; }
 -dontwarn com.android.billingclient.**
+
+# ========== Firebase Functions ==========
+
+# VerifiedPurchase data class — used for Cloud Functions response deserialization
+-keep class com.carenote.app.data.remote.VerifiedPurchase { *; }
