@@ -84,16 +84,16 @@ Git 履歴を確認し、key.properties は一度もコミットされていな�
 - 信頼度: HIGH
 - 工数: 30分
 
-### Phase 3: fastlane/Gemfile 削除（要ユーザー確認） - PENDING
+### Phase 3: fastlane/Gemfile 削除 - DONE
 
-DEPLOY_INSTRUCTIONS.md に「Ruby や Fastlane のインストールは不要です」と明記されており、Gradle Play Publisher に移行済みの可能性が高い。ユーザー確認後に fastlane/ と Gemfile を削除。
+Gradle Play Publisher v4.0.0 への移行完了済み。fastlane/Appfile, fastlane/Fastfile, Gemfile を削除。.gitignore の fastlane セクション（6行）もクリーンアップ。Gemfile.lock は元々存在しなかったため削除対象外。
 - 対象ファイル:
   - `fastlane/Appfile` (削除)
   - `fastlane/Fastfile` (削除)
   - `Gemfile` (削除)
-  - `Gemfile.lock` (削除)
-- 依存: ユーザー確認
-- 信頼度: MEDIUM（ユーザー確認が前提）
+  - `.gitignore` (fastlane セクション6行削除)
+- 依存: なし
+- 信頼度: HIGH
 - 工数: 15分
 
 ### Phase 4: Firebase App Check 導入 - PENDING
@@ -156,6 +156,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Phase 0 (Dir) | key.properties Git 履歴確認。コミット履歴なし、filter-repo 不要 | DONE |
 | Phase 1 (Dir) | .gitignore に detekt-cli/.kotlin/node_modules/ 追加。nul ファイル 2 箇所削除 | DONE |
 | Phase 2 (Dir) | osv-scanner.toml ルート削除、_config.yml exclude 追加、DEPLOY_INSTRUCTIONS.md → docs/ 移動 | DONE |
+| Phase 3 (Dir) | fastlane/ + Gemfile 削除、.gitignore クリーンアップ。Gradle Play Publisher 移行済み | DONE |
 
 ## アーキテクチャ参照
 
