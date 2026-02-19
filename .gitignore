@@ -86,3 +86,12 @@ nul
 
 # Claude Code
 .claude/
+
+# Detekt CLI (local tool)
+detekt-cli/
+
+# Kotlin compiler cache
+.kotlin/
+
+# Node modules (defense in depth - also in functions/.gitignore)
+node_modules/

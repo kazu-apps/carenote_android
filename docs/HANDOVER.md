@@ -1,14 +1,15 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 完了
+## セッションステータス: 進行中
 
-## 現在のタスク: Phase 3 完了（複数ケア対象者 UI 補完）
+## 現在のタスク: ディレクトリ整理（/disc 完了、ロードマップ作成済み）
 
 ## 次のアクション
 
-1. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
-2. リリース APK の実機テスト実施（手動: 物理デバイス SDK 26-36）
-3. 問い合わせメールアドレス確定（ビジネス判断: 現在プレースホルダー `support@carenote.app`）
+1. `/exec` でディレクトリ整理の Phase 0〜3 を順次実行
+2. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
+3. リリース APK の実機テスト実施（手動: 物理デバイス SDK 26-36）
+4. 問い合わせメールアドレス確定（ビジネス判断: 現在プレースホルダー `support@carenote.app`）
 
 ### テスト結果 (Phase 1)
 
@@ -24,6 +25,7 @@
 - **[CRITICAL] Firestore sync 基盤欠損** — `careRecipientMembers` コレクションへの書き込みコードがアプリ全体・Cloud Functions のどこにも存在しない。SyncWorker の `getFirestoreCareRecipientId()` が常に失敗するため、全 Syncer（medication, note, healthRecord, calendarEvent, noteComment, medicationLog）が実質非機能。AcceptInvitation も Room DB にのみ保存し Firestore に書き込まない。Member/Invitation/CareRecipient の Syncer が SyncModule に未実装。Firestore sync を機能させるには初期セットアップフロー（ユーザー登録時に `careRecipients` + `careRecipientMembers` を Firestore に作成）が必要
 - 問い合わせメールがプレースホルダー (`support@carenote.app`) — リリース前に実アドレス確定必要
 - リリース APK の実機テスト未実施
+- functions/ の firebase-tools 15.6.0 更新（package.json + package-lock.json）が未コミット
 
 ### 記録のみ（対応保留）
 
@@ -46,8 +48,53 @@
 | LOW | Disc OSV | AGP テスト基盤 netty/protobuf は AGP メジャーアップデートで解消見込み。osv-scanner.toml クリーンアップを将来実施 |
 | INFO | Detekt | Kotlin コンパイラ annotation-default-target 警告、テストコード型チェック警告（機能影響なし） |
 | INFO | Sec Ph3 | M-1: Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
+| LOW | Disc 20260219 Dir | carenote_spec.md の _config.yml exclude 有無は判断保留（security は含める推奨、quality は公開維持推奨） |
+| LOW | Disc 20260219 Dir | ui/common/UiText.kt → ui/util/ 移動は ROI 低のため延期（16+ ファイルの import 変更） |
+| LOW | Disc 20260219 Dir | テスト Fake 重複（test/ vs androidTest/）は DI アノテーション差異のため sharedTest 統合見送り |
+| LOW | Disc 20260219 Dir | docs/ 構造変更（GitHub Pages 分離）は _config.yml exclude で代替。構造変更は延期 |
 
 ## PENDING 項目
+
+### Phase 0: key.properties Git 履歴確認 - DONE
+
+Git 履歴を確認し、key.properties は一度もコミットされていないことを確認。git filter-repo やパスワードローテーションは不要。
+- 確認コマンド: `git log --all -- key.properties` → 0件
+- 依存: なし
+- 信頼度: HIGH
+
+### Phase 1: .gitignore 追記 + nul ファイル削除 - DONE
+
+.gitignore に detekt-cli/（JAR 20MB+）、.kotlin/（コンパイラログ）、node_modules/（多重防御）を追加。Windows artifact の nul ファイル 2箇所を削除。ビルド・CI への影響なし。
+- 対象ファイル:
+  - `.gitignore` (3行追加: `detekt-cli/`, `.kotlin/`, `node_modules/`)
+  - `nul` (削除)
+  - `app/src/test/nul` (削除)
+- 依存: なし
+- 信頼度: HIGH
+- 工数: 15分
+
+### Phase 2: osv-scanner.toml 統合 + _config.yml exclude + DEPLOY_INSTRUCTIONS 移動 - PENDING
+
+ルートの osv-scanner.toml を削除（app/ 側と完全同一のため）。docs/_config.yml に exclude リスト追加で開発ドキュメントの GitHub Pages 公開を防止。DEPLOY_INSTRUCTIONS.md を docs/ に移動。
+- 対象ファイル:
+  - `osv-scanner.toml` (ルート側を削除)
+  - `docs/_config.yml` (exclude リスト追加)
+  - `DEPLOY_INSTRUCTIONS.md` → `docs/DEPLOY_INSTRUCTIONS.md` (移動)
+- 依存: Phase 0（GitHub Pages 有効性確認の結果で _config.yml の緊急度が変わる）
+- 信頼度: HIGH
+- 工数: 30分
+
+### Phase 3: fastlane/Gemfile 削除（要ユーザー確認） - PENDING
+
+DEPLOY_INSTRUCTIONS.md に「Ruby や Fastlane のインストールは不要です」と明記されており、Gradle Play Publisher に移行済みの可能性が高い。ユーザー確認後に fastlane/ と Gemfile を削除。
+- 対象ファイル:
+  - `fastlane/Appfile` (削除)
+  - `fastlane/Fastfile` (削除)
+  - `Gemfile` (削除)
+  - `Gemfile.lock` (削除)
+- 依存: ユーザー確認
+- 信頼度: MEDIUM（ユーザー確認が前提）
+- 工数: 15分
 
 ### Phase 4: Firebase App Check 導入 - PENDING
 
@@ -106,6 +153,8 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Phase Robo | Roborazzi golden image を CI (Linux) 基準に更新。16ファイル更新（既存6修正 + 新規10追加） | DONE |
 | Phase 2 | AppConfig.kt を 7 ファイルに分割（delegation facade パターン）。既存 import 変更ゼロ | DONE |
 | Phase 3 | 複数ケア対象者 UI 補完: DAO全件取得、SharedPreferences永続化、HomeScreen切替UI | DONE |
+| Phase 0 (Dir) | key.properties Git 履歴確認。コミット履歴なし、filter-repo 不要 | DONE |
+| Phase 1 (Dir) | .gitignore に detekt-cli/.kotlin/node_modules/ 追加。nul ファイル 2 箇所削除 | DONE |
 
 ## アーキテクチャ参照
 
