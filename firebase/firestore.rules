@@ -6,66 +6,50 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
+    // User documents: only owner can read/write
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    function isOwner(recipientId) {
-      return isAuthenticated() && request.auth.uid == recipientId;
-    }
+    // CareRecipient documents: authorized members only
+    match /careRecipients/{careRecipientId} {
+      allow read, write: if isAuthorizedMember(careRecipientId);
 
-    function isMember(recipientId) {
-      return isAuthenticated() && exists(/databases/$(database)/documents/careRecipients/$(recipientId)/members/$(request.auth.uid));
-    }
+      // All sub-collections (medications, notes, healthRecords, calendarEvents, etc.)
+      match /{subCollection}/{docId} {
+        allow read, write: if isAuthorizedMember(careRecipientId);
 
-    function hasAccess(recipientId) {
-      return isOwner(recipientId) || isMember(recipientId);
-    }
-
-    // CareRecipient documents
-    match /careRecipients/{recipientId} {
-      allow read, write: if hasAccess(recipientId);
-
-      // Members sub-collection: read by owner/member, write by owner only
-      match /members/{uid} {
-        allow read: if hasAccess(recipientId);
-        allow write: if isOwner(recipientId);
-      }
-
-      match /medications/{medicationId} {
-        allow read, write: if hasAccess(recipientId);
-
+        // Nested sub-collections (logs under medications, comments under notes)
         match /logs/{logId} {
-          allow read, write: if hasAccess(recipientId);
+          allow read, write: if isAuthorizedMember(careRecipientId);
         }
-      }
-
-      match /notes/{noteId} {
-        allow read, write: if hasAccess(recipientId);
 
         match /comments/{commentId} {
-          allow read, write: if hasAccess(recipientId);
+          allow read, write: if isAuthorizedMember(careRecipientId);
         }
       }
+    }
 
-      match /healthRecords/{recordId} {
-        allow read, write: if hasAccess(recipientId);
-      }
-
-      match /calendarEvents/{eventId} {
-        allow read, write: if hasAccess(recipientId);
-      }
-
-      match /tasks/{taskId} {
-        allow read, write: if hasAccess(recipientId);
-      }
+    // Membership documents: self-access for reads, inviter for create
+    match /careRecipientMembers/{membershipId} {
+      allow read: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null &&
+                      request.resource.data.invitedBy == request.auth.uid;
+      allow update, delete: if request.auth != null &&
+                              resource.data.userId == request.auth.uid;
     }
 
     // User purchases (server-side write only)
     match /users/{uid}/purchases/{token} {
-      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
+    }
+
+    // Helper: check if user has a membership document for this careRecipient
+    function isAuthorizedMember(careRecipientId) {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/careRecipientMembers/$(request.auth.uid + '_' + careRecipientId));
     }
   }
 }

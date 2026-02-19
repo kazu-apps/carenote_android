@@ -2,19 +2,26 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 1B 品質チェック完了
+## 現在のタスク: Phase 1 完了（Firestore Rules 修正 + ユニットテスト）
 
 ## 次のアクション
 
-1. **OSV-Scanner 実行**（ツール未インストール。`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest` 必要）
-2. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
-3. リリース APK の実機テスト実施
-4. 問い合わせメールアドレス確定（現在プレースホルダー `support@carenote.app`）
+1. Phase 1B 本番デプロイ（手動: Firebase Console + Google Cloud Console 設定）
+2. リリース APK の実機テスト実施（手動: 物理デバイス SDK 26-36）
+3. 問い合わせメールアドレス確定（ビジネス判断: 現在プレースホルダー `support@carenote.app`）
+
+### テスト結果 (Phase 1)
+
+- **Billing テスト**: 14/14 PASS (playApiClient, purchaseRepository, verifyPurchase)
+- **Firestore Rules テスト**: 14/14 PASS (認証, careRecipients アクセス制御, サブコレクション, careRecipientMembers, purchases)
+- **合計**: 28/28 PASS
+- **注意**: Rules テストは Firebase Emulator 必須 (`npm run test:rules` で Emulator 自動起動)
 
 ## 既知の問題
 
 ### 未解決（要対応）
 
+- **[CRITICAL] Firestore sync 基盤欠損** — `careRecipientMembers` コレクションへの書き込みコードがアプリ全体・Cloud Functions のどこにも存在しない。SyncWorker の `getFirestoreCareRecipientId()` が常に失敗するため、全 Syncer（medication, note, healthRecord, calendarEvent, noteComment, medicationLog）が実質非機能。AcceptInvitation も Room DB にのみ保存し Firestore に書き込まない。Member/Invitation/CareRecipient の Syncer が SyncModule に未実装。Firestore sync を機能させるには初期セットアップフロー（ユーザー登録時に `careRecipients` + `careRecipientMembers` を Firestore に作成）が必要
 - 問い合わせメールがプレースホルダー (`support@carenote.app`) — リリース前に実アドレス確定必要
 - リリース APK の実機テスト未実施
 
@@ -22,7 +29,11 @@
 
 | 重要度 | 出典 | 内容 |
 |--------|------|------|
+| DONE | Disc 20260219 | Firestore Rules `isOwner`/`isMember` → `isAuthorizedMember` 統一完了。`careRecipientMembers` Rules 追加。Rules ユニットテスト 14 ケース全 PASS |
+| CRITICAL | Disc 20260219 | Firestore sync 基盤欠損: `careRecipientMembers` への write が存在せず、SyncWorker 全体が非機能。初期セットアップフロー実装が必要（スコープ外/将来に記載） |
 | MEDIUM | v4.0 | Rate Limiting 未実装（API エンドポイント、バックエンド依存。Firebase コンソール設定で緩和可能） |
+| LOW | Disc 20260219 | securityCrypto = "1.1.0-alpha06" alpha 版使用中。1.0.0 の既知バグ修正済みのため逆に安全（CVE なし確認済み） |
+| LOW | Disc 20260219 | SyncMapping テーブルに careRecipientId カラムなし。複数対象者 Firestore sync 時に衝突リスク（v2.0 で対処） |
 | LOW | v2.0 | FCM トークンのサーバー送信未実装（バックエンド前提） |
 | LOW | v10.0-tdd | SettingsViewModelTest 1170 行（Detekt 対象外だが将来的に分割検討） |
 | LOW | Detekt | Roborazzi スクリーンショット Windows/Linux フォントレンダリング差分（CI soft-fail 対応済み） |
@@ -38,12 +49,56 @@
 
 ## PENDING 項目
 
-（なし）
+### Phase 2: AppConfig.kt 分割 - PENDING
+
+727行の AppConfig.kt を機能別に分割し、Detekt LargeClass 閾値（800行）超過を予防する。Phase 1 と並行実施可能。
+- 対象ファイル:
+  - `app/src/main/java/com/carenote/app/config/AppConfig.kt` (分割元)
+  - `app/src/main/java/com/carenote/app/config/` (分割先: 複数ファイル)
+- 依存: なし
+- 信頼度: HIGH
+- 工数: 1日
+
+### Phase 3: 複数ケア対象者 UI 補完 - PENDING
+
+DB/DAO/Repository 層は完成済み（全 Entity に careRecipientId あり、全 DAO にフィルタクエリ実装済み、ActiveCareRecipientProvider 実装済み）。残存作業は CareRecipientDao の LIMIT 1 解除、選択状態の DataStore 永続化、切替 UI 実装。ローカルのみ（Firestore sync 再設計は v2.0）。
+- 対象ファイル:
+  - `app/src/main/java/com/carenote/app/data/local/dao/CareRecipientDao.kt` (LIMIT 1 解除)
+  - `app/src/main/java/com/carenote/app/data/repository/ActiveCareRecipientProviderImpl.kt` (DataStore 永続化)
+  - `app/src/main/java/com/carenote/app/ui/screens/home/HomeScreen.kt` (対象者切替 UI)
+  - 各 ViewModel (対象者切替の State 反映)
+- 依存: Phase 1（Firestore Rules 修正が先）
+- 信頼度: MEDIUM（Firestore sync は後続。ローカルのみの範囲では HIGH）
+- 工数: 7-9日
+
+### Phase 4: Firebase App Check 導入 - PENDING
+
+Play Integrity ベースの App Check を導入し、Cloud Functions エンドポイントと Firestore のコスト保護を強化する。リリース後 2週間以内（P1）。Play Console 設定は手動作業。
+- 対象ファイル:
+  - `app/build.gradle.kts` (firebase-appcheck 依存追加)
+  - `gradle/libs.versions.toml` (バージョン追加)
+  - `app/src/main/java/com/carenote/app/di/FirebaseModule.kt` (App Check 初期化)
+  - `app/proguard-rules.pro` (keep ルール追加)
+- 依存: Phase 1
+- 信頼度: MEDIUM（Play Console 手動設定が必要）
+- 工数: 2-3日
+
+### Phase 5: Offline First 強化 - PENDING
+
+ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行キューと同期状態の常時 UI 表示を実装する。
+- 対象ファイル:
+  - `app/src/main/java/com/carenote/app/data/repository/` (SyncQueueRepository 新規)
+  - `app/src/main/java/com/carenote/app/ui/components/` (同期状態 Snackbar)
+  - `app/src/main/java/com/carenote/app/data/worker/SyncWorker.kt` (再試行ロジック拡張)
+- 依存: Phase 3
+- 信頼度: MEDIUM
+- 工数: 3-4日
 
 ## 完了タスク
 
 | Item | 概要 | Status |
 |------|------|--------|
+| Phase 1 | Firestore Rules `isOwner`/`isMember` → `isAuthorizedMember` 統一。`careRecipientMembers` Rules 追加。Rules ユニットテスト 14 ケース追加 | DONE |
 | Phase 1B | Cloud Functions + PurchaseVerifier + BillingRepository 検証統合。品質チェック全 PASS（Build, Detekt, Unit Tests 2008/2008, Cloud Functions 14/14） | DONE |
 | v1.0 1-53 | Clean Architecture + 5機能 + リリース準備 + 品質改善 + テスト強化 | DONE |
 | v2.0 55-81 | Firebase Auth + Firestore 同期 + FCM + Crashlytics + セキュリティ強化 | DONE |
@@ -88,7 +143,12 @@
 
 ## スコープ外 / 将来
 
-- **FCM リモート通知**: Cloud Functions / バックエンド構築が前提
+- **FCM リモート通知**: Cloud Functions / バックエンド構築が前提。複数対象者対応（Phase 3）後に設計
+- **Firestore 初期セットアップフロー**: ユーザー登録/ログイン時に `careRecipients` + `careRecipientMembers` を Firestore に作成する処理。AcceptInvitation の Firestore 書き込み。Member/Invitation/CareRecipient Syncer の SyncModule 追加。現状は sync 基盤が根本的に非機能（Disc 20260219 で発見）
+- **Firestore Rules 全面再設計（v2.0）**: 複数対象者の Firestore sync 対応。SyncMapping に careRecipientId 追加、isOwner/isMember ロジック再設計
 - **Wear OS 対応**: Horologist + Health Services、別モジュール必要
 - **CSV データインポート**: 対象ユーザー適合性検証後
-- **Firebase App Check**: 導入推奨（PII 保護強化）
+- **音声メモ**: Speech-to-Text 統合
+- **介護保険認定書スキャン管理**: PDF 一元管理、期限切れアラート
+- **CareNoteNavHost.kt 分割**: 686行、ルートビルダー関数抽出（Phase 2 完了後に検討）
+- **Widget UX 改善**: タップでアクション（服薬記録等）追加

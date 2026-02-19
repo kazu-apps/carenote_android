@@ -380,6 +380,10 @@ data class SyncMappingEntity(
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
 
     // ユーザー自身のドキュメントのみ読み書き可能
     match /users/{userId} {
@@ -390,12 +394,16 @@ service cloud.firestore {
     match /careRecipients/{careRecipientId} {
       allow read, write: if isAuthorizedMember(careRecipientId);
 
-      // サブコレクションも同様
+      // サブコレクションも同様（medications, notes, healthRecords, calendarEvents 等）
       match /{subCollection}/{docId} {
         allow read, write: if isAuthorizedMember(careRecipientId);
 
-        // logs サブコレクション（medications 配下）
+        // ネストサブコレクション（medications/logs, notes/comments）
         match /logs/{logId} {
+          allow read, write: if isAuthorizedMember(careRecipientId);
+        }
+
+        match /comments/{commentId} {
           allow read, write: if isAuthorizedMember(careRecipientId);
         }
       }
@@ -409,6 +417,12 @@ service cloud.firestore {
                       request.resource.data.invitedBy == request.auth.uid;
       allow update, delete: if request.auth != null &&
                               resource.data.userId == request.auth.uid;
+    }
+
+    // ユーザー購入情報（サーバーサイドのみ書き込み可能）
+    match /users/{uid}/purchases/{token} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
 
     // ヘルパー関数: 認可されたメンバーかどうか
