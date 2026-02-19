@@ -2,7 +2,7 @@
 
 ## セッションステータス: 完了
 
-## 現在のタスク: Phase 1 完了（Firestore Rules 修正 + ユニットテスト）
+## 現在のタスク: Phase 2 完了（AppConfig.kt 分割）
 
 ## 次のアクション
 
@@ -48,16 +48,6 @@
 | INFO | Sec Ph3 | M-1: Deep link App Links 移行（実ドメイン設定が前提、デプロイタスク） |
 
 ## PENDING 項目
-
-### Phase 2: AppConfig.kt 分割 - PENDING
-
-727行の AppConfig.kt を機能別に分割し、Detekt LargeClass 閾値（800行）超過を予防する。Phase 1 と並行実施可能。
-- 対象ファイル:
-  - `app/src/main/java/com/carenote/app/config/AppConfig.kt` (分割元)
-  - `app/src/main/java/com/carenote/app/config/` (分割先: 複数ファイル)
-- 依存: なし
-- 信頼度: HIGH
-- 工数: 1日
 
 ### Phase 3: 複数ケア対象者 UI 補完 - PENDING
 
@@ -126,6 +116,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Detekt 修正 | CareRecipientScreen/ViewModel, AcceptInvitationViewModel メソッド分割（LongMethod, ComplexCondition, MaxLineLength） | DONE |
 | Phase OSV | Firebase BOM 34.8.0→34.9.0 + osv-scanner.toml テスト基盤 CVE 除外（23件→0件） | DONE |
 | Phase Robo | Roborazzi golden image を CI (Linux) 基準に更新。16ファイル更新（既存6修正 + 新規10追加） | DONE |
+| Phase 2 | AppConfig.kt を 7 ファイルに分割（delegation facade パターン）。既存 import 変更ゼロ | DONE |
 
 ## アーキテクチャ参照
 
