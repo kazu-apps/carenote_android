@@ -640,4 +640,67 @@ class FirestoreSyncRepositoryImplTest {
         coVerify { healthRecordSyncer.sync(careRecipientId, lastSync) }
         coVerify { calendarEventSyncer.sync(careRecipientId, lastSync) }
     }
+
+    // ========== lastSyncTime PartialSuccess バグ修正テスト ==========
+
+    @Test
+    fun `syncAll does NOT update lastSyncTime on PartialSuccess`() = runTest {
+        // Given: PartialSuccess を返すように設定
+        assertNull(lastSyncTime)
+        coEvery { medicationSyncer.sync(any(), any()) } returns
+            SyncResult.PartialSuccess(
+                successCount = 1,
+                failedEntities = listOf(1L),
+                errors = listOf(DomainError.NetworkError("Upload failed"))
+            )
+
+        // When
+        val result = repository.syncAll(careRecipientId)
+
+        // Then: PartialSuccess の場合、lastSyncTime は更新されない
+        result.assertSyncPartialSuccess()
+        assertNull(lastSyncTime)
+    }
+
+    @Test
+    fun `pushLocalChanges does NOT update lastSyncTime on PartialSuccess`() = runTest {
+        // Given: PartialSuccess を返すように設定
+        assertNull(lastSyncTime)
+        coEvery { medicationSyncer.sync(any(), any()) } returns
+            SyncResult.Success(uploadedCount = 1, downloadedCount = 0)
+        coEvery { noteSyncer.sync(any(), any()) } returns
+            SyncResult.PartialSuccess(
+                successCount = 1,
+                failedEntities = listOf(5L),
+                errors = listOf(DomainError.NetworkError("Push failed"))
+            )
+
+        // When
+        val result = repository.pushLocalChanges(careRecipientId)
+
+        // Then
+        result.assertSyncPartialSuccess()
+        assertNull(lastSyncTime)
+    }
+
+    @Test
+    fun `pullRemoteChanges does NOT update lastSyncTime on PartialSuccess`() = runTest {
+        // Given: PartialSuccess を返すように設定
+        assertNull(lastSyncTime)
+        coEvery { medicationSyncer.sync(any(), any()) } returns
+            SyncResult.Success(uploadedCount = 0, downloadedCount = 2)
+        coEvery { noteSyncer.sync(any(), any()) } returns
+            SyncResult.PartialSuccess(
+                successCount = 1,
+                failedEntities = listOf(10L),
+                errors = listOf(DomainError.NetworkError("Pull failed"))
+            )
+
+        // When
+        val result = repository.pullRemoteChanges(careRecipientId)
+
+        // Then
+        result.assertSyncPartialSuccess()
+        assertNull(lastSyncTime)
+    }
 }

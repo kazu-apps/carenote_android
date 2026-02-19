@@ -50,9 +50,10 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
         val medLogResult = syncMedicationLogsPhase(careRecipientId, accumulator)
         if (medLogResult != null) return medLogResult
 
-        settingsDataSource.updateLastSyncTime(startTime)
-
         val finalResult = accumulator.toFinalResult()
+        if (finalResult is SyncResult.Success) {
+            settingsDataSource.updateLastSyncTime(startTime)
+        }
         _syncState.value = SyncState.Success(startTime)
         Timber.d("Full sync completed: $finalResult")
         return finalResult
@@ -230,7 +231,9 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
             }
         }
 
-        settingsDataSource.updateLastSyncTime(syncTime)
+        if (allFailedEntities.isEmpty()) {
+            settingsDataSource.updateLastSyncTime(syncTime)
+        }
         _syncState.value = SyncState.Success(syncTime)
 
         return if (allFailedEntities.isEmpty()) {
@@ -278,7 +281,9 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
             }
         }
 
-        settingsDataSource.updateLastSyncTime(syncTime)
+        if (allFailedEntities.isEmpty()) {
+            settingsDataSource.updateLastSyncTime(syncTime)
+        }
         _syncState.value = SyncState.Success(syncTime)
 
         return if (allFailedEntities.isEmpty()) {

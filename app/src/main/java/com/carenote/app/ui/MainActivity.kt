@@ -42,6 +42,7 @@ import com.carenote.app.domain.repository.AuthRepository
 import com.carenote.app.domain.repository.CalendarEventRepository
 import com.carenote.app.domain.repository.ConnectivityRepository
 import com.carenote.app.domain.repository.SettingsRepository
+import com.carenote.app.domain.repository.SyncWorkSchedulerInterface
 import kotlinx.coroutines.flow.flowOf
 import com.carenote.app.ui.navigation.AdaptiveNavigationScaffold
 import com.carenote.app.ui.navigation.CareNoteNavHost
@@ -71,6 +72,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var connectivityRepository: ConnectivityRepository
+
+    @Inject
+    lateinit var syncWorkScheduler: SyncWorkSchedulerInterface
 
     @Inject
     lateinit var biometricHelper: BiometricAuthenticator
@@ -198,6 +202,15 @@ class MainActivity : AppCompatActivity() {
 
         val isOnline by connectivityRepository.isOnline
             .collectAsStateWithLifecycle(initialValue = true)
+
+        var previousIsOnline by remember { mutableStateOf(true) }
+        LaunchedEffect(isOnline) {
+            if (isOnline && !previousIsOnline) {
+                Timber.d("Connectivity restored, triggering immediate sync")
+                syncWorkScheduler.triggerImmediateSync()
+            }
+            previousIsOnline = isOnline
+        }
 
         if (showBottomBar) {
             AdaptiveNavigationScaffold(

@@ -77,6 +77,8 @@
     <string name="settings_last_sync_never">Never synced</string>
     <string name="settings_sync_started">Sync started</string>
     <string name="settings_sync_in_progress">Syncing...</string>
+    <string name="sync_complete_snackbar">Sync complete</string>
+    <string name="sync_error_snackbar">Sync failed. Retrying…</string>
 
     <!-- Security Settings -->
     <string name="settings_security">Security</string>

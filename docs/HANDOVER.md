@@ -112,16 +112,19 @@ Play Integrity ベースの App Check を導入。debug ビルドではスキッ
 - 信頼度: HIGH
 - 手動ステップ: Firebase Console で Play Integrity プロバイダー登録 + enforcement 有効化
 
-### Phase 5: Offline First 強化 - PENDING
+### Phase 5: Offline First 強化 - DONE
 
-ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行キューと同期状態の常時 UI 表示を実装する。
+同期状態の Snackbar UI 表示、lastSyncTime PartialSuccess バグ修正、接続復帰時の即時同期トリガーを実装。SyncQueueRepository は不要（デルタ同期で十分）。
 - 対象ファイル:
-  - `app/src/main/java/com/carenote/app/data/repository/` (SyncQueueRepository 新規)
-  - `app/src/main/java/com/carenote/app/ui/components/` (同期状態 Snackbar)
-  - `app/src/main/java/com/carenote/app/data/worker/SyncWorker.kt` (再試行ロジック拡張)
+  - `FirestoreSyncRepositoryImpl.kt` (lastSyncTime バグ修正 3箇所)
+  - `strings.xml` / `strings-en.xml` (同期 Snackbar 文字列追加)
+  - `SyncStatusViewModel.kt` (新規: 同期状態監視 + Snackbar 発行)
+  - `AdaptiveNavigationScaffold.kt` (Snackbar 統合)
+  - `MainActivity.kt` (接続復帰時 triggerImmediateSync)
+  - `SyncStatusViewModelTest.kt` (新規: 5テストケース)
+  - `FirestoreSyncRepositoryImplTest.kt` (3テストケース追加)
 - 依存: Phase 3（完了済み）
-- 信頼度: MEDIUM
-- 工数: 3-4日
+- 信頼度: HIGH
 
 ## 完了タスク
 
@@ -162,6 +165,7 @@ ConnectivityRepository の基盤を拡張し、同期失敗時の自動再試行
 | Phase 2 (Dir) | osv-scanner.toml ルート削除、_config.yml exclude 追加、DEPLOY_INSTRUCTIONS.md → docs/ 移動 | DONE |
 | Phase 3 (Dir) | fastlane/ + Gemfile 削除、.gitignore クリーンアップ。Gradle Play Publisher 移行済み | DONE |
 | Phase 4 (Dir) | Firebase App Check (Play Integrity) 導入。debug スキップ、release のみ有効。ProGuard 対応 | DONE |
+| Phase 5 (Dir) | Offline First 強化: 同期 Snackbar UI、lastSyncTime バグ修正、接続復帰即時同期 | DONE |
 
 ## アーキテクチャ参照
 
