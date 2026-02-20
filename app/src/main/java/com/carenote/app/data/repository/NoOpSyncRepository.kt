@@ -1,8 +1,10 @@
 package com.carenote.app.data.repository
 
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.repository.SyncRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +63,16 @@ class NoOpSyncRepository : SyncRepository {
     override suspend fun pullRemoteChanges(careRecipientId: String): SyncResult {
         Timber.w("pullRemoteChanges called but Firebase is not configured")
         return firebaseUnavailableFailure()
+    }
+
+    override suspend fun setupInitialCareRecipient(
+        userId: String,
+        careRecipient: CareRecipient
+    ): Result<String, DomainError> {
+        Timber.w("setupInitialCareRecipient called but Firebase is not configured")
+        return Result.Failure(
+            DomainError.NetworkError("Firebase is not configured. Please add google-services.json.")
+        )
     }
 
     private fun firebaseUnavailableFailure(): SyncResult.Failure =

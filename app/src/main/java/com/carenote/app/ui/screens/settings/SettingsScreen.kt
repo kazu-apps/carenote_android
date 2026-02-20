@@ -1,6 +1,5 @@
 package com.carenote.app.ui.screens.settings
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.padding
@@ -40,12 +39,13 @@ import com.carenote.app.ui.screens.settings.sections.CareRecipientSection
 import com.carenote.app.ui.screens.settings.sections.EmergencyContactSection
 import com.carenote.app.ui.screens.settings.sections.MemberManagementSection
 import com.carenote.app.ui.screens.settings.sections.SecuritySection
+import com.carenote.app.ui.screens.settings.components.ClickablePreference
 import com.carenote.app.ui.screens.settings.sections.DataExportSection
-import com.carenote.app.ui.screens.settings.sections.PremiumSection
 import com.carenote.app.ui.screens.settings.sections.SyncSection
 import com.carenote.app.ui.util.BiometricHelper
 import com.carenote.app.ui.util.RootDetector
 import com.carenote.app.ui.screens.settings.sections.ThemeSection
+import com.carenote.app.domain.model.PremiumStatus
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.model.UserSettings
 import com.carenote.app.ui.util.SnackbarEvent
@@ -62,6 +62,7 @@ fun SettingsScreen(
     onNavigateToCareRecipient: () -> Unit = {},
     onNavigateToEmergencyContacts: () -> Unit = {},
     onNavigateToMemberManagement: () -> Unit = {},
+    onNavigateToBilling: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -74,11 +75,6 @@ fun SettingsScreen(
     val billingUiState by viewModel.billingUiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var dialogState by remember { mutableStateOf<SettingsDialogState>(SettingsDialogState.None) }
-
-    LaunchedEffect(Unit) {
-        viewModel.connectBilling()
-        viewModel.loadProducts()
-    }
 
     SettingsEffects(viewModel, snackbarHostState, exportState)
     SettingsScaffold(
@@ -97,6 +93,7 @@ fun SettingsScreen(
         onNavigateToCareRecipient = onNavigateToCareRecipient,
         onNavigateToEmergencyContacts = onNavigateToEmergencyContacts,
         onNavigateToMemberManagement = onNavigateToMemberManagement,
+        onNavigateToBilling = onNavigateToBilling,
         viewModel = viewModel
     )
 }
@@ -150,6 +147,7 @@ private fun SettingsScaffold(
     onNavigateToCareRecipient: () -> Unit,
     onNavigateToEmergencyContacts: () -> Unit,
     onNavigateToMemberManagement: () -> Unit,
+    onNavigateToBilling: () -> Unit,
     viewModel: SettingsViewModel
 ) {
     Scaffold(
@@ -170,6 +168,7 @@ private fun SettingsScaffold(
             onNavigateToCareRecipient = onNavigateToCareRecipient,
             onNavigateToEmergencyContacts = onNavigateToEmergencyContacts,
             onNavigateToMemberManagement = onNavigateToMemberManagement,
+            onNavigateToBilling = onNavigateToBilling,
             viewModel = viewModel,
             modifier = Modifier.padding(innerPadding)
         )
@@ -215,6 +214,7 @@ private fun SettingsContent(
     onNavigateToCareRecipient: () -> Unit,
     onNavigateToEmergencyContacts: () -> Unit,
     onNavigateToMemberManagement: () -> Unit,
+    onNavigateToBilling: () -> Unit,
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -227,7 +227,7 @@ private fun SettingsContent(
             settings, isLoggedIn, currentUser, isSyncing,
             taskReminderLimitText, billingUiState, onDialogStateChange,
             onNavigateToPrivacyPolicy, onNavigateToTermsOfService,
-            viewModel
+            onNavigateToBilling, viewModel
         )
     }
 }
@@ -267,13 +267,14 @@ private fun LazyListScope.settingsPreferenceItems(
     onDialogStateChange: (SettingsDialogState) -> Unit,
     onNavigateToPrivacyPolicy: () -> Unit,
     onNavigateToTermsOfService: () -> Unit,
+    onNavigateToBilling: () -> Unit,
     viewModel: SettingsViewModel
 ) {
     settingsAppearanceItems(settings, viewModel)
     settingsAccountAndNotificationItems(
         settings, isLoggedIn, currentUser, isSyncing,
         taskReminderLimitText, billingUiState, onDialogStateChange,
-        viewModel
+        onNavigateToBilling, viewModel
     )
     settingsDataAndInfoItems(
         settings, onDialogStateChange,
@@ -305,6 +306,7 @@ private fun LazyListScope.settingsAccountAndNotificationItems(
     taskReminderLimitText: String?,
     billingUiState: BillingUiState,
     onDialogStateChange: (SettingsDialogState) -> Unit,
+    onNavigateToBilling: () -> Unit,
     viewModel: SettingsViewModel
 ) {
     item(key = "sync") {
@@ -326,7 +328,7 @@ private fun LazyListScope.settingsAccountAndNotificationItems(
     item(key = "premium") {
         SettingsPremiumItem(
             billingUiState = billingUiState,
-            viewModel = viewModel
+            onNavigateToBilling = onNavigateToBilling
         )
     }
     item(key = "notification") {
@@ -559,28 +561,26 @@ private fun SettingsMedicationTimeItem(
 @Composable
 private fun SettingsPremiumItem(
     billingUiState: BillingUiState,
-    viewModel: SettingsViewModel
+    onNavigateToBilling: () -> Unit
 ) {
-    val context = LocalContext.current
-    PremiumSection(
-        premiumStatus = billingUiState.premiumStatus,
-        connectionState = billingUiState.connectionState,
-        products = billingUiState.products,
-        isLoading = billingUiState.isLoading,
-        onPurchaseClick = { productId ->
-            (context as? Activity)?.let { activity ->
-                viewModel.launchPurchase(activity, productId)
-            }
-        },
-        onRestoreClick = { viewModel.restorePurchases() },
-        onManageClick = {
-            viewModel.logManageSubscription()
-            val intent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(AppConfig.Billing.GOOGLE_PLAY_SUBSCRIPTION_URL)
-            )
-            context.startActivity(intent)
-        }
+    val statusSummary = when (billingUiState.premiumStatus) {
+        is PremiumStatus.Active -> stringResource(
+            R.string.billing_status_active
+        )
+        is PremiumStatus.Inactive -> stringResource(
+            R.string.billing_status_inactive
+        )
+        is PremiumStatus.Expired -> stringResource(
+            R.string.billing_status_expired
+        )
+        is PremiumStatus.Pending -> stringResource(
+            R.string.billing_status_pending
+        )
+    }
+    ClickablePreference(
+        title = stringResource(R.string.settings_premium),
+        summary = statusSummary,
+        onClick = onNavigateToBilling
     )
 }
 

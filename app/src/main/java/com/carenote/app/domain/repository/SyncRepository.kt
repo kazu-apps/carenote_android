@@ -1,7 +1,9 @@
 package com.carenote.app.domain.repository
 
+import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
+import com.carenote.app.domain.model.CareRecipient
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 
@@ -151,4 +153,21 @@ interface SyncRepository {
      * @return 同期結果
      */
     suspend fun pullRemoteChanges(careRecipientId: String): SyncResult
+
+    // ========== 初期セットアップ ==========
+
+    /**
+     * Firestore に初期 CareRecipient ドキュメントをセットアップする
+     *
+     * careRecipientMembers と careRecipients の2つのドキュメントを作成し、
+     * sync の前提条件を満たす。
+     *
+     * @param userId Firebase Auth の UID
+     * @param careRecipient ローカルの CareRecipient
+     * @return 成功時は Firestore の careRecipientId、失敗時は DomainError
+     */
+    suspend fun setupInitialCareRecipient(
+        userId: String,
+        careRecipient: CareRecipient
+    ): com.carenote.app.domain.common.Result<String, DomainError>
 }

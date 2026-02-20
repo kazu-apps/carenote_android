@@ -65,10 +65,12 @@ class SyncWorker @AssistedInject constructor(
         }
 
         // 2. Get careRecipientId from Firestore
-        val careRecipientId = getCareRecipientId(user.uid)
+        var careRecipientId = getCareRecipientId(user.uid)
         if (careRecipientId == null) {
-            Timber.w("SyncWorker: No careRecipientId found for current user")
-            return Result.failure()
+            careRecipientId = setupCareRecipientIfNeeded(user.uid)
+            if (careRecipientId == null) {
+                return Result.retry()
+            }
         }
 
         // 2.5 Save firestoreId to local DB
@@ -139,6 +141,39 @@ class SyncWorker @AssistedInject constructor(
                     photoRepository.updateUploadStatus(photo.id, PhotoUploadStatus.FAILED)
                     Timber.w("Photo upload failed: id=${photo.id}, error=$error")
                 }
+        }
+    }
+
+    /**
+     * ローカル CareRecipient が存在し firestoreId が未設定の場合、
+     * Firestore にドキュメントを作成してセットアップする
+     */
+    private suspend fun setupCareRecipientIfNeeded(userId: String): String? {
+        return try {
+            val localRecipient = careRecipientRepository.getCareRecipient().first()
+            if (localRecipient == null || localRecipient.firestoreId != null) {
+                Timber.d("SyncWorker: No local recipient or already has firestoreId, skipping setup")
+                return null
+            }
+
+            Timber.d("SyncWorker: Attempting initial CareRecipient setup")
+            when (val result = syncRepository.setupInitialCareRecipient(userId, localRecipient)) {
+                is com.carenote.app.domain.common.Result.Success -> {
+                    val careRecipientId = result.value
+                    careRecipientRepository.updateFirestoreId(localRecipient.id, careRecipientId)
+                    Timber.d("SyncWorker: Initial setup completed, firestoreId saved")
+                    careRecipientId
+                }
+                is com.carenote.app.domain.common.Result.Failure -> {
+                    Timber.w("SyncWorker: Initial setup failed: ${result.error.message}")
+                    null
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e("SyncWorker: Unexpected error during setup: $e")
+            null
         }
     }
 

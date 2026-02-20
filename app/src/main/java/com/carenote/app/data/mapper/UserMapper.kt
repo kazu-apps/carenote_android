@@ -11,14 +11,14 @@ import javax.inject.Singleton
 @Singleton
 class UserMapper @Inject constructor() {
 
-    fun toDomain(firebaseUser: FirebaseUser): User {
+    fun toDomain(firebaseUser: FirebaseUser, isPremium: Boolean = false): User {
         return User(
             uid = firebaseUser.uid,
             name = firebaseUser.displayName ?: "",
             email = firebaseUser.email ?: "",
             createdAt = firebaseUser.metadata?.creationTimestamp?.toLocalDateTime()
                 ?: LocalDateTime.now(),
-            isPremium = false,
+            isPremium = isPremium,
             isEmailVerified = firebaseUser.isEmailVerified
         )
     }

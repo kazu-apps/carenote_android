@@ -21,6 +21,7 @@ import com.carenote.app.domain.model.MemberRole
 import com.carenote.app.domain.model.Note
 import com.carenote.app.domain.model.NoteComment
 import com.carenote.app.domain.model.NoteTag
+import com.carenote.app.domain.model.ProductInfo
 import com.carenote.app.domain.model.RecurrenceFrequency
 import com.carenote.app.domain.model.RelationshipType
 import com.carenote.app.domain.model.TaskPriority
@@ -322,4 +323,20 @@ fun aInvitation(
     token = token,
     expiresAt = expiresAt ?: clock.now().plusDays(7),
     createdAt = clock.now()
+)
+
+fun aProductInfo(
+    productId: String = "carenote_premium_monthly",
+    name: String = "月額プラン",
+    description: String = "月額480円で全機能",
+    formattedPrice: String = "¥480",
+    priceMicros: Long = 480_000_000L,
+    billingPeriod: String = "P1M"
+): ProductInfo = ProductInfo(
+    productId = productId,
+    name = name,
+    description = description,
+    formattedPrice = formattedPrice,
+    priceMicros = priceMicros,
+    billingPeriod = billingPeriod
 )

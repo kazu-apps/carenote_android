@@ -6,11 +6,17 @@ import com.carenote.app.data.local.dao.SyncMappingDao
 import com.carenote.app.data.repository.sync.EntitySyncer
 import com.carenote.app.data.repository.sync.MedicationLogSyncer
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.repository.SyncRepository
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -26,6 +32,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class FirestoreSyncRepositoryImpl @Inject constructor(
+    private val firestore: dagger.Lazy<FirebaseFirestore>,
     private val settingsDataSource: SettingsDataSource,
     private val syncMappingDao: SyncMappingDao,
     @Named("medication") private val medicationSyncer: EntitySyncer<*, *>,
@@ -294,6 +301,47 @@ class FirestoreSyncRepositoryImpl @Inject constructor(
             )
         } else {
             SyncResult.PartialSuccess(totalDownloaded, allFailedEntities, allErrors)
+        }
+    }
+
+    override suspend fun setupInitialCareRecipient(
+        userId: String,
+        careRecipient: CareRecipient
+    ): Result<String, DomainError> {
+        return try {
+            val db = firestore.get()
+            val careRecipientId = db.collection("careRecipients").document().id
+
+            // Step 1: Create careRecipientMembers document (must come first per Firestore Rules)
+            val memberDocId = "${userId}_${careRecipientId}"
+            val memberData = mapOf(
+                "userId" to userId,
+                "careRecipientId" to careRecipientId,
+                "invitedBy" to userId,
+                "role" to "owner"
+            )
+            db.collection("careRecipientMembers").document(memberDocId)
+                .set(memberData)
+                .await()
+
+            // Step 2: Create careRecipients document
+            val now = Timestamp.now()
+            val recipientData = mapOf(
+                "name" to careRecipient.name,
+                "createdAt" to now,
+                "updatedAt" to now
+            )
+            db.collection("careRecipients").document(careRecipientId)
+                .set(recipientData)
+                .await()
+
+            Timber.d("Initial CareRecipient setup completed successfully")
+            Result.Success(careRecipientId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e("Failed to setup initial CareRecipient: $e")
+            Result.Failure(DomainError.NetworkError("Failed to setup CareRecipient in Firestore", e))
         }
     }
 

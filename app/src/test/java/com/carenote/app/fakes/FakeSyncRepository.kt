@@ -1,8 +1,10 @@
 package com.carenote.app.fakes
 
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.repository.SyncRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +46,20 @@ class FakeSyncRepository : SyncRepository {
     var lastCareRecipientId: String? = null
         private set
 
+    /** true にすると setupInitialCareRecipient が失敗を返す */
+    var shouldFailSetup = false
+
+    /** setupInitialCareRecipient() が呼ばれた回数 */
+    var setupCallCount = 0
+        private set
+
+    /** 最後に setupInitialCareRecipient() に渡された userId */
+    var lastSetupUserId: String? = null
+        private set
+
+    /** setupInitialCareRecipient 成功時に返す careRecipientId */
+    var defaultSetupCareRecipientId: String = "fake-firestore-id"
+
     /**
      * syncState を設定する
      */
@@ -66,6 +82,10 @@ class FakeSyncRepository : SyncRepository {
         lastSyncTimeValue = null
         syncAllCallCount = 0
         lastCareRecipientId = null
+        shouldFailSetup = false
+        setupCallCount = 0
+        lastSetupUserId = null
+        defaultSetupCareRecipientId = "fake-firestore-id"
     }
 
     // ========== SyncRepository interface implementation ==========
@@ -122,5 +142,17 @@ class FakeSyncRepository : SyncRepository {
     override suspend fun pullRemoteChanges(careRecipientId: String): SyncResult {
         if (shouldFail) return SyncResult.Failure(failureError)
         return defaultSyncResult
+    }
+
+    override suspend fun setupInitialCareRecipient(
+        userId: String,
+        careRecipient: CareRecipient
+    ): Result<String, DomainError> {
+        setupCallCount++
+        lastSetupUserId = userId
+        if (shouldFailSetup) {
+            return Result.Failure(DomainError.NetworkError("Test setup failure"))
+        }
+        return Result.Success(defaultSetupCareRecipientId)
     }
 }

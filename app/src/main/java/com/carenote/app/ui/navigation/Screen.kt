@@ -261,6 +261,13 @@ sealed class Screen(
         fun createRoute(token: String): String = "accept_invitation/$token"
     }
 
+    data object Billing : Screen(
+        route = "billing",
+        titleResId = R.string.billing_screen_title,
+        selectedIcon = Icons.Filled.CreditCard,
+        unselectedIcon = Icons.Outlined.CreditCard
+    )
+
     companion object {
         val bottomNavItems get() = listOf(Home, Medication, Calendar, Timeline, HealthRecords, Notes)
         val authScreens get() = listOf(Login, Register, ForgotPassword)

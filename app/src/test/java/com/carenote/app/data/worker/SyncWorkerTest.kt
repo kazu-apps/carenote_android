@@ -2,8 +2,10 @@ package com.carenote.app.data.worker
 
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.common.DomainError
+import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.model.User
 import com.carenote.app.fakes.FakeAuthRepository
 import com.carenote.app.fakes.FakeSyncRepository
@@ -269,5 +271,58 @@ class SyncWorkerTest {
         assertTrue(result.isPartialSuccess)
         assertTrue(!result.isSuccess)
         assertTrue(!result.isFailure)
+    }
+
+    // ========== Setup Flow Tests ==========
+
+    @Test
+    fun `FakeSyncRepository setupInitialCareRecipient returns Success by default`() = runTest {
+        val careRecipient = CareRecipient(id = 1L, name = "Test Recipient")
+        val result = fakeSyncRepository.setupInitialCareRecipient("user-123", careRecipient)
+
+        assertTrue(result is Result.Success)
+        assertEquals("fake-firestore-id", (result as Result.Success).value)
+    }
+
+    @Test
+    fun `FakeSyncRepository setupInitialCareRecipient returns Failure when shouldFailSetup is true`() = runTest {
+        fakeSyncRepository.shouldFailSetup = true
+        val careRecipient = CareRecipient(id = 1L, name = "Test Recipient")
+
+        val result = fakeSyncRepository.setupInitialCareRecipient("user-123", careRecipient)
+
+        assertTrue(result is Result.Failure)
+        assertTrue((result as Result.Failure).error is DomainError.NetworkError)
+    }
+
+    @Test
+    fun `FakeSyncRepository tracks setup call count and userId`() = runTest {
+        assertEquals(0, fakeSyncRepository.setupCallCount)
+        assertNull(fakeSyncRepository.lastSetupUserId)
+
+        val careRecipient = CareRecipient(id = 1L, name = "Test Recipient")
+        fakeSyncRepository.setupInitialCareRecipient("user-abc", careRecipient)
+
+        assertEquals(1, fakeSyncRepository.setupCallCount)
+        assertEquals("user-abc", fakeSyncRepository.lastSetupUserId)
+
+        fakeSyncRepository.setupInitialCareRecipient("user-def", careRecipient)
+
+        assertEquals(2, fakeSyncRepository.setupCallCount)
+        assertEquals("user-def", fakeSyncRepository.lastSetupUserId)
+    }
+
+    @Test
+    fun `FakeSyncRepository clear resets setup state`() = runTest {
+        val careRecipient = CareRecipient(id = 1L, name = "Test Recipient")
+        fakeSyncRepository.shouldFailSetup = true
+        fakeSyncRepository.setupInitialCareRecipient("user-123", careRecipient)
+
+        fakeSyncRepository.clear()
+
+        assertEquals(false, fakeSyncRepository.shouldFailSetup)
+        assertEquals(0, fakeSyncRepository.setupCallCount)
+        assertNull(fakeSyncRepository.lastSetupUserId)
+        assertEquals("fake-firestore-id", fakeSyncRepository.defaultSetupCareRecipientId)
     }
 }

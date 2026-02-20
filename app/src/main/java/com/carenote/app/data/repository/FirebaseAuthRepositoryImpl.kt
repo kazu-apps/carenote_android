@@ -5,6 +5,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.model.User
 import com.carenote.app.domain.repository.AuthRepository
+import com.carenote.app.domain.repository.BillingRepository
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
@@ -20,12 +21,13 @@ import javax.inject.Singleton
 @Singleton
 class FirebaseAuthRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val userMapper: UserMapper
+    private val userMapper: UserMapper,
+    private val billingRepository: BillingRepository
 ) : AuthRepository {
 
     override val currentUser: Flow<User?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { auth ->
-            val user = auth.currentUser?.let { userMapper.toDomain(it) }
+            val user = auth.currentUser?.let { userMapper.toDomain(it, billingRepository.premiumStatus.value.isActive) }
             trySend(user)
         }
         firebaseAuth.addAuthStateListener(listener)
@@ -35,7 +37,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     }
 
     override fun getCurrentUser(): User? {
-        return firebaseAuth.currentUser?.let { userMapper.toDomain(it) }
+        return firebaseAuth.currentUser?.let { userMapper.toDomain(it, billingRepository.premiumStatus.value.isActive) }
     }
 
     override suspend fun signUp(
@@ -56,7 +58,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             firebaseUser.sendEmailVerification().await()
 
             Timber.d("User signed up successfully")
-            userMapper.toDomain(firebaseUser)
+            userMapper.toDomain(firebaseUser, billingRepository.premiumStatus.value.isActive)
         }
     }
 
@@ -69,7 +71,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
             val firebaseUser = authResult.user
                 ?: throw IllegalStateException("User is null after sign in")
             Timber.d("User signed in successfully")
-            userMapper.toDomain(firebaseUser)
+            userMapper.toDomain(firebaseUser, billingRepository.premiumStatus.value.isActive)
         }
     }
 

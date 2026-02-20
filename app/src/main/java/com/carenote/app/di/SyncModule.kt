@@ -220,6 +220,7 @@ object SyncModule {
     @Suppress("LongParameterList")
     fun provideSyncRepository(
         availability: FirebaseAvailability,
+        firestore: dagger.Lazy<FirebaseFirestore>,
         settingsDataSource: SettingsDataSource,
         syncMappingDao: SyncMappingDao,
         @Named("medication") medicationSyncer: dagger.Lazy<EntitySyncer<*, *>>,
@@ -231,6 +232,7 @@ object SyncModule {
     ): SyncRepository {
         if (!availability.isAvailable) return NoOpSyncRepository()
         return FirestoreSyncRepositoryImpl(
+            firestore,
             settingsDataSource,
             syncMappingDao,
             medicationSyncer.get(),

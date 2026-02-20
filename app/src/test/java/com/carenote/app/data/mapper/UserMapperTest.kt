@@ -111,4 +111,22 @@ class UserMapperTest {
         assertTrue(verifiedResult.isEmailVerified)
         assertFalse(unverifiedResult.isEmailVerified)
     }
+
+    @Test
+    fun `toDomain with isPremium true`() {
+        val firebaseUser = createMockFirebaseUser()
+
+        val result = mapper.toDomain(firebaseUser, isPremium = true)
+
+        assertTrue(result.isPremium)
+    }
+
+    @Test
+    fun `toDomain with isPremium false by default`() {
+        val firebaseUser = createMockFirebaseUser()
+
+        val result = mapper.toDomain(firebaseUser)
+
+        assertFalse(result.isPremium)
+    }
 }

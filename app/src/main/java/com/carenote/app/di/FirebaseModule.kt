@@ -10,6 +10,7 @@ import com.carenote.app.data.repository.NoOpAuthRepository
 import com.carenote.app.data.repository.NoOpStorageRepository
 import com.carenote.app.domain.repository.AnalyticsRepository
 import com.carenote.app.domain.repository.AuthRepository
+import com.carenote.app.domain.repository.BillingRepository
 import com.carenote.app.domain.repository.StorageRepository
 import com.carenote.app.ui.util.RootDetectionChecker
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -65,10 +66,11 @@ object FirebaseModule {
     @Singleton
     fun provideAuthRepository(
         availability: FirebaseAvailability,
-        userMapper: UserMapper
+        userMapper: UserMapper,
+        billingRepository: BillingRepository
     ): AuthRepository {
         if (!availability.isAvailable) return NoOpAuthRepository()
-        return FirebaseAuthRepositoryImpl(FirebaseAuth.getInstance(), userMapper)
+        return FirebaseAuthRepositoryImpl(FirebaseAuth.getInstance(), userMapper, billingRepository)
     }
 
     @Provides

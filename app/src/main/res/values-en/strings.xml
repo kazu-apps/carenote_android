@@ -781,4 +781,5 @@
     <string name="billing_free_tier_info">Upgrade to Premium to unlock all features</string>
     <string name="billing_connecting">Connecting…</string>
     <string name="billing_unavailable">Google Play Billing is not available</string>
+    <string name="billing_screen_title">Premium Plan</string>
 </resources>

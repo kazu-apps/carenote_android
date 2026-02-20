@@ -9,6 +9,7 @@ import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.SyncResult
 import com.carenote.app.domain.common.SyncState
 import com.carenote.app.fakes.FakeSyncMappingDao
+import com.google.firebase.firestore.FirebaseFirestore
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -91,7 +92,10 @@ class FirestoreSyncRepositoryImplTest {
         every { medicationLogSyncer.entityType } returns "medicationLog"
         every { noteCommentSyncer.entityType } returns "noteComment"
 
+        val lazyFirestore = dagger.Lazy { mockk<FirebaseFirestore>(relaxed = true) }
+
         repository = FirestoreSyncRepositoryImpl(
+            firestore = lazyFirestore,
             settingsDataSource = settingsDataSource,
             syncMappingDao = syncMappingDao,
             medicationSyncer = medicationSyncer,
