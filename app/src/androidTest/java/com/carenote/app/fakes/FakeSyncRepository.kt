@@ -2,7 +2,9 @@ package com.carenote.app.fakes
 
 import com.carenote.app.domain.common.DomainError
 import com.carenote.app.domain.common.SyncResult
+import com.carenote.app.domain.common.Result
 import com.carenote.app.domain.common.SyncState
+import com.carenote.app.domain.model.CareRecipient
 import com.carenote.app.domain.repository.SyncRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +44,16 @@ class FakeSyncRepository @Inject constructor() : SyncRepository {
     var syncAllCallCount = 0
         private set
 
+    /** setupInitialCareRecipient() が呼ばれた回数 */
+    var setupCallCount = 0
+        private set
+
+    /** setupInitialCareRecipient() を失敗させるかどうか */
+    var shouldFailSetup = false
+
+    /** 成功時に返す careRecipientId */
+    var defaultSetupCareRecipientId = "test-care-recipient-id"
+
     /** 最後に syncAll() に渡された careRecipientId */
     var lastCareRecipientId: String? = null
         private set
@@ -68,6 +80,9 @@ class FakeSyncRepository @Inject constructor() : SyncRepository {
         lastSyncTimeValue = null
         syncAllCallCount = 0
         lastCareRecipientId = null
+        setupCallCount = 0
+        shouldFailSetup = false
+        defaultSetupCareRecipientId = "test-care-recipient-id"
     }
 
     // ========== SyncRepository interface implementation ==========
@@ -124,5 +139,16 @@ class FakeSyncRepository @Inject constructor() : SyncRepository {
     override suspend fun pullRemoteChanges(careRecipientId: String): SyncResult {
         if (shouldFail) return SyncResult.Failure(failureError)
         return defaultSyncResult
+    }
+
+    override suspend fun setupInitialCareRecipient(
+        userId: String,
+        careRecipient: CareRecipient
+    ): Result<String, DomainError> {
+        setupCallCount++
+        if (shouldFailSetup) {
+            return Result.Failure(DomainError.NetworkError("Test setup failure"))
+        }
+        return Result.Success(defaultSetupCareRecipientId)
     }
 }
