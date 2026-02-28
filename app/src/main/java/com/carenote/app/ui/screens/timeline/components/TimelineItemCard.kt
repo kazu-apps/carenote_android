@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.carenote.app.R
 import com.carenote.app.config.AppConfig
 import com.carenote.app.domain.model.MedicationLogStatus
+import com.carenote.app.domain.model.MedicationTiming
 import com.carenote.app.domain.model.TimelineItem
 import com.carenote.app.ui.util.DateTimeFormatters
 
@@ -124,13 +125,25 @@ private fun MedicationLogContent(item: TimelineItem.MedicationLogItem) {
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
     )
+    val timingText = item.log.timing?.let { timing ->
+        when (timing) {
+            MedicationTiming.MORNING -> stringResource(R.string.medication_morning)
+            MedicationTiming.NOON -> stringResource(R.string.medication_noon)
+            MedicationTiming.EVENING -> stringResource(R.string.medication_evening)
+        }
+    }
     val statusText = when (item.log.status) {
         MedicationLogStatus.TAKEN -> stringResource(R.string.timeline_medication_taken)
         MedicationLogStatus.SKIPPED -> stringResource(R.string.timeline_medication_skipped)
         MedicationLogStatus.POSTPONED -> stringResource(R.string.timeline_medication_postponed)
     }
+    val displayText = if (timingText != null) {
+        "$timingText / $statusText"
+    } else {
+        statusText
+    }
     Text(
-        text = statusText,
+        text = displayText,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

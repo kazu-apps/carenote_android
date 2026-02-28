@@ -1,8 +1,8 @@
 # HANDOVER.md - CareNote Android
 
-## セッションステータス: 進行中
+## セッションステータス: 完了
 
-## 現在のタスク: Phase 3 Firestore 初期セットアップフロー実装完了
+## 現在のタスク: UI バグ修正 (タイムライン服薬タイミング + カレンダーチェックボックス)
 
 ## 次のアクション
 
@@ -107,6 +107,7 @@ SyncWorker 駆動の自動セットアップ。getCareRecipientId が null の�
 | Phase 1 (Billing UI) | BillingScreen + BillingViewModel + SettingsScreen 簡略化 + UserMapper isPremium 動的化 | DONE |
 | Phase 2 | HomeScreen.kt + CareNoteNavHost.kt 分割。706→256行、701→57行。6新規ファイル | DONE |
 | Phase 3 (Firestore Setup) | SyncWorker 駆動の Firestore 初期セットアップフロー。setupInitialCareRecipient 新設 | DONE |
+| UI バグ修正 | タイムライン服薬タイミング表示 + カレンダーチェックボックスTASK限定 | DONE |
 
 ## アーキテクチャ参照
 
