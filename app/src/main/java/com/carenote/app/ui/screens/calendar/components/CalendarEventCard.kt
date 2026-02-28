@@ -131,10 +131,12 @@ private fun EventTimeAndCheckbox(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
-        Checkbox(
-            checked = event.completed,
-            onCheckedChange = { onToggleCompleted(event) }
-        )
+        if (event.isTask) {
+            Checkbox(
+                checked = event.completed,
+                onCheckedChange = { onToggleCompleted(event) }
+            )
+        }
     }
 }
 
